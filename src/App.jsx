@@ -379,14 +379,14 @@ const App = () => {
             body: JSON.stringify(body)
           });
           if (!res.ok) {
+            if (res.status === 503) {
+              await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+              continue;
+            }
             const errData = await res.json().catch(() => ({}));
             const message = errData?.error?.message || `HTTP ${res.status}`;
             if (res.status >= 500) throw new Error(message);
             throw new Error(`non-retryable: ${message}`);
-          }
-          if (res.status === 503) {
-            await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
-            continue;
           }
           const data = await res.json();
           const parts = data?.candidates?.[0]?.content?.parts || [];

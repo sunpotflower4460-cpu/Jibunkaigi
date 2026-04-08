@@ -3,7 +3,7 @@
 
 /**
  * @param {string} text - ユーザーの発言
- * @returns {Object} - { desire, fear, freeze, reach, resignation, selfExcuse, shame, urFinished }
+ * @returns {Object} - { desire, fear, freeze, reach, resignation, selfErasure, shame, unfinished }
  */
 export const estimateState = (text) => {
   if (!text || typeof text !== 'string') {
@@ -13,9 +13,9 @@ export const estimateState = (text) => {
       freeze: 0,
       reach: 0,
       resignation: 0,
-      selfExcuse: 0,
+      selfErasure: 0,
       shame: 0,
-      urFinished: 0
+      unfinished: 0
     };
   }
 
@@ -26,9 +26,9 @@ export const estimateState = (text) => {
   let freeze = 0;
   let reach = 0;
   let resignation = 0;
-  let selfExcuse = 0;
+  let selfErasure = 0;
   let shame = 0;
-  let urFinished = 0;
+  let unfinished = 0;
 
   // ==================== desire 側 ====================
   if (t.includes('やりたい') || t.includes('行きたい') || t.includes('なりたい')) {
@@ -87,24 +87,24 @@ export const estimateState = (text) => {
 
   // ==================== unfinished 側 ====================
   if (t.includes('諦めきれない') || t.includes('まだある') || t.includes('残ってる')) {
-    urFinished += 0.4;
+    unfinished += 0.4;
   }
   if (t.includes('引っかかる') || t.includes('忘れられない')) {
-    urFinished += 0.3;
+    unfinished += 0.3;
   }
   if (t.includes('気になる') || t.includes('心残り')) {
-    urFinished += 0.25;
+    unfinished += 0.25;
   }
 
-  // ==================== selfExcuse 側 ====================
+  // ==================== selfErasure 側 ====================
   if (t.includes('でも') || t.includes('だって')) {
-    selfExcuse += 0.2;
+    selfErasure += 0.2;
   }
   if (t.includes('忙しい') || t.includes('時間がない')) {
-    selfExcuse += 0.25;
+    selfErasure += 0.25;
   }
   if (t.includes('才能ない') || t.includes('向いてない')) {
-    selfExcuse += 0.3;
+    selfErasure += 0.3;
   }
 
   // ==================== shame 側 ====================
@@ -125,8 +125,8 @@ export const estimateState = (text) => {
     freeze: Math.min(freeze, 1.0),
     reach: Math.min(reach, 1.0),
     resignation: Math.min(resignation, 1.0),
-    selfExcuse: Math.min(selfExcuse, 1.0),
+    selfErasure: Math.min(selfErasure, 1.0),
     shame: Math.min(shame, 1.0),
-    urFinished: Math.min(urFinished, 1.0)
+    unfinished: Math.min(unfinished, 1.0)
   };
 };
