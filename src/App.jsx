@@ -33,6 +33,9 @@ import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt'
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
 
+const getGlobalValue = (key) =>
+  (typeof globalThis !== 'undefined' && key in globalThis) ? globalThis[key] : undefined;
+
 const getFirebaseConfig = () => {
   try {
     if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_API_KEY) {
@@ -45,13 +48,14 @@ const getFirebaseConfig = () => {
         appId: import.meta.env.VITE_FIREBASE_APP_ID
       };
     }
-    if (typeof __firebase_config !== 'undefined') {
-      return typeof __firebase_config === 'string'
-        ? JSON.parse(__firebase_config)
-        : __firebase_config;
+    const globalConfig = getGlobalValue('__firebase_config');
+    if (globalConfig) {
+      return typeof globalConfig === 'string'
+        ? JSON.parse(globalConfig)
+        : globalConfig;
     }
-  } catch (e) {
-    console.error("Firebase config parsing error:", e);
+  } catch (error) {
+    console.error("Firebase config parsing error:", error);
   }
   return {};
 };
@@ -71,12 +75,12 @@ if (!hasFirebaseConfig) {
   console.error("Firebase configuration is missing or incomplete.");
 }
 
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'self-conf-v10';
+const appId = getGlobalValue('__app_id') || 'self-conf-v10';
 
 const apiKey =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY)
     ? import.meta.env.VITE_GEMINI_API_KEY
-    : (typeof __api_key !== 'undefined' ? __api_key : "");
+    : (getGlobalValue('__api_key') || "");
 
 const makeId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
@@ -178,7 +182,9 @@ const playSound = (type) => {
 const safeParseJson = (text) => {
   const normalized = String(text ?? "")
     .replace(/```json/gi, "").replace(/```/g, "").trim();
-  try { return JSON.parse(normalized); } catch {}
+  try { return JSON.parse(normalized); } catch (error) {
+    console.debug("Primary JSON parse failed, trying fallback", error);
+  }
   const start = normalized.indexOf("{");
   if (start === -1) return null;
   let depth = 0, inString = false, escaped = false, end = -1;
@@ -231,10 +237,10 @@ const App = () => {
   const timeoutIdsRef = useRef(new Set());
 
   const [showIntro, setShowIntro] = useState(() => {
-    try { return localStorage.getItem('jibunkaigi_intro_seen') !== 'true'; } catch(e) { return true; }
+    try { return localStorage.getItem('jibunkaigi_intro_seen') !== 'true'; } catch { return true; }
   });
   const [isHomeReady, setIsHomeReady] = useState(() => {
-    try { return localStorage.getItem('jibunkaigi_intro_seen') === 'true'; } catch(e) { return false; }
+    try { return localStorage.getItem('jibunkaigi_intro_seen') === 'true'; } catch { return false; }
   });
 
   const isAppReady = hasFirebaseConfig && !!db && !!user && !!apiKey;
@@ -280,7 +286,9 @@ const App = () => {
 
   const handleStartIntro = () => {
     playSound('intro');
-    try { localStorage.setItem('jibunkaigi_intro_seen', 'true'); } catch(e) {}
+    try { localStorage.setItem('jibunkaigi_intro_seen', 'true'); } catch (error) {
+      console.warn("Failed to persist intro flag", error);
+    }
     setIsHomeReady(true);
     scheduleTimeout(() => setShowIntro(false), 500);
   };
@@ -289,8 +297,9 @@ const App = () => {
     if (!auth) return;
     const initAuth = async () => {
       try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
+        const initialToken = getGlobalValue('__initial_auth_token');
+        if (initialToken) {
+          await signInWithCustomToken(auth, initialToken);
         } else {
           await signInAnonymously(auth);
         }
@@ -482,7 +491,10 @@ ${agentDescriptions}
     try {
       playSound('delete');
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', currentSessionId, 'messages', msgId));
-    } catch (e) { setErrorMessage("メッセージの削除に失敗しました。"); }
+    } catch (error) {
+      console.error("Failed to delete message", error);
+      setErrorMessage("メッセージの削除に失敗しました。");
+    }
   };
 
   const handleSend = async (overrideText = null) => {
@@ -697,7 +709,10 @@ ${agentDescriptions}
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId));
       if (currentSessionId === sessionId) { setCurrentSessionId(null); resetSessionUIState(); }
       setDeleteTargetId(null);
-    } catch (e) { setErrorMessage("削除に失敗しました。"); }
+    } catch (error) {
+      console.error("Failed to delete session", error);
+      setErrorMessage("削除に失敗しました。");
+    }
     setIsDeletingSession(false);
   };
 
@@ -706,7 +721,7 @@ ${agentDescriptions}
       await navigator.clipboard.writeText(content);
       setCopiedMsgId(msgId);
       scheduleTimeout(() => setCopiedMsgId(null), 2000);
-    } catch (e) {
+    } catch {
       const t = document.createElement("textarea");
       t.value = content; document.body.appendChild(t); t.select();
       document.execCommand('copy'); document.body.removeChild(t);
@@ -889,7 +904,7 @@ ${agentDescriptions}
                                 <button onClick={e => { e.stopPropagation(); if (autoExpandReactions?.msgId === msg.id && !activeReaction) setAutoExpandReactions(null); else { setActiveReaction(null); setAutoExpandReactions({msgId: msg.id, isLoading: false}); } }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${(autoExpandReactions?.msgId === msg.id && !activeReaction) ? 'bg-slate-800 text-white border-slate-900 shadow-md' : 'bg-white/40 text-slate-500 border-white/60 hover:bg-white/60'}`}>
                                   <Users size={10} /> OTHERS
                                 </button>
-                                {Object.entries(msg.reactions).map(([rId, data]) => {
+                                {Object.entries(msg.reactions).map(([rId]) => {
                                   const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
                                   return (
                                     <button key={rId} onClick={e => { e.stopPropagation(); setActiveReaction(activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? null : {msgId: msg.id, agentId: rId}); setAutoExpandReactions(null); }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? 'bg-slate-800 text-white border-slate-900' : 'bg-white/40 text-slate-400 border-white/60 hover:bg-white/60'}`}>
