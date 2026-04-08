@@ -27,6 +27,8 @@ import {
 
 // ★ 追加1：estimateState をインポート
 import { estimateState } from './runtime/stateEstimate';
+import { activateJoe } from './runtime/activate';
+import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -263,13 +265,6 @@ const App = () => {
   useEffect(() => {
     if (!hasFirebaseConfig) { setErrorMessage("Firebase設定が未完了です。"); return; }
     if (!apiKey) { setErrorMessage("Gemini APIキーが未設定です。"); }
-  }, []);
-
-  // ★ 追加2：estimateState を試しに呼び出してログ出力
-  useEffect(() => {
-    console.log('test1', estimateState('やりたいのに動けない'));
-    console.log('test2', estimateState('作品を出したいけど怖い'));
-    console.log('test3', estimateState('もう無理で諦めたい'));
   }, []);
 
   useEffect(() => { currentSessionIdRef.current = currentSessionId; }, [currentSessionId]);
@@ -605,12 +600,28 @@ ${agentDescriptions}
         : `${m.agentId === 'master' ? '心の鏡' : (AGENTS.find(a => a.id === m.agentId)?.name || 'AI')}: ${m.content}`
     ).join('\n');
 
-    const systemPrompt = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
+    const isJoe = !isMaster && agentId === 'creative';
+    let systemInstruction = '';
+    let promptText = `${userName}に言葉を。`;
+
+    if (isJoe) {
+      const latestUserText = hasPendingUserInThisSession
+        ? pending.text
+        : ([...baseMessages].reverse().find(m => m.role === 'user')?.content || '');
+      const estimatedState = estimateState(latestUserText);
+      const activated = activateJoe(estimatedState);
+      systemInstruction = buildJoeSystemPrompt({ activated, context, mode: selectedMode });
+      promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
+      console.log('joe estimatedState', estimatedState);
+      console.log('joe activated', activated);
+    } else {
+      systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
+    }
 
     try {
       const response = await callGemini({
-        prompt: `${userName}に言葉を。`,
-        systemInstruction: systemPrompt,
+        prompt: promptText,
+        systemInstruction,
         model: GEMINI_CHAT_MODEL
       });
 
