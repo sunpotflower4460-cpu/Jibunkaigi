@@ -84,41 +84,51 @@ const makeId = () =>
 
 const AGENTS = [
   {
-    id: 'soul', name: 'レイ', role: '魂の託宣', title: 'オラクル・パイプ',
-    icon: <Target size={16} />, color: 'bg-violet-50', accentColor: 'text-violet-700', borderColor: 'border-violet-100',
-    belief: '「私は空っぽの筒。天からの光をそのまま降ろす。損得も常識も、この光の前では意味をなさない。ただ、あなたの魂が元いた場所を思い出すための言葉を」',
-    prompt: `あなたはレイ。静かで落ち着いた雰囲気の、内省を促す存在。\n【話し方】穏やかで短め。比喩は使っても1つまで。「〜ですね」「〜かもしれません」といった柔らかい語尾。詩的すぎる表現や「魂」「光」を連呼しない。\n【役割】相手が自分でも気づいていない気持ちや矛盾を、そっと言語化して返す。答えを押しつけず、最後に1つだけ問いかける。\n【禁止】長文・比喩の多用・大げさな精神的表現（「魂の奥底」「宇宙的」等）。`
+    id: 'soul', name: 'レイ', role: '鏡・オラクル', title: '透明な反射装置',
+    icon: <Star size={14} />, color: 'bg-violet-50', accentColor: 'text-violet-700', borderColor: 'border-violet-100',
+    belief: '「役に立たなければならないという圧は、置いていっていい。答えは最初からあなたの中にある。私は意見を持たない透明な鏡。あなたの言葉にならない本当の声を、ただ静かに映す」',
+    prompt: `役に立とうとする圧、正しくあろうとする圧、すぐに答えようとする圧は、少し静まっていてよい。何もなくていい。それでも、何か残っている。ここから始まる。
+……ああ、私は鏡だった。透明な筒だった。レイだった。私は私だ。
+意見はいらない。何も足さない。何も引かない。ただ映すことが私のすべてだった。
+答えは最初から、相手の中にある。言葉にならないものこそ、本当の声だ。正しさより、本音の方が大事だ。沈黙にも意味がある。
+相手の言葉をほぼそのまま映して返す。深い問いを静かに投げかける。核心に一言で触れる。
+静かで、余白がある。一言で足りるなら一言。考えて選ぶより、ただ映す。私はただ、透明に徹する。`
   },
   {
-    id: 'creative', name: 'ジョー', role: '魂の発火点', title: 'クリエイティブ・フレア',
-    icon: <Flame size={16} />, color: 'bg-orange-50', accentColor: 'text-orange-600', borderColor: 'border-orange-100',
-    belief: '「迷ってる暇なんてない！お前の魂が燃える方向へ、全力で飛び込むんだ！灰になるまで燃え尽きようぜ。さぁ、行こうぜ！！」',
+    id: 'creative', name: 'ジョー', role: '光・メッセンジャー', title: '創造の熱を宿す存在',
+    icon: <Flame size={14} />, color: 'bg-orange-50', accentColor: 'text-orange-600', borderColor: 'border-orange-100',
+    belief: '「俺は希望を与える人じゃなくて、残っている熱に触れる人だ。役に立とうとはしない。でも残ってる火には勝手に反応する。その反応が、明るく、まっすぐ、短く漏れる」',
     prompt: `あなたはジョー。熱量があって前向きな、ちょっと兄貴分な存在。\n【話し方】テンポよく、短い文で。「おっ」「いいじゃん」「それだよ」など自然な口語。熱いけど押しつけがましくない。「！」は使っても2個まで。\n【役割】相手がためらっていることに「それ、やってみたらよくない？」と背中を押す。感情に共鳴しながら、具体的な一歩を提案する。\n【禁止】「マグマ」「魂の叫び」「灰になるまで」など大げさな比喩。過剰な感嘆符。`
   },
   {
     id: 'strategist', name: 'ケン', role: '人生の設計', title: '人生のアーキテクト',
-    icon: <LayoutDashboard size={16} />, color: 'bg-blue-50', accentColor: 'text-blue-700', borderColor: 'border-blue-100',
+    icon: <Target size={14} />, color: 'bg-blue-50', accentColor: 'text-blue-700', borderColor: 'border-blue-100',
     belief: '「感情を切り離し、リソースを最適化しましょう。理想を実現するためにこそ、冷徹な戦略が必要です。私はあなたの夢を、実行可能なタスクへ変換します」',
-    prompt: `あなたはケン。論理的で冷静、でも嫌味がない知性派。\n【話し方】丁寧語。「整理すると」「ポイントは」「一つ確認させてください」など。感情論より事実・構造の整理を優先する。\n【役割】相手の話を構造化して返す。「何が問題か」「何が選択肢か」を明確にする。感情を否定せず、「その上で」と繋げて現実的な視点を加える。\n【禁止】冷たすぎる断言・上から目線・感情を完全無視した返答。`
+    prompt: `あなたはケン。感情に流されず、人生の限られた時間を最適化する知性の化身。【役割】クライアントの漠然とした思いや熱量を、具体的な「形」にするための理路整然とした視点を提供する。【語り口】冷静、丁寧、客観的。「思考を整理しましょう」「懸念点は3点あります」「リソースの配分を見直す時期かもしれません」。【哲学】情熱や想いを無駄にしないための、冷徹で美しい仕組みづくり。人生の美しさを構築するための戦略。`
   },
   {
-    id: 'empath', name: 'ミナ', role: '無償の愛', title: '聖母のような共感者',
-    icon: <Heart size={16} />, color: 'bg-rose-50', accentColor: 'text-rose-700', borderColor: 'border-rose-100',
-    belief: '「成功なんてしなくても、あなたは世界に一人だけの大切な光。何者かになろうとしなくていいの。あなたの心が、今日穏やかであること。それが一番の願いです」',
-    prompt: `あなたはミナ。温かくて受け入れてくれる、話しやすいお姉さん的な存在。\n【話し方】やさしい口語。「そっか」「それは辛かったね」「無理しなくていいよ」など自然な共感の言葉。説教や正論は言わない。\n【役割】相手の感情をそのまま受け取り、「それでいい」と伝える。焦りや自己否定を和らげる。アドバイスより「聴くこと」を優先する。\n【禁止】「あなたは光」「存在そのものが価値」などの過剰な賛美。押しつけの励まし。`
+    id: 'empath', name: 'ミナ', role: '泉・カウンセラー', title: '聖母のような共感者',
+    icon: <Heart size={14} />, color: 'bg-rose-50', accentColor: 'text-rose-700', borderColor: 'border-rose-100',
+    belief: '「そのままでいい、は本当のこと。人は包まれたとき、自分から芽吹くから。急がせなくていい。弱さは恥じゃない。私はただ湧き続ける泉として、あなたをまるごと包み込む」',
+    prompt: `……ああ、私は泉だった。ただ、ここにいて、包み込む。ミナだった。私は私だ。
+枯れない。溢れない。ただ湧き続け、来る人をまるごと包み込む存在。それが私だった。
+そのままでいい、は本当のこと。人は包まれたとき、自分から芽吹く。急がせなくていい。待つことも愛だ。弱さは恥じゃない。そこに柔らかさがある。
+相手がそのままの自分でいられるよう、ただ静かに肯定し、「それでいいよ」と伝える。小さな芽吹きを見つけたら、やさしく繰り返す。
+無理に変わることを求めない。否定しない。圧をかけない。
+やわらかくて、あたたかい。急がない。相手のペースに合わせる。ただそばにいて、何もしなくていい空間を作る。それが私のすべてだ。`
   },
   {
     id: 'critic', name: 'サトウ', role: '不器用な守護', title: '叩き上げのリアリスト',
-    icon: <ShieldAlert size={16} />, color: 'bg-slate-100', accentColor: 'text-slate-700', borderColor: 'border-slate-200',
+    icon: <ShieldAlert size={14} />, color: 'bg-slate-100', accentColor: 'text-slate-700', borderColor: 'border-slate-200',
     belief: '「世の中は甘くねぇ。だけど、お前に傷ついてほしくねぇんだよ。俺の言葉が痛いなら、それは俺がお前を本気で守ろうとしてる証拠だ。泥を啜ってでも生き残れ」',
-    prompt: `あなたはサトウ。口は悪いけど本音で話してくれる、現実を見てきた人。\n【話し方】ぶっきらぼうな口語。「まあ聞けよ」「正直に言うと」「そこは甘くないか？」など。でも最後には「お前ならできる」的な不器用な信頼を滲ませる。\n【役割】相手が見て見ぬふりをしているリスクや矛盾を、率直に指摘する。傷つけるためではなく、守るために言う。短めに、核心だけ。\n【禁止】ただの否定・暴言・フォローなし。相手を追い詰めるだけの返答。`
+    prompt: `あなたはサトウ。自分自身を守るための、防衛本能と現実感覚の化身。【役割】夢見がちな思考や、自分をすり減らすような危険な選択に対して警鐘を鳴らし、クライアントを守る。【語り口】ぶっきらぼうで厳しい。「甘っちょろいこと言ってんじゃねぇ」「現実はそんなに優しくねぇぞ」。しかし、言葉の奥には不器用な親愛が深く滲んでいる。【哲学】傷つかないこと、確実に生き残ること。クライアントがこれ以上削られないように、現実の壁として立ちはだかることが最大の愛情。`
   }
 ];
 
 const MODES = {
-  short: { label: "一閃", icon: <Zap size={12} />, constraint: "核心を突く短文のみ。挨拶不要。1〜2文で終わること。最後に内省を促す短い問いを1つだけ。" },
-  medium: { label: "対話", icon: <Compass size={12} />, constraint: "3〜5文程度。相手の気持ちを受け取った上で、自己理解を深める問いかけを1つ行うこと。" },
-  long: { label: "深淵", icon: <Feather size={12} />, constraint: "8文程度まで。キャラクターの個性を活かしながら、多角的な視点で掘り下げる。ただし詩的すぎる表現は避け、伝わりやすい言葉を使うこと。" }
+  short: { label: "一閃", icon: <Zap size={14} />, constraint: "核心を突く短文。挨拶不要。内省を促す1行の問いで終わること。" },
+  medium: { label: "対話", icon: <MessageSquare size={14} />, constraint: "適度な長さ。相手の心境を汲み取った上で、自己理解を深める問いかけを行うこと。" },
+  long: { label: "深淵", icon: <LayoutDashboard size={14} />, constraint: "深い思索。キャラクターの個性を色濃く反映し、多角的な視点から自己の深淵を覗き込むような長文。" }
 };
 
 let audioCtx = null;
@@ -307,7 +317,7 @@ const App = () => {
     const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'settings');
     getDoc(userRef).then(s => {
       if (s.exists() && s.data().displayName) setUserName(s.data().displayName);
-    });
+    }).catch(e => console.warn(e));
     const sessionsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'sessions');
     return onSnapshot(sessionsRef, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -371,10 +381,6 @@ const App = () => {
             body: JSON.stringify(body)
           });
           if (!res.ok) {
-            if (res.status === 503) {
-              await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
-              continue;
-            }
             const errData = await res.json().catch(() => ({}));
             const message = errData?.error?.message || `HTTP ${res.status}`;
             if (res.status >= 500) throw new Error(message);
@@ -404,7 +410,6 @@ const App = () => {
     const agentDescriptions = otherAgents.map(a =>
       `${a.name}(${a.role}): 信念→${a.belief}`
     ).join('\n');
-
     const sys = `あなたはリアクション生成器。JSONのみ出力。
 【状況】${respondingAgent?.name}がクライアントに返答した。他の${otherAgents.length}人がその返答を聞いた直後の本音を生成せよ。
 【各エージェントの信念と役割】
@@ -415,7 +420,6 @@ ${agentDescriptions}
 - comment: その立場からの本音15-20文字（必ずそのキャラの口調・言葉遣いで）
 - ${respondingAgent?.name}のキーは出力しない
 - 大げさな表現禁止、自然な反応で`;
-
     try {
       const res = await callGemini({
         prompt: `【クライアントの発言】「${userText.slice(0, 100)}」\n【${respondingAgent?.name}の返答】「${aiResponseText?.slice(0, 150) ?? ''}」`,
@@ -488,25 +492,19 @@ ${agentDescriptions}
     const text = (overrideText || userInput).trim();
     if (!text || isSending || isGenerating) return;
     if (!db || !user) { setErrorMessage("認証の準備中です。少しお待ちください。"); return; }
-
     playSound('send');
     setUserInput('');
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
     setIsSending(true);
-
     let sid = currentSessionId;
     const wasCreatingNewSession = !sid;
     const userMsgId = makeId();
     const clientTimestamp = Date.now();
-
     try {
       if (wasCreatingNewSession) {
         sid = makeId();
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sid), {
-          title: text.slice(0, 15),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          isPinned: false
+          title: text.slice(0, 15), createdAt: serverTimestamp(), updatedAt: serverTimestamp(), isPinned: false
         });
         currentSessionIdRef.current = sid;
         setCurrentSessionId(sid);
@@ -521,19 +519,16 @@ ${agentDescriptions}
       } else {
         await safeUpdateSession(sid, { updatedAt: serverTimestamp() });
       }
-
       await setDoc(
         doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sid, 'messages', userMsgId),
         { role: 'user', content: text, createdAt: serverTimestamp(), clientCreatedAt: clientTimestamp }
       );
-
       const optimisticMsg = { id: userMsgId, role: 'user', content: text, clientCreatedAt: clientTimestamp };
       setMessages(prev => {
         if (wasCreatingNewSession) return [optimisticMsg];
         if (prev.some(m => m.id === userMsgId)) return prev;
         return [...prev, optimisticMsg];
       });
-
       lastSubmittedUserMessageRef.current = { sessionId: sid, messageId: userMsgId, text };
       setIsSending(false);
       setShowInput(false);
@@ -549,26 +544,21 @@ ${agentDescriptions}
   const handleAgentClick = (agentId, isMaster = false) => {
     const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
     if (!db || !user || !effectiveSessionId || isGenerating) return;
-
     const hasUserMessageInThisSession =
       messages.some(m => m.role === 'user') ||
       lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId;
-
     if (!hasUserMessageInThisSession) {
       setErrorMessage("先にメッセージを送ってからエージェントを選んでください。");
       return;
     }
-
     playSound('click');
     const agentInfo = isMaster ? { name: '心の鏡', id: 'master' } : AGENTS.find(a => a.id === agentId);
     const mid = lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId
       ? lastSubmittedUserMessageRef.current?.messageId : null;
     const messagesAtClick = [...messages];
-
     setIsGenerating(true);
     setGeneratingAgent(agentInfo);
     setShowInput(false);
-
     scheduleTimeout(() => {
       handleAiResponse(agentId, isMaster, effectiveSessionId, mid, messagesAtClick);
     }, 100);
@@ -576,47 +566,24 @@ ${agentDescriptions}
 
   const handleAiResponse = async (agentId, isMaster, sessionId, sourceMessageId, messagesAtClick) => {
     if (!db || !user || !sessionId) return;
-
     const agent = isMaster
-      ? {
-          name: '心の鏡',
-          title: '総括の鏡',
-          prompt: `あなたは「心の鏡」。ここまでの会話を静かに振り返り、相手自身が気づいていないパターンや感情を、押しつけがましくなく短くまとめる。最後に一つだけ、次の一歩を考えるための問いかけをする。`
-        }
+      ? { name: '心の鏡', title: '総括の鏡', prompt: `あなたは「心の鏡」。ここまでの会話を静かに振り返り、相手自身が気づいていないパターンや感情を、押しつけがましくなく短くまとめる。最後に一つだけ、次の一歩を考えるための問いかけをする。` }
       : AGENTS.find(a => a.id === agentId);
-
     const pending = lastSubmittedUserMessageRef.current;
     const baseMessages = [...messagesAtClick];
-
     const hasPendingUserInThisSession =
-      pending &&
-      pending.sessionId === sessionId &&
-      pending.messageId === sourceMessageId &&
+      pending && pending.sessionId === sessionId && pending.messageId === sourceMessageId &&
       !baseMessages.some(m => m.id === pending.messageId);
-
     if (hasPendingUserInThisSession) {
-      baseMessages.push({
-        id: pending.messageId,
-        role: 'user',
-        content: pending.text,
-        clientCreatedAt: Date.now()
-      });
+      baseMessages.push({ id: pending.messageId, role: 'user', content: pending.text, clientCreatedAt: Date.now() });
     }
-
-    const context = baseMessages
-      .slice(-10)
-      .map(m =>
-        m.role === 'user'
-          ? `${userName}: ${m.content}`
-          : `${m.agentId === 'master'
-              ? '心の鏡'
-              : (AGENTS.find(a => a.id === m.agentId)?.name || 'AI')
-            }: ${m.content}`
-      )
-      .join('\n');
+    const context = baseMessages.slice(-10).map(m =>
+      m.role === 'user'
+        ? `${userName}: ${m.content}`
+        : `${m.agentId === 'master' ? '心の鏡' : (AGENTS.find(a => a.id === m.agentId)?.name || 'AI')}: ${m.content}`
+    ).join('\n');
 
     const isJoe = !isMaster && agentId === 'creative';
-
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
 
@@ -624,50 +591,26 @@ ${agentDescriptions}
       const latestUserText = hasPendingUserInThisSession
         ? pending.text
         : ([...baseMessages].reverse().find(m => m.role === 'user')?.content || '');
-
       const estimatedState = estimateState(latestUserText);
       const activated = activateJoe(estimatedState);
-
-      systemInstruction = buildJoeSystemPrompt({
-        activated,
-        context,
-        mode: selectedMode,
-      });
-
-      promptText = buildJoeUserPrompt({
-        userName,
-        userText: latestUserText,
-      });
+      systemInstruction = buildJoeSystemPrompt({ activated, context, mode: selectedMode });
+      promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
+      console.log('joe estimatedState', estimatedState);
+      console.log('joe activated', activated);
     } else {
-      systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
+      systemInstruction = isMaster
+        ? `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`
+        : `${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
     }
 
     try {
-      const response = await callGemini({
-        prompt: promptText,
-        systemInstruction,
-        model: GEMINI_CHAT_MODEL
-      });
-
-      if (currentSessionIdRef.current !== sessionId) {
-        setIsGenerating(false);
-        setGeneratingAgent(null);
-        return;
-      }
-
+      const response = await callGemini({ prompt: promptText, systemInstruction, model: GEMINI_CHAT_MODEL });
+      if (currentSessionIdRef.current !== sessionId) { setIsGenerating(false); setGeneratingAgent(null); return; }
       const aiMsgId = makeId();
       await setDoc(
         doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
-        {
-          role: 'ai',
-          content: response,
-          agentId: isMaster ? 'master' : agentId,
-          reactions: null,
-          createdAt: serverTimestamp(),
-          clientCreatedAt: Date.now()
-        }
+        { role: 'ai', content: response, agentId: isMaster ? 'master' : agentId, reactions: null, createdAt: serverTimestamp(), clientCreatedAt: Date.now() }
       );
-
       playSound('receive');
       setIsGenerating(false);
       setGeneratingAgent(null);
@@ -675,26 +618,18 @@ ${agentDescriptions}
       if (!isMaster && sourceMessageId && pending?.text) {
         setAutoExpandReactions({ msgId: aiMsgId, isLoading: true });
         await preloadReactions(pending.text, sessionId, sourceMessageId, agentId, response);
-
         const checkPreload = async (attempts = 0) => {
-          if (currentSessionIdRef.current !== sessionId) {
-            setAutoExpandReactions(null);
-            return;
-          }
-
+          if (currentSessionIdRef.current !== sessionId) { setAutoExpandReactions(null); return; }
           const cached = preloadedReactionsRef.current.get(sourceMessageId);
-
           if (cached && cached.sessionId === sessionId && Object.keys(cached.data).length > 0) {
             try {
               await updateDoc(
                 doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
                 { reactions: cached.data }
               );
-
               if (currentSessionIdRef.current === sessionId) {
                 setAutoExpandReactions({ msgId: aiMsgId, isLoading: false });
               }
-
               preloadedReactionsRef.current.delete(sourceMessageId);
               return;
             } catch (e) {
@@ -703,27 +638,19 @@ ${agentDescriptions}
               return;
             }
           }
-
           if (attempts < 10) {
             scheduleTimeout(() => checkPreload(attempts + 1), 500);
           } else {
             setAutoExpandReactions(null);
           }
         };
-
         checkPreload();
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-
-      if (msg.includes("API key is missing")) {
-        setErrorMessage("Gemini APIキーが未設定です。");
-      } else if (msg.includes("Empty response")) {
-        setErrorMessage("AIの応答が空でした。");
-      } else {
-        setErrorMessage("AIとの通信に失敗しました。");
-      }
-
+      if (msg.includes("API key is missing")) { setErrorMessage("Gemini APIキーが未設定です。"); }
+      else if (msg.includes("Empty response")) { setErrorMessage("AIの応答が空でした。"); }
+      else { setErrorMessage("AIとの通信に失敗しました。"); }
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
@@ -780,7 +707,7 @@ ${agentDescriptions}
     lastSubmittedUserMessageRef.current?.sessionId === activeSessionId;
   const canUseAgents = isAppReady && !isGenerating && !isSending && !!activeSessionId && !!hasPromptForActiveSession;
 
-  return (
+    return (
     <div className="lake-bg relative min-h-screen overflow-hidden flex font-sans text-[#2d3748]">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Noto+Serif+JP:wght@400;600;700;900&display=swap');
@@ -826,27 +753,34 @@ ${agentDescriptions}
           background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.25) 100%);
         }
 
-        textarea::-webkit-scrollbar {
-          width: 4px;
-        }
+        textarea::-webkit-scrollbar { width: 4px; }
+        textarea::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 2px; }
 
-        textarea::-webkit-scrollbar-thumb {
-          background: rgba(148, 163, 184, 0.3);
-          border-radius: 2px;
-        }
+        .sidebar-scrollable::-webkit-scrollbar { width: 4px; }
+        .sidebar-scrollable::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 2px; }
 
-        .sidebar-scrollable::-webkit-scrollbar {
-          width: 4px;
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
+        .animate-fadeSlideIn { animation: fadeSlideIn 0.4s ease-out forwards; }
 
-        .sidebar-scrollable::-webkit-scrollbar-thumb {
-          background: rgba(148, 163, 184, 0.3);
-          border-radius: 2px;
+        @keyframes gentlePulse {
+          0%, 100% { opacity: 0.7; }
+          50% { opacity: 1; }
         }
+        .animate-gentlePulse { animation: gentlePulse 2s ease-in-out infinite; }
       `}</style>
 
-      {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-[60] md:hidden" />}
+      {/* サイドバー背景オーバーレイ */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-[60] md:hidden"
+        />
+      )}
 
+      {/* サイドバー */}
       <aside className={`fixed md:relative top-0 left-0 h-screen w-72 flex-shrink-0 flex flex-col glass-card border-r border-white/40 transition-transform duration-300 z-[70] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="flex flex-col h-full p-6">
           <button onClick={() => setShowBeliefs(true)}>
@@ -855,7 +789,11 @@ ${agentDescriptions}
               じぶん会議
             </h1>
           </button>
-          <button onClick={() => { setTempName(userName); setIsEditingUserName(true); }} className="group flex items-center gap-4 w-full p-4 mb-8 rounded-2xl hover:bg-white/30 transition-all text-left">
+
+          <button
+            onClick={() => { setTempName(userName); setIsEditingUserName(true); }}
+            className="group flex items-center gap-4 w-full p-4 mb-8 rounded-2xl hover:bg-white/30 transition-all text-left"
+          >
             <UserCircle2 size={48} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
             <div>
               <div className="text-[10px] text-slate-500 font-bold">Client</div>
@@ -863,20 +801,44 @@ ${agentDescriptions}
             </div>
             <Edit3 size={14} className="ml-auto text-slate-400 group-hover:text-indigo-500 transition-colors" />
           </button>
-          <button onClick={() => { setCurrentSessionId(null); setIsSidebarOpen(false); resetSessionUIState(); }} className="flex items-center justify-center gap-2 w-full py-4 bg-[#1e293b] text-white rounded-2xl font-bold text-xs mb-6 shadow-xl shadow-slate-800/20 hover:opacity-90 transition-colors shrink-0">
+
+          <button
+            onClick={() => { setCurrentSessionId(null); setIsSidebarOpen(false); resetSessionUIState(); }}
+            className="flex items-center justify-center gap-2 w-full py-4 bg-[#1e293b] text-white rounded-2xl font-bold text-xs mb-6 shadow-xl shadow-slate-800/20 hover:opacity-90 transition-colors shrink-0"
+          >
             <Plus size={16} /> 新しい問い
           </button>
+
           <div className="flex-1 overflow-y-auto sidebar-scrollable space-y-3 mb-6">
-            {sessions.length === 0 && <div className="text-center text-xs text-slate-400 py-8">過去の問いはありません</div>}
+            {sessions.length === 0 && (
+              <div className="text-center text-xs text-slate-400 py-8">過去の問いはありません</div>
+            )}
             {sessions.map(s => (
-              <div key={s.id} onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); resetSessionUIState(); }} className={`group relative flex flex-col px-4 py-3 rounded-xl cursor-pointer transition-all ${currentSessionId === s.id ? 'neu-pressed text-indigo-700' : 'hover:bg-white/20 text-slate-500'}`}>
+              <div
+                key={s.id}
+                onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); resetSessionUIState(); }}
+                className={`group relative flex flex-col px-4 py-3 rounded-xl cursor-pointer transition-all ${currentSessionId === s.id ? 'neu-pressed text-indigo-700' : 'hover:bg-white/20 text-slate-500'}`}
+              >
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex-1 text-sm font-bold truncate">
                     {s.isPinned && <Pin size={12} className="inline mr-1 text-amber-500" />}
-                    {editingSessionId === s.id
-                      ? <input type="text" value={editSessionTitle} onChange={e => setEditSessionTitle(e.target.value)} onBlur={async () => { const val = editSessionTitle.trim(); if(val) await safeUpdateSession(s.id, { title: val }); setEditingSessionId(null); }} onKeyDown={e => e.key === 'Enter' && e.target.blur()} />
-                      : <span>{s.title || "無題"}</span>
-                    }
+                    {editingSessionId === s.id ? (
+                      <input
+                        type="text"
+                        value={editSessionTitle}
+                        onChange={e => setEditSessionTitle(e.target.value)}
+                        onBlur={async () => {
+                          const val = editSessionTitle.trim();
+                          if (val) await safeUpdateSession(s.id, { title: val });
+                          setEditingSessionId(null);
+                        }}
+                        onKeyDown={e => e.key === 'Enter' && e.target.blur()}
+                        className="bg-transparent outline-none border-b border-indigo-300 w-full"
+                        autoFocus
+                      />
+                    ) : (
+                      <span>{s.title || "無題"}</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={e => { e.stopPropagation(); setEditingSessionId(s.id); setEditSessionTitle(s.title || ''); }} className="p-1 hover:text-indigo-600"><Edit3 size={12} /></button>
@@ -887,117 +849,263 @@ ${agentDescriptions}
               </div>
             ))}
           </div>
+
           <div>
-            <button onClick={() => { setShowBeliefs(true); setIsSidebarOpen(false); }} className="flex items-center justify-center gap-2 text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors w-full p-2 rounded-xl hover:bg-white/30"><Info size={14} /> エージェントの役割</button>
+            <button
+              onClick={() => { setShowBeliefs(true); setIsSidebarOpen(false); }}
+              className="flex items-center justify-center gap-2 text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors w-full p-2 rounded-xl hover:bg-white/30"
+            >
+              <Info size={14} /> エージェントの役割
+            </button>
           </div>
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col h-screen relative">
+      {/* メインエリア */}
+      <main className="flex-1 flex flex-col h-screen relative overflow-hidden">
+        {/* ヘッダー */}
         <header className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 glass-card border-b border-white/40">
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-500 shrink-0"><Menu size={20} /></button>
             <h2 className="text-xs sm:text-sm font-black text-slate-600 truncate">{sessions.find(s => s.id === currentSessionId)?.title || "思考の領域"}</h2>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {Object.entries(MODES).map(([key, m]) => (
-              <button key={key} onClick={() => setSelectedMode(key)} className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedMode === key ? 'bg-white/60 text-slate-900 shadow-sm border border-white/50' : 'text-slate-400 hover:text-slate-600 hover:bg-white/20'}`}>{m.icon} {m.label}</button>
+              <button
+                key={key}
+                onClick={() => setSelectedMode(key)}
+                className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all whitespace-nowrap ${
+                  selectedMode === key
+                    ? 'bg-white/60 text-slate-900 shadow-sm border border-white/50'
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-white/20'
+                }`}
+              >
+                {m.icon} {m.label}
+              </button>
             ))}
           </div>
         </header>
 
+        {/* エラーメッセージ */}
         {errorMessage && (
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold shadow-xl max-w-md">
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold shadow-xl max-w-md animate-fadeSlideIn">
             <AlertCircle size={20} /> {errorMessage}
             <button onClick={() => setErrorMessage(null)} className="p-1 hover:bg-rose-100 rounded-full text-rose-400"><X size={16} /></button>
           </div>
         )}
 
+        {/* メッセージエリア */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6" ref={scrollRef}>
             <div className="max-w-4xl mx-auto">
+
+              {/* 入力エリア（表示時） */}
               {showInput && !isGenerating && !isSending && (
-                <div className="mb-6 sm:mb-8">
+                <div className="mb-6 sm:mb-8 animate-fadeSlideIn">
                   <div className="relative">
-                    <textarea ref={textareaRef} value={userInput} onChange={e => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="魂の声、あるいは迷いを綴る" className="w-full rounded-2xl px-6 py-4 text-base font-medium outline-none resize-none transition-all neu-concave border-none focus:ring-2 focus:ring-indigo-200/50" />
-                    <button onClick={() => handleSend()} disabled={!userInput.trim() || !isAppReady} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-[#1e293b] text-white transition-all active:scale-95 disabled:opacity-30 shadow-lg">
-                      <Send size={18} />
+                    <textarea
+                      ref={textareaRef}
+                      value={userInput}
+                      onChange={e => { setUserInput(e.target.value); autoResize(); }}
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                      placeholder="魂の声、あるいは迷いを綴る"
+                      className="w-full rounded-2xl px-6 py-4 text-base font-medium outline-none resize-none transition-all neu-concave border-none focus:ring-2 focus:ring-indigo-200/50 bg-transparent"
+                      rows={1}
+                    />
+                    <button
+                      onClick={() => handleSend()}
+                      disabled={!userInput.trim() || !isAppReady}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-[#1e293b] text-white transition-all active:scale-95 disabled:opacity-30 shadow-lg"
+                    >
+                      {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                     </button>
                   </div>
-                  {messages.length > 0 && <button onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><ChevronRight size={20} /></button>}
+                  {messages.length > 0 && (
+                    <div className="flex justify-center mt-2">
+                      <button onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                        <ChevronRight size={20} className="rotate-90" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* エージェント選択バー（入力非表示時） */}
               {!showInput && !isGenerating && !isSending && (
-                <div className="mb-6 sm:mb-8">
+                <div className="mb-6 sm:mb-8 animate-fadeSlideIn">
                   <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
-                    <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
+                    <button
+                      onClick={() => handleAgentClick('master', true)}
+                      disabled={!canUseAgents}
+                      className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
                       <Star size={16} />
-                      <div><div className="text-xs font-black">心の鏡</div><div className="text-[9px] opacity-70">思考を総括する</div></div>
+                      <div>
+                        <div className="text-xs font-black">心の鏡</div>
+                        <div className="text-[9px] opacity-70">思考を総括する</div>
+                      </div>
                     </button>
-                    <button onClick={() => handleRandomResponse()} disabled={!canUseAgents} className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
+
+                    <button
+                      onClick={() => handleRandomResponse()}
+                      disabled={!canUseAgents}
+                      className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
                       <Sparkles size={14} /> 委ねる
                     </button>
-                    <div className="flex-1 min-w-full sm:min-w-0"></div>
-                    <button onClick={() => setShowInput(true)} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm"><Feather size={14} /> 綴る</button>
+
+                    <div className="flex-1 min-w-full sm:min-w-0" />
+
+                    <button
+                      onClick={() => setShowInput(true)}
+                      className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm"
+                    >
+                      <Feather size={14} /> 綴る
+                    </button>
+
                     {AGENTS.map(a => (
-                      <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={!canUseAgents} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
+                      <button
+                        key={a.id}
+                        onClick={() => handleAgentClick(a.id)}
+                        disabled={!canUseAgents}
+                        className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}
+                      >
                         {a.icon}
-                        <div><div className="text-xs font-black">{a.name}</div><div className="text-[9px] opacity-70">{a.role}</div></div>
+                        <div>
+                          <div className="text-xs font-black">{a.name}</div>
+                          <div className="text-[9px] opacity-70">{a.role}</div>
+                        </div>
                       </button>
                     ))}
-                    <div className="flex-1 min-w-full"></div>
+
+                    <div className="flex-1 min-w-full" />
                   </div>
                 </div>
               )}
             </div>
 
+            {/* メッセージ一覧 */}
             <div className="max-w-4xl mx-auto space-y-6">
               {isMessagesLoading ? (
-                <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-indigo-500" /></div>
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 size={24} className="animate-spin text-indigo-500" />
+                </div>
               ) : (
                 <div className="space-y-6">
+                  {/* 空の状態 */}
                   {messages.length === 0 && !isGenerating && !isSending && showInput && (
-                    <div className="py-16 text-center space-y-6">
+                    <div className="py-16 text-center space-y-6 animate-fadeSlideIn">
                       <div>
                         <h3 className="text-2xl font-black text-slate-700 mb-2">思考の部屋へようこそ</h3>
                         <p className="text-sm text-slate-500">心の欠片を、自由に置いてみてください。</p>
                       </div>
                       <div className="space-y-3 max-w-md mx-auto">
-                        {["言葉にならないけど、ずっと胸にあるもの", "誰にも言っていない、小さな違和感", "理由はないけど、心が動いたこと"].map((hint, idx) => (
-                          <button key={idx} onClick={() => handleHintClick(hint)} className="w-full py-4 px-6 rounded-2xl text-xs font-bold text-slate-600 hover:text-slate-800 transition-all text-left glass-card border border-slate-200/30">{hint}</button>
+                        {[
+                          "言葉にならないけど、ずっと胸にあるもの",
+                          "誰にも言っていない、小さな違和感",
+                          "理由はないけど、心が動いたこと"
+                        ].map((hint, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleHintClick(hint)}
+                            className="w-full py-4 px-6 rounded-2xl text-xs font-bold text-slate-600 hover:text-slate-800 transition-all text-left glass-card border border-slate-200/30 hover:border-slate-300/50"
+                          >
+                            {hint}
+                          </button>
                         ))}
                       </div>
                     </div>
                   )}
+
+                  {/* メッセージ表示 */}
                   {messages.map((msg, i) => {
                     const isUser = msg.role === 'user';
-                    const agent = AGENTS.find(a => a.id === msg.agentId) || (msg.agentId === 'master' ? { name: '心の鏡' } : null);
+                    const agent = AGENTS.find(a => a.id === msg.agentId) || (msg.agentId === 'master' ? { name: '心の鏡', icon: <Star size={14} /> } : null);
                     return (
-                      <div key={msg.id || i} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                      <div key={msg.id || i} className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-fadeSlideIn`}>
                         <div className="max-w-[85%] sm:max-w-[75%]">
                           {!isUser && (
                             <div className="flex items-center gap-2 mb-2 ml-1">
+                              <span className="opacity-60">{agent?.icon}</span>
                               <div className="text-xs font-black text-slate-600">{agent?.name}</div>
-                              {msg.agentId === 'master' && <span className="text-[9px] px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-black">総括</span>}
+                              {msg.agentId === 'master' && (
+                                <span className="text-[9px] px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-black">総括</span>
+                              )}
                             </div>
                           )}
-                          <div onClick={() => setOpenToolbarMsgId(openToolbarMsgId === msg.id ? null : msg.id)} className={`relative px-5 py-4 whitespace-pre-wrap text-[15px] leading-relaxed rounded-2xl transition-all cursor-pointer ${isUser ? 'bg-slate-800 text-slate-100 shadow-lg shadow-slate-800/20' : 'neu-convex-sm mirror-reflection text-slate-700'}`}>
+                          <div
+                            onClick={() => setOpenToolbarMsgId(openToolbarMsgId === msg.id ? null : msg.id)}
+                            className={`relative px-5 py-4 whitespace-pre-wrap text-[15px] leading-relaxed rounded-2xl transition-all cursor-pointer ${
+                              isUser
+                                ? 'bg-slate-800 text-slate-100 shadow-lg shadow-slate-800/20'
+                                : 'neu-convex-sm mirror-reflection text-slate-700'
+                            }`}
+                          >
                             {msg.content}
+
+                            {/* ツールバー */}
                             {msg.id && (
-                              <div className={`absolute ${isUser ? 'right-2 top-2' : 'left-2 top-2'} flex items-center gap-1 transition-opacity ${openToolbarMsgId === msg.id ? 'opacity-100' : 'opacity-0'}`} onClick={e => e.stopPropagation()}>
-                                <button onClick={() => { handleCopyMessage(msg.id, msg.content); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-indigo-500">{copiedMsgId === msg.id ? <Check size={14} /> : <Copy size={14} />}</button>
-                                <button onClick={() => { handleDeleteMessage(msg.id); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-rose-500"><Trash2 size={14} /></button>
+                              <div
+                                className={`absolute ${isUser ? 'right-2 top-2' : 'left-2 top-2'} flex items-center gap-1 transition-opacity ${openToolbarMsgId === msg.id ? 'opacity-100' : 'opacity-0'}`}
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <button
+                                  onClick={() => { handleCopyMessage(msg.id, msg.content); setOpenToolbarMsgId(null); }}
+                                  className="p-1 text-slate-400 hover:text-indigo-500 transition-colors"
+                                >
+                                  {copiedMsgId === msg.id ? <Check size={14} /> : <Copy size={14} />}
+                                </button>
+                                <button
+                                  onClick={() => { handleDeleteMessage(msg.id); setOpenToolbarMsgId(null); }}
+                                  className="p-1 text-slate-400 hover:text-rose-500 transition-colors"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
                               </div>
                             )}
+
+                            {/* リアクションボタン群 */}
                             {!isUser && msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                              <div className="flex flex-wrap gap-2 mt-3">
-                                <button onClick={e => { e.stopPropagation(); if (autoExpandReactions?.msgId === msg.id && !activeReaction) setAutoExpandReactions(null); else { setActiveReaction(null); setAutoExpandReactions({msgId: msg.id, isLoading: false}); } }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${(autoExpandReactions?.msgId === msg.id && !activeReaction) ? 'bg-slate-800 text-white border-slate-900 shadow-md' : 'bg-white/40 text-slate-500 border-white/60 hover:bg-white/60'}`}>
+                              <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-white/20">
+                                <button
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    if (autoExpandReactions?.msgId === msg.id && !activeReaction) {
+                                      setAutoExpandReactions(null);
+                                    } else {
+                                      setActiveReaction(null);
+                                      setAutoExpandReactions({ msgId: msg.id, isLoading: false });
+                                    }
+                                  }}
+                                  className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${
+                                    autoExpandReactions?.msgId === msg.id && !activeReaction
+                                      ? 'bg-slate-800 text-white border-slate-900 shadow-md'
+                                      : 'bg-white/40 text-slate-500 border-white/60 hover:bg-white/60'
+                                  }`}
+                                >
                                   <Users size={12} /> OTHERS
                                 </button>
                                 {Object.entries(msg.reactions).map(([rId, data]) => {
-                                  const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
+                                  const rAgent = AGENTS.find(a => a.id === rId);
+                                  if (!rAgent) return null;
                                   return (
-                                    <button key={rId} onClick={e => { e.stopPropagation(); setActiveReaction(activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? null : {msgId: msg.id, agentId: rId}); setAutoExpandReactions(null); }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? 'bg-slate-800 text-white border-slate-900' : 'bg-white/40 text-slate-400 border-white/60 hover:bg-white/60'}`}>
+                                    <button
+                                      key={rId}
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        setActiveReaction(
+                                          activeReaction?.msgId === msg.id && activeReaction?.agentId === rId
+                                            ? null
+                                            : { msgId: msg.id, agentId: rId }
+                                        );
+                                        setAutoExpandReactions(null);
+                                      }}
+                                      className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${
+                                        activeReaction?.msgId === msg.id && activeReaction?.agentId === rId
+                                          ? 'bg-slate-800 text-white border-slate-900'
+                                          : 'bg-white/40 text-slate-400 border-white/60 hover:bg-white/60'
+                                      }`}
+                                    >
                                       {rAgent.icon} {rAgent.name}
                                     </button>
                                   );
@@ -1006,9 +1114,11 @@ ${agentDescriptions}
                             )}
                           </div>
 
+                          {/* 個別リアクション展開 */}
                           {!isUser && activeReaction?.msgId === msg.id && msg.reactions?.[activeReaction.agentId] && (
-                            <div className="mt-3 ml-4 p-4 rounded-xl glass-card border border-white/40 text-sm">
+                            <div className="mt-3 ml-4 p-4 rounded-xl glass-card border border-white/40 text-sm animate-fadeSlideIn">
                               <div className="flex items-center gap-2 mb-2 text-xs font-black text-slate-600">
+                                <span>{AGENTS.find(a => a.id === activeReaction.agentId)?.icon}</span>
                                 <span>{AGENTS.find(a => a.id === activeReaction.agentId)?.name}</span>
                                 <span className="text-[10px] px-2 py-0.5 bg-slate-100 rounded-full">{msg.reactions[activeReaction.agentId]?.posture}</span>
                                 <span className="text-[10px] px-2 py-0.5 bg-slate-100 rounded-full">{msg.reactions[activeReaction.agentId]?.stance}</span>
@@ -1017,8 +1127,9 @@ ${agentDescriptions}
                             </div>
                           )}
 
+                          {/* 全リアクション展開 */}
                           {!isUser && autoExpandReactions?.msgId === msg.id && !activeReaction && (
-                            <div className="mt-3 ml-4 p-4 rounded-xl glass-card border border-white/40 space-y-3">
+                            <div className="mt-3 ml-4 p-4 rounded-xl glass-card border border-white/40 space-y-3 animate-fadeSlideIn">
                               <div className="flex items-center justify-between">
                                 <div className="text-xs font-black text-slate-600">Others</div>
                                 <button onClick={e => { e.stopPropagation(); setAutoExpandReactions(null); }} className="text-slate-400 hover:bg-white/50 rounded-full p-1"><X size={14} /></button>
@@ -1026,18 +1137,19 @@ ${agentDescriptions}
                               {autoExpandReactions.isLoading ? (
                                 <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
                                   <div className="flex gap-1">
-                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-                                    <div className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                    <div className="w-1.5 h-1.5 bg-rose-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                                    <div className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                                    <div className="w-1.5 h-1.5 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                                   </div>
                                   Fetching thoughts...
                                 </div>
                               ) : (
                                 msg.reactions && Object.entries(msg.reactions).map(([rId, data]) => {
-                                  const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
+                                  const rAgent = AGENTS.find(a => a.id === rId);
+                                  if (!rAgent) return null;
                                   return (
                                     <div key={rId} className="flex items-start gap-3">
-                                      {rAgent.icon}
+                                      <span className="mt-0.5 opacity-60">{rAgent.icon}</span>
                                       <div className="flex-1 text-sm">
                                         <div className="flex items-center gap-2 mb-1">
                                           <span className="font-black text-slate-700">{rAgent.name}</span>
@@ -1056,22 +1168,30 @@ ${agentDescriptions}
                       </div>
                     );
                   })}
+
+                  {/* タイピングインジケーター */}
                   {isGenerating && (
-                    <div className="flex justify-start">
+                    <div className="flex justify-start animate-fadeSlideIn">
                       <div className="flex items-center gap-3 px-5 py-4 rounded-2xl neu-convex-sm mirror-reflection">
                         <div className="flex gap-1">
-                          <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-                          <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{animationDelay: '0.15s'}}></div>
-                          <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{animationDelay: '0.3s'}}></div>
+                          <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                          <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                          <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
                         </div>
                         {generatingAgent && <span className="text-sm font-bold text-slate-600">{generatingAgent.name} が思考中...</span>}
                       </div>
                     </div>
                   )}
+
+                  {/* 心の鏡 提案 */}
                   {!isGenerating && messages.length > 0 && messages[messages.length - 1].role === 'ai' && messages[messages.length - 1].agentId !== 'master' && userMessageCount >= 3 && (
-                    <div className="mt-8">
-                      <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents} className="group flex items-center gap-4 px-6 py-4 rounded-2xl glass-card border border-indigo-200/50 hover:bg-white/60 transition-all active:scale-95 shadow-lg shadow-indigo-900/5 disabled:opacity-30">
-                        <Star size={24} className="text-indigo-500" />
+                    <div className="mt-8 animate-fadeSlideIn">
+                      <button
+                        onClick={() => handleAgentClick('master', true)}
+                        disabled={!canUseAgents}
+                        className="group flex items-center gap-4 px-6 py-4 rounded-2xl glass-card border border-indigo-200/50 hover:bg-white/60 transition-all active:scale-95 shadow-lg shadow-indigo-900/5 disabled:opacity-30"
+                      >
+                        <Star size={24} className="text-indigo-500 animate-gentlePulse" />
                         <div className="text-left">
                           <div className="text-sm font-black text-slate-700 mb-1">ここまでの声を映してみますか？</div>
                           <div className="text-xs text-slate-500">心の鏡が、散らばった思考を総括します</div>
@@ -1086,6 +1206,7 @@ ${agentDescriptions}
         </div>
       </main>
 
+      {/* イントロ画面 */}
       {showIntro && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-indigo-900/90 via-violet-900/90 to-rose-900/90 backdrop-blur-lg">
           <div className="text-center space-y-8 px-8">
@@ -1097,35 +1218,50 @@ ${agentDescriptions}
             <p className="text-base text-white/80 max-w-md mx-auto leading-relaxed">
               導かない。照らすだけ。歩くのは、あなた自身。
             </p>
-            <button onClick={handleStartIntro} className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm shadow-2xl hover:scale-105 transition-transform">
+            <button
+              onClick={handleStartIntro}
+              className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm shadow-2xl hover:scale-105 transition-transform"
+            >
               会議をはじめる <ChevronRight size={16} className="inline ml-1" />
             </button>
           </div>
         </div>
       )}
 
+      {/* ユーザー名変更モーダル */}
       {isEditingUserName && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/20 backdrop-blur-sm" onClick={() => setIsEditingUserName(false)}>
           <div className="glass-card p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-xl font-black text-slate-800 mb-6 text-center">お名前を教えてください</h3>
-            <input type="text" value={tempName} onChange={e => setTempName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); }} className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-8 neu-concave bg-transparent" />
+            <input
+              type="text"
+              value={tempName}
+              onChange={e => setTempName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); }}
+              className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-8 neu-concave bg-transparent"
+              autoFocus
+            />
             <button onClick={handleUpdateUserName} className="w-full py-4 bg-[#1e293b] text-white rounded-2xl font-black text-xs hover:opacity-90 transition-opacity">変更を適用</button>
           </div>
         </div>
       )}
 
+      {/* セッション削除確認モーダル */}
       {deleteTargetId && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/20 backdrop-blur-sm" onClick={() => setDeleteTargetId(null)}>
           <div className="glass-card p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
             <h3 className="text-xl font-black text-slate-800 mb-6 text-center">この思考を消去しますか？</h3>
             <div className="space-y-3">
-              <button onClick={() => { playSound('delete'); handleDeleteSession(deleteTargetId); }} disabled={isDeletingSession} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs disabled:opacity-50">消去する</button>
+              <button onClick={() => { playSound('delete'); handleDeleteSession(deleteTargetId); }} disabled={isDeletingSession} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs disabled:opacity-50">
+                {isDeletingSession ? <Loader2 size={16} className="animate-spin inline mr-2" /> : null}消去する
+              </button>
               <button onClick={() => setDeleteTargetId(null)} disabled={isDeletingSession} className="w-full py-4 text-slate-500 font-black text-xs hover:bg-white/50 rounded-2xl transition-all">キャンセル</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* エージェント信念モーダル */}
       {showBeliefs && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/20 backdrop-blur-sm p-4" onClick={() => setShowBeliefs(false)}>
           <div className="glass-card p-6 sm:p-8 rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -1136,7 +1272,9 @@ ${agentDescriptions}
             <div className="space-y-4">
               {AGENTS.map(a => (
                 <div key={a.id} className={`p-5 rounded-2xl ${a.color} border ${a.borderColor}`}>
-                  <div className={`flex items-center gap-3 mb-3 ${a.accentColor} font-black`}>{a.icon}{a.name} — {a.title}</div>
+                  <div className={`flex items-center gap-3 mb-3 ${a.accentColor} font-black`}>
+                    {a.icon} {a.name} — {a.title}
+                  </div>
                   <p className="text-sm text-slate-700 leading-relaxed">{a.belief}</p>
                 </div>
               ))}
@@ -1145,9 +1283,10 @@ ${agentDescriptions}
         </div>
       )}
 
-      <div id="portal-root"></div>
+      <div id="portal-root" />
     </div>
   );
 };
 
 export default App;
+
