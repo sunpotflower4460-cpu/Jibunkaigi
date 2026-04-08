@@ -1,109 +1,132 @@
 // src/runtime/stateEstimate.js
+// ユーザーの発言から心理状態を推定する（全エージェント共通）
 
-const clamp01 = (n) => Math.max(0, Math.min(1, n));
+/**
+ * @param {string} text - ユーザーの発言
+ * @returns {Object} - { desire, fear, freeze, reach, resignation, selfExcuse, shame, urFinished }
+ */
+export const estimateState = (text) => {
+  if (!text || typeof text !== 'string') {
+    return {
+      desire: 0,
+      fear: 0,
+      freeze: 0,
+      reach: 0,
+      resignation: 0,
+      selfExcuse: 0,
+      shame: 0,
+      urFinished: 0
+    };
+  }
 
-const bump = (obj, key, amount) => {
-  obj[key] = clamp01((obj[key] || 0) + amount);
-};
+  const t = text.toLowerCase();
 
-export const estimateState = (text = '') => {
-  const t = text.trim();
+  let desire = 0;
+  let fear = 0;
+  let freeze = 0;
+  let reach = 0;
+  let resignation = 0;
+  let selfExcuse = 0;
+  let shame = 0;
+  let urFinished = 0;
 
-  const state = {
-    fear: 0,
-    freeze: 0,
-    desire: 0,
-    unfinished: 0,
-    selfErasure: 0,
-    reach: 0,
-    resignation: 0,
-    shame: 0,
+  // ==================== desire 側 ====================
+  if (t.includes('やりたい') || t.includes('行きたい') || t.includes('なりたい')) {
+    desire += 0.4;
+  }
+  if (t.includes('したい') || t.includes('欲しい')) {
+    desire += 0.2;
+  }
+  if (t.includes('憧れ') || t.includes('夢')) {
+    desire += 0.3;
+  }
+
+  // ==================== reach 側 ====================
+  if (t.includes('出したい') || t.includes('届けたい') || t.includes('進みたい')) {
+    reach += 0.3;
+  }
+  if (t.includes('作りたい') || t.includes('書きたい') || t.includes('描きたい')) {
+    reach += 0.25;
+  }
+  if (t.includes('伝えたい') || t.includes('見せたい')) {
+    reach += 0.2;
+  }
+
+  // ==================== fear 側 ====================
+  if (t.includes('怖い') || t.includes('不安')) {
+    fear += 0.4;
+  }
+  if (t.includes('恐れ') || t.includes('ビビ')) {
+    fear += 0.3;
+  }
+  if (t.includes('心配') || t.includes('緊張')) {
+    fear += 0.2;
+  }
+
+  // ==================== freeze 側 ====================
+  if (t.includes('動けない') || t.includes('できない')) {
+    freeze += 0.4;
+  }
+  if (t.includes('止まって') || t.includes('固まって')) {
+    freeze += 0.35;
+  }
+  if (t.includes('手が出ない') || t.includes('進めない')) {
+    freeze += 0.3;
+  }
+
+  // ==================== resignation 側 ====================
+  if (t.includes('諦め') || t.includes('無理')) {
+    resignation += 0.5;
+  }
+  if (t.includes('もうダメ') || t.includes('終わった')) {
+    resignation += 0.4;
+  }
+  if (t.includes('どうせ') || t.includes('しょせん')) {
+    resignation += 0.3;
+  }
+
+  // ==================== unfinished 側 ====================
+  if (t.includes('諦めきれない') || t.includes('まだある') || t.includes('残ってる')) {
+    urFinished += 0.4;
+  }
+  if (t.includes('引っかかる') || t.includes('忘れられない')) {
+    urFinished += 0.3;
+  }
+  if (t.includes('気になる') || t.includes('心残り')) {
+    urFinished += 0.25;
+  }
+
+  // ==================== selfExcuse 側 ====================
+  if (t.includes('でも') || t.includes('だって')) {
+    selfExcuse += 0.2;
+  }
+  if (t.includes('忙しい') || t.includes('時間がない')) {
+    selfExcuse += 0.25;
+  }
+  if (t.includes('才能ない') || t.includes('向いてない')) {
+    selfExcuse += 0.3;
+  }
+
+  // ==================== shame 側 ====================
+  if (t.includes('恥ずかしい') || t.includes('ダサい')) {
+    shame += 0.3;
+  }
+  if (t.includes('みっともない') || t.includes('情けない')) {
+    shame += 0.35;
+  }
+  if (t.includes('バカにされ') || t.includes('笑われ')) {
+    shame += 0.4;
+  }
+
+  // 最大値を1.0に制限
+  return {
+    desire: Math.min(desire, 1.0),
+    fear: Math.min(fear, 1.0),
+    freeze: Math.min(freeze, 1.0),
+    reach: Math.min(reach, 1.0),
+    resignation: Math.min(resignation, 1.0),
+    selfExcuse: Math.min(selfExcuse, 1.0),
+    shame: Math.min(shame, 1.0),
+    urFinished: Math.min(urFinished, 1.0)
   };
-
-  if (!t) return state;
-
-  if (t.includes('怖') || t.includes('不安')) {
-    bump(state, 'fear', 0.35);
-  }
-
-  if (
-    t.includes('動け') ||
-    t.includes('固ま') ||
-    t.includes('止ま') ||
-    t.includes('何もでき')
-  ) {
-    bump(state, 'freeze', 0.45);
-  }
-
-  if (
-    t.includes('したい') ||
-    t.includes('本当は') ||
-    t.includes('進みたい') ||
-    t.includes('出したい')
-  ) {
-    bump(state, 'desire', 0.45);
-  }
-
-  if (
-    t.includes('まだ') ||
-    t.includes('終わ') ||
-    t.includes('後悔') ||
-    t.includes('捨てられない')
-  ) {
-    bump(state, 'unfinished', 0.35);
-  }
-
-  if (
-    t.includes('薄っぺら') ||
-    t.includes('自信がない') ||
-    t.includes('ダメ') ||
-    t.includes('消えたい')
-  ) {
-    bump(state, 'selfErasure', 0.45);
-  }
-
-  if (
-    t.includes('伝えたい') ||
-    t.includes('出したい') ||
-    t.includes('言いたい') ||
-    t.includes('向き合いたい')
-  ) {
-    bump(state, 'reach', 0.35);
-  }
-
-  if (
-    t.includes('諦め') ||
-    t.includes('無理') ||
-    t.includes('もういい') ||
-    t.includes('仕方ない')
-  ) {
-    bump(state, 'resignation', 0.45);
-  }
-
-  if (
-    t.includes('恥') ||
-    t.includes('比べ') ||
-    t.includes('笑われ') ||
-    t.includes('自信がない')
-  ) {
-    bump(state, 'shame', 0.4);
-  }
-
-  if (t.includes('のに')) {
-    bump(state, 'unfinished', 0.12);
-    bump(state, 'desire', 0.1);
-    bump(state, 'freeze', 0.08);
-  }
-
-  if (t.includes('でも')) {
-    bump(state, 'desire', 0.08);
-    bump(state, 'reach', 0.06);
-  }
-
-  if (t.includes('本当は')) {
-    bump(state, 'desire', 0.15);
-    bump(state, 'unfinished', 0.1);
-  }
-
-  return state;
 };
