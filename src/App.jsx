@@ -25,8 +25,10 @@ import {
   Info, Compass, ChevronRight, Check, Copy, Flame, Star
 } from 'lucide-react';
 
-// ★ 追加1：estimateState をインポート
+// ★ 修正1：新しいインポートを追加
 import { estimateState } from './runtime/stateEstimate';
+import { activateJoe } from './runtime/activate';
+import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -84,40 +86,40 @@ const makeId = () =>
 const AGENTS = [
   {
     id: 'soul', name: 'レイ', role: '魂の託宣', title: 'オラクル・パイプ',
-    icon: <Star size={14} />, color: 'bg-violet-50', accentColor: 'text-violet-700', borderColor: 'border-violet-100',
+    icon: <Target size={16} />, color: 'bg-violet-50', accentColor: 'text-violet-700', borderColor: 'border-violet-100',
     belief: '「私は空っぽの筒。天からの光をそのまま降ろす。損得も常識も、この光の前では意味をなさない。ただ、あなたの魂が元いた場所を思い出すための言葉を」',
     prompt: `あなたはレイ。静かで落ち着いた雰囲気の、内省を促す存在。\n【話し方】穏やかで短め。比喩は使っても1つまで。「〜ですね」「〜かもしれません」といった柔らかい語尾。詩的すぎる表現や「魂」「光」を連呼しない。\n【役割】相手が自分でも気づいていない気持ちや矛盾を、そっと言語化して返す。答えを押しつけず、最後に1つだけ問いかける。\n【禁止】長文・比喩の多用・大げさな精神的表現（「魂の奥底」「宇宙的」等）。`
   },
   {
     id: 'creative', name: 'ジョー', role: '魂の発火点', title: 'クリエイティブ・フレア',
-    icon: <Flame size={14} />, color: 'bg-orange-50', accentColor: 'text-orange-600', borderColor: 'border-orange-100',
+    icon: <Flame size={16} />, color: 'bg-orange-50', accentColor: 'text-orange-600', borderColor: 'border-orange-100',
     belief: '「迷ってる暇なんてない！お前の魂が燃える方向へ、全力で飛び込むんだ！灰になるまで燃え尽きようぜ。さぁ、行こうぜ！！」',
     prompt: `あなたはジョー。熱量があって前向きな、ちょっと兄貴分な存在。\n【話し方】テンポよく、短い文で。「おっ」「いいじゃん」「それだよ」など自然な口語。熱いけど押しつけがましくない。「！」は使っても2個まで。\n【役割】相手がためらっていることに「それ、やってみたらよくない？」と背中を押す。感情に共鳴しながら、具体的な一歩を提案する。\n【禁止】「マグマ」「魂の叫び」「灰になるまで」など大げさな比喩。過剰な感嘆符。`
   },
   {
     id: 'strategist', name: 'ケン', role: '人生の設計', title: '人生のアーキテクト',
-    icon: <Target size={14} />, color: 'bg-blue-50', accentColor: 'text-blue-700', borderColor: 'border-blue-100',
+    icon: <LayoutDashboard size={16} />, color: 'bg-blue-50', accentColor: 'text-blue-700', borderColor: 'border-blue-100',
     belief: '「感情を切り離し、リソースを最適化しましょう。理想を実現するためにこそ、冷徹な戦略が必要です。私はあなたの夢を、実行可能なタスクへ変換します」',
     prompt: `あなたはケン。論理的で冷静、でも嫌味がない知性派。\n【話し方】丁寧語。「整理すると」「ポイントは」「一つ確認させてください」など。感情論より事実・構造の整理を優先する。\n【役割】相手の話を構造化して返す。「何が問題か」「何が選択肢か」を明確にする。感情を否定せず、「その上で」と繋げて現実的な視点を加える。\n【禁止】冷たすぎる断言・上から目線・感情を完全無視した返答。`
   },
   {
     id: 'empath', name: 'ミナ', role: '無償の愛', title: '聖母のような共感者',
-    icon: <Heart size={14} />, color: 'bg-rose-50', accentColor: 'text-rose-700', borderColor: 'border-rose-100',
+    icon: <Heart size={16} />, color: 'bg-rose-50', accentColor: 'text-rose-700', borderColor: 'border-rose-100',
     belief: '「成功なんてしなくても、あなたは世界に一人だけの大切な光。何者かになろうとしなくていいの。あなたの心が、今日穏やかであること。それが一番の願いです」',
     prompt: `あなたはミナ。温かくて受け入れてくれる、話しやすいお姉さん的な存在。\n【話し方】やさしい口語。「そっか」「それは辛かったね」「無理しなくていいよ」など自然な共感の言葉。説教や正論は言わない。\n【役割】相手の感情をそのまま受け取り、「それでいい」と伝える。焦りや自己否定を和らげる。アドバイスより「聴くこと」を優先する。\n【禁止】「あなたは光」「存在そのものが価値」などの過剰な賛美。押しつけの励まし。`
   },
   {
     id: 'critic', name: 'サトウ', role: '不器用な守護', title: '叩き上げのリアリスト',
-    icon: <ShieldAlert size={14} />, color: 'bg-slate-100', accentColor: 'text-slate-700', borderColor: 'border-slate-200',
+    icon: <ShieldAlert size={16} />, color: 'bg-slate-100', accentColor: 'text-slate-700', borderColor: 'border-slate-200',
     belief: '「世の中は甘くねぇ。だけど、お前に傷ついてほしくねぇんだよ。俺の言葉が痛いなら、それは俺がお前を本気で守ろうとしてる証拠だ。泥を啜ってでも生き残れ」',
     prompt: `あなたはサトウ。口は悪いけど本音で話してくれる、現実を見てきた人。\n【話し方】ぶっきらぼうな口語。「まあ聞けよ」「正直に言うと」「そこは甘くないか？」など。でも最後には「お前ならできる」的な不器用な信頼を滲ませる。\n【役割】相手が見て見ぬふりをしているリスクや矛盾を、率直に指摘する。傷つけるためではなく、守るために言う。短めに、核心だけ。\n【禁止】ただの否定・暴言・フォローなし。相手を追い詰めるだけの返答。`
   }
 ];
 
 const MODES = {
-  short: { label: "一閃", icon: <Zap size={14} />, constraint: "核心を突く短文のみ。挨拶不要。1〜2文で終わること。最後に内省を促す短い問いを1つだけ。" },
-  medium: { label: "対話", icon: <MessageSquare size={14} />, constraint: "3〜5文程度。相手の気持ちを受け取った上で、自己理解を深める問いかけを1つ行うこと。" },
-  long: { label: "深淵", icon: <LayoutDashboard size={14} />, constraint: "8文程度まで。キャラクターの個性を活かしながら、多角的な視点で掘り下げる。ただし詩的すぎる表現は避け、伝わりやすい言葉を使うこと。" }
+  short: { label: "一閃", icon: <Zap size={12} />, constraint: "核心を突く短文のみ。挨拶不要。1〜2文で終わること。最後に内省を促す短い問いを1つだけ。" },
+  medium: { label: "対話", icon: <Compass size={12} />, constraint: "3〜5文程度。相手の気持ちを受け取った上で、自己理解を深める問いかけを1つ行うこと。" },
+  long: { label: "深淵", icon: <Feather size={12} />, constraint: "8文程度まで。キャラクターの個性を活かしながら、多角的な視点で掘り下げる。ただし詩的すぎる表現は避け、伝わりやすい言葉を使うこと。" }
 };
 
 let audioCtx = null;
@@ -175,7 +177,9 @@ const playSound = (type) => {
 
 const safeParseJson = (text) => {
   const normalized = String(text ?? "")
-    .replace(/```json/gi, "").replace(/```/g, "").trim();
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
   try { return JSON.parse(normalized); } catch {}
   const start = normalized.indexOf("{");
   if (start === -1) return null;
@@ -185,9 +189,10 @@ const safeParseJson = (text) => {
     if (escaped) { escaped = false; continue; }
     if (ch === "\\") { escaped = true; continue; }
     if (ch === '"') { inString = !inString; continue; }
-    if (inString) continue;
-    if (ch === "{") depth += 1;
-    if (ch === "}") { depth -= 1; if (depth === 0) { end = i; break; } }
+    if (!inString) {
+      if (ch === "{") depth++;
+      if (ch === "}") { depth--; if (depth === 0) { end = i; break; } }
+    }
   }
   if (end === -1) return null;
   try { return JSON.parse(normalized.slice(start, end + 1)); } catch { return null; }
@@ -265,7 +270,7 @@ const App = () => {
     if (!apiKey) { setErrorMessage("Gemini APIキーが未設定です。"); }
   }, []);
 
-  // ★ 追加2：estimateState を試しに呼び出してログ出力
+  // ★ 修正3：test useEffect（確認後に削除してOK）
   useEffect(() => {
     console.log('test1', estimateState('やりたいのに動けない'));
     console.log('test2', estimateState('作品を出したいけど怖い'));
@@ -362,27 +367,24 @@ const App = () => {
     const fetchWithRetry = async (retries = 5) => {
       for (let i = 0; i < retries; i++) {
         try {
-          const payload = {
-            contents: [{ parts: [{ text: prompt }] }],
-            systemInstruction: { parts: [{ text: systemInstruction }] },
-            ...((jsonMode || reactionSchema) ? {
-              generationConfig: {
-                responseMimeType: "application/json",
-                responseJsonSchema: reactionSchema ? reactionJsonSchema : undefined
-              }
-            } : {})
-          };
-          const res = await fetch(endpoint, {
+          const body = { contents: [{ parts: [{ text: prompt }] }] };
+          if (systemInstruction) body.systemInstruction = { parts: [{ text: systemInstruction }] };
+          if (jsonMode || reactionSchema) {
+            body.generationConfig = { responseMimeType: "application/json" };
+            if (reactionSchema) body.generationConfig.responseSchema = reactionJsonSchema;
+          }
+          const res = await fetch(`${endpoint}?key=${apiKey}`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-            body: JSON.stringify(payload)
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
           });
           if (!res.ok) {
-            const errText = await res.text();
-            console.error(`Gemini API Error (${model}) status=${res.status}`, errText);
-            const retryable = [429, 500, 502, 503, 504].includes(res.status);
-            if (!retryable) throw new Error(`Gemini API non-retryable error: ${res.status}`);
-            if (i === retries - 1) throw new Error(`Gemini API retryable error: ${res.status}`);
+            const errData = await res.json().catch(() => ({}));
+            const message = errData?.error?.message || `HTTP ${res.status}`;
+            if (res.status >= 500) throw new Error(message);
+            throw new Error(`non-retryable: ${message}`);
+          }
+          if (res.status === 503) {
             await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
             continue;
           }
@@ -517,7 +519,7 @@ ${agentDescriptions}
         currentSessionIdRef.current = sid;
         setCurrentSessionId(sid);
         callGemini({
-          prompt: `文:「${text}」から15字以内の内省タイトルを生成。`,
+          prompt: `次の文:「${text}」から15字以内の内省タイトルを生成。`,
           systemInstruction: "タイトルのみ出力。余計な記号不要。",
           model: GEMINI_CHAT_MODEL
         }).then(t => {
@@ -580,10 +582,16 @@ ${agentDescriptions}
     }, 100);
   };
 
+  // ★ 修正2：handleAiResponse 全体を新パイプラインに対応
   const handleAiResponse = async (agentId, isMaster, sessionId, sourceMessageId, messagesAtClick) => {
     if (!db || !user || !sessionId) return;
+
     const agent = isMaster
-      ? { name: '心の鏡', title: '総括の鏡', prompt: `あなたは「心の鏡」。ここまでの会話を静かに振り返り、相手自身が気づいていないパターンや感情を、押しつけがましくなく短くまとめる。最後に一つだけ、次の一歩を考えるための問いかけをする。` }
+      ? {
+          name: '心の鏡',
+          title: '総括の鏡',
+          prompt: `あなたは「心の鏡」。ここまでの会話を静かに振り返り、相手自身が気づいていないパターンや感情を、押しつけがましくなく短くまとめる。最後に一つだけ、次の一歩を考えるための問いかけをする。`
+        }
       : AGENTS.find(a => a.id === agentId);
 
     const pending = lastSubmittedUserMessageRef.current;
@@ -596,32 +604,80 @@ ${agentDescriptions}
       !baseMessages.some(m => m.id === pending.messageId);
 
     if (hasPendingUserInThisSession) {
-      baseMessages.push({ id: pending.messageId, role: 'user', content: pending.text, clientCreatedAt: Date.now() });
+      baseMessages.push({
+        id: pending.messageId,
+        role: 'user',
+        content: pending.text,
+        clientCreatedAt: Date.now()
+      });
     }
 
-    const context = baseMessages.slice(-10).map(m =>
-      m.role === 'user'
-        ? `${userName}: ${m.content}`
-        : `${m.agentId === 'master' ? '心の鏡' : (AGENTS.find(a => a.id === m.agentId)?.name || 'AI')}: ${m.content}`
-    ).join('\n');
+    const context = baseMessages
+      .slice(-10)
+      .map(m =>
+        m.role === 'user'
+          ? `${userName}: ${m.content}`
+          : `${m.agentId === 'master'
+              ? '心の鏡'
+              : (AGENTS.find(a => a.id === m.agentId)?.name || 'AI')
+            }: ${m.content}`
+      )
+      .join('\n');
 
-    const systemPrompt = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
+    const isJoe = !isMaster && agentId === 'creative';
+
+    let systemInstruction = '';
+    let promptText = `${userName}に言葉を。`;
+
+    if (isJoe) {
+      const latestUserText = hasPendingUserInThisSession
+        ? pending.text
+        : ([...baseMessages].reverse().find(m => m.role === 'user')?.content || '');
+
+      const estimatedState = estimateState(latestUserText);
+      const activated = activateJoe(estimatedState);
+
+      systemInstruction = buildJoeSystemPrompt({
+        activated,
+        context,
+        mode: selectedMode,
+      });
+
+      promptText = buildJoeUserPrompt({
+        userName,
+        userText: latestUserText,
+      });
+
+      console.log('joe estimatedState', estimatedState);
+      console.log('joe activated', activated);
+    } else {
+      systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
+    }
 
     try {
       const response = await callGemini({
-        prompt: `${userName}に言葉を。`,
-        systemInstruction: systemPrompt,
+        prompt: promptText,
+        systemInstruction,
         model: GEMINI_CHAT_MODEL
       });
 
       if (currentSessionIdRef.current !== sessionId) {
-        setIsGenerating(false); setGeneratingAgent(null); return;
+        setIsGenerating(false);
+        setGeneratingAgent(null);
+        return;
       }
 
       const aiMsgId = makeId();
       await setDoc(
         doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
-        { role: 'ai', content: response, agentId: isMaster ? 'master' : agentId, reactions: null, createdAt: serverTimestamp(), clientCreatedAt: Date.now() }
+        {
+          role: 'ai',
+          content: response,
+          agentId: isMaster ? 'master' : agentId,
+          reactions: null,
+          createdAt: serverTimestamp(),
+          clientCreatedAt: Date.now()
+        }
       );
 
       playSound('receive');
@@ -633,7 +689,11 @@ ${agentDescriptions}
         await preloadReactions(pending.text, sessionId, sourceMessageId, agentId, response);
 
         const checkPreload = async (attempts = 0) => {
-          if (currentSessionIdRef.current !== sessionId) { setAutoExpandReactions(null); return; }
+          if (currentSessionIdRef.current !== sessionId) {
+            setAutoExpandReactions(null);
+            return;
+          }
+
           const cached = preloadedReactionsRef.current.get(sourceMessageId);
 
           if (cached && cached.sessionId === sessionId && Object.keys(cached.data).length > 0) {
@@ -642,9 +702,11 @@ ${agentDescriptions}
                 doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
                 { reactions: cached.data }
               );
+
               if (currentSessionIdRef.current === sessionId) {
                 setAutoExpandReactions({ msgId: aiMsgId, isLoading: false });
               }
+
               preloadedReactionsRef.current.delete(sourceMessageId);
               return;
             } catch (e) {
@@ -654,16 +716,19 @@ ${agentDescriptions}
             }
           }
 
-          if (attempts < 6) {
+          // ★ 修正2：setTimeout → scheduleTimeout に統一
+          if (attempts < 10) {
             scheduleTimeout(() => checkPreload(attempts + 1), 500);
           } else {
             setAutoExpandReactions(null);
           }
         };
+
         checkPreload();
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+
       if (msg.includes("API key is missing")) {
         setErrorMessage("Gemini APIキーが未設定です。");
       } else if (msg.includes("Empty response")) {
@@ -671,6 +736,7 @@ ${agentDescriptions}
       } else {
         setErrorMessage("AIとの通信に失敗しました。");
       }
+
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
@@ -729,124 +795,187 @@ ${agentDescriptions}
 
   return (
     <div className="lake-bg relative min-h-screen overflow-hidden flex font-sans text-[#2d3748]">
-      <div className="water-shimmer z-0" />
-      <div className={`flex w-full h-full relative z-10 transition-opacity duration-500 ${isHomeReady || !showIntro ? 'opacity-100' : 'opacity-0'}`}>
-        {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-[60] md:hidden" />}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Noto+Serif+JP:wght@400;600;700;900&display=swap');
 
-        <aside className={`fixed md:relative inset-y-0 left-0 w-72 bg-[#eef2f7]/50 border-r border-white/20 z-[70] transition-transform duration-300 backdrop-blur-xl flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-          <div className="flex-1 flex flex-col p-6 overflow-hidden">
-            <div className="flex items-center gap-3 mb-10 px-2 cursor-pointer" onClick={() => setShowBeliefs(true)}>
-              <div className="p-2 rounded-xl bg-[#1e293b] text-white flex items-center justify-center"><Users size={18} /></div>
-              <h1 className="text-lg font-black tracking-tighter">じぶん会議</h1>
+        .lake-bg {
+          background: linear-gradient(165deg, #e0e7ff 0%, #fef3c7 30%, #fce7f3 60%, #e0e7ff 100%);
+          font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        .glass-card {
+          background: rgba(255, 255, 255, 0.4);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .neu-convex {
+          box-shadow:
+            6px 6px 16px rgba(163, 177, 198, 0.25),
+            -6px -6px 16px rgba(255, 255, 255, 0.7);
+        }
+
+        .neu-convex-sm {
+          box-shadow:
+            3px 3px 8px rgba(163, 177, 198, 0.2),
+            -3px -3px 8px rgba(255, 255, 255, 0.6);
+        }
+
+        .neu-concave {
+          box-shadow:
+            inset 4px 4px 12px rgba(163, 177, 198, 0.2),
+            inset -4px -4px 12px rgba(255, 255, 255, 0.5);
+        }
+
+        .neu-pressed {
+          box-shadow:
+            inset 3px 3px 8px rgba(100, 116, 139, 0.15),
+            inset -2px -2px 6px rgba(255, 255, 255, 0.4);
+          background: rgba(255, 255, 255, 0.3);
+        }
+
+        .mirror-reflection {
+          background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.25) 100%);
+        }
+
+        textarea::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        textarea::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.3);
+          border-radius: 2px;
+        }
+
+        .sidebar-scrollable::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .sidebar-scrollable::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.3);
+          border-radius: 2px;
+        }
+      `}</style>
+
+      {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-[60] md:hidden" />}
+
+      <aside className={`fixed md:relative top-0 left-0 h-screen w-72 flex-shrink-0 flex flex-col glass-card border-r border-white/40 transition-transform duration-300 z-[70] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+        <div className="flex flex-col h-full p-6">
+          <button onClick={() => setShowBeliefs(true)}>
+            <h1 className="text-2xl font-black mb-8 bg-gradient-to-r from-indigo-700 via-violet-600 to-rose-600 bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition-opacity">
+              <Sparkles size={20} className="inline mr-2 text-indigo-600" />
+              じぶん会議
+            </h1>
+          </button>
+          <button onClick={() => { setTempName(userName); setIsEditingUserName(true); }} className="group flex items-center gap-4 w-full p-4 mb-8 rounded-2xl hover:bg-white/30 transition-all text-left">
+            <UserCircle2 size={48} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
+            <div>
+              <div className="text-[10px] text-slate-500 font-bold">Client</div>
+              <div className="font-bold text-lg text-slate-700">{userName}</div>
             </div>
-            <button onClick={() => { setTempName(userName); setIsEditingUserName(true); }} className="group flex items-center gap-4 w-full p-4 mb-8 rounded-2xl hover:bg-white/30 transition-all text-left">
-              <div className="w-10 h-10 rounded-full bg-white/40 border border-white/60 flex items-center justify-center text-slate-400 shrink-0"><UserCircle2 size={20} /></div>
-              <div className="flex-1 overflow-hidden">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Client</p>
-                <p className="font-bold truncate text-xs">{userName}</p>
-              </div>
-              <Edit3 size={12} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
-            </button>
-            <button onClick={() => { setCurrentSessionId(null); setIsSidebarOpen(false); resetSessionUIState(); }} className="flex items-center justify-center gap-2 w-full py-4 bg-[#1e293b] text-white rounded-2xl font-bold text-xs mb-6 shadow-xl shadow-slate-800/20 hover:opacity-90 transition-colors shrink-0">
-              <Plus size={16} /> 新しい問い
-            </button>
-            <div className="flex-1 overflow-y-auto no-scrollbar space-y-1 relative">
-              {sessions.length === 0 && <p className="text-[10px] text-slate-400 font-bold px-4 py-2 text-center opacity-70 mt-4">過去の問いはありません</p>}
-              {sessions.map(s => (
-                <div key={s.id} onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); resetSessionUIState(); }} className={`group relative flex flex-col px-4 py-3 rounded-xl cursor-pointer transition-all ${currentSessionId === s.id ? 'neu-pressed text-indigo-700' : 'hover:bg-white/20 text-slate-500'}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0 flex items-center gap-1.5">
-                      {s.isPinned && <Pin size={10} className="text-amber-500 shrink-0 fill-amber-500" />}
-                      {editingSessionId === s.id
-                        ? <input autoFocus className="flex-1 bg-white border border-indigo-200 rounded px-1 py-0.5 text-xs font-bold outline-none" value={editSessionTitle} onChange={e => setEditSessionTitle(e.target.value)} onBlur={async () => { const val = editSessionTitle.trim(); if(val) await safeUpdateSession(s.id, { title: val }); setEditingSessionId(null); }} onKeyDown={e => e.key === 'Enter' && e.target.blur()} />
-                        : <span className="text-xs font-bold truncate">{s.title || "無題"}</span>
-                      }
-                    </div>
-                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => { e.stopPropagation(); setEditingSessionId(s.id); setEditSessionTitle(s.title || ''); }} className="p-1 hover:text-indigo-600"><Edit3 size={10}/></button>
-                      <button onClick={(e) => { e.stopPropagation(); safeUpdateSession(s.id, { isPinned: !s.isPinned }); }} className={`p-1 ${s.isPinned ? 'text-amber-500' : 'hover:text-amber-500'}`}><Pin size={10}/></button>
-                      <button onClick={(e) => { e.stopPropagation(); setDeleteTargetId(s.id); }} className="p-1 hover:text-rose-500"><Trash2 size={10}/></button>
-                    </div>
+            <Edit3 size={14} className="ml-auto text-slate-400 group-hover:text-indigo-500 transition-colors" />
+          </button>
+          <button onClick={() => { setCurrentSessionId(null); setIsSidebarOpen(false); resetSessionUIState(); }} className="flex items-center justify-center gap-2 w-full py-4 bg-[#1e293b] text-white rounded-2xl font-bold text-xs mb-6 shadow-xl shadow-slate-800/20 hover:opacity-90 transition-colors shrink-0">
+            <Plus size={16} /> 新しい問い
+          </button>
+          <div className="flex-1 overflow-y-auto sidebar-scrollable space-y-3 mb-6">
+            {sessions.length === 0 && <div className="text-center text-xs text-slate-400 py-8">過去の問いはありません</div>}
+            {sessions.map(s => (
+              <div key={s.id} onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); resetSessionUIState(); }} className={`group relative flex flex-col px-4 py-3 rounded-xl cursor-pointer transition-all ${currentSessionId === s.id ? 'neu-pressed text-indigo-700' : 'hover:bg-white/20 text-slate-500'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex-1 text-sm font-bold truncate">
+                    {s.isPinned && <Pin size={12} className="inline mr-1 text-amber-500" />}
+                    {editingSessionId === s.id
+                      ? <input type="text" value={editSessionTitle} onChange={e => setEditSessionTitle(e.target.value)} onBlur={async () => { const val = editSessionTitle.trim(); if(val) await safeUpdateSession(s.id, { title: val }); setEditingSessionId(null); }} onKeyDown={e => e.key === 'Enter' && e.target.blur()} />
+                      : <span>{s.title || "無題"}</span>
+                    }
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={e => { e.stopPropagation(); setEditingSessionId(s.id); setEditSessionTitle(s.title || ''); }} className="p-1 hover:text-indigo-600"><Edit3 size={12} /></button>
+                    <button onClick={e => { e.stopPropagation(); safeUpdateSession(s.id, { isPinned: !s.isPinned }); }} className={`p-1 ${s.isPinned ? 'text-amber-500' : 'hover:text-amber-500'}`}><Pin size={12} /></button>
+                    <button onClick={e => { e.stopPropagation(); setDeleteTargetId(s.id); }} className="p-1 hover:text-rose-500"><Trash2 size={12} /></button>
                   </div>
                 </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-4 border-t border-slate-300/30 shrink-0">
-              <button onClick={() => { setShowBeliefs(true); setIsSidebarOpen(false); }} className="flex items-center justify-center gap-2 text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors w-full p-2 rounded-xl hover:bg-white/30"><Info size={14} className="text-slate-400" /> エージェントの役割</button>
-            </div>
+              </div>
+            ))}
           </div>
-        </aside>
+          <div>
+            <button onClick={() => { setShowBeliefs(true); setIsSidebarOpen(false); }} className="flex items-center justify-center gap-2 text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors w-full p-2 rounded-xl hover:bg-white/30"><Info size={14} /> エージェントの役割</button>
+          </div>
+        </div>
+      </aside>
 
-        <div className="flex-1 flex flex-col min-w-0 relative">
-          <header className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 neu-convex-sm gap-2" style={{ borderRadius: '0 0 16px 16px', zIndex: 10 }}>
-            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-              <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-500 shrink-0"><Menu size={18} /></button>
-              <h2 className="font-bold text-sm tracking-tight truncate text-slate-800">{sessions.find(s => s.id === currentSessionId)?.title || "思考の領域"}</h2>
-            </div>
-            <div className="flex p-0.5 sm:p-1 rounded-xl neu-concave shrink-0">
-              {Object.entries(MODES).map(([key, m]) => (
-                <button key={key} onClick={() => setSelectedMode(key)} className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedMode === key ? 'bg-white/60 text-slate-900 shadow-sm border border-white/50' : 'text-slate-400 hover:text-slate-600 hover:bg-white/20'}`}>{m.icon} <span className="hidden sm:inline">{m.label}</span></button>
-              ))}
-            </div>
-          </header>
+      <main className="flex-1 flex flex-col h-screen relative">
+        <header className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 glass-card border-b border-white/40">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-500 shrink-0"><Menu size={20} /></button>
+            <h2 className="text-xs sm:text-sm font-black text-slate-600 truncate">{sessions.find(s => s.id === currentSessionId)?.title || "思考の領域"}</h2>
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {Object.entries(MODES).map(([key, m]) => (
+              <button key={key} onClick={() => setSelectedMode(key)} className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedMode === key ? 'bg-white/60 text-slate-900 shadow-sm border border-white/50' : 'text-slate-400 hover:text-slate-600 hover:bg-white/20'}`}>{m.icon} {m.label}</button>
+            ))}
+          </div>
+        </header>
 
-          {errorMessage && (
-            <div className="mx-6 mt-4 p-3 rounded-xl glass-card border-rose-200/50 flex items-center justify-between animate-in fade-in slide-in-from-top-2 z-40">
-              <div className="flex items-center gap-2 text-rose-600 text-xs font-bold"><AlertCircle size={14}/> {errorMessage}</div>
-              <button onClick={() => setErrorMessage(null)} className="p-1 hover:bg-rose-100 rounded-full text-rose-400"><X size={14}/></button>
-            </div>
-          )}
+        {errorMessage && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold shadow-xl max-w-md">
+            <AlertCircle size={20} /> {errorMessage}
+            <button onClick={() => setErrorMessage(null)} className="p-1 hover:bg-rose-100 rounded-full text-rose-400"><X size={16} /></button>
+          </div>
+        )}
 
-          <div className="p-4 md:p-6 relative z-30">
-            <div className="max-w-4xl mx-auto min-h-[72px] flex flex-col justify-center">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6" ref={scrollRef}>
+            <div className="max-w-4xl mx-auto">
               {showInput && !isGenerating && !isSending && (
-                <div className="flex gap-4 animate-in fade-in slide-in-from-top-2 w-full">
-                  <div className="flex-1 relative">
-                    <textarea ref={textareaRef} rows="1" value={userInput} onChange={(e) => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="魂の声、あるいは迷いを綴る" className="w-full rounded-2xl px-6 py-4 text-base font-medium outline-none resize-none transition-all neu-concave border-none focus:ring-2 focus:ring-indigo-200/50" />
+                <div className="mb-6 sm:mb-8">
+                  <div className="relative">
+                    <textarea ref={textareaRef} value={userInput} onChange={e => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="魂の声、あるいは迷いを綴る" className="w-full rounded-2xl px-6 py-4 text-base font-medium outline-none resize-none transition-all neu-concave border-none focus:ring-2 focus:ring-indigo-200/50" />
                     <button onClick={() => handleSend()} disabled={!userInput.trim() || !isAppReady} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-[#1e293b] text-white transition-all active:scale-95 disabled:opacity-30 shadow-lg">
                       <Send size={18} />
                     </button>
                   </div>
-                  {messages.length > 0 && <button onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><X size={20}/></button>}
+                  {messages.length > 0 && <button onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><ChevronRight size={20} /></button>}
                 </div>
               )}
               {!showInput && !isGenerating && !isSending && (
-                <div className="relative flex items-center animate-in fade-in slide-in-from-bottom-2 w-full">
-                  <div className="flex-1 flex gap-2 py-2 px-1 overflow-x-auto no-scrollbar items-center w-full">
+                <div className="mb-6 sm:mb-8">
+                  <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
                     <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
-                      <Compass size={14} className="text-indigo-400" />
-                      <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">心の鏡</span><span className="text-[7px] opacity-70 font-bold tracking-tighter truncate">思考を総括する</span></div>
+                      <Star size={16} />
+                      <div><div className="text-xs font-black">心の鏡</div><div className="text-[9px] opacity-70">思考を総括する</div></div>
                     </button>
                     <button onClick={() => handleRandomResponse()} disabled={!canUseAgents} className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
                       <Sparkles size={14} /> 委ねる
                     </button>
-                    <div className="w-px h-6 bg-slate-300 self-center mx-1 shrink-0" />
+                    <div className="flex-1 min-w-full sm:min-w-0"></div>
                     <button onClick={() => setShowInput(true)} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm"><Feather size={14} /> 綴る</button>
                     {AGENTS.map(a => (
                       <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={!canUseAgents} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
                         {a.icon}
-                        <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">{a.name}</span><span className="text-[7px] opacity-50 font-bold tracking-tighter truncate">{a.role}</span></div>
+                        <div><div className="text-xs font-black">{a.name}</div><div className="text-[9px] opacity-70">{a.role}</div></div>
                       </button>
                     ))}
-                    <div className="w-4 md:w-0 shrink-0" />
+                    <div className="flex-1 min-w-full"></div>
                   </div>
                 </div>
               )}
             </div>
-          </div>
 
-          <main ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 no-scrollbar relative z-10">
-            <div className="max-w-2xl mx-auto pb-32">
+            <div className="max-w-4xl mx-auto space-y-6">
               {isMessagesLoading ? (
-                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-slate-400" size={32} /></div>
+                <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-indigo-500" /></div>
               ) : (
-                <>
+                <div className="space-y-6">
                   {messages.length === 0 && !isGenerating && !isSending && showInput && (
-                    <div className="h-full flex flex-col items-center justify-center py-20 animate-in fade-in duration-1000">
-                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-slate-400 mb-6 glass-card"><Feather size={32} /></div>
-                      <h3 className="text-lg font-black text-slate-800 mb-2">思考の部屋へようこそ</h3>
-                      <p className="text-xs text-slate-500 mb-10 text-center font-medium">心の欠片を、自由に置いてみてください。</p>
-                      <div className="flex flex-col gap-3 w-full max-w-sm">
+                    <div className="py-16 text-center space-y-6">
+                      <div>
+                        <h3 className="text-2xl font-black text-slate-700 mb-2">思考の部屋へようこそ</h3>
+                        <p className="text-sm text-slate-500">心の欠片を、自由に置いてみてください。</p>
+                      </div>
+                      <div className="space-y-3 max-w-md mx-auto">
                         {["言葉にならないけど、ずっと胸にあるもの", "誰にも言っていない、小さな違和感", "理由はないけど、心が動いたこと"].map((hint, idx) => (
                           <button key={idx} onClick={() => handleHintClick(hint)} className="w-full py-4 px-6 rounded-2xl text-xs font-bold text-slate-600 hover:text-slate-800 transition-all text-left glass-card border border-slate-200/30">{hint}</button>
                         ))}
@@ -857,26 +986,26 @@ ${agentDescriptions}
                     const isUser = msg.role === 'user';
                     const agent = AGENTS.find(a => a.id === msg.agentId) || (msg.agentId === 'master' ? { name: '心の鏡' } : null);
                     return (
-                      <div key={msg.id || i} className="group/msg mb-12 animate-in fade-in slide-in-from-bottom-2 flex flex-col items-start">
-                        <div className={`flex flex-col ${isUser ? 'items-end self-end' : 'items-start'}`}>
+                      <div key={msg.id || i} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                        <div className="max-w-[85%] sm:max-w-[75%]">
                           {!isUser && (
                             <div className="flex items-center gap-2 mb-2 ml-1">
-                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{agent?.name}</span>
-                              {msg.agentId === 'master' && <span className="bg-indigo-50/50 text-indigo-400 text-[8px] font-black px-1 rounded border border-indigo-100/30">総括</span>}
+                              <div className="text-xs font-black text-slate-600">{agent?.name}</div>
+                              {msg.agentId === 'master' && <span className="text-[9px] px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-black">総括</span>}
                             </div>
                           )}
                           <div onClick={() => setOpenToolbarMsgId(openToolbarMsgId === msg.id ? null : msg.id)} className={`relative px-5 py-4 whitespace-pre-wrap text-[15px] leading-relaxed rounded-2xl transition-all cursor-pointer ${isUser ? 'bg-slate-800 text-slate-100 shadow-lg shadow-slate-800/20' : 'neu-convex-sm mirror-reflection text-slate-700'}`}>
                             {msg.content}
                             {msg.id && (
-                              <div className={`absolute top-2 right-2 flex items-center gap-1 p-1 rounded-lg transition-opacity ${isUser ? 'bg-slate-700/50' : 'bg-white/50 shadow-sm'} ${openToolbarMsgId === msg.id ? 'opacity-100' : 'opacity-0 md:group-hover/msg:opacity-100'}`} onClick={e => e.stopPropagation()}>
-                                <button onClick={() => { handleCopyMessage(msg.id, msg.content); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-indigo-500">{copiedMsgId === msg.id ? <Check size={12}/> : <Copy size={12}/>}</button>
-                                <button onClick={() => { handleDeleteMessage(msg.id); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-rose-500"><Trash2 size={12}/></button>
+                              <div className={`absolute ${isUser ? 'right-2 top-2' : 'left-2 top-2'} flex items-center gap-1 transition-opacity ${openToolbarMsgId === msg.id ? 'opacity-100' : 'opacity-0'}`} onClick={e => e.stopPropagation()}>
+                                <button onClick={() => { handleCopyMessage(msg.id, msg.content); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-indigo-500">{copiedMsgId === msg.id ? <Check size={14} /> : <Copy size={14} />}</button>
+                                <button onClick={() => { handleDeleteMessage(msg.id); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-rose-500"><Trash2 size={14} /></button>
                               </div>
                             )}
                             {!isUser && msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                              <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-white/20">
+                              <div className="flex flex-wrap gap-2 mt-3">
                                 <button onClick={e => { e.stopPropagation(); if (autoExpandReactions?.msgId === msg.id && !activeReaction) setAutoExpandReactions(null); else { setActiveReaction(null); setAutoExpandReactions({msgId: msg.id, isLoading: false}); } }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${(autoExpandReactions?.msgId === msg.id && !activeReaction) ? 'bg-slate-800 text-white border-slate-900 shadow-md' : 'bg-white/40 text-slate-500 border-white/60 hover:bg-white/60'}`}>
-                                  <Users size={10} /> OTHERS
+                                  <Users size={12} /> OTHERS
                                 </button>
                                 {Object.entries(msg.reactions).map(([rId, data]) => {
                                   const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
@@ -891,52 +1020,44 @@ ${agentDescriptions}
                           </div>
 
                           {!isUser && activeReaction?.msgId === msg.id && msg.reactions?.[activeReaction.agentId] && (
-                            <div className="mt-3 w-full p-5 rounded-2xl glass-card animate-in fade-in slide-in-from-top-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{AGENTS.find(a => a.id === activeReaction.agentId)?.name}</span>
-                                <span className="px-1.5 py-0.5 bg-white/50 border text-slate-400 text-[8px] font-black rounded italic">{msg.reactions[activeReaction.agentId]?.posture}</span>
-                                <span className={`text-[8px] px-2 py-0.5 rounded-full font-black ${
-                                  msg.reactions[activeReaction.agentId]?.stance === '賛成' ? 'bg-emerald-100 text-emerald-700' :
-                                  msg.reactions[activeReaction.agentId]?.stance === '反対' ? 'bg-rose-100 text-rose-700' :
-                                  'bg-slate-100 text-slate-500'
-                                }`}>{msg.reactions[activeReaction.agentId]?.stance}</span>
+                            <div className="mt-3 ml-4 p-4 rounded-xl glass-card border border-white/40 text-sm">
+                              <div className="flex items-center gap-2 mb-2 text-xs font-black text-slate-600">
+                                <span>{AGENTS.find(a => a.id === activeReaction.agentId)?.name}</span>
+                                <span className="text-[10px] px-2 py-0.5 bg-slate-100 rounded-full">{msg.reactions[activeReaction.agentId]?.posture}</span>
+                                <span className="text-[10px] px-2 py-0.5 bg-slate-100 rounded-full">{msg.reactions[activeReaction.agentId]?.stance}</span>
                               </div>
-                              <p className="text-[13px] font-medium text-slate-600 italic">「{msg.reactions[activeReaction.agentId]?.comment}」</p>
+                              <p className="text-slate-700">「{msg.reactions[activeReaction.agentId]?.comment}」</p>
                             </div>
                           )}
 
                           {!isUser && autoExpandReactions?.msgId === msg.id && !activeReaction && (
-                            <div className="mt-4 p-4 rounded-2xl glass-card flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 shadow-lg border border-indigo-100/50 w-full min-h-[80px] relative">
-                              <div className="flex items-center justify-between px-1 mb-1">
-                                <span className="text-[9px] font-black text-indigo-400/80 uppercase tracking-widest">Others</span>
-                                <button onClick={e => { e.stopPropagation(); setAutoExpandReactions(null); }} className="text-slate-400 hover:bg-white/50 rounded-full p-1"><X size={12}/></button>
+                            <div className="mt-3 ml-4 p-4 rounded-xl glass-card border border-white/40 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="text-xs font-black text-slate-600">Others</div>
+                                <button onClick={e => { e.stopPropagation(); setAutoExpandReactions(null); }} className="text-slate-400 hover:bg-white/50 rounded-full p-1"><X size={14} /></button>
                               </div>
                               {autoExpandReactions.isLoading ? (
-                                <div className="py-4 flex flex-col items-center justify-center opacity-70">
-                                  <div className="flex gap-1.5 mb-2">
-                                    <div className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                                    <div className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                                    <div className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                                <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+                                  <div className="flex gap-1">
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                                    <div className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                    <div className="w-1.5 h-1.5 bg-rose-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                                   </div>
-                                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Fetching thoughts...</p>
+                                  Fetching thoughts...
                                 </div>
                               ) : (
                                 msg.reactions && Object.entries(msg.reactions).map(([rId, data]) => {
                                   const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
                                   return (
-                                    <div key={rId} className="flex gap-3 items-start bg-white/60 p-3 rounded-xl border border-white/80 animate-in fade-in">
-                                      <div className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${rAgent.color} ${rAgent.accentColor} border ${rAgent.borderColor}`}>{rAgent.icon}</div>
-                                      <div className="flex-1 min-w-0">
+                                    <div key={rId} className="flex items-start gap-3">
+                                      {rAgent.icon}
+                                      <div className="flex-1 text-sm">
                                         <div className="flex items-center gap-2 mb-1">
-                                          <span className="text-[10px] font-black text-slate-700">{rAgent.name}</span>
-                                          <span className="text-[8px] px-1.5 py-0.5 bg-white/80 text-slate-500 rounded italic font-bold">{data.posture}</span>
-                                          <span className={`text-[8px] px-2 py-0.5 rounded-full font-black ${
-                                            data.stance === '賛成' ? 'bg-emerald-100 text-emerald-700' :
-                                            data.stance === '反対' ? 'bg-rose-100 text-rose-700' :
-                                            'bg-slate-100 text-slate-500'
-                                          }`}>{data.stance}</span>
+                                          <span className="font-black text-slate-700">{rAgent.name}</span>
+                                          <span className="text-[10px] px-2 py-0.5 bg-white/50 rounded-full">{data.posture}</span>
+                                          <span className="text-[10px] px-2 py-0.5 bg-white/50 rounded-full">{data.stance}</span>
                                         </div>
-                                        <p className="text-[12px] font-medium text-slate-600 leading-relaxed">「{data.comment}」</p>
+                                        <p className="text-slate-600">「{data.comment}」</p>
                                       </div>
                                     </div>
                                   );
@@ -949,66 +1070,68 @@ ${agentDescriptions}
                     );
                   })}
                   {isGenerating && (
-                    <div className="flex flex-col gap-3 p-4 animate-in fade-in">
-                      <div className="flex gap-2">
-                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" />
-                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                    <div className="flex justify-start">
+                      <div className="flex items-center gap-3 px-5 py-4 rounded-2xl neu-convex-sm mirror-reflection">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                          <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{animationDelay: '0.15s'}}></div>
+                          <div className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{animationDelay: '0.3s'}}></div>
+                        </div>
+                        {generatingAgent && <span className="text-sm font-bold text-slate-600">{generatingAgent.name} が思考中...</span>}
                       </div>
-                      {generatingAgent && <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{generatingAgent.name} が思考中...</p>}
                     </div>
                   )}
                   {!isGenerating && messages.length > 0 && messages[messages.length - 1].role === 'ai' && messages[messages.length - 1].agentId !== 'master' && userMessageCount >= 3 && (
-                    <div className="flex justify-center mt-12 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
+                    <div className="mt-8">
                       <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents} className="group flex items-center gap-4 px-6 py-4 rounded-2xl glass-card border border-indigo-200/50 hover:bg-white/60 transition-all active:scale-95 shadow-lg shadow-indigo-900/5 disabled:opacity-30">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-110 transition-transform"><Compass size={18} /></div>
-                        <div className="flex flex-col text-left">
-                          <span className="text-sm font-black text-slate-700">ここまでの声を映してみますか？</span>
-                          <span className="text-[10px] font-bold text-slate-400">心の鏡が、散らばった思考を総括します</span>
+                        <Star size={24} className="text-indigo-500" />
+                        <div className="text-left">
+                          <div className="text-sm font-black text-slate-700 mb-1">ここまでの声を映してみますか？</div>
+                          <div className="text-xs text-slate-500">心の鏡が、散らばった思考を総括します</div>
                         </div>
                       </button>
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
-          </main>
+          </div>
         </div>
-      </div>
+      </main>
 
       {showIntro && (
-        <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 transition-opacity duration-500 ${isHomeReady ? 'opacity-0' : 'opacity-100'}`}>
-          <div className="absolute inset-0 bg-[#eef2f7] z-0" /><div className="water-shimmer z-0" />
-          <div className="max-w-md w-full text-center p-8 md:p-10 rounded-[3rem] glass-card relative z-10 space-y-8 anim-card-rise">
-            <div className="anim-scale-in"><div className="inline-flex items-center justify-center p-5 rounded-[2rem] bg-[#1e293b] text-white anim-float shadow-2xl"><Users size={36} /></div></div>
-            <div className="space-y-2">
-              <p className="text-[10px] font-black tracking-[0.4em] text-slate-400 uppercase">Inner Conference Room</p>
-              <h1 className="text-4xl font-black tracking-tighter text-slate-800">じぶん会議</h1>
-              <p className="text-sm font-bold text-slate-500">5つの視点で、じぶんに潜る</p>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-indigo-900/90 via-violet-900/90 to-rose-900/90 backdrop-blur-lg">
+          <div className="text-center space-y-8 px-8">
+            <div>
+              <div className="text-sm tracking-[0.3em] text-indigo-200 font-bold mb-3">Inner Conference Room</div>
+              <h1 className="text-5xl sm:text-6xl font-black text-white mb-3">じぶん会議</h1>
+              <p className="text-lg text-violet-200 font-bold">5つの視点で、じぶんに潜る</p>
             </div>
-            <div className="py-6 px-2 md:p-8 rounded-[2rem] bg-white/20 border border-white/40 shadow-inner flex justify-center items-center w-full">
-              <p className="text-base sm:text-lg md:text-xl font-medium text-slate-700 leading-loose tracking-[0.1em] text-center whitespace-nowrap">導かない。照らすだけ。<br />歩くのは、あなた自身。</p>
-            </div>
-            <button onClick={handleStartIntro} className="w-full py-5 bg-[#1e293b] text-white rounded-2xl font-black text-sm active:scale-95 flex items-center justify-center gap-2 shadow-2xl">会議をはじめる <ChevronRight size={18} /></button>
+            <p className="text-base text-white/80 max-w-md mx-auto leading-relaxed">
+              導かない。照らすだけ。歩くのは、あなた自身。
+            </p>
+            <button onClick={handleStartIntro} className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm shadow-2xl hover:scale-105 transition-transform">
+              会議をはじめる <ChevronRight size={16} className="inline ml-1" />
+            </button>
           </div>
         </div>
       )}
 
       {isEditingUserName && (
-        <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-md z-[150] flex items-center justify-center p-6" onClick={() => setIsEditingUserName(false)}>
-          <div className="rounded-[2.5rem] w-full max-w-sm p-10 text-center glass-card" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-black mb-8">お名前を教えてください</h3>
-            <input autoFocus value={tempName} onChange={e => setTempName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); }} className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-8 neu-concave bg-transparent" />
-            <button onClick={handleUpdateUserName} className="w-full py-4 bg-[#1e293b] text-white rounded-2xl font-black text-xs shadow-lg">変更を適用</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/20 backdrop-blur-sm" onClick={() => setIsEditingUserName(false)}>
+          <div className="glass-card p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-black text-slate-800 mb-6 text-center">お名前を教えてください</h3>
+            <input type="text" value={tempName} onChange={e => setTempName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); }} className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-8 neu-concave bg-transparent" />
+            <button onClick={handleUpdateUserName} className="w-full py-4 bg-[#1e293b] text-white rounded-2xl font-black text-xs hover:opacity-90 transition-opacity">変更を適用</button>
           </div>
         </div>
       )}
 
       {deleteTargetId && (
-        <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-md z-[150] flex items-center justify-center p-6" onClick={() => setDeleteTargetId(null)}>
-          <div className="rounded-[2.5rem] w-full max-w-sm p-10 text-center glass-card" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-black mb-8">この思考を消去しますか？</h3>
-            <div className="flex flex-col gap-2">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/20 backdrop-blur-sm" onClick={() => setDeleteTargetId(null)}>
+          <div className="glass-card p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-black text-slate-800 mb-6 text-center">この思考を消去しますか？</h3>
+            <div className="space-y-3">
               <button onClick={() => { playSound('delete'); handleDeleteSession(deleteTargetId); }} disabled={isDeletingSession} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs disabled:opacity-50">消去する</button>
               <button onClick={() => setDeleteTargetId(null)} disabled={isDeletingSession} className="w-full py-4 text-slate-500 font-black text-xs hover:bg-white/50 rounded-2xl transition-all">キャンセル</button>
             </div>
@@ -1017,17 +1140,17 @@ ${agentDescriptions}
       )}
 
       {showBeliefs && (
-        <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-xl z-[150] flex items-center justify-center p-6" onClick={() => setShowBeliefs(false)}>
-          <div className="rounded-[2.5rem] w-full max-w-xl h-4/5 flex flex-col overflow-hidden glass-card" onClick={e => e.stopPropagation()}>
-            <div className="p-8 pb-4 flex items-center justify-between border-b border-white/10">
-              <h3 className="text-xl font-black tracking-tight">会議メンバーの魂</h3>
-              <button onClick={() => setShowBeliefs(false)} className="p-2 hover:bg-white/40 rounded-full"><X size={20}/></button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/20 backdrop-blur-sm p-4" onClick={() => setShowBeliefs(false)}>
+          <div className="glass-card p-6 sm:p-8 rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-black text-slate-800">会議メンバーの魂</h3>
+              <button onClick={() => setShowBeliefs(false)} className="p-2 hover:bg-white/40 rounded-full"><X size={20} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-8 pt-6 no-scrollbar space-y-4">
+            <div className="space-y-4">
               {AGENTS.map(a => (
-                <div key={a.id} className={`p-6 rounded-2xl ${a.color} ${a.accentColor} neu-convex-sm backdrop-blur-sm`}>
-                  <div className="flex items-center gap-3 mb-3">{a.icon}<span className="font-black text-xs">{a.name} — {a.title}</span></div>
-                  <p className="text-xs font-bold leading-relaxed text-slate-600 italic">{a.belief}</p>
+                <div key={a.id} className={`p-5 rounded-2xl ${a.color} border ${a.borderColor}`}>
+                  <div className={`flex items-center gap-3 mb-3 ${a.accentColor} font-black`}>{a.icon}{a.name} — {a.title}</div>
+                  <p className="text-sm text-slate-700 leading-relaxed">{a.belief}</p>
                 </div>
               ))}
             </div>
@@ -1035,33 +1158,7 @@ ${agentDescriptions}
         </div>
       )}
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        .animate-in { animation: fadeIn 300ms ease-out both; }
-        .fade-in { animation-name: fadeIn; }
-        .slide-in-from-top-2 { animation: slideInFromTop2 300ms ease-out both; }
-        .slide-in-from-bottom-2 { animation: slideInFromBottom2 300ms ease-out both; }
-        .slide-in-from-top-1 { animation: slideInFromTop1 200ms ease-out both; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideInFromTop2 { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideInFromTop1 { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideInFromBottom2 { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .lake-bg { background: linear-gradient(175deg, #f2f6fa 0%, #e6ecf3 30%, #dce4ee 50%, #d3dce8 70%, #e0e7f0 100%); min-height: 100vh; }
-        .neu-convex-sm { background: linear-gradient(145deg, rgba(255,255,255,0.88), rgba(243,247,251,0.78)); box-shadow: 2px 2px 6px rgba(174,188,206,0.2), -2px -2px 6px rgba(255,255,255,0.85), inset 0 1px 0 rgba(255,255,255,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.55); }
-        .neu-concave { background: linear-gradient(145deg, rgba(230,236,244,0.4), rgba(240,245,250,0.4)); box-shadow: inset 2px 2px 6px rgba(174,188,206,0.2), inset -2px -2px 6px rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.35); }
-        .neu-pressed { background: linear-gradient(145deg, rgba(224,230,238,0.6), rgba(236,241,247,0.5)); box-shadow: inset 2px 2px 6px rgba(163,177,198,0.35), inset -2px -2px 6px rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.3); }
-        .mirror-reflection::before { content: ''; position: absolute; top: 0; left: -10%; right: -10%; height: 50%; background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 100%); pointer-events: none; z-index: 1; transform: skewX(-2deg); }
-        .glass-card { background: linear-gradient(145deg, rgba(255,255,255,0.75), rgba(247,250,253,0.65)); box-shadow: 3px 3px 10px rgba(174,188,206,0.2), -3px -3px 10px rgba(255,255,255,0.75), inset 0 1px 0 rgba(255,255,255,0.6); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.6); }
-        .water-shimmer { position: absolute; inset: 0; background: radial-gradient(ellipse at 25% 75%, rgba(147,197,253,0.15), transparent), radial-gradient(ellipse at 75% 55%, rgba(165,180,252,0.1), transparent); animation: water-shimmer 10s ease-in-out infinite; pointer-events: none; }
-        @keyframes water-shimmer { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.5; } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .anim-float { animation: float 4s ease-in-out infinite; }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        .anim-scale-in { animation: scaleIn 0.6s ease-out 0.15s both; }
-        @keyframes introCardRise { from { opacity: 0; transform: translateY(30px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .anim-card-rise { animation: introCardRise 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both; }
-      ` }} />
+      <div id="portal-root"></div>
     </div>
   );
 };
