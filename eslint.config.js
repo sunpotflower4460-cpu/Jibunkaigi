@@ -17,6 +17,7 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: {
         ...globals.browser,
+        // Canvas/production runtime globals injected by the hosting environment.
         __firebase_config: 'readonly',
         __app_id: 'readonly',
         __api_key: 'readonly',
