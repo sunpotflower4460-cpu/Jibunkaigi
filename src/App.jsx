@@ -178,7 +178,7 @@ const playSound = (type) => {
 const safeParseJson = (text) => {
   const normalized = String(text ?? "")
     .replace(/```json/gi, "").replace(/```/g, "").trim();
-  try { return JSON.parse(normalized); } catch {}
+  try { return JSON.parse(normalized); } catch (_e) { /* noop */ }
   const start = normalized.indexOf("{");
   if (start === -1) return null;
   let depth = 0, inString = false, escaped = false, end = -1;
@@ -192,7 +192,7 @@ const safeParseJson = (text) => {
     if (ch === "}") { depth -= 1; if (depth === 0) { end = i; break; } }
   }
   if (end === -1) return null;
-  try { return JSON.parse(normalized.slice(start, end + 1)); } catch { return null; }
+  try { return JSON.parse(normalized.slice(start, end + 1)); } catch (_e) { return null; }
 };
 
 const App = () => {
@@ -231,10 +231,10 @@ const App = () => {
   const timeoutIdsRef = useRef(new Set());
 
   const [showIntro, setShowIntro] = useState(() => {
-    try { return localStorage.getItem('jibunkaigi_intro_seen') !== 'true'; } catch(e) { return true; }
+    try { return localStorage.getItem('jibunkaigi_intro_seen') !== 'true'; } catch(_e) { return true; }
   });
   const [isHomeReady, setIsHomeReady] = useState(() => {
-    try { return localStorage.getItem('jibunkaigi_intro_seen') === 'true'; } catch(e) { return false; }
+    try { return localStorage.getItem('jibunkaigi_intro_seen') === 'true'; } catch(_e) { return false; }
   });
 
   const isAppReady = hasFirebaseConfig && !!db && !!user && !!apiKey;
@@ -280,7 +280,7 @@ const App = () => {
 
   const handleStartIntro = () => {
     playSound('intro');
-    try { localStorage.setItem('jibunkaigi_intro_seen', 'true'); } catch(e) {}
+    try { localStorage.setItem('jibunkaigi_intro_seen', 'true'); } catch(_e) { /* noop */ }
     setIsHomeReady(true);
     scheduleTimeout(() => setShowIntro(false), 500);
   };
@@ -363,7 +363,7 @@ const App = () => {
             ...((jsonMode || reactionSchema) ? {
               generationConfig: {
                 responseMimeType: "application/json",
-                responseJsonSchema: reactionSchema ? reactionJsonSchema : undefined
+                responseSchema: reactionSchema ? reactionJsonSchema : undefined
               }
             } : {})
           };
@@ -482,7 +482,7 @@ ${agentDescriptions}
     try {
       playSound('delete');
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', currentSessionId, 'messages', msgId));
-    } catch (e) { setErrorMessage("メッセージの削除に失敗しました。"); }
+    } catch (_e) { setErrorMessage("メッセージの削除に失敗しました。"); }
   };
 
   const handleSend = async (overrideText = null) => {
@@ -697,7 +697,7 @@ ${agentDescriptions}
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId));
       if (currentSessionId === sessionId) { setCurrentSessionId(null); resetSessionUIState(); }
       setDeleteTargetId(null);
-    } catch (e) { setErrorMessage("削除に失敗しました。"); }
+    } catch (_e) { setErrorMessage("削除に失敗しました。"); }
     setIsDeletingSession(false);
   };
 
@@ -706,7 +706,7 @@ ${agentDescriptions}
       await navigator.clipboard.writeText(content);
       setCopiedMsgId(msgId);
       scheduleTimeout(() => setCopiedMsgId(null), 2000);
-    } catch (e) {
+    } catch (_e) {
       const t = document.createElement("textarea");
       t.value = content; document.body.appendChild(t); t.select();
       document.execCommand('copy'); document.body.removeChild(t);
@@ -889,7 +889,7 @@ ${agentDescriptions}
                                 <button onClick={e => { e.stopPropagation(); if (autoExpandReactions?.msgId === msg.id && !activeReaction) setAutoExpandReactions(null); else { setActiveReaction(null); setAutoExpandReactions({msgId: msg.id, isLoading: false}); } }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${(autoExpandReactions?.msgId === msg.id && !activeReaction) ? 'bg-slate-800 text-white border-slate-900 shadow-md' : 'bg-white/40 text-slate-500 border-white/60 hover:bg-white/60'}`}>
                                   <Users size={10} /> OTHERS
                                 </button>
-                                {Object.entries(msg.reactions).map(([rId, data]) => {
+                                {Object.entries(msg.reactions).map(([rId]) => {
                                   const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
                                   return (
                                     <button key={rId} onClick={e => { e.stopPropagation(); setActiveReaction(activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? null : {msgId: msg.id, agentId: rId}); setAutoExpandReactions(null); }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? 'bg-slate-800 text-white border-slate-900' : 'bg-white/40 text-slate-400 border-white/60 hover:bg-white/60'}`}>
