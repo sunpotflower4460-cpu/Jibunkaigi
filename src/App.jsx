@@ -31,8 +31,6 @@ import { estimateState } from './runtime/stateEstimate';
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
 
-// ... 以下、Firebase設定・AGENTS・MODES・playSound・safeParseJsonなどは全く同じなので省略せずそのまま残す
-
 const getFirebaseConfig = () => {
   try {
     if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_API_KEY) {
@@ -262,16 +260,16 @@ const App = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!hasFirebaseConfig) { setErrorMessage("Firebase設定が未完了です。"); return; }
+    if (!apiKey) { setErrorMessage("Gemini APIキーが未設定です。"); }
+  }, []);
+
   // ★ 追加：estimateState を試しに呼び出してログ出力
   useEffect(() => {
     console.log('test1', estimateState('やりたいのに動けない'));
     console.log('test2', estimateState('作品を出したいけど怖い'));
     console.log('test3', estimateState('もう無理で諦めたい'));
-  }, []);
-
-  useEffect(() => {
-    if (!hasFirebaseConfig) { setErrorMessage("Firebase設定が未完了です。"); return; }
-    if (!apiKey) { setErrorMessage("Gemini APIキーが未設定です。"); }
   }, []);
 
   useEffect(() => { currentSessionIdRef.current = currentSessionId; }, [currentSessionId]);
@@ -731,8 +729,42 @@ ${agentDescriptions}
 
   return (
     <div className="lake-bg relative min-h-screen overflow-hidden flex font-sans text-[#2d3748]">
-      {/* 以下、元のコードのUIと同じなので省略します。既存のHTMLレイアウトをそのままコピーしてください */}
-      {/* ... ここには元のApp.jsxの<header>〜</div>までの全UIを貼る ... */}
+      <div className="water-shimmer z-0" />
+      <div className={`flex w-full h-full relative z-10 transition-opacity duration-500 ${isHomeReady || !showIntro ? 'opacity-100' : 'opacity-0'}`}>
+        {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-[60] md:hidden" />}
+
+        {/* 以下、既存のUIコードをそのまま続けてください（サイドバー、ヘッダー、メッセージ表示など） */}
+        {/* ここには元の App.jsx の全UIレイアウト（<aside>〜最後の</div>まで）をそのままコピーしてください */}
+        
+        {/* 省略：元のコードの <aside>〜全UIをここに貼り付けてください */}
+        
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .animate-in { animation: fadeIn 300ms ease-out both; }
+        .fade-in { animation-name: fadeIn; }
+        .slide-in-from-top-2 { animation: slideInFromTop2 300ms ease-out both; }
+        .slide-in-from-bottom-2 { animation: slideInFromBottom2 300ms ease-out both; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInFromTop2 { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInFromBottom2 { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .lake-bg { background: linear-gradient(175deg, #f2f6fa 0%, #e6ecf3 30%, #dce4ee 50%, #d3dce8 70%, #e0e7f0 100%); min-height: 100vh; }
+        .neu-convex-sm { background: linear-gradient(145deg, rgba(255,255,255,0.88), rgba(243,247,251,0.78)); box-shadow: 2px 2px 6px rgba(174,188,206,0.2), -2px -2px 6px rgba(255,255,255,0.85), inset 0 1px 0 rgba(255,255,255,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.55); }
+        .neu-concave { background: linear-gradient(145deg, rgba(230,236,244,0.4), rgba(240,245,250,0.4)); box-shadow: inset 2px 2px 6px rgba(174,188,206,0.2), inset -2px -2px 6px rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.35); }
+        .neu-pressed { background: linear-gradient(145deg, rgba(224,230,238,0.6), rgba(236,241,247,0.5)); box-shadow: inset 2px 2px 6px rgba(163,177,198,0.35), inset -2px -2px 6px rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.3); }
+        .mirror-reflection::before { content: ''; position: absolute; top: 0; left: -10%; right: -10%; height: 50%; background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 100%); pointer-events: none; z-index: 1; transform: skewX(-2deg); }
+        .glass-card { background: linear-gradient(145deg, rgba(255,255,255,0.75), rgba(247,250,253,0.65)); box-shadow: 3px 3px 10px rgba(174,188,206,0.2), -3px -3px 10px rgba(255,255,255,0.75), inset 0 1px 0 rgba(255,255,255,0.6); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.6); }
+        .water-shimmer { position: absolute; inset: 0; background: radial-gradient(ellipse at 25% 75%, rgba(147,197,253,0.15), transparent), radial-gradient(ellipse at 75% 55%, rgba(165,180,252,0.1), transparent); animation: water-shimmer 10s ease-in-out infinite; pointer-events: none; }
+        @keyframes water-shimmer { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.5; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .anim-float { animation: float 4s ease-in-out infinite; }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        .anim-scale-in { animation: scaleIn 0.6s ease-out 0.15s both; }
+        @keyframes introCardRise { from { opacity: 0; transform: translateY(30px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .anim-card-rise { animation: introCardRise 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both; }
+      ` }} />
     </div>
   );
 };
