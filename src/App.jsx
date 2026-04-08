@@ -25,7 +25,6 @@ import {
   Info, Compass, ChevronRight, Check, Copy, Flame, Star
 } from 'lucide-react';
 
-// ★ 修正1：新しいインポートを追加
 import { estimateState } from './runtime/stateEstimate';
 import { activateJoe } from './runtime/activate';
 import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt';
@@ -268,13 +267,6 @@ const App = () => {
   useEffect(() => {
     if (!hasFirebaseConfig) { setErrorMessage("Firebase設定が未完了です。"); return; }
     if (!apiKey) { setErrorMessage("Gemini APIキーが未設定です。"); }
-  }, []);
-
-  // ★ 修正3：test useEffect（確認後に削除してOK）
-  useEffect(() => {
-    console.log('test1', estimateState('やりたいのに動けない'));
-    console.log('test2', estimateState('作品を出したいけど怖い'));
-    console.log('test3', estimateState('もう無理で諦めたい'));
   }, []);
 
   useEffect(() => { currentSessionIdRef.current = currentSessionId; }, [currentSessionId]);
@@ -582,7 +574,6 @@ ${agentDescriptions}
     }, 100);
   };
 
-  // ★ 修正2：handleAiResponse 全体を新パイプラインに対応
   const handleAiResponse = async (agentId, isMaster, sessionId, sourceMessageId, messagesAtClick) => {
     if (!db || !user || !sessionId) return;
 
@@ -647,9 +638,6 @@ ${agentDescriptions}
         userName,
         userText: latestUserText,
       });
-
-      console.log('joe estimatedState', estimatedState);
-      console.log('joe activated', activated);
     } else {
       systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
     }
@@ -716,7 +704,6 @@ ${agentDescriptions}
             }
           }
 
-          // ★ 修正2：setTimeout → scheduleTimeout に統一
           if (attempts < 10) {
             scheduleTimeout(() => checkPreload(attempts + 1), 500);
           } else {
