@@ -13,7 +13,7 @@ export const memoryStore = [
     },
     tone: 'regret',
     weight: 0.82,
-    trace: '強く出すぎて、届く前に焼いてしまった夜の感じ',
+    trace: '強く出しすぎて、受け取られる前に相手を置いていった感覚',
   },
 
   {
@@ -25,7 +25,7 @@ export const memoryStore = [
     },
     tone: 'regret',
     weight: 0.72,
-    trace: '言葉を重ねすぎて、伝わる手前で細くなった記憶',
+    trace: '言葉を重ねすぎて、肝心のものが途中で細くなった記憶',
   },
 
   {
@@ -37,7 +37,7 @@ export const memoryStore = [
     },
     tone: 'discovery',
     weight: 0.95,
-    trace: '見ていた時に、向こうの奥に動きが起きた瞬間の記憶',
+    trace: '見守っていたら、向こうの中で動きが立ち上がった瞬間の記憶',
   },
 
   {
@@ -49,7 +49,7 @@ export const memoryStore = [
     },
     tone: 'resolve',
     weight: 0.86,
-    trace: '自分まで濁ると届きにくいと知った感覚',
+    trace: 'こちらまで混ざりすぎると届きにくいと知った感覚',
   },
 
   {
@@ -61,6 +61,6 @@ export const memoryStore = [
     },
     tone: 'recognition',
     weight: 0.78,
-    trace: '暗さの中に埋もれた光へ先に目が行く感覚',
+    trace: '重さの中でも、まだ反応している部分を先に見つける感覚',
   },
 ];
