@@ -31,8 +31,8 @@ import { activateJoe } from './runtime/activate';
 import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt';
 import { checkResponse, cleanResponse } from './runtime/postCheck';
 import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
-import { pickRandomAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
+import { pickRandomAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -417,10 +417,13 @@ const App = () => {
     if (!respondingAgent) return;
     const otherAgents = AGENTS.filter(a => a.id !== respondingAgentId);
 
+    const sys = buildReactionSystemPrompt(respondingAgent, otherAgents);
+    const prompt = buildReactionUserPrompt(userText, respondingAgent.name, aiResponseText);
+
     try {
       const res = await callGemini({
-        prompt: buildReactionUserPrompt(userText, respondingAgent.name, aiResponseText ?? ''),
-        systemInstruction: buildReactionSystemPrompt(respondingAgent, otherAgents),
+        prompt,
+        systemInstruction: sys,
         model: GEMINI_REACTIONS_MODEL,
         reactionSchema: true
       });
@@ -461,8 +464,8 @@ const App = () => {
 
   const handleRandomResponse = () => {
     if (AGENTS.length > 0) {
-      const lastId = getLastRespondingAgentId(messages);
-      const agentId = pickRandomAgent(AGENTS, lastId);
+      const lastAgentId = getLastRespondingAgentId(messages);
+      const agentId = pickRandomAgent(AGENTS, lastAgentId);
       handleAgentClick(agentId);
     }
   };
@@ -615,34 +618,37 @@ const App = () => {
       systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
     }
 
-    // Apply drift-prevention refresh when the agent has responded many times
+    // Apply drift-prevention refresh when the agent has responded many times.
+    // Use a short anchor reminder instead of re-inserting large persona blocks
+    // that are already included in systemInstruction.
     if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
-      const refreshText = isJoe ? (activated?.refresh || '') : (agent.prompt || '');
+      const refreshText = isJoe
+        ? '上記のJoe設定・活性状態・口調を維持し、一貫した応答を続けてください。'
+        : `あなたは${agent.name}として、上記の設定と制約を守って応答してください。`;
       systemInstruction = applyRefresh(systemInstruction, refreshText);
     }
 
     try {
-      const rawResponse = await callGemini({
+      const response = await callGemini({
         prompt: promptText,
         systemInstruction,
         model: GEMINI_CHAT_MODEL
       });
 
+      const responseCheck = checkResponse(response);
+      if (!responseCheck.ok) {
+        throw new Error(`response_check:${responseCheck.reason}`);
+      }
+      const cleanedResponse = cleanResponse(response);
+
       if (currentSessionIdRef.current !== sessionId) {
         setIsGenerating(false); setGeneratingAgent(null); return;
-      }
-
-      // Clean up agent-name prefixes and validate the response
-      const response = cleanResponse(rawResponse);
-      const check = checkResponse(response);
-      if (!check.ok) {
-        throw new Error(`Invalid response: ${check.reason}`);
       }
 
       const aiMsgId = makeId();
       await setDoc(
         doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
-        { role: 'ai', content: response, agentId: isMaster ? 'master' : agentId, reactions: null, createdAt: serverTimestamp(), clientCreatedAt: Date.now() }
+        { role: 'ai', content: cleanedResponse, agentId: isMaster ? 'master' : agentId, reactions: null, createdAt: serverTimestamp(), clientCreatedAt: Date.now() }
       );
 
       playSound('receive');
@@ -651,7 +657,7 @@ const App = () => {
 
       if (!isMaster && sourceMessageId && pending?.text) {
         setAutoExpandReactions({ msgId: aiMsgId, isLoading: true });
-        await preloadReactions(pending.text, sessionId, sourceMessageId, agentId, response);
+        await preloadReactions(pending.text, sessionId, sourceMessageId, agentId, cleanedResponse);
 
         const checkPreload = async (attempts = 0) => {
           if (currentSessionIdRef.current !== sessionId) { setAutoExpandReactions(null); return; }
@@ -687,8 +693,10 @@ const App = () => {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("API key is missing")) {
         setErrorMessage("Gemini APIキーが未設定です。");
-      } else if (msg.includes("Empty response") || msg.includes("Invalid response")) {
-        setErrorMessage("AIの応答が不正でした。もう一度お試しください。");
+      } else if (msg.includes("response_check:empty") || msg.includes("Empty response")) {
+        setErrorMessage("AIの応答が空でした。もう一度お試しください。");
+      } else if (msg.includes("response_check:json_leak")) {
+        setErrorMessage("AIの応答が不正な形式でした（JSONが返されました）。もう一度お試しください。");
       } else {
         setErrorMessage("AIとの通信に失敗しました。");
       }
