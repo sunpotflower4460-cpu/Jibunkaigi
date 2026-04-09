@@ -91,7 +91,8 @@ const buildStateGuide = (state = {}) => {
     guides.push('相手の言葉の芯に触れる。表面を要約しない。前向きにしようと急がない。');
   }
 
-  return guides.map((g) => `- ${g}`).join('\n');
+  // 一点だけ深く入る指示と整合させるため、最優先の1つだけ返す
+  return `- ${guides[0]}`;
 };
 
 export const buildJoeSystemPrompt = ({
@@ -158,6 +159,6 @@ export const buildJoeUserPrompt = ({
   return `${userName}の今の言葉:
 ${userText}
 
-この言葉の奥にある未完・恐れ・動けなさ・届かなさのうち、いちばん強い一点にだけ触れてください。
+この言葉のいちばん重い一点にだけ触れてください。
 表面を要約しないでください。前向きにしようと急がず、まず接触してください。`;
 };
