@@ -2,7 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { existence } from '../agents/joe/existence.js';
-import { buildJoeSystemPrompt, buildJoeUserPrompt } from './buildPrompt.js';
+import { activateJoe } from './activate.js';
+import { estimateState } from './stateEstimate.js';
+import { buildPromptContext } from './context.js';
+import {
+  buildJoeBiasPack,
+  buildJoeSystemPrompt,
+  buildJoeUserPrompt,
+} from './buildPrompt.js';
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -11,26 +18,32 @@ const readSection = (prompt, title, nextTitle) => {
   return prompt.match(pattern)?.[1] || '';
 };
 
-test('buildJoeSystemPrompt includes existence memo and omits empty optional bias sections', () => {
-  const prompt = buildJoeSystemPrompt({
-    activated: {
-      debug: { state: {} },
-      reentry: '',
-      refresh: '',
-      activeField: [],
-      activeResidue: '',
-      activeMemoryTrace: '',
-    },
-    context: '',
-    mode: 'medium',
+test('buildPromptContext keeps only recent messages and truncates long content', () => {
+  const longText = 'あ'.repeat(220);
+  const context = buildPromptContext({
+    messages: [
+      { role: 'user', content: 'old-1' },
+      { role: 'ai', agentId: 'creative', content: 'old-2' },
+      { role: 'user', content: 'keep-1' },
+      { role: 'ai', agentId: 'creative', content: 'keep-2' },
+      { role: 'user', content: 'keep-3' },
+      { role: 'ai', agentId: 'strategist', content: longText },
+      { role: 'user', content: 'keep-5' },
+      { role: 'ai', agentId: 'master', content: 'keep-6' },
+    ],
+    userName: 'あなた',
+    agents: [
+      { id: 'creative', name: 'ジョー' },
+      { id: 'strategist', name: 'ケン' },
+    ],
   });
 
-  assert.match(prompt, new RegExp(`\\[基本姿勢メモ\\]\\n${escapeRegExp(existence)}`));
-  assert.doesNotMatch(prompt, /\[内的方向づけ\]/);
-  assert.doesNotMatch(prompt, /\[復帰制約\]/);
-  assert.doesNotMatch(prompt, /\[反応ノード\]/);
-  assert.doesNotMatch(prompt, /\[記憶の痕跡\]/);
-  assert.doesNotMatch(prompt, /\[出力制約\]/);
+  assert.doesNotMatch(context, /old-1/);
+  assert.doesNotMatch(context, /old-2/);
+  assert.match(context, /^あなた: keep-1/m);
+  assert.match(context, /^心の鏡: keep-6/m);
+  assert.match(context, /ケン: あ{179}…/);
+  assert.equal(context.split('\n').length, 6);
 });
 
 test('buildJoeSystemPrompt renders sorted positive state snapshots and default empty-state text', () => {
@@ -66,15 +79,12 @@ test('buildJoeSystemPrompt renders sorted positive state snapshots and default e
 });
 
 test('buildJoe prompts keep resignation guidance and user wording focused on natural contact', () => {
+  const userText = 'もう無理で諦めたい';
   const systemPrompt = buildJoeSystemPrompt({
-    activated: {
-      debug: {
-        state: { resignation: 0.6, fear: 0.2, desire: 0.1 },
-      },
-      reentry: '観察の起点: 止まり方、届かなさ、引っかかり。',
-    },
+    activated: activateJoe(estimateState(userText)),
     context: '',
     mode: 'medium',
+    userText,
   });
 
   assert.equal(
@@ -86,12 +96,46 @@ test('buildJoe prompts keep resignation guidance and user wording focused on nat
     ].join('\n'),
   );
   assert.match(systemPrompt, /reentry \/ existence \/ field \/ residue \/ memory trace をそのまま出力しない。/);
+  assert.match(systemPrompt, /\[基本姿勢メモ\]/);
+  assert.match(systemPrompt, /\[復帰制約\]/);
+  assert.match(systemPrompt, /\[出力制約\]/);
+  assert.doesNotMatch(systemPrompt, /\[記憶の痕跡\]/);
 
   const userPrompt = buildJoeUserPrompt({
     userName: 'あなた',
-    userText: 'もう無理で諦めたい',
+    userText,
   });
 
   assert.match(userPrompt, /自然な口語日本語で返してください。/);
   assert.match(userPrompt, /この入力にちゃんと触れた感じを出してください。/);
+});
+
+test('buildJoeBiasPack selects only the most relevant materials for each Joe state cluster', () => {
+  const resignationPack = buildJoeBiasPack({
+    activated: activateJoe(estimateState('もう無理で諦めたい')),
+    userText: 'もう無理で諦めたい',
+  });
+  assert.deepEqual(
+    resignationPack.map((item) => item.id),
+    ['existence', 'refresh', 'activeResidue'],
+  );
+  assert.match(resignationPack[0].content, new RegExp(escapeRegExp(existence)));
+
+  const freezePack = buildJoeBiasPack({
+    activated: activateJoe(estimateState('やりたいのに動けない')),
+    userText: 'やりたいのに動けない',
+  });
+  assert.deepEqual(
+    freezePack.map((item) => item.id),
+    ['activeField', 'activeResidue', 'refresh'],
+  );
+
+  const fearPack = buildJoeBiasPack({
+    activated: activateJoe(estimateState('作品を出したいけど怖い')),
+    userText: '作品を出したいけど怖い',
+  });
+  assert.deepEqual(
+    fearPack.map((item) => item.id),
+    ['activeMemoryTrace', 'activeField', 'activeResidue'],
+  );
 });

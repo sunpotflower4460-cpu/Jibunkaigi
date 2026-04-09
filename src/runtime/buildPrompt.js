@@ -3,6 +3,7 @@
 // 内部素材は「内的バイアス」として扱い、表の返答にそのまま出さない。
 
 import { existence } from '../agents/joe/existence.js';
+import { truncatePromptText } from './context.js';
 
 const MODE_GUIDE = {
   short: '短くていい。一言でも、触れていれば十分。',
@@ -10,22 +11,26 @@ const MODE_GUIDE = {
   long: '少し深く入っていい。ただし、説教や整理に逃げない。',
 };
 
+const MAX_JOE_CONTEXT_MESSAGES = 6;
+const MAX_JOE_CONTEXT_CHARS = 180;
+
 const normalizeContext = (context) => {
   if (!context) return '';
 
   if (typeof context === 'string') {
-    return context.trim();
+    return truncatePromptText(context, MAX_JOE_CONTEXT_MESSAGES * MAX_JOE_CONTEXT_CHARS).trim();
   }
 
   if (Array.isArray(context)) {
     return context
+      .slice(-MAX_JOE_CONTEXT_MESSAGES)
       .map((item) => {
         if (typeof item === 'string') return item.trim();
         if (!item) return '';
 
         const role = item.role || 'user';
         const name = item.name || (role === 'user' ? 'ユーザー' : 'AI');
-        const content = item.content || '';
+        const content = truncatePromptText(item.content || '', MAX_JOE_CONTEXT_CHARS);
 
         return `${name}: ${content}`.trim();
       })
@@ -57,6 +62,156 @@ const renderResidue = (activeResidue = '') => {
 const renderRefresh = (refresh = '') => {
   if (!refresh) return '';
   return refresh.trim();
+};
+
+const clamp01 = (value) => Math.max(0, Math.min(1, value));
+
+const hasContent = (value) => {
+  if (Array.isArray(value)) return value.length > 0;
+  return typeof value === 'string' ? value.trim().length > 0 : Boolean(value);
+};
+
+const scoreTextBonus = (userText = '', patterns = []) => {
+  const normalized = String(userText ?? '').toLowerCase();
+  return patterns.reduce((total, pattern) => total + (pattern.test(normalized) ? 0.12 : 0), 0);
+};
+
+export const scoreJoeMaterials = ({
+  activated,
+  userText = '',
+  state = activated?.debug?.state || {},
+}) => {
+  const safeActivated = activated || {};
+  const materials = [
+    {
+      id: 'existence',
+      title: '基本姿勢メモ',
+      content: existence,
+      group: 'orientation',
+      score:
+        0.04 +
+        (state.resignation ?? 0) * 1.05 +
+        (state.selfErasure ?? 0) * 0.95 +
+        (state.shame ?? 0) * 0.9 +
+        scoreTextBonus(userText, [/諦め/i, /無理/i, /消えたい/i]),
+    },
+    {
+      id: 'reentry',
+      title: '内的方向づけ',
+      content: safeActivated.reentry || '',
+      group: 'orientation',
+      score:
+        0.1 +
+        (state.desire ?? 0) * 0.35 +
+        (state.fear ?? 0) * 0.35 +
+        (state.freeze ?? 0) * 0.28 +
+        (state.reach ?? 0) * 0.18,
+    },
+    {
+      id: 'refresh',
+      title: '復帰制約',
+      content: renderRefresh(safeActivated.refresh || ''),
+      group: 'regulation',
+      score:
+        0.08 +
+        (state.resignation ?? 0) * 0.95 +
+        (state.freeze ?? 0) * 0.72 +
+        (state.fear ?? 0) * 0.24 +
+        scoreTextBonus(userText, [/無理/i, /動けない/i, /怖い/i]),
+    },
+    {
+      id: 'activeMemoryTrace',
+      title: '記憶の痕跡',
+      content: renderMemoryTrace(safeActivated.activeMemoryTrace || ''),
+      group: 'trace',
+      score:
+        0.03 +
+        (state.fear ?? 0) * 0.85 +
+        (state.reach ?? 0) * 0.7 +
+        (state.unfinished ?? 0) * 0.65 +
+        (state.shame ?? 0) * 0.45 +
+        scoreTextBonus(userText, [/作品/i, /出したい/i, /見せたい/i, /怖い/i]),
+    },
+    {
+      id: 'activeField',
+      title: '反応ノード',
+      content: renderField(safeActivated.activeField || []),
+      group: 'surface',
+      score:
+        0.05 +
+        (state.desire ?? 0) * 0.72 +
+        (state.freeze ?? 0) * 0.82 +
+        (state.fear ?? 0) * 0.68 +
+        (state.reach ?? 0) * 0.62 +
+        (state.unfinished ?? 0) * 0.66 +
+        scoreTextBonus(userText, [/動けない/i, /怖い/i, /引っかか/i, /出したい/i]),
+    },
+    {
+      id: 'activeResidue',
+      title: '出力制約',
+      content: renderResidue(safeActivated.activeResidue || ''),
+      group: 'regulation',
+      score:
+        0.12 +
+        (state.freeze ?? 0) * 0.82 +
+        (state.unfinished ?? 0) * 0.72 +
+        (state.fear ?? 0) * 0.3 +
+        (state.reach ?? 0) * 0.22 +
+        (state.resignation ?? 0) * 0.68 +
+        (state.selfErasure ?? 0) * 0.62 +
+        (state.shame ?? 0) * 0.58 +
+        scoreTextBonus(userText, [/動けない/i, /怖い/i, /諦め/i]),
+    },
+  ];
+
+  return materials
+    .filter((material) => hasContent(material.content))
+    .map((material) => ({
+      ...material,
+      score: clamp01(material.score),
+    }))
+    .sort((a, b) => b.score - a.score);
+};
+
+export const selectRelevantInternalBias = ({
+  activated,
+  userText = '',
+  state = activated?.debug?.state || {},
+}) => {
+  const scored = scoreJoeMaterials({ activated, userText, state });
+  if (!scored.length) return [];
+
+  const selected = [];
+  const groupCounts = new Map();
+  const maxItems = scored[2]?.score >= 0.32 ? 3 : 2;
+
+  for (const material of scored) {
+    const currentGroupCount = groupCounts.get(material.group) || 0;
+    const allowSecondRegulation = material.group === 'regulation' && currentGroupCount < 2;
+    const allowSingleFromGroup = currentGroupCount === 0;
+
+    if (allowSingleFromGroup || allowSecondRegulation) {
+      selected.push(material);
+      groupCounts.set(material.group, currentGroupCount + 1);
+    }
+
+    if (selected.length >= maxItems) break;
+  }
+
+  return selected.length ? selected : scored.slice(0, 1);
+};
+
+export const buildJoeBiasPack = ({
+  activated,
+  userText = '',
+  state = activated?.debug?.state || {},
+}) => {
+  return selectRelevantInternalBias({ activated, userText, state }).map(({ id, title, content, score }) => ({
+    id,
+    title,
+    content,
+    score,
+  }));
 };
 
 const renderStateSnapshot = (state = {}) => {
@@ -136,19 +291,18 @@ export const buildJoeSystemPrompt = ({
   activated,
   context = '',
   mode = 'medium',
+  userText = '',
 }) => {
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
-
-  const reentry = safeActivated.reentry || '';
-  const refresh = renderRefresh(safeActivated.refresh || '');
-  const activeField = renderField(safeActivated.activeField || []);
-  const activeResidue = renderResidue(safeActivated.activeResidue || '');
-  const activeMemoryTrace = renderMemoryTrace(safeActivated.activeMemoryTrace || '');
   const normalizedContext = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
   const stateGuide = buildStateGuide(state);
   const stateSnapshot = renderStateSnapshot(state);
+  const biasPack = buildJoeBiasPack({ activated: safeActivated, userText, state });
+  const biasSections = biasPack
+    .map(({ title, content }) => `[${title}]\n${content}`)
+    .join('\n\n');
 
   return `
 あなたはジョー。自然な口語日本語で、相手の言葉の芯に触れる。
@@ -187,17 +341,7 @@ ${stateSnapshot}
 
 ---以下は内的バイアス。参照のみ。表の返答でそのまま使わない---
 
-${existence ? `[基本姿勢メモ]\n${existence}` : ''}
-
-${reentry ? `[内的方向づけ]\n${reentry}` : ''}
-
-${refresh ? `[復帰制約]\n${refresh}` : ''}
-
-${activeMemoryTrace ? `[記憶の痕跡]\n${activeMemoryTrace}` : ''}
-
-${activeField ? `[反応ノード]\n${activeField}` : ''}
-
-${activeResidue ? `[出力制約]\n${activeResidue}` : ''}
+${biasSections}
 
 ---内的バイアスここまで---
 
