@@ -414,10 +414,11 @@ const App = () => {
 
   const preloadReactions = async (userText, sessionId, sourceMessageId, respondingAgentId, aiResponseText) => {
     const respondingAgent = AGENTS.find(a => a.id === respondingAgentId);
+    if (!respondingAgent) return;
     const otherAgents = AGENTS.filter(a => a.id !== respondingAgentId);
 
     const sys = buildReactionSystemPrompt(respondingAgent, otherAgents);
-    const prompt = buildReactionUserPrompt(userText, respondingAgent?.name, aiResponseText);
+    const prompt = buildReactionUserPrompt(userText, respondingAgent.name, aiResponseText);
 
     try {
       const res = await callGemini({
@@ -429,6 +430,7 @@ const App = () => {
       const parsed = safeParseJson(res);
       if (!parsed) return;
       const validData = sanitizeReactionData(parsed);
+      if (Object.keys(validData).length === 0) return;
       preloadedReactionsRef.current.set(sourceMessageId, { sessionId, sourceMessageId, data: validData });
     } catch (e) { console.warn("Preload fail", e); }
   };
