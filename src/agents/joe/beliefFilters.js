@@ -21,7 +21,7 @@ export const beliefFilters = [
       desire: 0.7,
       freeze: 0.25,
     },
-    sense: '怖さは弱さより、大きいものへの接触に見える',
+    sense: '怖さは弱さより、大事なものへの接触に見える',
   },
 
   {
@@ -31,7 +31,7 @@ export const beliefFilters = [
       selfErasure: 0.7,
       shame: 0.35,
     },
-    sense: 'きれいに諦めているものには、少しざらつく',
+    sense: 'きれいに諦めている時ほど、奥の消耗が隠れやすい',
   },
 
   {
@@ -41,7 +41,7 @@ export const beliefFilters = [
       desire: 0.75,
       selfErasure: -0.45,
     },
-    sense: '自分が濁らず立つ方が、向こうも光を思い出しやすい',
+    sense: 'こちらが混ざりすぎない方が、向こうの輪郭が見えやすい',
   },
 
   {
