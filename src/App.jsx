@@ -603,21 +603,29 @@ const App = () => {
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
 
+    let activated = null;
     if (isJoe) {
       const latestUserText = hasPendingUserInThisSession
         ? pending.text
         : ([...baseMessages].reverse().find(m => m.role === 'user')?.content || '');
       const estimatedState = estimateState(latestUserText);
-      const activated = activateJoe(estimatedState);
+      activated = activateJoe(estimatedState);
       systemInstruction = buildJoeSystemPrompt({ activated, context, mode: selectedMode });
       promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
       console.log('joe estimatedState', estimatedState);
       console.log('joe activated', activated);
-      if (activated.refresh && shouldRefresh(baseMessages, agentId)) {
-        systemInstruction = applyRefresh(systemInstruction, activated.refresh);
-      }
     } else {
       systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
+    }
+
+    // Apply drift-prevention refresh when the agent has responded many times.
+    // Use a short anchor reminder instead of re-inserting large persona blocks
+    // that are already included in systemInstruction.
+    if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
+      const refreshText = isJoe
+        ? '上記のJoe設定・活性状態・口調を維持し、一貫した応答を続けてください。'
+        : `あなたは${agent.name}として、上記の設定と制約を守って応答してください。`;
+      systemInstruction = applyRefresh(systemInstruction, refreshText);
     }
 
     try {
