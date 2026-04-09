@@ -198,7 +198,7 @@ const safeParseJson = (text) => {
     if (ch === "}") { depth -= 1; if (depth === 0) { end = i; break; } }
   }
   if (end === -1) return null;
-  try { return JSON.parse(normalized.slice(start, end + 1)); } catch { return null; }
+  try { return JSON.parse(normalized.slice(start, end + 1)); } catch (_e) { return null; }
 };
 
 const App = () => {
@@ -372,7 +372,7 @@ const App = () => {
             ...((jsonMode || reactionSchema) ? {
               generationConfig: {
                 responseMimeType: "application/json",
-                responseJsonSchema: reactionSchema ? reactionJsonSchema : undefined
+                ...(reactionSchema ? { responseSchema: reactionJsonSchema } : {})
               }
             } : {})
           };
