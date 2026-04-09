@@ -29,6 +29,10 @@ import {
 import { estimateState } from './runtime/stateEstimate';
 import { activateJoe } from './runtime/activate';
 import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt';
+import { checkResponse, cleanResponse } from './runtime/postCheck';
+import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
+import { pickRandomAgent, getLastRespondingAgentId } from './runtime/switchAgent';
+import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -410,41 +414,20 @@ const App = () => {
 
   const preloadReactions = async (userText, sessionId, sourceMessageId, respondingAgentId, aiResponseText) => {
     const respondingAgent = AGENTS.find(a => a.id === respondingAgentId);
+    if (!respondingAgent) return;
     const otherAgents = AGENTS.filter(a => a.id !== respondingAgentId);
-    const agentDescriptions = otherAgents.map(a =>
-      `${a.name}(${a.role}): 信念→${a.belief}`
-    ).join('\n');
-
-    const sys = `あなたはリアクション生成器。JSONのみ出力。
-【状況】${respondingAgent?.name}がクライアントに返答した。他の${otherAgents.length}人がその返答を聞いた直後の本音を生成せよ。
-【各エージェントの信念と役割】
-${agentDescriptions}
-【ルール】
-- stance: 各自の信念に基づき "賛成" "反対" "どちらでもない" のいずれか
-- posture: 動作5文字以内
-- comment: その立場からの本音15-20文字（必ずそのキャラの口調・言葉遣いで）
-- ${respondingAgent?.name}のキーは出力しない
-- 大げさな表現禁止、自然な反応で`;
 
     try {
       const res = await callGemini({
-        prompt: `【クライアントの発言】「${userText.slice(0, 100)}」\n【${respondingAgent?.name}の返答】「${aiResponseText?.slice(0, 150) ?? ''}」`,
-        systemInstruction: sys,
+        prompt: buildReactionUserPrompt(userText, respondingAgent.name, aiResponseText ?? ''),
+        systemInstruction: buildReactionSystemPrompt(respondingAgent, otherAgents),
         model: GEMINI_REACTIONS_MODEL,
         reactionSchema: true
       });
       const parsed = safeParseJson(res);
       if (!parsed) return;
-      const validData = {};
-      for (const [key, val] of Object.entries(parsed)) {
-        if (val && typeof val.posture === 'string' && typeof val.comment === 'string') {
-          validData[key] = {
-            stance: ['賛成', '反対', 'どちらでもない'].includes(val.stance) ? val.stance : 'どちらでもない',
-            posture: val.posture.slice(0, 5),
-            comment: val.comment.slice(0, 40)
-          };
-        }
-      }
+      const validData = sanitizeReactionData(parsed);
+      if (Object.keys(validData).length === 0) return;
       preloadedReactionsRef.current.set(sourceMessageId, { sessionId, sourceMessageId, data: validData });
     } catch (e) { console.warn("Preload fail", e); }
   };
@@ -478,8 +461,9 @@ ${agentDescriptions}
 
   const handleRandomResponse = () => {
     if (AGENTS.length > 0) {
-      const randomAgent = AGENTS[Math.floor(Math.random() * AGENTS.length)];
-      handleAgentClick(randomAgent.id);
+      const lastId = getLastRespondingAgentId(messages);
+      const agentId = pickRandomAgent(AGENTS, lastId);
+      handleAgentClick(agentId);
     }
   };
 
@@ -616,12 +600,13 @@ ${agentDescriptions}
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
 
+    let activated = null;
     if (isJoe) {
       const latestUserText = hasPendingUserInThisSession
         ? pending.text
         : ([...baseMessages].reverse().find(m => m.role === 'user')?.content || '');
       const estimatedState = estimateState(latestUserText);
-      const activated = activateJoe(estimatedState);
+      activated = activateJoe(estimatedState);
       systemInstruction = buildJoeSystemPrompt({ activated, context, mode: selectedMode });
       promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
       console.log('joe estimatedState', estimatedState);
@@ -630,8 +615,14 @@ ${agentDescriptions}
       systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
     }
 
+    // Apply drift-prevention refresh when the agent has responded many times
+    if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
+      const refreshText = isJoe ? (activated?.refresh || '') : (agent.prompt || '');
+      systemInstruction = applyRefresh(systemInstruction, refreshText);
+    }
+
     try {
-      const response = await callGemini({
+      const rawResponse = await callGemini({
         prompt: promptText,
         systemInstruction,
         model: GEMINI_CHAT_MODEL
@@ -639,6 +630,13 @@ ${agentDescriptions}
 
       if (currentSessionIdRef.current !== sessionId) {
         setIsGenerating(false); setGeneratingAgent(null); return;
+      }
+
+      // Clean up agent-name prefixes and validate the response
+      const response = cleanResponse(rawResponse);
+      const check = checkResponse(response);
+      if (!check.ok) {
+        throw new Error(`Invalid response: ${check.reason}`);
       }
 
       const aiMsgId = makeId();
@@ -689,8 +687,8 @@ ${agentDescriptions}
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("API key is missing")) {
         setErrorMessage("Gemini APIキーが未設定です。");
-      } else if (msg.includes("Empty response")) {
-        setErrorMessage("AIの応答が空でした。");
+      } else if (msg.includes("Empty response") || msg.includes("Invalid response")) {
+        setErrorMessage("AIの応答が不正でした。もう一度お試しください。");
       } else {
         setErrorMessage("AIとの通信に失敗しました。");
       }
