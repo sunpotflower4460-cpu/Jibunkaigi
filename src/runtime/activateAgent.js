@@ -4,7 +4,7 @@
 // falling back to a minimal stub for agents that don't yet
 // have a dedicated activation pipeline.
 
-import { activateJoe } from './activate';
+import { activateJoe } from './activate.js';
 
 /**
  * Activate the appropriate agent pipeline for the given agent ID.
