@@ -725,7 +725,7 @@ ${agentDescriptions}
         reactions: null,
         clientCreatedAt: Date.now(),
       };
-      const { id: _optimisticAiMessageId, ...optimisticAiMessageForStorage } = optimisticAiMessage;
+      const { id: _id, ...optimisticAiMessageForStorage } = optimisticAiMessage;
 
       responseTimingRef.current = {
         ...responseTimingRef.current,
