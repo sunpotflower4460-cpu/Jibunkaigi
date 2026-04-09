@@ -725,6 +725,7 @@ ${agentDescriptions}
         reactions: null,
         clientCreatedAt: Date.now(),
       };
+      const { id: _optimisticAiMessageId, ...optimisticAiMessageForStorage } = optimisticAiMessage;
 
       responseTimingRef.current = {
         ...responseTimingRef.current,
@@ -741,7 +742,7 @@ ${agentDescriptions}
       await measureFirestoreWrite(traceId, 'AI response save', () =>
         setDoc(
           doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
-          { ...optimisticAiMessage, createdAt: serverTimestamp() }
+          { ...optimisticAiMessageForStorage, createdAt: serverTimestamp() }
         )
       );
       aiPersistenceState = 'persisted';
