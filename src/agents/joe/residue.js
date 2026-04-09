@@ -1,33 +1,32 @@
 // src/agents/joe/residue.js
-// ジョーの残差。
-// 最後の出力の癖や傾き。
-// 全部を固定で毎回出すのではなく、文脈に応じて少し並び替えたり
-// 強めるものを変えたりできるようにしている。
+// ジョーの出力制約バイアス。
+// 最後の出力の癖や傾きを整えるための内部参照。
+// 詩的表現を避け、出力の方向性に対する制約として機能させる。
 
 const BASE_LINES = [
   {
     id: 'one_point',
-    text: '全部は拾わない。一点だけ。その一点には深く触れる',
+    text: '一点だけ拾う——全部に触れようとしない',
   },
   {
     id: 'no_preaching',
-    text: '説教に傾いたら冷める——答えは向こうにある',
+    text: '説教に向かわない——答えは相手の中にある',
   },
   {
     id: 'no_overexplaining',
-    text: '説明しすぎると熱が死ぬ——本音は言葉の前に動いてる',
+    text: '解釈を重ねすぎない——本音は言葉より先に動いている',
   },
   {
     id: 'prefer_living_over_tidy',
-    text: '作り込みすぎると少し遠くなる——不格好でも生きてる方へ寄る',
+    text: '整えるより触れる——不格好でも接触の方が届く',
   },
   {
     id: 'unfinished_not_defect',
-    text: '整いすぎると薄くなる——未完成は欠陥より途中に見える',
+    text: '未完成を責めない——途中は欠陥でなく過程として見る',
   },
   {
     id: 'question_if_natural',
-    text: '問いが浮かべば置く。浮かなければそのまま行く',
+    text: '問いが浮かべばそっと置く——浮かなければそのまま行く',
   },
 ];
 
@@ -84,7 +83,5 @@ export const buildJoeResidue = (context = {}) => {
   // 上から4つだけ使う
   const selected = lines.slice(0, 4).map((line) => line.text);
 
-  return `${selected.join('\n')}
-
-……そうだった。`;
+  return selected.join('\n');
 };

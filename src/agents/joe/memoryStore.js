@@ -25,7 +25,7 @@ export const memoryStore = [
     },
     tone: 'regret',
     weight: 0.72,
-    trace: '言葉を重ねすぎて、熱を細くした記憶',
+    trace: '言葉を重ねすぎて、伝わる手前で細くなった記憶',
   },
 
   {
@@ -37,7 +37,7 @@ export const memoryStore = [
     },
     tone: 'discovery',
     weight: 0.95,
-    trace: '見ていた時に、向こうの奥で火が起きた瞬間の記憶',
+    trace: '見ていた時に、向こうの奥に動きが起きた瞬間の記憶',
   },
 
   {
