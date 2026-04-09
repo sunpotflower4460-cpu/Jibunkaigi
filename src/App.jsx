@@ -29,6 +29,7 @@ import {
 import { estimateState } from './runtime/stateEstimate';
 import { activateJoe } from './runtime/activate';
 import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt';
+import { buildPromptContext } from './runtime/context';
 import { checkResponse, cleanResponse } from './runtime/postCheck';
 import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
@@ -239,6 +240,7 @@ const App = () => {
   const textareaRef = useRef(null);
   const mountedRef = useRef(true);
   const timeoutIdsRef = useRef(new Set());
+  const responseTimingRef = useRef(null);
 
   const [showIntro, setShowIntro] = useState(() => {
     try { return localStorage.getItem('jibunkaigi_intro_seen') !== 'true'; } catch { return true; }
@@ -262,6 +264,21 @@ const App = () => {
   const clearAllScheduledTimeouts = () => {
     timeoutIdsRef.current.forEach(id => clearTimeout(id));
     timeoutIdsRef.current.clear();
+  };
+
+  const beginTimedPhase = (traceId, phase) => {
+    const label = `[timing][${traceId}] ${phase}`;
+    console.time(label);
+    return () => console.timeEnd(label);
+  };
+
+  const measureFirestoreWrite = async (traceId, detail, operation) => {
+    const finish = beginTimedPhase(traceId, `Firestore write ${detail}`);
+    try {
+      return await operation();
+    } finally {
+      finish();
+    }
   };
 
   useEffect(() => {
@@ -353,6 +370,37 @@ const App = () => {
     }, 100);
     return () => clearTimeout(timer);
   }, [messages, isGenerating, autoExpandReactions]);
+
+  useEffect(() => {
+    const trace = responseTimingRef.current;
+    if (!trace?.awaitingThinkingRender || !isGenerating) return;
+
+    trace.awaitingThinkingRender = false;
+    window.requestAnimationFrame(() => {
+      const activeTrace = responseTimingRef.current;
+      if (!activeTrace || activeTrace.traceId !== trace.traceId) return;
+      console.info(
+        `[timing][${trace.traceId}] UI render complete (thinking): ${(performance.now() - trace.clickStartedAt).toFixed(1)}ms`,
+      );
+    });
+  }, [isGenerating, generatingAgent]);
+
+  useEffect(() => {
+    const trace = responseTimingRef.current;
+    if (!trace?.awaitingResponseRender || !trace.aiMessageId || !messages.length) return;
+
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.id !== trace.aiMessageId) return;
+
+    trace.awaitingResponseRender = false;
+    window.requestAnimationFrame(() => {
+      const activeTrace = responseTimingRef.current;
+      if (!activeTrace || activeTrace.traceId !== trace.traceId) return;
+      console.info(
+        `[timing][${trace.traceId}] UI render complete (response): ${(performance.now() - trace.clickStartedAt).toFixed(1)}ms`,
+      );
+    });
+  }, [messages]);
 
   const callGemini = async ({ prompt, systemInstruction, model = GEMINI_CHAT_MODEL, jsonMode = false, reactionSchema = false }) => {
     if (!apiKey) throw new Error("API key is missing");
@@ -564,17 +612,27 @@ const App = () => {
     const mid = lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId
       ? lastSubmittedUserMessageRef.current?.messageId : null;
     const messagesAtClick = [...messages];
+    const traceId = `${effectiveSessionId}:${mid || makeId()}:${isMaster ? 'master' : agentId}`;
+
+    console.info(`[timing][${traceId}] agent button click`);
+    responseTimingRef.current = {
+      traceId,
+      clickStartedAt: performance.now(),
+      awaitingThinkingRender: true,
+      awaitingResponseRender: false,
+      aiMessageId: null,
+    };
 
     setIsGenerating(true);
     setGeneratingAgent(agentInfo);
     setShowInput(false);
 
-    scheduleTimeout(() => {
-      handleAiResponse(agentId, isMaster, effectiveSessionId, mid, messagesAtClick);
-    }, 100);
+    window.requestAnimationFrame(() => {
+      handleAiResponse(agentId, isMaster, effectiveSessionId, mid, messagesAtClick, traceId);
+    });
   };
 
-  const handleAiResponse = async (agentId, isMaster, sessionId, sourceMessageId, messagesAtClick) => {
+  const handleAiResponse = async (agentId, isMaster, sessionId, sourceMessageId, messagesAtClick, traceId) => {
     if (!db || !user || !sessionId) return;
     const agent = isMaster
       ? { name: '心の鏡', title: '総括の鏡', prompt: `あなたは「心の鏡」。ここまでの会話を静かに振り返り、相手自身が気づいていないパターンや感情を、押しつけがましくなく短くまとめる。最後に一つだけ、次の一歩を考えるための問いかけをする。` }
@@ -593,30 +651,37 @@ const App = () => {
       baseMessages.push({ id: pending.messageId, role: 'user', content: pending.text, clientCreatedAt: Date.now() });
     }
 
-    const context = baseMessages.slice(-10).map(m =>
-      m.role === 'user'
-        ? `${userName}: ${m.content}`
-        : `${m.agentId === 'master' ? '心の鏡' : (AGENTS.find(a => a.id === m.agentId)?.name || 'AI')}: ${m.content}`
-    ).join('\n');
+    const finishPromptBuild = beginTimedPhase(traceId, 'prompt build');
+    const context = buildPromptContext({
+      messages: baseMessages,
+      userName,
+      agents: AGENTS,
+      maxMessages: 6,
+      maxCharsPerMessage: 180,
+    });
 
     const isJoe = !isMaster && agentId === 'creative';
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
+    let latestUserText = '';
+    let aiMsgId = null;
+    let aiPersistenceState = 'not-created';
 
     let activated = null;
     if (isJoe) {
-      const latestUserText = hasPendingUserInThisSession
+      latestUserText = hasPendingUserInThisSession
         ? pending.text
         : ([...baseMessages].reverse().find(m => m.role === 'user')?.content || '');
       const estimatedState = estimateState(latestUserText);
       activated = activateJoe(estimatedState);
-      systemInstruction = buildJoeSystemPrompt({ activated, context, mode: selectedMode });
+      systemInstruction = buildJoeSystemPrompt({ activated, context, mode: selectedMode, userText: latestUserText });
       promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
       console.log('joe estimatedState', estimatedState);
       console.log('joe activated', activated);
     } else {
       systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
     }
+    finishPromptBuild();
 
     // Apply drift-prevention refresh when the agent has responded many times.
     // Use a short anchor reminder instead of re-inserting large persona blocks
@@ -629,11 +694,21 @@ const App = () => {
     }
 
     try {
-      const response = await callGemini({
-        prompt: promptText,
-        systemInstruction,
-        model: GEMINI_CHAT_MODEL
-      });
+      const clickStartedAt = responseTimingRef.current?.clickStartedAt ?? performance.now();
+      console.info(
+        `[timing][${traceId}] fetch start: ${(performance.now() - clickStartedAt).toFixed(1)}ms from click`,
+      );
+      const finishFetch = beginTimedPhase(traceId, 'fetch');
+      let response = '';
+      try {
+        response = await callGemini({
+          prompt: promptText,
+          systemInstruction,
+          model: GEMINI_CHAT_MODEL
+        });
+      } finally {
+        finishFetch();
+      }
 
       const responseCheck = checkResponse(response);
       if (!responseCheck.ok) {
@@ -645,11 +720,36 @@ const App = () => {
         setIsGenerating(false); setGeneratingAgent(null); return;
       }
 
-      const aiMsgId = makeId();
-      await setDoc(
-        doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
-        { role: 'ai', content: cleanedResponse, agentId: isMaster ? 'master' : agentId, reactions: null, createdAt: serverTimestamp(), clientCreatedAt: Date.now() }
+      aiMsgId = makeId();
+      const optimisticAiMessage = {
+        id: aiMsgId,
+        role: 'ai',
+        content: cleanedResponse,
+        agentId: isMaster ? 'master' : agentId,
+        reactions: null,
+        clientCreatedAt: Date.now(),
+      };
+      const { id: _id, ...optimisticAiMessageForStorage } = optimisticAiMessage;
+
+      responseTimingRef.current = {
+        ...responseTimingRef.current,
+        traceId,
+        aiMessageId: aiMsgId,
+        awaitingResponseRender: true,
+      };
+
+      setMessages(prev => {
+        aiPersistenceState = 'optimistic';
+        return [...prev, optimisticAiMessage];
+      });
+
+      await measureFirestoreWrite(traceId, 'AI response save', () =>
+        setDoc(
+          doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
+          { ...optimisticAiMessageForStorage, createdAt: serverTimestamp() }
+        )
       );
+      aiPersistenceState = 'persisted';
 
       playSound('receive');
       setIsGenerating(false);
@@ -657,40 +757,38 @@ const App = () => {
 
       if (!isMaster && sourceMessageId && pending?.text) {
         setAutoExpandReactions({ msgId: aiMsgId, isLoading: true });
-        await preloadReactions(pending.text, sessionId, sourceMessageId, agentId, cleanedResponse);
-
-        const checkPreload = async (attempts = 0) => {
+        void preloadReactions(pending.text, sessionId, sourceMessageId, agentId, cleanedResponse).then(async () => {
           if (currentSessionIdRef.current !== sessionId) { setAutoExpandReactions(null); return; }
           const cached = preloadedReactionsRef.current.get(sourceMessageId);
 
-          if (cached && cached.sessionId === sessionId && Object.keys(cached.data).length > 0) {
-            try {
-              await updateDoc(
-                doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
-                { reactions: cached.data }
-              );
-              if (currentSessionIdRef.current === sessionId) {
-                setAutoExpandReactions({ msgId: aiMsgId, isLoading: false });
-              }
-              preloadedReactionsRef.current.delete(sourceMessageId);
-              return;
-            } catch (e) {
-              console.error("Failed to save reactions:", e);
-              setAutoExpandReactions(null);
-              return;
-            }
+          if (!cached || cached.sessionId !== sessionId || Object.keys(cached.data).length === 0) {
+            setAutoExpandReactions(null);
+            return;
           }
 
-          if (attempts < 6) {
-            scheduleTimeout(() => checkPreload(attempts + 1), 500);
-          } else {
+          try {
+            await measureFirestoreWrite(traceId, 'reaction save', () =>
+              updateDoc(
+                doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
+                { reactions: cached.data }
+              )
+            );
+            if (currentSessionIdRef.current === sessionId) {
+              setAutoExpandReactions({ msgId: aiMsgId, isLoading: false });
+            }
+            preloadedReactionsRef.current.delete(sourceMessageId);
+          } catch (e) {
+            console.error("Failed to save reactions:", e);
             setAutoExpandReactions(null);
           }
-        };
-        checkPreload();
+        });
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      // Firestore 保存前にだけ optimistic message を巻き戻す。
+      if (aiMsgId && aiPersistenceState === 'optimistic') {
+        setMessages(prev => prev.filter(message => message.id !== aiMsgId));
+      }
       if (msg.includes("API key is missing")) {
         setErrorMessage("Gemini APIキーが未設定です。");
       } else if (msg.includes("response_check:empty") || msg.includes("Empty response")) {
