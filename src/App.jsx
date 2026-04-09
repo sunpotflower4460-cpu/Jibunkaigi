@@ -30,6 +30,10 @@ import { estimateState } from './runtime/stateEstimate';
 import { activateJoe } from './runtime/activate';
 import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt';
 import { buildPromptContext } from './runtime/context';
+import { checkResponse, cleanResponse } from './runtime/postCheck';
+import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
+import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
+import { pickRandomAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -458,41 +462,23 @@ const App = () => {
 
   const preloadReactions = async (userText, sessionId, sourceMessageId, respondingAgentId, aiResponseText) => {
     const respondingAgent = AGENTS.find(a => a.id === respondingAgentId);
+    if (!respondingAgent) return;
     const otherAgents = AGENTS.filter(a => a.id !== respondingAgentId);
-    const agentDescriptions = otherAgents.map(a =>
-      `${a.name}(${a.role}): 信念→${a.belief}`
-    ).join('\n');
 
-    const sys = `あなたはリアクション生成器。JSONのみ出力。
-【状況】${respondingAgent?.name}がクライアントに返答した。他の${otherAgents.length}人がその返答を聞いた直後の本音を生成せよ。
-【各エージェントの信念と役割】
-${agentDescriptions}
-【ルール】
-- stance: 各自の信念に基づき "賛成" "反対" "どちらでもない" のいずれか
-- posture: 動作5文字以内
-- comment: その立場からの本音15-20文字（必ずそのキャラの口調・言葉遣いで）
-- ${respondingAgent?.name}のキーは出力しない
-- 大げさな表現禁止、自然な反応で`;
+    const sys = buildReactionSystemPrompt(respondingAgent, otherAgents);
+    const prompt = buildReactionUserPrompt(userText, respondingAgent.name, aiResponseText);
 
     try {
       const res = await callGemini({
-        prompt: `【クライアントの発言】「${userText.slice(0, 100)}」\n【${respondingAgent?.name}の返答】「${aiResponseText?.slice(0, 150) ?? ''}」`,
+        prompt,
         systemInstruction: sys,
         model: GEMINI_REACTIONS_MODEL,
         reactionSchema: true
       });
       const parsed = safeParseJson(res);
       if (!parsed) return;
-      const validData = {};
-      for (const [key, val] of Object.entries(parsed)) {
-        if (val && typeof val.posture === 'string' && typeof val.comment === 'string') {
-          validData[key] = {
-            stance: ['賛成', '反対', 'どちらでもない'].includes(val.stance) ? val.stance : 'どちらでもない',
-            posture: val.posture.slice(0, 5),
-            comment: val.comment.slice(0, 40)
-          };
-        }
-      }
+      const validData = sanitizeReactionData(parsed);
+      if (Object.keys(validData).length === 0) return;
       preloadedReactionsRef.current.set(sourceMessageId, { sessionId, sourceMessageId, data: validData });
     } catch (e) { console.warn("Preload fail", e); }
   };
@@ -526,8 +512,9 @@ ${agentDescriptions}
 
   const handleRandomResponse = () => {
     if (AGENTS.length > 0) {
-      const randomAgent = AGENTS[Math.floor(Math.random() * AGENTS.length)];
-      handleAgentClick(randomAgent.id);
+      const lastAgentId = getLastRespondingAgentId(messages);
+      const agentId = pickRandomAgent(AGENTS, lastAgentId);
+      handleAgentClick(agentId);
     }
   };
 
@@ -680,12 +667,13 @@ ${agentDescriptions}
     let aiMsgId = null;
     let aiPersistenceState = 'not-created';
 
+    let activated = null;
     if (isJoe) {
       latestUserText = hasPendingUserInThisSession
         ? pending.text
         : ([...baseMessages].reverse().find(m => m.role === 'user')?.content || '');
       const estimatedState = estimateState(latestUserText);
-      const activated = activateJoe(estimatedState);
+      activated = activateJoe(estimatedState);
       systemInstruction = buildJoeSystemPrompt({ activated, context, mode: selectedMode, userText: latestUserText });
       promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
       console.log('joe estimatedState', estimatedState);
@@ -694,6 +682,16 @@ ${agentDescriptions}
       systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
     }
     finishPromptBuild();
+
+    // Apply drift-prevention refresh when the agent has responded many times.
+    // Use a short anchor reminder instead of re-inserting large persona blocks
+    // that are already included in systemInstruction.
+    if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
+      const refreshText = isJoe
+        ? '上記のJoe設定・活性状態・口調を維持し、一貫した応答を続けてください。'
+        : `あなたは${agent.name}として、上記の設定と制約を守って応答してください。`;
+      systemInstruction = applyRefresh(systemInstruction, refreshText);
+    }
 
     try {
       const clickStartedAt = responseTimingRef.current?.clickStartedAt ?? performance.now();
@@ -712,6 +710,12 @@ ${agentDescriptions}
         finishFetch();
       }
 
+      const responseCheck = checkResponse(response);
+      if (!responseCheck.ok) {
+        throw new Error(`response_check:${responseCheck.reason}`);
+      }
+      const cleanedResponse = cleanResponse(response);
+
       if (currentSessionIdRef.current !== sessionId) {
         setIsGenerating(false); setGeneratingAgent(null); return;
       }
@@ -720,7 +724,7 @@ ${agentDescriptions}
       const optimisticAiMessage = {
         id: aiMsgId,
         role: 'ai',
-        content: response,
+        content: cleanedResponse,
         agentId: isMaster ? 'master' : agentId,
         reactions: null,
         clientCreatedAt: Date.now(),
@@ -753,7 +757,7 @@ ${agentDescriptions}
 
       if (!isMaster && sourceMessageId && pending?.text) {
         setAutoExpandReactions({ msgId: aiMsgId, isLoading: true });
-        void preloadReactions(pending.text, sessionId, sourceMessageId, agentId, response).then(async () => {
+        void preloadReactions(pending.text, sessionId, sourceMessageId, agentId, cleanedResponse).then(async () => {
           if (currentSessionIdRef.current !== sessionId) { setAutoExpandReactions(null); return; }
           const cached = preloadedReactionsRef.current.get(sourceMessageId);
 
@@ -787,8 +791,10 @@ ${agentDescriptions}
       }
       if (msg.includes("API key is missing")) {
         setErrorMessage("Gemini APIキーが未設定です。");
-      } else if (msg.includes("Empty response")) {
-        setErrorMessage("AIの応答が空でした。");
+      } else if (msg.includes("response_check:empty") || msg.includes("Empty response")) {
+        setErrorMessage("AIの応答が空でした。もう一度お試しください。");
+      } else if (msg.includes("response_check:json_leak")) {
+        setErrorMessage("AIの応答が不正な形式でした（JSONが返されました）。もう一度お試しください。");
       } else {
         setErrorMessage("AIとの通信に失敗しました。");
       }
