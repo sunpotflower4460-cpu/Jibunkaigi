@@ -3,12 +3,12 @@
 // ジョーの belief / memory / field / residue のうち
 // 今回「前に出るもの」だけを選ぶ。
 
-import { getJoeReentry } from '../agents/joe/reentry';
-import { JOE_REFRESH } from '../agents/joe/refresh';
-import { JOE_FIELD_NODES } from '../agents/joe/field';
-import { buildJoeResidue } from '../agents/joe/residue';
-import { beliefFilters } from '../agents/joe/beliefFilters';
-import { memoryStore } from '../agents/joe/memoryStore';
+import { getJoeReentry } from '../agents/joe/reentry.js';
+import { JOE_REFRESH } from '../agents/joe/refresh.js';
+import { JOE_FIELD_NODES } from '../agents/joe/field.js';
+import { buildJoeResidue } from '../agents/joe/residue.js';
+import { beliefFilters } from '../agents/joe/beliefFilters.js';
+import { memoryStore } from '../agents/joe/memoryStore.js';
 
 // --- util ---
 

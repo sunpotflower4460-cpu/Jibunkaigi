@@ -2,7 +2,7 @@
 // 役割：ジョー用の system prompt / user prompt を組み立てる。
 // 内部素材は「内的バイアス」として扱い、表の返答にそのまま出さない。
 
-import { existence } from '../agents/joe/existence';
+import { existence } from '../agents/joe/existence.js';
 
 const MODE_GUIDE = {
   short: '短くていい。一言でも、触れていれば十分。',
@@ -61,6 +61,7 @@ const renderRefresh = (refresh = '') => {
 
 const renderStateSnapshot = (state = {}) => {
   const entries = Object.entries(state)
+    // スナップショットは「今、前に出ている軸」だけを見る。0以下の値は表示しない。
     .filter(([, value]) => typeof value === 'number' && value > 0)
     .sort((a, b) => b[1] - a[1]);
 
@@ -216,5 +217,5 @@ ${userText}
 
 この言葉のいちばん重い一点にだけ触れてください。
 表面を要約しないでください。前向きにしようと急がず、まず接触してください。
-自然な口語日本語で返してください。内部メモの語をそのまま使わず、この入力に触れた感じを出してください。`;
+自然な口語日本語で返してください。この入力にちゃんと触れた感じを出してください。`;
 };
