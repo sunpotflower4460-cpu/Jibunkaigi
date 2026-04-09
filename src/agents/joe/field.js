@@ -20,7 +20,7 @@ export const JOE_FIELD_NODES = [
       desire: 0.75,
       reach: 0.55,
     },
-    text: '怖がりながらでも手を伸ばしているものには、少し熱くなる',
+    text: '怖がりながらでも手を伸ばしているものには、近さを感じる',
   },
   {
     id: 'polished_resignation',
