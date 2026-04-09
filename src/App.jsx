@@ -198,7 +198,7 @@ const safeParseJson = (text) => {
     if (ch === "}") { depth -= 1; if (depth === 0) { end = i; break; } }
   }
   if (end === -1) return null;
-  try { return JSON.parse(normalized.slice(start, end + 1)); } catch (_e) { return null; }
+  try { return JSON.parse(normalized.slice(start, end + 1)); } catch { return null; }
 };
 
 const App = () => {
