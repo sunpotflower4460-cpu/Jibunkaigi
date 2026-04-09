@@ -625,7 +625,7 @@ ${agentDescriptions}
     const mid = lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId
       ? lastSubmittedUserMessageRef.current?.messageId : null;
     const messagesAtClick = [...messages];
-    const traceId = `${effectiveSessionId}:${mid || Date.now()}:${isMaster ? 'master' : agentId}`;
+    const traceId = `${effectiveSessionId}:${mid || makeId()}:${isMaster ? 'master' : agentId}`;
 
     console.info(`[timing][${traceId}] agent button click`);
     responseTimingRef.current = {
@@ -677,6 +677,8 @@ ${agentDescriptions}
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
     let latestUserText = '';
+    let aiMsgId = null;
+    let aiPersistenceState = 'not-created';
 
     if (isJoe) {
       latestUserText = hasPendingUserInThisSession
@@ -714,7 +716,7 @@ ${agentDescriptions}
         setIsGenerating(false); setGeneratingAgent(null); return;
       }
 
-      const aiMsgId = makeId();
+      aiMsgId = makeId();
       const optimisticAiMessage = {
         id: aiMsgId,
         role: 'ai',
@@ -732,7 +734,7 @@ ${agentDescriptions}
       };
 
       setMessages(prev => {
-        if (prev.some(message => message.id === aiMsgId)) return prev;
+        aiPersistenceState = 'optimistic';
         return [...prev, optimisticAiMessage];
       });
 
@@ -742,6 +744,7 @@ ${agentDescriptions}
           { ...optimisticAiMessage, createdAt: serverTimestamp() }
         )
       );
+      aiPersistenceState = 'persisted';
 
       playSound('receive');
       setIsGenerating(false);
@@ -777,9 +780,9 @@ ${agentDescriptions}
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      const failedAiMessageId = responseTimingRef.current?.aiMessageId;
-      if (failedAiMessageId) {
-        setMessages(prev => prev.filter(message => message.id !== failedAiMessageId));
+      // Firestore 保存前にだけ optimistic message を巻き戻す。
+      if (aiMsgId && aiPersistenceState === 'optimistic') {
+        setMessages(prev => prev.filter(message => message.id !== aiMsgId));
       }
       if (msg.includes("API key is missing")) {
         setErrorMessage("Gemini APIキーが未設定です。");

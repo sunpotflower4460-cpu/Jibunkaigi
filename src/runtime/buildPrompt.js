@@ -13,6 +13,10 @@ const MODE_GUIDE = {
 
 const MAX_JOE_CONTEXT_MESSAGES = 6;
 const MAX_JOE_CONTEXT_CHARS = 180;
+// キーワード一致は「今回の入力との近さ」を少し押し上げるだけに留める。
+const PATTERN_MATCH_BONUS_SCORE = 0.12;
+// 3番手がここを超える時だけ 3 素材まで広げ、通常は 1〜2 素材に抑える。
+const THIRD_BIAS_SCORE_THRESHOLD = 0.32;
 
 const normalizeContext = (context) => {
   if (!context) return '';
@@ -73,7 +77,7 @@ const hasContent = (value) => {
 
 const scoreTextBonus = (userText = '', patterns = []) => {
   const normalized = String(userText ?? '').toLowerCase();
-  return patterns.reduce((total, pattern) => total + (pattern.test(normalized) ? 0.12 : 0), 0);
+  return patterns.reduce((total, pattern) => total + (pattern.test(normalized) ? PATTERN_MATCH_BONUS_SCORE : 0), 0);
 };
 
 export const scoreJoeMaterials = ({
@@ -82,6 +86,8 @@ export const scoreJoeMaterials = ({
   state = activated?.debug?.state || {},
 }) => {
   const safeActivated = activated || {};
+  // score は「今回の状態との近さ」を優先し、problem statement の例示
+  // （resignation -> refresh/residue/existence など）に沿うように重み付けしている。
   const materials = [
     {
       id: 'existence',
@@ -183,7 +189,7 @@ export const selectRelevantInternalBias = ({
 
   const selected = [];
   const groupCounts = new Map();
-  const maxItems = scored[2]?.score >= 0.32 ? 3 : 2;
+  const maxSelectedMaterials = scored.length > 2 && scored[2].score >= THIRD_BIAS_SCORE_THRESHOLD ? 3 : 2;
 
   for (const material of scored) {
     const currentGroupCount = groupCounts.get(material.group) || 0;
@@ -195,9 +201,10 @@ export const selectRelevantInternalBias = ({
       groupCounts.set(material.group, currentGroupCount + 1);
     }
 
-    if (selected.length >= maxItems) break;
+    if (selected.length >= maxSelectedMaterials) break;
   }
 
+  // 何も選べない時でも、最上位 1 素材だけは残してジョーの軸を失わないようにする。
   return selected.length ? selected : scored.slice(0, 1);
 };
 
