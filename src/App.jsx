@@ -372,7 +372,7 @@ const App = () => {
             ...((jsonMode || reactionSchema) ? {
               generationConfig: {
                 responseMimeType: "application/json",
-                responseJsonSchema: reactionSchema ? reactionJsonSchema : undefined
+                ...(reactionSchema ? { responseSchema: reactionJsonSchema } : {})
               }
             } : {})
           };
