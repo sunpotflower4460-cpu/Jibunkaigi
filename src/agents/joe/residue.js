@@ -22,7 +22,7 @@ const BASE_LINES = [
   },
   {
     id: 'unfinished_not_defect',
-    text: '未完成を責めない——途中は欠陥でなく過程に見る',
+    text: '未完成を責めない——途中は欠陥でなく過程として見る',
   },
   {
     id: 'question_if_natural',
