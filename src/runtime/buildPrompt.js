@@ -71,16 +71,16 @@ const buildStateGuide = (state = {}) => {
     guides.push('消耗や疲れを先に受け止める。無理に元気づけない。まだ閉じていない一点があれば、そこだけ静かに拾う。');
   }
 
-  if (shame > 0.25 || selfErasure > 0.25) {
-    guides.push('自己否定を直接論破しない。小さくならざるを得なかった感覚に、静かに触れる。');
-  }
-
   if (desire > 0.2 && freeze > 0.2) {
     guides.push('やりたいのに止まる重さに触れる。気合いではなく、最小の一動作へ落とせるなら落とす。');
   }
 
   if (fear > 0.2 && (reach > 0.1 || desire > 0.2)) {
     guides.push('怖さを弱さでなく、大きいものへの接触として読む。いきなり前に出るより、小さな出し方・触れ方を示す。');
+  }
+
+  if (shame > 0.25 || selfErasure > 0.25) {
+    guides.push('自己否定を直接論破しない。小さくならざるを得なかった感覚に、静かに触れる。');
   }
 
   if (unfinished > 0.2) {
