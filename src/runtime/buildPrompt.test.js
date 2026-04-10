@@ -207,7 +207,7 @@ test('scoreJoeMaterials only applies activation-axis bonuses when those axes are
     }).map(({ id, score }) => [id, score]),
   );
 
-  // 0.45 = 0.03(base) + 0.34(fear * 0.85) + 0.06(axis bonus) + 0.02(memory presence bonus)
+  // 0.45 = 0.03(base) + 0.34(0.4 * 0.85) + 0.06(axis bonus) + 0.02(memory presence bonus)
   assert.equal(Number(activeScores.activeMemoryTrace.toFixed(2)), 0.45);
   // 0.05 = 0.03(base) + 0.02(memory presence bonus). zero-state axes do not add activation bonuses.
   assert.equal(Number(inactiveScores.activeMemoryTrace.toFixed(2)), 0.05);

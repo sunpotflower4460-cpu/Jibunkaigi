@@ -83,6 +83,8 @@ const scoreTextBonus = (userText = '', patterns = []) => {
   return patterns.reduce((total, pattern) => total + (pattern.test(normalized) ? PATTERN_MATCH_BONUS_SCORE : 0), 0);
 };
 
+// activateJoe が拾った優勢軸を、実際に state 上でも立っている場合だけ薄く加点する。
+// presence bonus は、memory / field / residue のように「今回すでに活性化している素材」がある時の微調整用。
 const scoreActivationBonus = (activated = {}, state = {}, axisWeights = {}, materialPresenceBonus = 0) => {
   const dominantAxes = activated?.debug?.dominantAxes || [];
   const axisBonus = dominantAxes.reduce(
