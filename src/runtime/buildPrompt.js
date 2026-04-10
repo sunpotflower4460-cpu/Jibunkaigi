@@ -238,7 +238,7 @@ export const selectRelevantInternalBias = ({
   if (!scored.length) return [];
 
   // 最上位だけは保険枠として残す。全部ゼロにするとジョーの触れ方が薄くなりやすいため、
-  // 低 signal 入力でも「もっとも近い 1 素材」だけは参照可能にしておく。
+  // 低シグナル入力でも「もっとも近い 1 素材」だけは参照可能にしておく。
   const eligible = scored.filter((material, index) => index === 0 || material.score >= MIN_SELECTED_BIAS_SCORE);
   const selected = [];
   const groupCounts = new Map();

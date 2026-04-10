@@ -9,6 +9,7 @@ import {
   buildJoeBiasPack,
   buildJoeSystemPrompt,
   buildJoeUserPrompt,
+  scoreJoeMaterials,
 } from './buildPrompt.js';
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -110,7 +111,7 @@ test('buildJoe prompts keep resignation guidance and user wording focused on nat
   assert.match(userPrompt, /この入力にちゃんと触れた感じを出してください。/);
 });
 
-test('buildJoeBiasPack keeps the required Joe scenarios focused to two injected materials', () => {
+test('buildJoeBiasPack keeps the required Joe scenarios focused to the expected two injected materials', () => {
   const scenarios = [
     {
       text: 'もう無理で諦めたい',
@@ -144,7 +145,6 @@ test('buildJoeBiasPack keeps the required Joe scenarios focused to two injected 
 
     assert.deepEqual(pack.map((item) => item.id), expectedIds);
     assert.equal(pack.length, expectedIds.length);
-    assert.ok(pack.length <= 3);
 
     for (const title of expectedTitles) {
       assert.match(prompt, new RegExp(`\\[${escapeRegExp(title)}\\]`));
@@ -176,4 +176,37 @@ test('buildJoeBiasPack drops low-relevance materials unless a third one is clear
     ['existence', 'activeResidue', 'refresh'],
   );
   assert.equal(highComplexityPack.length, 3);
+});
+
+test('scoreJoeMaterials only applies activation-axis bonuses when those axes are actually active', () => {
+  const activated = {
+    reentry: 'reentry',
+    refresh: 'refresh',
+    activeMemoryTrace: 'trace',
+    activeField: [{ text: 'node' }],
+    activeResidue: 'residue',
+    debug: {
+      dominantAxes: ['fear', 'freeze', 'reach'],
+      pickedMemoryIds: ['memory-1'],
+      pickedFieldIds: ['field-1'],
+    },
+  };
+
+  const activeScores = Object.fromEntries(
+    scoreJoeMaterials({
+      activated,
+      userText: '',
+      state: { fear: 0.4, freeze: 0, reach: 0 },
+    }).map(({ id, score }) => [id, score]),
+  );
+  const inactiveScores = Object.fromEntries(
+    scoreJoeMaterials({
+      activated,
+      userText: '',
+      state: { fear: 0, freeze: 0, reach: 0 },
+    }).map(({ id, score }) => [id, score]),
+  );
+
+  assert.equal(Number(activeScores.activeMemoryTrace.toFixed(2)), 0.45);
+  assert.equal(Number(inactiveScores.activeMemoryTrace.toFixed(2)), 0.05);
 });
