@@ -729,7 +729,7 @@ const App = () => {
         reactions: null,
         clientCreatedAt: Date.now(),
       };
-      const { id: _id, ...optimisticAiMessageForStorage } = optimisticAiMessage;
+      const { id: _optimisticAiMessageId, ...optimisticAiMessageForStorage } = optimisticAiMessage;
 
       responseTimingRef.current = {
         ...responseTimingRef.current,
