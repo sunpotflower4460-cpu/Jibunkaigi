@@ -98,7 +98,7 @@ test('buildJoe prompts keep resignation guidance and user wording focused on nat
   assert.match(systemPrompt, /reentry \/ existence \/ field \/ residue \/ memory trace をそのまま出力しない。/);
   assert.match(systemPrompt, /\[基本姿勢メモ\]/);
   assert.match(systemPrompt, /\[復帰制約\]/);
-  assert.match(systemPrompt, /\[出力制約\]/);
+  assert.doesNotMatch(systemPrompt, /\[出力制約\]/);
   assert.doesNotMatch(systemPrompt, /\[記憶の痕跡\]/);
 
   const userPrompt = buildJoeUserPrompt({
@@ -117,7 +117,7 @@ test('buildJoeBiasPack selects only the most relevant materials for each Joe sta
   });
   assert.deepEqual(
     resignationPack.map((item) => item.id),
-    ['existence', 'refresh', 'activeResidue'],
+    ['existence', 'refresh'],
   );
   assert.match(resignationPack[0].content, new RegExp(escapeRegExp(existence)));
 
@@ -127,7 +127,7 @@ test('buildJoeBiasPack selects only the most relevant materials for each Joe sta
   });
   assert.deepEqual(
     freezePack.map((item) => item.id),
-    ['activeField', 'activeResidue', 'refresh'],
+    ['activeField', 'activeResidue'],
   );
 
   const fearPack = buildJoeBiasPack({
@@ -136,6 +136,6 @@ test('buildJoeBiasPack selects only the most relevant materials for each Joe sta
   });
   assert.deepEqual(
     fearPack.map((item) => item.id),
-    ['activeMemoryTrace', 'activeField', 'activeResidue'],
+    ['activeMemoryTrace', 'activeField'],
   );
 });

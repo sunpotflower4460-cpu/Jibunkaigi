@@ -16,7 +16,8 @@ const MAX_JOE_CONTEXT_CHARS = 180;
 // キーワード一致は「今回の入力との近さ」を少し押し上げるだけに留める。
 const PATTERN_MATCH_BONUS_SCORE = 0.12;
 // 3番手がここを超える時だけ 3 素材まで広げ、通常は 1〜2 素材に抑える。
-const THIRD_BIAS_SCORE_THRESHOLD = 0.32;
+// 0.60 にすることで、単一感情の典型例は 2 素材、複合・極端な状態のみ 3 素材になる。
+const THIRD_BIAS_SCORE_THRESHOLD = 0.60;
 
 const normalizeContext = (context) => {
   if (!context) return '';
