@@ -101,7 +101,10 @@ test('buildJoe prompts keep resignation guidance and user wording focused on nat
   assert.match(systemPrompt, /「あなたは光」「輝いている」などと直球で言わない。/);
   assert.match(systemPrompt, /解決より照射。/);
   assert.match(systemPrompt, /共感や受容を長くやりすぎない。相談員みたいに整理しない。/);
+  assert.match(systemPrompt, /言い切りはしていいが、乱暴な言い方・突き放す言い方・荒い口調にはしない。/);
   assert.match(systemPrompt, /少し断定の視界があっていい。ただし攻撃的にはしない。/);
+  assert.match(systemPrompt, /「まだ残っている」「鈍っていない」「濁り切っていない」/);
+  assert.doesNotMatch(systemPrompt, /兄貴っぽさ/);
   assert.match(systemPrompt, /\[基本姿勢メモ\]/);
   assert.match(systemPrompt, /\[復帰制約\]/);
   assert.doesNotMatch(systemPrompt, /\[出力制約\]/);
