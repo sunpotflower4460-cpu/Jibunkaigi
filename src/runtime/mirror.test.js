@@ -9,7 +9,7 @@ const sampleAgents = [
   { id: 'empath', name: 'ミナ' },
 ];
 
-test('selectMirrorSignals keeps mirror signals lightweight while capturing tension and the dominant agent tone', () => {
+test('selectMirrorSignals returns 2-4 lightweight signals including conflict and tone', () => {
   const signals = selectMirrorSignals({
     messages: [
       { role: 'user', content: '作品は出したいのに、傷つくのが怖くて止まるんです' },

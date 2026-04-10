@@ -26,8 +26,8 @@ const EMOTION_PATTERN_MAP = Object.fromEntries(
 const scorePatterns = (text, patterns = []) =>
   patterns.reduce((total, pattern) => total + (pattern.test(text) ? 1 : 0), 0);
 
-const countMessagesWithPatterns = (messages, patterns = []) =>
-  messages.filter((message) => scorePatterns(message, patterns) > 0).length;
+const countTextsWithPatterns = (texts, patterns = []) =>
+  texts.filter((text) => scorePatterns(String(text || ''), patterns) > 0).length;
 
 const findTopEmotion = (text) => {
   const ranked = EMOTION_PATTERNS
@@ -159,8 +159,8 @@ const describeRepeatedPattern = (userMessages = []) => {
   if (!userMessages.length) return null;
 
   if (
-    countMessagesWithPatterns(userMessages, EMOTION_PATTERN_MAP.desire) > 1 &&
-    countMessagesWithPatterns(userMessages, EMOTION_PATTERN_MAP.fear) > 0
+    countTextsWithPatterns(userMessages, EMOTION_PATTERN_MAP.desire) > 1 &&
+    countTextsWithPatterns(userMessages, EMOTION_PATTERN_MAP.fear) > 0
   ) {
     return {
       key: 'repeated_pattern',
@@ -169,7 +169,7 @@ const describeRepeatedPattern = (userMessages = []) => {
     };
   }
 
-  if (countMessagesWithPatterns(userMessages, EMOTION_PATTERN_MAP.confusion) > 1) {
+  if (countTextsWithPatterns(userMessages, EMOTION_PATTERN_MAP.confusion) > 1) {
     return {
       key: 'repeated_pattern',
       label: '繰り返し出た流れ',
@@ -177,7 +177,7 @@ const describeRepeatedPattern = (userMessages = []) => {
     };
   }
 
-  if (countMessagesWithPatterns(userMessages, EMOTION_PATTERN_MAP.fatigue) > 1) {
+  if (countTextsWithPatterns(userMessages, EMOTION_PATTERN_MAP.fatigue) > 1) {
     return {
       key: 'repeated_pattern',
       label: '繰り返し出た流れ',
@@ -241,8 +241,10 @@ export const selectMirrorSignals = ({
   ].filter(Boolean);
 
   const uniqueSignals = [];
+  const seenKeys = new Set();
   for (const signal of candidates) {
-    if (uniqueSignals.some((item) => item.key === signal.key)) continue;
+    if (seenKeys.has(signal.key)) continue;
+    seenKeys.add(signal.key);
     uniqueSignals.push(signal);
     if (uniqueSignals.length >= MAX_MIRROR_SIGNALS) break;
   }
