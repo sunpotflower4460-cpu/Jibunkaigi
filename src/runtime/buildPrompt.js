@@ -213,10 +213,12 @@ export const buildJoeBiasPack = ({
   userText = '',
   state = activated?.debug?.state || {},
 }) => {
-  return selectRelevantInternalBias({ activated, userText, state }).map(({ id, title, content, score }) => ({
+  return selectRelevantInternalBias({ activated, userText, state }).map(({ id, title, content, group, score }) => ({
     id,
     title,
     content,
+    // group は selectedBiasTypes として debug に使える。表の返答には出さない。
+    group,
     score,
   }));
 };
