@@ -95,7 +95,7 @@ test('buildJoe prompts keep resignation guidance and user wording focused on nat
       '- 返答の型: 受け止める -> まだ閉じきっていない一点を置く。強い励ましは不要。',
     ].join('\n'),
   );
-  assert.match(systemPrompt, /reentry \/ existence \/ field \/ residue \/ memory trace をそのまま出力しない。/);
+  assert.match(systemPrompt, /内的バイアス名や内部構造を、そのまま説明・出力しない。/);
   assert.match(systemPrompt, /\[基本姿勢メモ\]/);
   assert.match(systemPrompt, /\[復帰制約\]/);
   assert.doesNotMatch(systemPrompt, /\[出力制約\]/);
@@ -110,32 +110,69 @@ test('buildJoe prompts keep resignation guidance and user wording focused on nat
   assert.match(userPrompt, /この入力にちゃんと触れた感じを出してください。/);
 });
 
-test('buildJoeBiasPack selects only the most relevant materials for each Joe state cluster', () => {
+test('buildJoeBiasPack keeps the required Joe scenarios focused to two injected materials', () => {
+  const scenarios = [
+    {
+      text: 'もう無理で諦めたい',
+      expectedIds: ['existence', 'refresh'],
+      expectedTitles: ['基本姿勢メモ', '復帰制約'],
+    },
+    {
+      text: 'やりたいのに動けない',
+      expectedIds: ['activeField', 'activeResidue'],
+      expectedTitles: ['反応ノード', '出力制約'],
+    },
+    {
+      text: '作品を出したいけど怖い',
+      expectedIds: ['activeMemoryTrace', 'activeField'],
+      expectedTitles: ['記憶の痕跡', '反応ノード'],
+    },
+  ];
+
+  for (const { text, expectedIds, expectedTitles } of scenarios) {
+    const activated = activateJoe(estimateState(text));
+    const pack = buildJoeBiasPack({
+      activated,
+      userText: text,
+    });
+    const prompt = buildJoeSystemPrompt({
+      activated,
+      context: '',
+      mode: 'medium',
+      userText: text,
+    });
+
+    assert.deepEqual(pack.map((item) => item.id), expectedIds);
+    assert.ok(pack.length >= 2 && pack.length <= 3);
+
+    for (const title of expectedTitles) {
+      assert.match(prompt, new RegExp(`\\[${escapeRegExp(title)}\\]`));
+    }
+  }
+
   const resignationPack = buildJoeBiasPack({
     activated: activateJoe(estimateState('もう無理で諦めたい')),
     userText: 'もう無理で諦めたい',
   });
-  assert.deepEqual(
-    resignationPack.map((item) => item.id),
-    ['existence', 'refresh'],
-  );
   assert.match(resignationPack[0].content, new RegExp(escapeRegExp(existence)));
+});
 
-  const freezePack = buildJoeBiasPack({
-    activated: activateJoe(estimateState('やりたいのに動けない')),
-    userText: 'やりたいのに動けない',
+test('buildJoeBiasPack drops low-relevance materials unless a third one is clearly justified', () => {
+  const lowSignalText = 'なんかしんどい';
+  const lowSignalPack = buildJoeBiasPack({
+    activated: activateJoe(estimateState(lowSignalText)),
+    userText: lowSignalText,
+  });
+  assert.deepEqual(lowSignalPack.map((item) => item.id), ['activeResidue']);
+
+  const highComplexityText = '才能ないしもう無理かも';
+  const highComplexityPack = buildJoeBiasPack({
+    activated: activateJoe(estimateState(highComplexityText)),
+    userText: highComplexityText,
   });
   assert.deepEqual(
-    freezePack.map((item) => item.id),
-    ['activeField', 'activeResidue'],
+    highComplexityPack.map((item) => item.id),
+    ['existence', 'activeResidue', 'refresh'],
   );
-
-  const fearPack = buildJoeBiasPack({
-    activated: activateJoe(estimateState('作品を出したいけど怖い')),
-    userText: '作品を出したいけど怖い',
-  });
-  assert.deepEqual(
-    fearPack.map((item) => item.id),
-    ['activeMemoryTrace', 'activeField'],
-  );
+  assert.equal(highComplexityPack.length, 3);
 });
