@@ -239,7 +239,8 @@ export const selectRelevantInternalBias = ({
   const scored = scoreJoeMaterials({ activated, userText, state });
   if (!scored.length) return [];
 
-  // 最上位だけは保険枠として残す。全部ゼロにするとジョーの触れ方が薄くなりやすいため、
+  // scored.length > 0 は上で保証済み。最上位だけは保険枠として残す。
+  // 全部ゼロにするとジョーの触れ方が薄くなりやすいため、
   // 低シグナル入力でも「もっとも近い 1 素材」だけは参照可能にしておく。
   const eligible = scored.filter((material, index) => index === 0 || material.score >= MIN_SELECTED_BIAS_SCORE);
   const selected = [];
