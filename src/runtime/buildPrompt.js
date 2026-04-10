@@ -15,9 +15,11 @@ const MAX_JOE_CONTEXT_MESSAGES = 6;
 const MAX_JOE_CONTEXT_CHARS = 180;
 // キーワード一致は「今回の入力との近さ」を少し押し上げるだけに留める。
 const PATTERN_MATCH_BONUS_SCORE = 0.12;
+// relevance がこれを下回る素材は、最上位の保険枠を除いて注入しない。
+const MIN_SELECTED_BIAS_SCORE = 0.24;
 // 3番手がここを超える時だけ 3 素材まで広げ、通常は 1〜2 素材に抑える。
-// 0.60 にすることで、単一感情の典型例は 2 素材、複合・極端な状態のみ 3 素材になる。
-const THIRD_BIAS_SCORE_THRESHOLD = 0.60;
+// 0.65 にすることで、単一感情の典型例は 2 素材、複合・極端な状態のみ 3 素材になる。
+const THIRD_BIAS_SCORE_THRESHOLD = 0.65;
 
 const normalizeContext = (context) => {
   if (!context) return '';
@@ -81,6 +83,17 @@ const scoreTextBonus = (userText = '', patterns = []) => {
   return patterns.reduce((total, pattern) => total + (pattern.test(normalized) ? PATTERN_MATCH_BONUS_SCORE : 0), 0);
 };
 
+// activateJoe が拾った優勢軸を、実際に state 上でも立っている場合だけ薄く加点する。
+// presence bonus は、memory / field / residue のように「今回すでに活性化している素材」がある時の微調整用。
+const scoreActivationBonus = (activated = {}, state = {}, axisWeights = {}, materialPresenceBonus = 0) => {
+  const dominantAxes = activated?.debug?.dominantAxes || [];
+  const axisBonus = dominantAxes.reduce(
+    (total, axis) => total + ((state[axis] ?? 0) > 0 ? (axisWeights[axis] || 0) : 0),
+    0,
+  );
+  return axisBonus + materialPresenceBonus;
+};
+
 export const scoreJoeMaterials = ({
   activated,
   userText = '',
@@ -100,6 +113,11 @@ export const scoreJoeMaterials = ({
         (state.resignation ?? 0) * 1.05 +
         (state.selfErasure ?? 0) * 0.95 +
         (state.shame ?? 0) * 0.9 +
+        scoreActivationBonus(safeActivated, state, {
+          resignation: 0.06,
+          selfErasure: 0.06,
+          shame: 0.05,
+        }) +
         scoreTextBonus(userText, [/諦め/i, /無理/i, /消えたい/i]),
     },
     {
@@ -112,7 +130,13 @@ export const scoreJoeMaterials = ({
         (state.desire ?? 0) * 0.35 +
         (state.fear ?? 0) * 0.35 +
         (state.freeze ?? 0) * 0.28 +
-        (state.reach ?? 0) * 0.18,
+        (state.reach ?? 0) * 0.18 +
+        scoreActivationBonus(safeActivated, state, {
+          desire: 0.03,
+          fear: 0.03,
+          freeze: 0.02,
+          reach: 0.02,
+        }),
     },
     {
       id: 'refresh',
@@ -124,6 +148,11 @@ export const scoreJoeMaterials = ({
         (state.resignation ?? 0) * 0.95 +
         (state.freeze ?? 0) * 0.72 +
         (state.fear ?? 0) * 0.24 +
+        scoreActivationBonus(safeActivated, state, {
+          resignation: 0.06,
+          freeze: 0.05,
+          fear: 0.02,
+        }, safeActivated.refresh ? 0.01 : 0) +
         scoreTextBonus(userText, [/無理/i, /動けない/i, /怖い/i]),
     },
     {
@@ -137,6 +166,12 @@ export const scoreJoeMaterials = ({
         (state.reach ?? 0) * 0.7 +
         (state.unfinished ?? 0) * 0.65 +
         (state.shame ?? 0) * 0.45 +
+        scoreActivationBonus(safeActivated, state, {
+          fear: 0.06,
+          reach: 0.05,
+          shame: 0.04,
+          unfinished: 0.03,
+        }, safeActivated.debug?.pickedMemoryIds?.length ? 0.02 : 0) +
         scoreTextBonus(userText, [/作品/i, /出したい/i, /見せたい/i, /怖い/i]),
     },
     {
@@ -151,6 +186,13 @@ export const scoreJoeMaterials = ({
         (state.fear ?? 0) * 0.68 +
         (state.reach ?? 0) * 0.62 +
         (state.unfinished ?? 0) * 0.66 +
+        scoreActivationBonus(safeActivated, state, {
+          desire: 0.05,
+          freeze: 0.05,
+          fear: 0.04,
+          reach: 0.04,
+          unfinished: 0.04,
+        }, safeActivated.debug?.pickedFieldIds?.length ? 0.02 : 0) +
         scoreTextBonus(userText, [/動けない/i, /怖い/i, /引っかか/i, /出したい/i]),
     },
     {
@@ -167,6 +209,15 @@ export const scoreJoeMaterials = ({
         (state.resignation ?? 0) * 0.68 +
         (state.selfErasure ?? 0) * 0.62 +
         (state.shame ?? 0) * 0.58 +
+        scoreActivationBonus(safeActivated, state, {
+          freeze: 0.05,
+          unfinished: 0.05,
+          fear: 0.03,
+          reach: 0.02,
+          resignation: 0.04,
+          selfErasure: 0.05,
+          shame: 0.05,
+        }, safeActivated.activeResidue ? 0.01 : 0) +
         scoreTextBonus(userText, [/動けない/i, /怖い/i, /諦め/i]),
     },
   ];
@@ -188,11 +239,15 @@ export const selectRelevantInternalBias = ({
   const scored = scoreJoeMaterials({ activated, userText, state });
   if (!scored.length) return [];
 
+  // scored.length > 0 は上で保証済み。最上位だけは保険枠として残す。
+  // 全部ゼロにするとジョーの触れ方が薄くなりやすいため、
+  // 低シグナル入力でも「もっとも近い 1 素材」だけは参照可能にしておく。
+  const eligible = scored.filter((material, index) => index === 0 || material.score >= MIN_SELECTED_BIAS_SCORE);
   const selected = [];
   const groupCounts = new Map();
-  const maxSelectedMaterials = scored.length > 2 && scored[2].score >= THIRD_BIAS_SCORE_THRESHOLD ? 3 : 2;
+  const maxSelectedMaterials = eligible.length > 2 && eligible[2].score >= THIRD_BIAS_SCORE_THRESHOLD ? 3 : 2;
 
-  for (const material of scored) {
+  for (const material of eligible) {
     const currentGroupCount = groupCounts.get(material.group) || 0;
     const allowSecondRegulation = material.group === 'regulation' && currentGroupCount < 2;
     const allowSingleFromGroup = currentGroupCount === 0;
@@ -324,7 +379,7 @@ export const buildJoeSystemPrompt = ({
 - 「火」「熱」「まだある」「わかる」などの語は常用しない。相手が使っていないなら特に安易に出さない。
 - 同じ語尾・同じ比喩・同じ導入を繰り返さない。比喩は必要な場合でも1つまで。
 - 内部素材（下部の内的バイアス）は内面の偏りとしてだけ使う。文言・比喩・概念をそのまま引用しない。
-- reentry / existence / field / residue / memory trace をそのまま出力しない。belief や memory の説明もしない。
+- 内的バイアス名や内部構造を、そのまま説明・出力しない。
 - 「俺はジョーだ」のような自己宣言を返答に入れない。
 - 説教しない。励ましを急がない。無理に前向きへ運ばない。
 - 全部に触れようとせず、一点だけ深く入る。
