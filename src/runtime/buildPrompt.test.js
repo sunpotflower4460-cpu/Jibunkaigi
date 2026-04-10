@@ -143,7 +143,8 @@ test('buildJoeBiasPack keeps the required Joe scenarios focused to two injected 
     });
 
     assert.deepEqual(pack.map((item) => item.id), expectedIds);
-    assert.ok(pack.length >= 2 && pack.length <= 3);
+    assert.equal(pack.length, expectedIds.length);
+    assert.ok(pack.length <= 3);
 
     for (const title of expectedTitles) {
       assert.match(prompt, new RegExp(`\\[${escapeRegExp(title)}\\]`));
