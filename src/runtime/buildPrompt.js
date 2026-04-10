@@ -83,13 +83,13 @@ const scoreTextBonus = (userText = '', patterns = []) => {
   return patterns.reduce((total, pattern) => total + (pattern.test(normalized) ? PATTERN_MATCH_BONUS_SCORE : 0), 0);
 };
 
-const scoreActivationBonus = (activated = {}, state = {}, axisWeights = {}, presenceBonus = 0) => {
+const scoreActivationBonus = (activated = {}, state = {}, axisWeights = {}, materialPresenceBonus = 0) => {
   const dominantAxes = activated?.debug?.dominantAxes || [];
   const axisBonus = dominantAxes.reduce(
     (total, axis) => total + ((state[axis] ?? 0) > 0 ? (axisWeights[axis] || 0) : 0),
     0,
   );
-  return axisBonus + presenceBonus;
+  return axisBonus + materialPresenceBonus;
 };
 
 export const scoreJoeMaterials = ({
