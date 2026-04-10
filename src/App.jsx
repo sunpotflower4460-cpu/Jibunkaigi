@@ -30,6 +30,7 @@ import { estimateState } from './runtime/stateEstimate';
 import { activateJoe } from './runtime/activate';
 import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt';
 import { buildPromptContext } from './runtime/context';
+import { buildMirrorSystemPrompt, buildMirrorUserPrompt, selectMirrorSignals } from './runtime/mirror';
 import { checkResponse, cleanResponse } from './runtime/postCheck';
 import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
@@ -663,21 +664,28 @@ const App = () => {
     const isJoe = !isMaster && agentId === 'creative';
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
-    let latestUserText = '';
+    const latestUserText = hasPendingUserInThisSession
+      ? pending.text
+      : ([...baseMessages].reverse().find(m => m.role === 'user')?.content || '');
     let aiMsgId = null;
     let aiPersistenceState = 'not-created';
 
     let activated = null;
     if (isJoe) {
-      latestUserText = hasPendingUserInThisSession
-        ? pending.text
-        : ([...baseMessages].reverse().find(m => m.role === 'user')?.content || '');
       const estimatedState = estimateState(latestUserText);
       activated = activateJoe(estimatedState);
       systemInstruction = buildJoeSystemPrompt({ activated, context, mode: selectedMode, userText: latestUserText });
       promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
       console.log('joe estimatedState', estimatedState);
       console.log('joe activated', activated);
+    } else if (isMaster) {
+      const signals = selectMirrorSignals({
+        messages: baseMessages,
+        agents: AGENTS,
+        latestUserText,
+      });
+      systemInstruction = buildMirrorSystemPrompt({ context, mode: selectedMode, signals });
+      promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
     } else {
       systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
     }
