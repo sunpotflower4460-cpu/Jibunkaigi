@@ -19,8 +19,12 @@ const EMOTION_PATTERNS = [
   { id: 'shame', label: '恥や自己否定', patterns: [/恥/i, /情けな/i, /自信がない/i, /才能ない/i, /だめ/i] },
 ];
 
+const EMOTION_PATTERN_MAP = Object.fromEntries(
+  EMOTION_PATTERNS.map((item) => [item.id, item.patterns]),
+);
+
 const scorePatterns = (text, patterns = []) =>
-  patterns.reduce((total, pattern) => total + ((text.match(pattern) || []).length), 0);
+  patterns.reduce((total, pattern) => total + (pattern.test(text) ? 1 : 0), 0);
 
 const countMessagesWithPatterns = (messages, patterns = []) =>
   messages.filter((message) => scorePatterns(message, patterns) > 0).length;
@@ -155,8 +159,8 @@ const describeRepeatedPattern = (userMessages = []) => {
   if (!userMessages.length) return null;
 
   if (
-    countMessagesWithPatterns(userMessages, EMOTION_PATTERNS.find((item) => item.id === 'desire')?.patterns) > 1 &&
-    countMessagesWithPatterns(userMessages, EMOTION_PATTERNS.find((item) => item.id === 'fear')?.patterns) > 0
+    countMessagesWithPatterns(userMessages, EMOTION_PATTERN_MAP.desire) > 1 &&
+    countMessagesWithPatterns(userMessages, EMOTION_PATTERN_MAP.fear) > 0
   ) {
     return {
       key: 'repeated_pattern',
@@ -165,7 +169,7 @@ const describeRepeatedPattern = (userMessages = []) => {
     };
   }
 
-  if (countMessagesWithPatterns(userMessages, EMOTION_PATTERNS.find((item) => item.id === 'confusion')?.patterns) > 1) {
+  if (countMessagesWithPatterns(userMessages, EMOTION_PATTERN_MAP.confusion) > 1) {
     return {
       key: 'repeated_pattern',
       label: '繰り返し出た流れ',
@@ -173,7 +177,7 @@ const describeRepeatedPattern = (userMessages = []) => {
     };
   }
 
-  if (countMessagesWithPatterns(userMessages, EMOTION_PATTERNS.find((item) => item.id === 'fatigue')?.patterns) > 1) {
+  if (countMessagesWithPatterns(userMessages, EMOTION_PATTERN_MAP.fatigue) > 1) {
     return {
       key: 'repeated_pattern',
       label: '繰り返し出た流れ',
