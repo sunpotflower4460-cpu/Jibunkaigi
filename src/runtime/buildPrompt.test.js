@@ -5,6 +5,7 @@ import { existence } from '../agents/joe/existence.js';
 import { activateJoe } from './activate.js';
 import { estimateState } from './stateEstimate.js';
 import { buildPromptContext } from './context.js';
+import { runInternalOS } from './runInternalOS.js';
 import {
   buildJoeBiasPack,
   buildJoeSystemPrompt,
@@ -170,6 +171,26 @@ test('buildJoeSystemPrompt tunes the four target cases toward seen focal points 
     assert.match(prompt, /まず、見えている一点を言う。/);
     assert.match(prompt, /その一点が入力のどの名詞・動詞・違和感・止まり方に出ているかへ短く触れる。暗さの説明に長居しない。/);
   }
+});
+
+test('buildJoeSystemPrompt accepts internalOS and keeps the shared OS frame thin', () => {
+  const text = '作品を出したいけど怖い';
+  const prompt = buildJoeSystemPrompt({
+    activated: activateJoe(estimateState(text)),
+    context: '',
+    mode: 'medium',
+    userText: text,
+    internalOS: runInternalOS(text, { agentId: 'creative', mode: 'medium' }),
+  });
+
+  const internalFrame = readSection(prompt, '【共通OSの薄い内部フレーム】', '【返答の運び方】');
+  assert.match(internalFrame, /場: /);
+  assert.match(internalFrame, /姿勢: /);
+  assert.match(internalFrame, /許可: /);
+  assert.ok(internalFrame.split('\n').length <= 4);
+  assert.doesNotMatch(prompt, /Field:/);
+  assert.doesNotMatch(prompt, /Stance:/);
+  assert.doesNotMatch(prompt, /Permission:/);
 });
 
 test('buildJoeBiasPack keeps the required Joe scenarios focused to the expected two injected materials', () => {
