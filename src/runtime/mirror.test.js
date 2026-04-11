@@ -32,6 +32,24 @@ test('selectMirrorSignals returns the lightweight mirror signal object', () => {
   assert.match(signals.mainConflict, /進みたい|傷つく|怖さ/);
   assert.match(signals.repeatedPattern, /引き返す往復|立ち止まる/);
   assert.match(signals.dominantTendency, /ジョー|ケン/);
+  assert.doesNotMatch(signals.dominantTendency, /正しい|勝ち/);
+});
+
+test('selectMirrorSignals weights recent near-user tendencies over raw counts', () => {
+  const signals = selectMirrorSignals({
+    messages: [
+      { role: 'user', content: '進みたい気持ちはあるけど、まだ整理しきれていません' },
+      { role: 'ai', agentId: 'strategist', content: '論点を整理すると、先に決めるものが見えます' },
+      { role: 'user', content: 'でも今は、まず怖さごと雑に扱いたくない感じもあります' },
+      { role: 'ai', agentId: 'creative', content: '怖さがあっても、消したくないものは残ってる気がする' },
+    ],
+    agents: sampleAgents,
+    latestUserText: 'でも今は、まず怖さごと雑に扱いたくない感じもあります',
+  });
+
+  assert.match(signals.dominantTendency, /ジョーの前へ動かそうとする視点が少し前に出ていた/);
+  assert.match(signals.mainPull, /少し前を向きたい|見失わない/);
+  assert.match(signals.unresolvedPoint, /軽く扱わない|閉じていない|開いている|開いたまま/);
 });
 
 test('buildMirrorSystemPrompt defines the quiet synthesis shape and mirror-specific prohibitions', () => {
@@ -52,7 +70,8 @@ test('buildMirrorSystemPrompt defines the quiet synthesis shape and mirror-speci
   assert.match(systemPrompt, /ジョーほど熱くも重くもならず/);
   assert.match(systemPrompt, /箇条書き要約にしない。説教しない。無理に前向きにしない。/);
   assert.match(systemPrompt, /エージェント同士の意見を勝敗化しない。/);
-  assert.match(systemPrompt, /最後は問いを1つだけ返す。/);
+  assert.match(systemPrompt, /要約より、今ここに残っている重さ・引力・未解決点を優先する。/);
+  assert.match(systemPrompt, /本文で疑問形を使わない。問いは最後の一文だけにする。/);
   assert.match(systemPrompt, /1\. 会話全体の中で残ったものを短く映す。/);
   assert.match(systemPrompt, /【mirror signals】/);
   assert.match(systemPrompt, /mainPull: 完全に離れるより、怖さを抱えたまま少し前を向きたい流れがある。/);
@@ -69,5 +88,6 @@ test('buildMirrorUserPrompt keeps the final ask anchored to the latest user text
   assert.match(userPrompt, /あなたの直近の言葉:/);
   assert.match(userPrompt, /まだ決めなくていいことがある気がします/);
   assert.match(userPrompt, /場の重力を映す静かな統合/);
-  assert.match(userPrompt, /最後は問いを1つだけにしてください。/);
+  assert.match(userPrompt, /誰が正しいかではなく/);
+  assert.match(userPrompt, /疑問形はその一文だけにしてください。/);
 });

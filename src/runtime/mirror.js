@@ -1,9 +1,9 @@
 import { truncatePromptText } from './context.js';
 
 const MODE_GUIDE = {
-  short: '2〜3文で十分。静かに映し、最後は問いを1つだけ置く。',
-  medium: '3〜4文で返す。少し構造を見せつつ、静かな余白を残す。',
-  long: '4〜6文まで。深くなってよいが、分析し過ぎず、温度を保つ。',
+  short: '本文は1〜2文で十分。静かに映し、最後に問いを1文だけ置く。',
+  medium: '本文は2〜3文まで。少し構造を見せつつ、最後に問いを1文だけ置く。',
+  long: '本文は3〜4文まで。深くなってよいが、最後の問いは1文だけに留める。',
 };
 
 const SIGNAL_LABELS = {
@@ -19,6 +19,8 @@ const MAX_MIRROR_SIGNAL_MESSAGES = 6;
 const MAX_MIRROR_CONTEXT_MESSAGES = 4;
 const MAX_MIRROR_CONTEXT_CHARS = 150;
 const DEFAULT_REPEATED_PATTERN = 'まだ強い反復は少ないが、同じ重さが静かに残っている。';
+const EMOTION_BALANCE_THRESHOLD = 0.72;
+const TENDENCY_BALANCE_THRESHOLD = 0.85;
 
 const AGENT_TENDENCIES = {
   soul: '静かに照らす視点',
@@ -41,6 +43,17 @@ const EMOTION_PATTERN_MAP = Object.fromEntries(
   EMOTION_PATTERNS.map((item) => [item.id, item.patterns]),
 );
 
+const UNRESOLVED_PATTERNS = [/決められない/i, /決めきれ/i, /どう/i, /どっち/i, /選べ/i, /まだ/i];
+
+const TENDENCY_SPLIT_LABELS = {
+  'creative:critic': '前へ動きたい流れと、守るために止まりたい流れ',
+  'creative:empath': '前へ動きたい流れと、まず傷みを雑に扱いたくない流れ',
+  'creative:strategist': '動きながら確かめたい流れと、先に見通しを立てたい流れ',
+  'strategist:empath': '整理して進めたい流れと、まだ受け止めておきたい流れ',
+  'soul:strategist': '静かに輪郭を見たい流れと、構造を先に整えたい流れ',
+  'critic:empath': '守るために厳しく見たい流れと、まず緩めて守りたい流れ',
+};
+
 const scorePatterns = (text, patterns = []) =>
   patterns.reduce((total, pattern) => total + (pattern.test(text) ? 1 : 0), 0);
 
@@ -54,6 +67,76 @@ const findTopEmotion = (text) => {
     .sort((a, b) => b.score - a.score);
 
   return ranked[0] || null;
+};
+
+const buildRankedEmotionScores = (entries = []) =>
+  EMOTION_PATTERNS
+    .map((item) => ({
+      ...item,
+      score: entries.reduce(
+        (total, entry) => total + scorePatterns(entry.text, item.patterns) * entry.weight,
+        0,
+      ),
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+const getRecencyWeight = (index, total) => {
+  if (total <= 1) return 1;
+  return 1 + (index / (total - 1)) * 0.9;
+};
+
+const getUserEntries = (messages = []) =>
+  messages
+    .map((message, index) => ({
+      message,
+      index,
+      text: String(message?.content || '').trim(),
+    }))
+    .filter(({ message, text }) => message?.role === 'user' && text)
+    .map(({ index, text }) => ({
+      text,
+      index,
+      weight: getRecencyWeight(index, messages.length) + (index === messages.length - 1 ? 0.4 : 0.15),
+    }));
+
+const findPreviousUserIndex = (messages = [], currentIndex = -1) => {
+  for (let index = currentIndex - 1; index >= 0; index -= 1) {
+    if (messages[index]?.role === 'user') return index;
+  }
+  return -1;
+};
+
+const normalizeTendencyKey = (left = '', right = '') => [left, right].sort().join(':');
+
+const describeTendencySplit = (top = {}, next = {}) => {
+  if (!top.id || !next.id) return '';
+  return TENDENCY_SPLIT_LABELS[normalizeTendencyKey(top.id, next.id)] || '';
+};
+
+const rankTendencies = (messages = [], agents = []) => {
+  const latestUserIndex = messages.map((message) => message?.role).lastIndexOf('user');
+  const scores = messages.reduce((acc, message, index) => {
+    if (message?.role !== 'ai' || !message.agentId || message.agentId === 'master') return acc;
+
+    const previousUserIndex = findPreviousUserIndex(messages, index);
+    const distanceFromUser = previousUserIndex < 0 ? null : index - previousUserIndex;
+    const closenessBoost =
+      distanceFromUser === 1 ? 0.45 : distanceFromUser === 2 ? 0.2 : distanceFromUser === 3 ? 0.08 : 0;
+    const recentUserBoost = latestUserIndex >= 0 && index > latestUserIndex ? 0.35 : 0;
+    const contentWeight = Math.min(0.2, String(message.content || '').trim().length / 280);
+    const score = getRecencyWeight(index, messages.length) + closenessBoost + recentUserBoost + contentWeight;
+    acc.set(message.agentId, (acc.get(message.agentId) || 0) + score);
+    return acc;
+  }, new Map());
+
+  return [...scores.entries()]
+    .map(([id, score]) => ({
+      id,
+      score,
+      agent: agents.find((item) => item.id === id),
+    }))
+    .sort((a, b) => b.score - a.score);
 };
 
 const normalizeContext = (context) => {
@@ -86,22 +169,31 @@ const normalizeContext = (context) => {
   return '';
 };
 
-const describeMainEmotion = (combinedUserText = '') => {
-  const emotion = findTopEmotion(combinedUserText);
+const describeMainEmotion = (rankedEmotions = [], combinedUserText = '') => {
+  const emotion = rankedEmotions[0] || findTopEmotion(combinedUserText);
+  const secondary = rankedEmotions[1] || null;
 
   if (!emotion) {
     return '会話の底には、まだ言い切られていない気持ちが静かに残っている。';
   }
 
+  if (secondary && secondary.score >= emotion.score * EMOTION_BALANCE_THRESHOLD) {
+    return `会話の底には、${emotion.label}が強く残りつつ、${secondary.label}もまだ引いていない。`;
+  }
+
   return `会話の底には、${emotion.label}がいちばん長く残っている。`;
 };
 
-const describeMainConflict = (scoreMap = {}) => {
+const describeMainConflict = (scoreMap = {}, tendencyBalance = {}) => {
   const desire = scoreMap.desire || 0;
   const fear = scoreMap.fear || 0;
   const fatigue = scoreMap.fatigue || 0;
   const confusion = scoreMap.confusion || 0;
   const shame = scoreMap.shame || 0;
+
+  if (tendencyBalance.splitLabel) {
+    return `全体では、${tendencyBalance.splitLabel}が少し割れたまま残っている。`;
+  }
 
   if (desire > 0 && (fear > 0 || fatigue > 0)) {
     return '進みたい気持ちと、傷つく怖さや消耗を避けたい感覚が同時に残っている。';
@@ -122,12 +214,20 @@ const describeMainConflict = (scoreMap = {}) => {
   return '何を進め、何をまだ閉じないでおくかが、ひとつに決まりきっていない。';
 };
 
-const describeMainPull = (scoreMap = {}) => {
+const describeMainPull = (scoreMap = {}, tendencyBalance = {}) => {
   const desire = scoreMap.desire || 0;
   const confusion = scoreMap.confusion || 0;
   const fatigue = scoreMap.fatigue || 0;
   const fear = scoreMap.fear || 0;
   const sadness = scoreMap.sadness || 0;
+
+  if (['empath', 'critic'].includes(tendencyBalance.topId) && (fatigue > 0 || sadness > 0 || fear > 0)) {
+    return '結論へ押し込むより、まず今の重さを軽く扱わない方向へ全体が引かれている。';
+  }
+
+  if (tendencyBalance.topId === 'strategist') {
+    return '答えを急ぐより、何がまだ曖昧なのかを見分ける方向へ全体が寄っている。';
+  }
 
   if (desire > 0 && fear > 0) {
     return '完全に離れるより、怖さを抱えたままでも少し前を向きたい流れがある。';
@@ -144,7 +244,9 @@ const describeMainPull = (scoreMap = {}) => {
   return 'はっきりした答えより、いま残っている感触を見失わない方向へ引かれている。';
 };
 
-const describeRepeatedPattern = (userMessages = []) => {
+const describeRepeatedPattern = (userEntries = []) => {
+  const userMessages = userEntries.map((entry) => entry.text);
+
   if (!userMessages.length) {
     return DEFAULT_REPEATED_PATTERN;
   }
@@ -164,6 +266,10 @@ const describeRepeatedPattern = (userMessages = []) => {
     return '前に進む話になるたびに、先に消耗の重さが戻ってきやすい。';
   }
 
+  if (countTextsWithPatterns(userMessages, [/でも/i, /のに/i, /一方で/i]) > 1) {
+    return '向きたい気持ちと引き返す感覚が、言い方を変えながら何度も同じ場所に戻っている。';
+  }
+
   if (userMessages.length >= 2) {
     return '言い方は変わっても、同じ場所で立ち止まる感触が繰り返し残っている。';
   }
@@ -171,9 +277,13 @@ const describeRepeatedPattern = (userMessages = []) => {
   return DEFAULT_REPEATED_PATTERN;
 };
 
-const describeUnresolvedPoint = (latestUserText = '', scoreMap = {}) => {
+const describeUnresolvedPoint = (latestUserText = '', scoreMap = {}, tendencyBalance = {}) => {
   if (/[?？]/.test(latestUserText)) {
     return '直近の問いがまだ閉じておらず、結論より先に見ておきたい余白が残っている。';
+  }
+
+  if (scorePatterns(latestUserText, UNRESOLVED_PATTERNS) > 0 && tendencyBalance.splitLabel) {
+    return `${tendencyBalance.splitLabel}のどちらを急いで選ぶかではなく、何を軽く扱わないままにしておくかがまだ開いている。`;
   }
 
   if ((scoreMap.confusion || 0) > 0) {
@@ -184,40 +294,38 @@ const describeUnresolvedPoint = (latestUserText = '', scoreMap = {}) => {
     return '進むかどうかより、何を守りながら進みたいのかがまだ開いたままになっている。';
   }
 
+  if ((scoreMap.fatigue || 0) > 0 || (scoreMap.sadness || 0) > 0) {
+    return '進めるかどうかより、いまの消耗や寂しさをどこまで守っておきたいのかがまだ閉じていない。';
+  }
+
   return 'まだ言葉にしきれていない論点があり、きれいには閉じていない。';
 };
 
-const describeDominantTendency = (messages = [], agents = [], scoreMap = {}) => {
-  const counts = messages.reduce((acc, message) => {
-    if (message.role !== 'ai' || message.agentId === 'master') return acc;
-    acc.set(message.agentId, (acc.get(message.agentId) || 0) + 1);
-    return acc;
-  }, new Map());
-
-  const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+const describeDominantTendency = (rankedTendencies = [], scoreMap = {}) => {
   const resolveAgentView = (agentId) => {
-    const agent = agents.find((item) => item.id === agentId);
+    const agent = rankedTendencies.find((item) => item.id === agentId)?.agent;
     return {
       name: agent?.name || '誰かの',
       tendency: AGENT_TENDENCIES[agentId] || 'ある視点',
     };
   };
 
-  if (ranked.length >= 2) {
-    const [topId, topCount] = ranked[0];
-    const [nextId, nextCount] = ranked[1];
+  if (rankedTendencies.length >= 2) {
+    const [topRank, nextRank] = rankedTendencies;
+    const topId = topRank.id;
+    const nextId = nextRank.id;
     const top = resolveAgentView(topId);
     const next = resolveAgentView(nextId);
 
-    if (topCount === nextCount) {
-      return `${top.name}の${top.tendency}と、${next.name}の${next.tendency}が並んで残っている。`;
+    if (nextRank.score >= topRank.score * TENDENCY_BALANCE_THRESHOLD) {
+      return `${top.name}の${top.tendency}と、${next.name}の${next.tendency}がほぼ並んで残っている。`;
     }
 
     return `全体では${top.name}の${top.tendency}が少し前に出ていたが、${next.name}の${next.tendency}も残っている。`;
   }
 
-  if (ranked.length === 1) {
-    const top = resolveAgentView(ranked[0][0]);
+  if (rankedTendencies.length === 1) {
+    const top = resolveAgentView(rankedTendencies[0].id);
     return `全体では${top.name}の${top.tendency}がやや前に出ていたが、勝ち負けではなく今の傾きとして残っている。`;
   }
 
@@ -232,29 +340,51 @@ const describeDominantTendency = (messages = [], agents = [], scoreMap = {}) => 
   return '全体では、まだ一つに固めず場の重さを見ようとする視点が前に出ている。';
 };
 
+const summarizeTendencyBalance = (rankedTendencies = []) => {
+  const top = rankedTendencies[0] || {};
+  const next = rankedTendencies[1] || {};
+  const splitLabel =
+    next.score && top.score && next.score >= top.score * TENDENCY_BALANCE_THRESHOLD
+      ? describeTendencySplit(top, next)
+      : '';
+
+  return {
+    topId: top.id || '',
+    nextId: next.id || '',
+    splitLabel,
+  };
+};
+
 export const selectMirrorSignals = ({
   messages = [],
   agents = [],
   latestUserText = '',
 }) => {
   const recentMessages = messages.filter(Boolean).slice(-MAX_MIRROR_SIGNAL_MESSAGES);
-  const userMessages = recentMessages
-    .filter((message) => message.role === 'user')
-    .map((message) => String(message.content || '').trim())
-    .filter(Boolean);
+  const userEntries = getUserEntries(recentMessages);
+  const userMessages = userEntries.map((entry) => entry.text);
   const combinedUserText = userMessages.join('\n');
+  const rankedEmotionScores = buildRankedEmotionScores(userEntries);
+  const rankedTendencies = rankTendencies(recentMessages, agents);
+  const tendencyBalance = summarizeTendencyBalance(rankedTendencies);
 
   const scoreMap = Object.fromEntries(
-    EMOTION_PATTERNS.map((item) => [item.id, scorePatterns(combinedUserText, item.patterns)]),
+    EMOTION_PATTERNS.map((item) => [
+      item.id,
+      userEntries.reduce(
+        (total, entry) => total + scorePatterns(entry.text, item.patterns) * entry.weight,
+        0,
+      ),
+    ]),
   );
 
   return {
-    mainEmotion: describeMainEmotion(combinedUserText),
-    mainConflict: describeMainConflict(scoreMap),
-    mainPull: describeMainPull(scoreMap),
-    repeatedPattern: describeRepeatedPattern(userMessages),
-    unresolvedPoint: describeUnresolvedPoint(latestUserText, scoreMap),
-    dominantTendency: describeDominantTendency(recentMessages, agents, scoreMap),
+    mainEmotion: describeMainEmotion(rankedEmotionScores, combinedUserText),
+    mainConflict: describeMainConflict(scoreMap, tendencyBalance),
+    mainPull: describeMainPull(scoreMap, tendencyBalance),
+    repeatedPattern: describeRepeatedPattern(userEntries),
+    unresolvedPoint: describeUnresolvedPoint(latestUserText, scoreMap, tendencyBalance),
+    dominantTendency: describeDominantTendency(rankedTendencies, scoreMap),
   };
 };
 
@@ -279,6 +409,7 @@ export const buildMirrorSystemPrompt = ({
 【見る順序】
 - 信念より先に、場の流れと反応を見る。
 - どの傾きが強かったか、どのズレが残ったか、何がまだ閉じていないかを見る。
+- 要約より、今ここに残っている重さ・引力・未解決点を優先する。
 - どれが正しいかは決めない。エージェント同士の意見を勝敗化しない。
 
 【出力ルール】
@@ -286,7 +417,8 @@ export const buildMirrorSystemPrompt = ({
 - 箇条書き要約にしない。説教しない。無理に前向きにしない。
 - 冷たく分析しすぎず、でもただの中立要約にも戻さない。
 - 「あなたはこうです」と断定せず、「今ここではこう見える」に寄せる。
-- 最後は問いを1つだけ返す。問いは一文だけにする。
+- 本文で疑問形を使わない。問いは最後の一文だけにする。
+- 次の行動や正解を迫る問いにしない。
 
 【返答の型】
 1. 会話全体の中で残ったものを短く映す。
@@ -307,5 +439,6 @@ export const buildMirrorUserPrompt = ({
 }) => `${userName}の直近の言葉:
 ${userText}
 
-この会話を、ただの要約ではなく「場の重力を映す静かな統合」として返してください。
-長くしすぎず、押しつけず、最後は問いを1つだけにしてください。`;
+この会話を、誰が正しいかではなく「場の重力を映す静かな統合」として返してください。
+ただの要約ではなく、今ここに残っている重さ・ズレ・未解決点を優先してください。
+本文は短く、問いは最後の一文だけにしてください。疑問形はその一文だけにしてください。`;
