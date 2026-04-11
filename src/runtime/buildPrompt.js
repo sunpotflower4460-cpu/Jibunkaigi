@@ -20,6 +20,8 @@ const MIN_SELECTED_BIAS_SCORE = 0.24;
 // 3番手がここを超える時だけ 3 素材まで広げ、通常は 1〜2 素材に抑える。
 // 0.65 にすることで、単一感情の典型例は 2 素材、複合・極端な状態のみ 3 素材になる。
 const THIRD_BIAS_SCORE_THRESHOLD = 0.65;
+const PERMISSION_ACTIVE_THRESHOLD = 0.4;
+const MAX_INTERNAL_FRAME_LINES = 4;
 
 const normalizeContext = (context) => {
   if (!context) return '';
@@ -299,7 +301,7 @@ const describeInternalLevel = (value, labels) => {
   return labels.min;
 };
 
-const pickTopKeys = (scores = {}, limit = 2) => Object.entries(scores)
+const selectHighestScoredKeys = (scores = {}, limit = 2) => Object.entries(scores)
   .filter(([, value]) => typeof value === 'number' && value > 0)
   .sort(([, a], [, b]) => b - a)
   .slice(0, limit)
@@ -351,7 +353,7 @@ const buildJoeInternalFrame = ({
     guard: '傷つきやすさを守る',
     nudge: '押しすぎず小さく促す',
   };
-  const topStances = pickTopKeys(stance);
+  const topStances = selectHighestScoredKeys(stance);
   if (topStances.length) {
     const [first, second] = topStances;
     lines.push(`- 姿勢: ${stanceLabels[first]}${second ? `。${stanceLabels[second]}` : ''}。`);
@@ -364,7 +366,7 @@ const buildJoeInternalFrame = ({
     ['allowPartialUncertainty', '曖昧さを少し残していい'],
   ];
   const activePermissions = permissionLabels
-    .filter(([key]) => (permission[key] ?? 0) >= 0.4)
+    .filter(([key]) => (permission[key] ?? 0) >= PERMISSION_ACTIVE_THRESHOLD)
     .map(([, label]) => label);
   if (activePermissions.length) {
     lines.push(`- 許可: ${activePermissions.slice(0, 2).join('。')}。`);
@@ -374,7 +376,7 @@ const buildJoeInternalFrame = ({
     lines.push('- 触れ方: 壊れやすい縁はやわらかく扱う。');
   }
 
-  return lines.slice(0, 4).join('\n');
+  return lines.slice(0, MAX_INTERNAL_FRAME_LINES).join('\n');
 };
 
 // 状態に応じた対応指針を生成する
