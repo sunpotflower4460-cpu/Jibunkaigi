@@ -3,7 +3,7 @@ import { truncatePromptText } from './context.js';
 const MODE_GUIDE = {
   short: '2〜3文で十分。静かに映し、最後は問いを1つだけ置く。',
   medium: '3〜4文で返す。少し構造を見せつつ、静かな余白を残す。',
-  long: '4〜6文まで。深くなってよいが、分析しすぎず、温度を保つ。',
+  long: '4〜6文まで。深くなってよいが、分析し過ぎず、温度を保つ。',
 };
 
 const SIGNAL_LABELS = {
@@ -18,6 +18,7 @@ const SIGNAL_LABELS = {
 const MAX_MIRROR_SIGNAL_MESSAGES = 6;
 const MAX_MIRROR_CONTEXT_MESSAGES = 4;
 const MAX_MIRROR_CONTEXT_CHARS = 150;
+const DEFAULT_REPEATED_PATTERN = 'まだ強い反復は少ないが、同じ重さが静かに残っている。';
 
 const AGENT_TENDENCIES = {
   soul: '静かに照らす視点',
@@ -145,7 +146,7 @@ const describeMainPull = (scoreMap = {}) => {
 
 const describeRepeatedPattern = (userMessages = []) => {
   if (!userMessages.length) {
-    return 'まだ強い反復は少ないが、同じ重さが静かに残っている。';
+    return DEFAULT_REPEATED_PATTERN;
   }
 
   if (
@@ -167,7 +168,7 @@ const describeRepeatedPattern = (userMessages = []) => {
     return '言い方は変わっても、同じ場所で立ち止まる感触が繰り返し残っている。';
   }
 
-  return 'まだ強い反復は少ないが、同じ重さが静かに残っている。';
+  return DEFAULT_REPEATED_PATTERN;
 };
 
 const describeUnresolvedPoint = (latestUserText = '', scoreMap = {}) => {
@@ -259,10 +260,7 @@ export const selectMirrorSignals = ({
 
 const renderSignals = (signals = {}) =>
   Object.entries(SIGNAL_LABELS)
-    .map(([key, label]) => {
-      const value = signals[key];
-      return `- ${label}: ${value || '特定しきれないが、無理に埋めない。'}`;
-    })
+    .map(([key, label]) => `- ${label}: ${signals[key]}`)
     .join('\n');
 
 export const buildMirrorSystemPrompt = ({
