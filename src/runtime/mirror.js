@@ -15,6 +15,7 @@ const SIGNAL_LABELS = {
   dominantTendency: 'dominantTendency',
 };
 
+const MAX_MIRROR_SIGNAL_MESSAGES = 6;
 const MAX_MIRROR_CONTEXT_MESSAGES = 4;
 const MAX_MIRROR_CONTEXT_CHARS = 150;
 
@@ -235,7 +236,7 @@ export const selectMirrorSignals = ({
   agents = [],
   latestUserText = '',
 }) => {
-  const recentMessages = messages.filter(Boolean).slice(-(MAX_MIRROR_CONTEXT_MESSAGES + 2));
+  const recentMessages = messages.filter(Boolean).slice(-MAX_MIRROR_SIGNAL_MESSAGES);
   const userMessages = recentMessages
     .filter((message) => message.role === 'user')
     .map((message) => String(message.content || '').trim())
