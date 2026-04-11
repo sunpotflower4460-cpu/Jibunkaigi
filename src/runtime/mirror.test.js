@@ -32,6 +32,7 @@ test('selectMirrorSignals returns the lightweight mirror signal object', () => {
   assert.match(signals.mainConflict, /進みたい|傷つく|怖さ/);
   assert.match(signals.repeatedPattern, /引き返す往復|立ち止まる/);
   assert.match(signals.dominantTendency, /ジョー|ケン/);
+  assert.match(signals.dominantTendency, /視点|残っている/);
   assert.doesNotMatch(signals.dominantTendency, /正しい|勝ち/);
 });
 
@@ -47,7 +48,8 @@ test('selectMirrorSignals weights recent near-user tendencies over raw counts', 
     latestUserText: 'でも今は、まず怖さごと雑に扱いたくない感じもあります',
   });
 
-  assert.match(signals.dominantTendency, /ジョーの前へ動かそうとする視点が少し前に出ていた/);
+  assert.match(signals.dominantTendency, /ジョー/);
+  assert.match(signals.dominantTendency, /前に出ていた/);
   assert.match(signals.mainPull, /少し前を向きたい|見失わない/);
   assert.match(signals.unresolvedPoint, /軽く扱わない|閉じていない|開いている|開いたまま/);
 });

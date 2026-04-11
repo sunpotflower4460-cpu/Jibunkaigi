@@ -19,8 +19,25 @@ const MAX_MIRROR_SIGNAL_MESSAGES = 6;
 const MAX_MIRROR_CONTEXT_MESSAGES = 4;
 const MAX_MIRROR_CONTEXT_CHARS = 150;
 const DEFAULT_REPEATED_PATTERN = 'まだ強い反復は少ないが、同じ重さが静かに残っている。';
+// recency は最大で約 1.9 倍までに留め、最新を優先しつつ古い流れも消し切らない。
 const EMOTION_BALANCE_THRESHOLD = 0.72;
 const TENDENCY_BALANCE_THRESHOLD = 0.85;
+const MIN_REPEAT_PATTERN_COUNT = 2;
+// user の直近発話は場の重力に直結しやすいため、他の user 発話より少し強く残す。
+const LATEST_USER_WEIGHT_BOOST = 0.4;
+const BASE_USER_WEIGHT_BOOST = 0.15;
+// AI 発話は user 発話の近くにあるほど、その user の重さを受けた反応として扱う。
+const IMMEDIATE_USER_DISTANCE = 1;
+const NEAR_USER_DISTANCE = 2;
+const FAR_USER_DISTANCE = 3;
+const IMMEDIATE_USER_CLOSENESS_BOOST = 0.45;
+const NEAR_USER_CLOSENESS_BOOST = 0.2;
+const FAR_USER_CLOSENESS_BOOST = 0.08;
+// 直近 user のあとに出た応答は「今ここ」の傾きとして少しだけ押し上げる。
+const POST_LATEST_USER_BOOST = 0.35;
+// AI 応答は 1〜2 文程度でも差がつくので、長さは軽い影響度の補助値としてだけ使う。
+const MAX_AI_CONTENT_WEIGHT = 0.2;
+const AI_CONTENT_LENGTH_NORMALIZER = 280;
 
 const AGENT_TENDENCIES = {
   soul: '静かに照らす視点',
@@ -43,15 +60,29 @@ const EMOTION_PATTERN_MAP = Object.fromEntries(
   EMOTION_PATTERNS.map((item) => [item.id, item.patterns]),
 );
 
-const UNRESOLVED_PATTERNS = [/決められない/i, /決めきれ/i, /どう/i, /どっち/i, /選べ/i, /まだ/i];
+const UNRESOLVED_PATTERNS = [
+  /決められない/i,
+  /決めきれ/i,
+  /どう(?:する|したい|扱う)/i,
+  /どっち/i,
+  /選べ/i,
+  /まだ[^。\n]{0,12}(?:決め|閉じ|言葉|選)/i,
+];
 
 const TENDENCY_SPLIT_LABELS = {
+  // ここでは実際に言語化しやすい「割れ」だけを明示し、その他の組み合わせは空文字で流す。
   'creative:critic': '前へ動きたい流れと、守るために止まりたい流れ',
   'creative:empath': '前へ動きたい流れと、まず傷みを雑に扱いたくない流れ',
   'creative:strategist': '動きながら確かめたい流れと、先に見通しを立てたい流れ',
   'strategist:empath': '整理して進めたい流れと、まだ受け止めておきたい流れ',
   'soul:strategist': '静かに輪郭を見たい流れと、構造を先に整えたい流れ',
   'critic:empath': '守るために厳しく見たい流れと、まず緩めて守りたい流れ',
+};
+
+const CLOSENESS_BOOST_BY_DISTANCE = {
+  [IMMEDIATE_USER_DISTANCE]: IMMEDIATE_USER_CLOSENESS_BOOST,
+  [NEAR_USER_DISTANCE]: NEAR_USER_CLOSENESS_BOOST,
+  [FAR_USER_DISTANCE]: FAR_USER_CLOSENESS_BOOST,
 };
 
 const scorePatterns = (text, patterns = []) =>
@@ -86,8 +117,10 @@ const getRecencyWeight = (index, total) => {
   return 1 + (index / (total - 1)) * 0.9;
 };
 
-const getUserEntries = (messages = []) =>
-  messages
+const getUserEntries = (messages = []) => {
+  const totalMessages = messages.length;
+
+  return messages
     .map((message, index) => ({
       message,
       index,
@@ -97,14 +130,10 @@ const getUserEntries = (messages = []) =>
     .map(({ index, text }) => ({
       text,
       index,
-      weight: getRecencyWeight(index, messages.length) + (index === messages.length - 1 ? 0.4 : 0.15),
+      weight:
+        getRecencyWeight(index, totalMessages) +
+        (index === totalMessages - 1 ? LATEST_USER_WEIGHT_BOOST : BASE_USER_WEIGHT_BOOST),
     }));
-
-const findPreviousUserIndex = (messages = [], currentIndex = -1) => {
-  for (let index = currentIndex - 1; index >= 0; index -= 1) {
-    if (messages[index]?.role === 'user') return index;
-  }
-  return -1;
 };
 
 const normalizeTendencyKey = (left = '', right = '') => [left, right].sort().join(':');
@@ -116,15 +145,25 @@ const describeTendencySplit = (top = {}, next = {}) => {
 
 const rankTendencies = (messages = [], agents = []) => {
   const latestUserIndex = messages.map((message) => message?.role).lastIndexOf('user');
+  const previousUserIndices = [];
+  let lastUserIndex = -1;
+
+  messages.forEach((message, index) => {
+    previousUserIndices[index] = lastUserIndex;
+    if (message?.role === 'user') lastUserIndex = index;
+  });
+
   const scores = messages.reduce((acc, message, index) => {
     if (message?.role !== 'ai' || !message.agentId || message.agentId === 'master') return acc;
 
-    const previousUserIndex = findPreviousUserIndex(messages, index);
+    const previousUserIndex = previousUserIndices[index];
     const distanceFromUser = previousUserIndex < 0 ? null : index - previousUserIndex;
-    const closenessBoost =
-      distanceFromUser === 1 ? 0.45 : distanceFromUser === 2 ? 0.2 : distanceFromUser === 3 ? 0.08 : 0;
-    const recentUserBoost = latestUserIndex >= 0 && index > latestUserIndex ? 0.35 : 0;
-    const contentWeight = Math.min(0.2, String(message.content || '').trim().length / 280);
+    const closenessBoost = CLOSENESS_BOOST_BY_DISTANCE[distanceFromUser] || 0;
+    const recentUserBoost = latestUserIndex >= 0 && index > latestUserIndex ? POST_LATEST_USER_BOOST : 0;
+    const contentWeight = Math.min(
+      MAX_AI_CONTENT_WEIGHT,
+      String(message.content || '').trim().length / AI_CONTENT_LENGTH_NORMALIZER,
+    );
     const score = getRecencyWeight(index, messages.length) + closenessBoost + recentUserBoost + contentWeight;
     acc.set(message.agentId, (acc.get(message.agentId) || 0) + score);
     return acc;
@@ -177,7 +216,7 @@ const describeMainEmotion = (rankedEmotions = [], combinedUserText = '') => {
     return '会話の底には、まだ言い切られていない気持ちが静かに残っている。';
   }
 
-  if (secondary && secondary.score >= emotion.score * EMOTION_BALANCE_THRESHOLD) {
+  if (secondary && emotion.score > 0 && secondary.score >= emotion.score * EMOTION_BALANCE_THRESHOLD) {
     return `会話の底には、${emotion.label}が強く残りつつ、${secondary.label}もまだ引いていない。`;
   }
 
@@ -266,7 +305,7 @@ const describeRepeatedPattern = (userEntries = []) => {
     return '前に進む話になるたびに、先に消耗の重さが戻ってきやすい。';
   }
 
-  if (countTextsWithPatterns(userMessages, [/でも/i, /のに/i, /一方で/i]) > 1) {
+  if (countTextsWithPatterns(userMessages, [/でも/i, /のに/i, /一方で/i]) >= MIN_REPEAT_PATTERN_COUNT) {
     return '向きたい気持ちと引き返す感覚が、言い方を変えながら何度も同じ場所に戻っている。';
   }
 
@@ -317,7 +356,7 @@ const describeDominantTendency = (rankedTendencies = [], scoreMap = {}) => {
     const top = resolveAgentView(topId);
     const next = resolveAgentView(nextId);
 
-    if (nextRank.score >= topRank.score * TENDENCY_BALANCE_THRESHOLD) {
+    if (topRank.score > 0 && nextRank.score >= topRank.score * TENDENCY_BALANCE_THRESHOLD) {
       return `${top.name}の${top.tendency}と、${next.name}の${next.tendency}がほぼ並んで残っている。`;
     }
 
@@ -344,7 +383,7 @@ const summarizeTendencyBalance = (rankedTendencies = []) => {
   const top = rankedTendencies[0] || {};
   const next = rankedTendencies[1] || {};
   const splitLabel =
-    next.score && top.score && next.score >= top.score * TENDENCY_BALANCE_THRESHOLD
+    next.score > 0 && top.score > 0 && next.score >= top.score * TENDENCY_BALANCE_THRESHOLD
       ? describeTendencySplit(top, next)
       : '';
 
