@@ -356,7 +356,8 @@ const buildJoeInternalFrame = ({
   };
   const topStances = selectTopScoredKeys(stance);
   if (topStances.length) {
-    const [first, second] = topStances;
+    const first = topStances[0];
+    const second = topStances[1];
     lines.push(`- 姿勢: ${stanceLabels[first]}${second ? `。${stanceLabels[second]}` : ''}。`);
   }
 
