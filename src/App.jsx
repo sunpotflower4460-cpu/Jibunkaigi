@@ -31,6 +31,7 @@ import { activateJoe } from './runtime/activate';
 import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt';
 import { buildPromptContext } from './runtime/context';
 import { buildMirrorSystemPrompt, buildMirrorUserPrompt, selectMirrorSignals } from './runtime/mirror';
+import { runInternalOS } from './runtime/runInternalOS';
 import { checkResponse, cleanResponse } from './runtime/postCheck';
 import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
@@ -672,12 +673,17 @@ const App = () => {
 
     let activated = null;
     if (isJoe) {
+      const joeInternalState = runInternalOS(latestUserText, { agentId, mode: selectedMode });
       const estimatedState = estimateState(latestUserText);
       activated = activateJoe(estimatedState);
-      systemInstruction = buildJoeSystemPrompt({ activated, context, mode: selectedMode, userText: latestUserText });
+      systemInstruction = buildJoeSystemPrompt({
+        activated,
+        context,
+        mode: selectedMode,
+        userText: latestUserText,
+        internalOS: joeInternalState,
+      });
       promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
-      console.log('joe estimatedState', estimatedState);
-      console.log('joe activated', activated);
     } else if (isMaster) {
       const signals = selectMirrorSignals({
         messages: baseMessages,

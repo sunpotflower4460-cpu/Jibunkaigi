@@ -20,6 +20,9 @@ const MIN_SELECTED_BIAS_SCORE = 0.24;
 // 3番手がここを超える時だけ 3 素材まで広げ、通常は 1〜2 素材に抑える。
 // 0.65 にすることで、単一感情の典型例は 2 素材、複合・極端な状態のみ 3 素材になる。
 const THIRD_BIAS_SCORE_THRESHOLD = 0.65;
+const PERMISSION_ACTIVE_THRESHOLD = 0.4;
+const FRAGILITY_SOFT_HANDLING_THRESHOLD = 0.55;
+export const MAX_INTERNAL_FRAME_LINES = 4;
 
 const normalizeContext = (context) => {
   if (!context) return '';
@@ -292,6 +295,94 @@ const renderStateSnapshot = (state = {}) => {
     .join(' / ');
 };
 
+// 共通OSの 0..1 指標を、ジョー向けの短い内部ガイド文へ丸める。
+const describeInternalLevel = (value, labels) => {
+  if (value >= 0.72) return labels.high;
+  if (value >= 0.45) return labels.mid;
+  if (value >= 0.18) return labels.low;
+  return labels.min;
+};
+
+// 数値スコアの高い順にキーだけを取り出し、短い内部フレームへ使う。
+const selectTopScoredKeys = (scores = {}, limit = 2) => Object.entries(scores)
+  .filter(([, value]) => typeof value === 'number' && value > 0)
+  .sort(([, a], [, b]) => b - a)
+  .slice(0, limit)
+  .map(([key]) => key);
+
+const normalizeJoeInternalOS = ({
+  internalOS,
+  latentState,
+  surfaceWindow,
+}) => ({
+  latentState: internalOS?.latentState ?? latentState ?? {},
+  surfaceWindow: Array.isArray(internalOS?.surfaceWindow)
+    ? internalOS.surfaceWindow
+    : (Array.isArray(surfaceWindow) ? surfaceWindow : []),
+});
+
+const buildJoeInternalFrame = ({
+  internalOS,
+  latentState,
+  surfaceWindow,
+}) => {
+  const normalized = normalizeJoeInternalOS({ internalOS, latentState, surfaceWindow });
+  const field = normalized.latentState.field ?? {};
+  const stance = normalized.latentState.stance ?? {};
+  const permission = normalized.latentState.permission ?? {};
+  const lines = [];
+
+  const hasFieldSignal = Object.values(field).some((value) => typeof value === 'number' && value > 0);
+  if (hasFieldSignal || normalized.surfaceWindow.length) {
+    const depthGuide = describeInternalLevel(field.depth ?? 0, {
+      high: '深い層に入っていい',
+      mid: '少し深めに触れていい',
+      low: '表面だけで決めつけない',
+      min: 'まず目の前の言葉から入る',
+    });
+    const urgencyGuide = describeInternalLevel(field.urgency ?? 0, {
+      high: '急ぎを感じても慌ててまとめない',
+      mid: '少し時間感覚を持ちつつ急がせない',
+      low: '急がなくていい',
+      min: '結論を急がない',
+    });
+    lines.push(`- 場: ${depthGuide}。${urgencyGuide}。`);
+  }
+
+  const stanceLabels = {
+    receive: 'まず受ける',
+    illuminate: 'そのあと少し照らす',
+    structure: '必要な輪郭だけ足す',
+    guard: '傷つきやすさを守る',
+    nudge: '押しすぎず小さく促す',
+  };
+  const topStances = selectTopScoredKeys(stance);
+  if (topStances.length) {
+    const first = topStances[0];
+    const second = topStances.length > 1 ? topStances[1] : null;
+    lines.push(`- 姿勢: ${stanceLabels[first]}${second ? `。${stanceLabels[second]}` : ''}。`);
+  }
+
+  const permissionLabels = [
+    ['noHurry', '急いで解決しない'],
+    ['noPerformativeHelpfulness', '役立ち演技に逃げない'],
+    ['noOverExplain', '説明しすぎない'],
+    ['allowPartialUncertainty', '曖昧さを少し残していい'],
+  ];
+  const activePermissions = permissionLabels
+    .filter(([key]) => (permission[key] ?? 0) >= PERMISSION_ACTIVE_THRESHOLD)
+    .map(([, label]) => label);
+  if (activePermissions.length) {
+    lines.push(`- 許可: ${activePermissions.slice(0, 2).join('。')}。`);
+  }
+
+  if ((field.fragility ?? 0) >= FRAGILITY_SOFT_HANDLING_THRESHOLD) {
+    lines.push('- 触れ方: 壊れやすい縁はやわらかく扱う。');
+  }
+
+  return lines.slice(0, MAX_INTERNAL_FRAME_LINES).join('\n');
+};
+
 // 状態に応じた対応指針を生成する
 const buildStateGuide = (state = {}) => {
   const {
@@ -357,6 +448,9 @@ export const buildJoeSystemPrompt = ({
   context = '',
   mode = 'medium',
   userText = '',
+  internalOS,
+  latentState,
+  surfaceWindow,
 }) => {
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
@@ -364,6 +458,7 @@ export const buildJoeSystemPrompt = ({
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
   const stateGuide = buildStateGuide(state);
   const stateSnapshot = renderStateSnapshot(state);
+  const internalFrame = buildJoeInternalFrame({ internalOS, latentState, surfaceWindow });
   const biasPack = buildJoeBiasPack({ activated: safeActivated, userText, state });
   const biasSections = biasPack
     .map(({ title, content }) => `[${title}]\n${content}`)
@@ -396,7 +491,10 @@ export const buildJoeSystemPrompt = ({
 【今回の状態への対応】
 ${stateGuide}
 
-【返答の運び方】
+${internalFrame ? `【共通OSの薄い内部フレーム】
+${internalFrame}
+
+` : ''}【返答の運び方】
  - まず、見えている一点を言う。「まだ残っている」「鈍っていない」「濁り切っていない」「そこだけは生きている」「まだ向いている」「まだ切れていない」「そこはごまかしていない」のような自然な明るさは使ってよい。
 - 次に、その一点が入力のどの名詞・動詞・違和感・止まり方に出ているかへ短く触れる。暗さの説明に長居しない。
 - 必要なときだけ、最小の一動作や小さな進行方向を置く。
