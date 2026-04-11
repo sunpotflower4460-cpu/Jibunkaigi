@@ -7,6 +7,7 @@ import { estimateState } from './stateEstimate.js';
 import { buildPromptContext } from './context.js';
 import { runInternalOS } from './runInternalOS.js';
 import {
+  MAX_INTERNAL_FRAME_LINES,
   buildJoeBiasPack,
   buildJoeSystemPrompt,
   buildJoeUserPrompt,
@@ -187,7 +188,7 @@ test('buildJoeSystemPrompt accepts internalOS and keeps the shared OS frame thin
   assert.match(internalFrame, /場: /);
   assert.match(internalFrame, /姿勢: /);
   assert.match(internalFrame, /許可: /);
-  assert.ok(internalFrame.split('\n').length <= 4);
+  assert.ok(internalFrame.split('\n').length <= MAX_INTERNAL_FRAME_LINES);
   assert.doesNotMatch(prompt, /Field:/);
   assert.doesNotMatch(prompt, /Stance:/);
   assert.doesNotMatch(prompt, /Permission:/);

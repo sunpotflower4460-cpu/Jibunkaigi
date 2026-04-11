@@ -21,7 +21,8 @@ const MIN_SELECTED_BIAS_SCORE = 0.24;
 // 0.65 にすることで、単一感情の典型例は 2 素材、複合・極端な状態のみ 3 素材になる。
 const THIRD_BIAS_SCORE_THRESHOLD = 0.65;
 const PERMISSION_ACTIVE_THRESHOLD = 0.4;
-const MAX_INTERNAL_FRAME_LINES = 4;
+const FRAGILITY_SOFT_HANDLING_THRESHOLD = 0.55;
+export const MAX_INTERNAL_FRAME_LINES = 4;
 
 const normalizeContext = (context) => {
   if (!context) return '';
@@ -301,7 +302,7 @@ const describeInternalLevel = (value, labels) => {
   return labels.min;
 };
 
-const selectHighestScoredKeys = (scores = {}, limit = 2) => Object.entries(scores)
+const selectTopScoredKeys = (scores = {}, limit = 2) => Object.entries(scores)
   .filter(([, value]) => typeof value === 'number' && value > 0)
   .sort(([, a], [, b]) => b - a)
   .slice(0, limit)
@@ -353,7 +354,7 @@ const buildJoeInternalFrame = ({
     guard: '傷つきやすさを守る',
     nudge: '押しすぎず小さく促す',
   };
-  const topStances = selectHighestScoredKeys(stance);
+  const topStances = selectTopScoredKeys(stance);
   if (topStances.length) {
     const [first, second] = topStances;
     lines.push(`- 姿勢: ${stanceLabels[first]}${second ? `。${stanceLabels[second]}` : ''}。`);
@@ -372,7 +373,7 @@ const buildJoeInternalFrame = ({
     lines.push(`- 許可: ${activePermissions.slice(0, 2).join('。')}。`);
   }
 
-  if ((field.fragility ?? 0) >= 0.55) {
+  if ((field.fragility ?? 0) >= FRAGILITY_SOFT_HANDLING_THRESHOLD) {
     lines.push('- 触れ方: 壊れやすい縁はやわらかく扱う。');
   }
 
