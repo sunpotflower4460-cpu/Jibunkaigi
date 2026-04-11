@@ -295,6 +295,7 @@ const renderStateSnapshot = (state = {}) => {
     .join(' / ');
 };
 
+// 共通OSの 0..1 指標を、ジョー向けの短い内部ガイド文へ丸める。
 const describeInternalLevel = (value, labels) => {
   if (value >= 0.72) return labels.high;
   if (value >= 0.45) return labels.mid;
@@ -302,6 +303,7 @@ const describeInternalLevel = (value, labels) => {
   return labels.min;
 };
 
+// 数値スコアの高い順にキーだけを取り出し、短い内部フレームへ使う。
 const selectTopScoredKeys = (scores = {}, limit = 2) => Object.entries(scores)
   .filter(([, value]) => typeof value === 'number' && value > 0)
   .sort(([, a], [, b]) => b - a)
@@ -357,7 +359,7 @@ const buildJoeInternalFrame = ({
   const topStances = selectTopScoredKeys(stance);
   if (topStances.length) {
     const first = topStances[0];
-    const second = topStances[1];
+    const second = topStances.length > 1 ? topStances[1] : null;
     lines.push(`- 姿勢: ${stanceLabels[first]}${second ? `。${stanceLabels[second]}` : ''}。`);
   }
 
