@@ -684,7 +684,6 @@ const App = () => {
         internalOS: joeInternalState,
       });
       promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
-      console.log('joe internalOS', joeInternalState);
       console.log('joe estimatedState', estimatedState);
       console.log('joe activated', activated);
     } else if (isMaster) {
