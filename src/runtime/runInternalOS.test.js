@@ -20,6 +20,8 @@ const assertNumericShape = (result) => {
     for (const key of keys) {
       assert.equal(typeof result.latentState[section][key], 'number');
       assert.ok(Number.isFinite(result.latentState[section][key]));
+      assert.ok(result.latentState[section][key] >= 0);
+      assert.ok(result.latentState[section][key] <= 1);
     }
   }
 

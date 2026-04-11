@@ -7,11 +7,12 @@ import { buildSurfaceWindow } from './surfaceWindow.js';
 
 export function runInternalOS(input, options = {}) {
   const normalizedInput = typeof input === 'string' ? input : '';
+  const normalizedOptions = options && typeof options === 'object' ? options : {};
   const initialState = createInitialInternalState();
-  const field = estimateField(normalizedInput, options);
-  const reaction = generateReaction(normalizedInput, field, options);
-  const stance = selectStance(field, reaction, options);
-  const permission = createPermissionLayer({ field, reaction, stance, options });
+  const field = estimateField(normalizedInput);
+  const reaction = generateReaction(normalizedInput, field);
+  const stance = selectStance(field, reaction);
+  const permission = createPermissionLayer({ field, reaction, stance });
 
   const latentState = {
     ...initialState,
@@ -21,7 +22,7 @@ export function runInternalOS(input, options = {}) {
     permission,
   };
 
-  const surfaceWindow = buildSurfaceWindow(latentState, options);
+  const surfaceWindow = buildSurfaceWindow(latentState);
 
   return {
     latentState,
@@ -29,6 +30,7 @@ export function runInternalOS(input, options = {}) {
     debugInfo: {
       version: 'pr1-minimum-os',
       inputLength: normalizedInput.length,
+      optionKeys: Object.keys(normalizedOptions),
     },
   };
 }
