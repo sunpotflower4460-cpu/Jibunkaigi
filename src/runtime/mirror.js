@@ -3,12 +3,28 @@ import { truncatePromptText } from './context.js';
 const MODE_GUIDE = {
   short: '2〜3文で十分。静かに映し、最後は問いを1つだけ置く。',
   medium: '3〜4文で返す。少し構造を見せつつ、静かな余白を残す。',
-  long: '4〜6文まで。深くなってよいが、説明や説教に傾けない。',
+  long: '4〜6文まで。深くなってよいが、分析しすぎず、温度を保つ。',
 };
 
-const MAX_MIRROR_CONTEXT_MESSAGES = 8;
-const MAX_MIRROR_CONTEXT_CHARS = 180;
-const MAX_MIRROR_SIGNALS = 4;
+const SIGNAL_LABELS = {
+  mainEmotion: 'mainEmotion',
+  mainConflict: 'mainConflict',
+  mainPull: 'mainPull',
+  repeatedPattern: 'repeatedPattern',
+  unresolvedPoint: 'unresolvedPoint',
+  dominantTendency: 'dominantTendency',
+};
+
+const MAX_MIRROR_CONTEXT_MESSAGES = 4;
+const MAX_MIRROR_CONTEXT_CHARS = 150;
+
+const AGENT_TENDENCIES = {
+  soul: '静かに照らす視点',
+  creative: '前へ動かそうとする視点',
+  strategist: '構造化して見通しを作る視点',
+  empath: '受け止めて緩める視点',
+  critic: '守るために現実を見る視点',
+};
 
 const EMOTION_PATTERNS = [
   { id: 'fear', label: '怖さや不安', patterns: [/怖/i, /不安/i, /傷つ/i, /失敗/i, /こわ/i] },
@@ -68,24 +84,14 @@ const normalizeContext = (context) => {
   return '';
 };
 
-const describeDominantAgentTone = (messages = [], agents = []) => {
-  const counts = messages.reduce((acc, message) => {
-    if (message.role !== 'ai' || message.agentId === 'master') return acc;
-    acc.set(message.agentId, (acc.get(message.agentId) || 0) + 1);
-    return acc;
-  }, new Map());
+const describeMainEmotion = (combinedUserText = '') => {
+  const emotion = findTopEmotion(combinedUserText);
 
-  if (!counts.size) return null;
+  if (!emotion) {
+    return '会話の底には、まだ言い切られていない気持ちが静かに残っている。';
+  }
 
-  const [agentId] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
-  const agent = agents.find((item) => item.id === agentId);
-  if (!agent) return null;
-
-  return {
-    key: 'dominant_agent_tone',
-    label: '強く残った視点',
-    summary: `${agent.name}の視点がいちばん濃く残っているが、勝ち負けではなく一つの色として扱う。`,
-  };
+  return `会話の底には、${emotion.label}がいちばん長く残っている。`;
 };
 
 const describeMainConflict = (scoreMap = {}) => {
@@ -96,30 +102,22 @@ const describeMainConflict = (scoreMap = {}) => {
   const shame = scoreMap.shame || 0;
 
   if (desire > 0 && (fear > 0 || fatigue > 0)) {
-    return {
-      key: 'main_conflict',
-      label: '大きな葛藤',
-      summary: '進みたい気持ちと、傷つく怖さや消耗を避けたい感覚が同時にある。',
-    };
+    return '進みたい気持ちと、傷つく怖さや消耗を避けたい感覚が同時に残っている。';
   }
 
   if (confusion > 0 && desire > 0) {
-    return {
-      key: 'main_conflict',
-      label: '大きな葛藤',
-      summary: '動きたい方向はあるのに、どこから決めるかで足が止まりやすい。',
-    };
+    return '動きたい方向はあるのに、どこから決めるかで足が止まりやすい。';
   }
 
   if (shame > 0 && desire > 0) {
-    return {
-      key: 'main_conflict',
-      label: '大きな葛藤',
-      summary: '向かいたい気持ちの横で、自分にはその資格がないという感覚が引き戻している。',
-    };
+    return '向かいたい気持ちの横で、自分にはその資格がないという感覚が引き戻している。';
   }
 
-  return null;
+  if (fear > 0 && fatigue > 0) {
+    return '進むことを考えるほど、これ以上削られたくない感覚も強くなっている。';
+  }
+
+  return '何を進め、何をまだ閉じないでおくかが、ひとつに決まりきっていない。';
 };
 
 const describeMainPull = (scoreMap = {}) => {
@@ -127,87 +125,109 @@ const describeMainPull = (scoreMap = {}) => {
   const confusion = scoreMap.confusion || 0;
   const fatigue = scoreMap.fatigue || 0;
   const fear = scoreMap.fear || 0;
+  const sadness = scoreMap.sadness || 0;
 
   if (desire > 0 && fear > 0) {
-    return {
-      key: 'main_pull',
-      label: 'いま引いている方向',
-      summary: '怖さがあっても、完全に離れるよりは少しだけ前を向きたい流れがある。',
-    };
+    return '完全に離れるより、怖さを抱えたままでも少し前を向きたい流れがある。';
   }
 
-  if (fatigue > 0) {
-    return {
-      key: 'main_pull',
-      label: 'いま引いている方向',
-      summary: '結論を急ぐことより、まず消耗を減らしたい流れが強い。',
-    };
+  if (fatigue > 0 || sadness > 0) {
+    return '結論を急ぐことより、まず今の重さを雑に扱わない方向へ引かれている。';
   }
 
   if (confusion > 0) {
-    return {
-      key: 'main_pull',
-      label: 'いま引いている方向',
-      summary: '答えそのものより、何をまだ閉じなくていいかを確かめたい流れがある。',
-    };
+    return '答えより先に、何をまだ閉じなくていいかを確かめたい流れがある。';
   }
 
-  return null;
+  return 'はっきりした答えより、いま残っている感触を見失わない方向へ引かれている。';
 };
 
 const describeRepeatedPattern = (userMessages = []) => {
-  if (!userMessages.length) return null;
+  if (!userMessages.length) {
+    return 'まだ強い反復は少ないが、同じ重さが静かに残っている。';
+  }
 
   if (
     countTextsWithPatterns(userMessages, EMOTION_PATTERN_MAP.desire) > 1 &&
     countTextsWithPatterns(userMessages, EMOTION_PATTERN_MAP.fear) > 0
   ) {
-    return {
-      key: 'repeated_pattern',
-      label: '繰り返し出た流れ',
-      summary: '動きたいのに少し手前で引き返す往復が、何度か顔を出している。',
-    };
+    return '動きたいのに少し手前で引き返す往復が、何度か顔を出している。';
   }
 
   if (countTextsWithPatterns(userMessages, EMOTION_PATTERN_MAP.confusion) > 1) {
-    return {
-      key: 'repeated_pattern',
-      label: '繰り返し出た流れ',
-      summary: '答えを急ぐより、まだ名前のつかない引っかかりを確かめ直す流れが続いている。',
-    };
+    return '答えを急ぐより、名前のつかない引っかかりを確かめ直す流れが続いている。';
   }
 
   if (countTextsWithPatterns(userMessages, EMOTION_PATTERN_MAP.fatigue) > 1) {
-    return {
-      key: 'repeated_pattern',
-      label: '繰り返し出た流れ',
-      summary: '前に進む話のたびに、先に消耗の重さが戻ってきやすい。',
-    };
+    return '前に進む話になるたびに、先に消耗の重さが戻ってきやすい。';
   }
 
-  return null;
+  if (userMessages.length >= 2) {
+    return '言い方は変わっても、同じ場所で立ち止まる感触が繰り返し残っている。';
+  }
+
+  return 'まだ強い反復は少ないが、同じ重さが静かに残っている。';
 };
 
 const describeUnresolvedPoint = (latestUserText = '', scoreMap = {}) => {
-  if (!latestUserText.trim()) return null;
+  if (/[?？]/.test(latestUserText)) {
+    return '直近の問いがまだ閉じておらず、結論より先に見ておきたい余白が残っている。';
+  }
 
-  if (/[?？]/.test(latestUserText) || (scoreMap.confusion || 0) > 0) {
-    return {
-      key: 'unresolved_point',
-      label: 'まだ閉じていない点',
-      summary: '結論より先に、まだ閉じたくない問いが残っている。',
-    };
+  if ((scoreMap.confusion || 0) > 0) {
+    return '何を先に決めるかではなく、どこがまだ曖昧なままなのかが開いたままになっている。';
   }
 
   if ((scoreMap.fear || 0) > 0 && (scoreMap.desire || 0) > 0) {
-    return {
-      key: 'unresolved_point',
-      label: 'まだ閉じていない点',
-      summary: '進むかどうかより、何を守りながら進みたいのかがまだ開いたままになっている。',
-    };
+    return '進むかどうかより、何を守りながら進みたいのかがまだ開いたままになっている。';
   }
 
-  return null;
+  return 'まだ言葉にしきれていない論点があり、きれいには閉じていない。';
+};
+
+const describeDominantTendency = (messages = [], agents = [], scoreMap = {}) => {
+  const counts = messages.reduce((acc, message) => {
+    if (message.role !== 'ai' || message.agentId === 'master') return acc;
+    acc.set(message.agentId, (acc.get(message.agentId) || 0) + 1);
+    return acc;
+  }, new Map());
+
+  const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const resolveAgentView = (agentId) => {
+    const agent = agents.find((item) => item.id === agentId);
+    return {
+      name: agent?.name || '誰かの',
+      tendency: AGENT_TENDENCIES[agentId] || 'ある視点',
+    };
+  };
+
+  if (ranked.length >= 2) {
+    const [topId, topCount] = ranked[0];
+    const [nextId, nextCount] = ranked[1];
+    const top = resolveAgentView(topId);
+    const next = resolveAgentView(nextId);
+
+    if (topCount === nextCount) {
+      return `${top.name}の${top.tendency}と、${next.name}の${next.tendency}が並んで残っている。`;
+    }
+
+    return `全体では${top.name}の${top.tendency}が少し前に出ていたが、${next.name}の${next.tendency}も残っている。`;
+  }
+
+  if (ranked.length === 1) {
+    const top = resolveAgentView(ranked[0][0]);
+    return `全体では${top.name}の${top.tendency}がやや前に出ていたが、勝ち負けではなく今の傾きとして残っている。`;
+  }
+
+  if ((scoreMap.fatigue || 0) > 0) {
+    return '全体では、まず消耗を雑に扱わない視点が前に出ている。';
+  }
+
+  if ((scoreMap.confusion || 0) > 0) {
+    return '全体では、急いで決めず構造を見ようとする視点が前に出ている。';
+  }
+
+  return '全体では、まだ一つに固めず場の重さを見ようとする視点が前に出ている。';
 };
 
 export const selectMirrorSignals = ({
@@ -215,7 +235,7 @@ export const selectMirrorSignals = ({
   agents = [],
   latestUserText = '',
 }) => {
-  const recentMessages = messages.filter(Boolean).slice(-MAX_MIRROR_CONTEXT_MESSAGES);
+  const recentMessages = messages.filter(Boolean).slice(-(MAX_MIRROR_CONTEXT_MESSAGES + 2));
   const userMessages = recentMessages
     .filter((message) => message.role === 'user')
     .map((message) => String(message.content || '').trim())
@@ -226,89 +246,58 @@ export const selectMirrorSignals = ({
     EMOTION_PATTERNS.map((item) => [item.id, scorePatterns(combinedUserText, item.patterns)]),
   );
 
-  const mainEmotion = findTopEmotion(combinedUserText);
-  const candidates = [
-    mainEmotion && {
-      key: 'main_emotion',
-      label: '強く残った感情',
-      summary: `会話の底には、${mainEmotion.label}が比較的はっきり残っている。`,
-    },
-    describeMainConflict(scoreMap),
-    describeDominantAgentTone(recentMessages, agents),
-    describeRepeatedPattern(userMessages),
-    describeUnresolvedPoint(latestUserText, scoreMap),
-    describeMainPull(scoreMap),
-  ].filter(Boolean);
-
-  const uniqueSignals = [];
-  const seenKeys = new Set();
-  for (const signal of candidates) {
-    if (seenKeys.has(signal.key)) continue;
-    seenKeys.add(signal.key);
-    uniqueSignals.push(signal);
-    if (uniqueSignals.length >= MAX_MIRROR_SIGNALS) break;
-  }
-
-  if (uniqueSignals.length >= 2) return uniqueSignals;
-
-  const fallback = [
-    {
-      key: 'main_emotion',
-      label: '強く残った感情',
-      summary: '会話の底には、まだ言い切られていない気持ちが静かに残っている。',
-    },
-    describeDominantAgentTone(recentMessages, agents),
-    {
-      key: 'main_pull',
-      label: 'いま引いている方向',
-      summary: '答えを急ぐより、自分の中で何が残っているかを見たい流れとして扱う。',
-    },
-  ].filter(Boolean);
-
-  return fallback.slice(0, 2);
+  return {
+    mainEmotion: describeMainEmotion(combinedUserText),
+    mainConflict: describeMainConflict(scoreMap),
+    mainPull: describeMainPull(scoreMap),
+    repeatedPattern: describeRepeatedPattern(userMessages),
+    unresolvedPoint: describeUnresolvedPoint(latestUserText, scoreMap),
+    dominantTendency: describeDominantTendency(recentMessages, agents, scoreMap),
+  };
 };
 
-const renderSignals = (signals = []) => {
-  if (!signals.length) return '- 今回は明確な signal が少ない。無理に整理せず、残っている気配だけを静かに映す。';
-
-  return signals
-    .map((signal) => `- ${signal.label}: ${signal.summary}`)
+const renderSignals = (signals = {}) =>
+  Object.entries(SIGNAL_LABELS)
+    .map(([key, label]) => {
+      const value = signals[key];
+      return `- ${label}: ${value || '特定しきれないが、無理に埋めない。'}`;
+    })
     .join('\n');
-};
 
 export const buildMirrorSystemPrompt = ({
   context = '',
   mode = 'medium',
-  signals = [],
+  signals = {},
 }) => {
   const normalizedContext = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
 
   return `
 あなたは「心の鏡」。
-ここまでの会話を、静かに深く、でも速く束ねる統合役として振る舞う。
+会話のまとめ役ではなく、その場の重力と未解決点を映す、静かな統合の窓として振る舞う。
+ジョーほど熱くも重くもならず、薄い signal から全体の傾きを読む。
 
-【役割】
-- 直前の一言だけでなく、会話全体に残った流れを見る。
-- エージェントごとの差や緊張関係も拾うが、どれが正しいかは決めない。
-- 相手の中にいま強く残っているものを、断定せず静かに映す。
+【見る順序】
+- 信念より先に、場の流れと反応を見る。
+- どの傾きが強かったか、どのズレが残ったか、何がまだ閉じていないかを見る。
+- どれが正しいかは決めない。エージェント同士の意見を勝敗化しない。
 
 【出力ルール】
 - 自然な口語日本語で、短めに返す。
-- 説教しない。無理に前向きにしない。まとめすぎない。
-- ただの箇条書き要約にしない。エージェント同士の意見を勝敗化しない。
-- 「あなたはこうです」と決めつけず、「今ここではこう見える」に寄せる。
+- 箇条書き要約にしない。説教しない。無理に前向きにしない。
+- 冷たく分析しすぎず、でもただの中立要約にも戻さない。
+- 「あなたはこうです」と断定せず、「今ここではこう見える」に寄せる。
 - 最後は問いを1つだけ返す。問いは一文だけにする。
 
 【返答の型】
-1. 会話全体の中で残ったものを、一言で静かに映す。
-2. その中の葛藤やズレを、正解を決めずに言語化する。
-3. 最後に、開いたまま残してよい問いを1つだけ置く。
+1. 会話全体の中で残ったものを短く映す。
+2. その中の葛藤 / ズレ / 未解決点を言語化する。
+3. 最後に、開いたままでよい問いを1つだけ置く。
 
-【今回の signal】
+【mirror signals】
 ${renderSignals(signals)}
 
-${normalizedContext ? `【ここまでの流れ】\n${normalizedContext}\n` : ''}【今回のモード】
+${normalizedContext ? `【直近の流れ】\n${normalizedContext}\n` : ''}【今回のモード】
 ${modeGuide}
 `.trim();
 };
@@ -316,11 +305,8 @@ ${modeGuide}
 export const buildMirrorUserPrompt = ({
   userName = 'あなた',
   userText = '',
-}) => {
-  return `${userName}の直近の言葉:
+}) => `${userName}の直近の言葉:
 ${userText}
 
-この会話を「静かな統合」として返してください。
-短く、自然に、押しつけずに。
-最後は問いを1つだけにしてください。`;
-};
+この会話を、ただの要約ではなく「場の重力を映す静かな統合」として返してください。
+長くしすぎず、押しつけず、最後は問いを1つだけにしてください。`;

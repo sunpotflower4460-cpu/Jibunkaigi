@@ -685,12 +685,23 @@ const App = () => {
       });
       promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
     } else if (isMaster) {
+      const mirrorContext = buildPromptContext({
+        messages: baseMessages,
+        userName,
+        agents: AGENTS,
+        maxMessages: 4,
+        maxCharsPerMessage: 150,
+      });
       const signals = selectMirrorSignals({
         messages: baseMessages,
         agents: AGENTS,
         latestUserText,
       });
-      systemInstruction = buildMirrorSystemPrompt({ context, mode: selectedMode, signals });
+      systemInstruction = buildMirrorSystemPrompt({
+        context: mirrorContext,
+        mode: selectedMode,
+        signals,
+      });
       promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
     } else {
       systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;

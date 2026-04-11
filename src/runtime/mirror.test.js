@@ -9,7 +9,7 @@ const sampleAgents = [
   { id: 'empath', name: 'ミナ' },
 ];
 
-test('selectMirrorSignals returns 2-4 lightweight signals including conflict and tone', () => {
+test('selectMirrorSignals returns the lightweight mirror signal object', () => {
   const signals = selectMirrorSignals({
     messages: [
       { role: 'user', content: '作品は出したいのに、傷つくのが怖くて止まるんです' },
@@ -22,32 +22,42 @@ test('selectMirrorSignals returns 2-4 lightweight signals including conflict and
     latestUserText: 'やりたいのに、考え始めるとまた怖くなります',
   });
 
-  assert.ok(signals.length >= 2);
-  assert.ok(signals.length <= 4);
-  assert.ok(signals.some((signal) => signal.key === 'main_conflict'));
-  assert.ok(signals.some((signal) => signal.key === 'repeated_pattern'));
-  assert.ok(signals.some((signal) => signal.key === 'dominant_agent_tone'));
+  assert.equal(typeof signals, 'object');
+  assert.equal(typeof signals.mainEmotion, 'string');
+  assert.equal(typeof signals.mainConflict, 'string');
+  assert.equal(typeof signals.mainPull, 'string');
+  assert.equal(typeof signals.repeatedPattern, 'string');
+  assert.equal(typeof signals.unresolvedPoint, 'string');
+  assert.equal(typeof signals.dominantTendency, 'string');
+  assert.match(signals.mainConflict, /進みたい|傷つく|怖さ/);
+  assert.match(signals.repeatedPattern, /引き返す往復|立ち止まる/);
+  assert.match(signals.dominantTendency, /ジョー|ケン/);
 });
 
 test('buildMirrorSystemPrompt defines the quiet synthesis shape and mirror-specific prohibitions', () => {
   const systemPrompt = buildMirrorSystemPrompt({
     mode: 'medium',
     context: 'あなた: 進みたいけど怖い\nジョー: 小さく出してみよう\nケン: 出し方を分けよう',
-    signals: [
-      { key: 'main_emotion', label: '強く残った感情', summary: '会話の底には、怖さや不安が比較的はっきり残っている。' },
-      { key: 'main_conflict', label: '大きな葛藤', summary: '進みたい気持ちと、傷つく怖さが同時にある。' },
-      { key: 'dominant_agent_tone', label: '強く残った視点', summary: 'ジョーの視点がいちばん濃く残っているが、勝ち負けではなく一つの色として扱う。' },
-    ],
+    signals: {
+      mainEmotion: '会話の底には、怖さや不安がいちばん長く残っている。',
+      mainConflict: '進みたい気持ちと、傷つく怖さが同時にある。',
+      mainPull: '完全に離れるより、怖さを抱えたまま少し前を向きたい流れがある。',
+      repeatedPattern: '動きたいのに少し手前で引き返す往復が、何度か顔を出している。',
+      unresolvedPoint: '進むかどうかより、何を守りながら進みたいのかがまだ開いたままになっている。',
+      dominantTendency: '全体ではジョーの前へ動かそうとする視点が少し前に出ていたが、ケンの構造化して見通しを作る視点も残っている。',
+    },
   });
 
-  assert.match(systemPrompt, /静かに深く、でも速く束ねる統合役/);
-  assert.match(systemPrompt, /説教しない。無理に前向きにしない。まとめすぎない。/);
+  assert.match(systemPrompt, /その場の重力と未解決点を映す、静かな統合の窓/);
+  assert.match(systemPrompt, /ジョーほど熱くも重くもならず/);
+  assert.match(systemPrompt, /箇条書き要約にしない。説教しない。無理に前向きにしない。/);
   assert.match(systemPrompt, /エージェント同士の意見を勝敗化しない。/);
   assert.match(systemPrompt, /最後は問いを1つだけ返す。/);
-  assert.match(systemPrompt, /1\. 会話全体の中で残ったものを、一言で静かに映す。/);
-  assert.match(systemPrompt, /【今回の signal】/);
-  assert.match(systemPrompt, /強く残った視点: ジョーの視点がいちばん濃く残っている/);
-  assert.match(systemPrompt, /【ここまでの流れ】/);
+  assert.match(systemPrompt, /1\. 会話全体の中で残ったものを短く映す。/);
+  assert.match(systemPrompt, /【mirror signals】/);
+  assert.match(systemPrompt, /mainPull: 完全に離れるより、怖さを抱えたまま少し前を向きたい流れがある。/);
+  assert.match(systemPrompt, /dominantTendency: 全体ではジョーの前へ動かそうとする視点が少し前に出ていた/);
+  assert.match(systemPrompt, /【直近の流れ】/);
 });
 
 test('buildMirrorUserPrompt keeps the final ask anchored to the latest user text and a single question', () => {
@@ -58,6 +68,6 @@ test('buildMirrorUserPrompt keeps the final ask anchored to the latest user text
 
   assert.match(userPrompt, /あなたの直近の言葉:/);
   assert.match(userPrompt, /まだ決めなくていいことがある気がします/);
-  assert.match(userPrompt, /静かな統合/);
+  assert.match(userPrompt, /場の重力を映す静かな統合/);
   assert.match(userPrompt, /最後は問いを1つだけにしてください。/);
 });
