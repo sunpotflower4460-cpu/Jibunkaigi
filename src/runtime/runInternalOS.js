@@ -27,7 +27,7 @@ export function runInternalOS(input, options = {}) {
     previousMix: normalizedOptions.previousMix,
   });
 
-  const surfaceWindow = buildSurfaceWindow(latentState, patternMix);
+  const surfaceWindow = buildSurfaceWindow(latentState);
 
   return {
     latentState,
