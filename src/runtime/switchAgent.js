@@ -34,6 +34,7 @@ const AGENT_PATTERN_AFFINITY = {
 const BASE_AGENT_WEIGHT = 0.12;
 const DOMINANT_BONUS = 0.08;
 const LAST_AGENT_PENALTY = 0.74;
+let fallbackRandomCounter = 0;
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
 const roundWeight = (value) => Math.round(value * 10000) / 10000;
@@ -60,7 +61,9 @@ const secureRandomUnit = () => {
     return parseInt(seed, 16) / 4294967296;
   }
 
-  return 0.5;
+  fallbackRandomCounter += 1;
+  const timeSeed = `${Date.now()}:${Math.round((globalThis.performance?.now?.() ?? 0) * 1000)}:${fallbackRandomCounter}`;
+  return hashUnit(timeSeed);
 };
 
 const normalizeSelectedPatterns = (patternMix) => {
