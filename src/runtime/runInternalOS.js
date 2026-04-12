@@ -5,6 +5,7 @@ import { generateReaction } from './reactionGenerator.js';
 import { mixLatentPatterns } from './routerMixer.js';
 import { selectStance } from './stanceSelector.js';
 import { buildSurfaceWindow } from './surfaceWindow.js';
+import { blendLatentState, normalizeLatentState } from './afterglow.js';
 
 export function runInternalOS(input, options = {}) {
   const normalizedInput = typeof input === 'string' ? input : '';
@@ -15,13 +16,18 @@ export function runInternalOS(input, options = {}) {
   const stance = selectStance(field, reaction);
   const permission = createPermissionLayer({ field, reaction, stance });
 
-  const latentState = {
+  const freshLatentState = {
     ...initialState,
     field,
     reaction,
     stance,
     permission,
   };
+
+  const previousLatentState = normalizeLatentState(normalizedOptions.previousLatentState);
+  const latentState = previousLatentState
+    ? blendLatentState(previousLatentState, freshLatentState)
+    : freshLatentState;
 
   const patternMix = mixLatentPatterns(latentState, {
     previousMix: normalizedOptions.previousMix,
@@ -38,6 +44,7 @@ export function runInternalOS(input, options = {}) {
       inputLength: normalizedInput.length,
       optionKeys: Object.keys(normalizedOptions),
       dominantPattern: patternMix.dominant,
+      usedAfterglow: Boolean(previousLatentState),
     },
   };
 }

@@ -32,6 +32,7 @@ import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt'
 import { buildPromptContext } from './runtime/context';
 import { buildMirrorSystemPrompt, buildMirrorUserPrompt, selectMirrorSignals } from './runtime/mirror';
 import { runInternalOS } from './runtime/runInternalOS';
+import { buildNextAfterglow, getAfterglowSeed } from './runtime/afterglow';
 import { checkResponse, cleanResponse } from './runtime/postCheck';
 import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
@@ -239,6 +240,7 @@ const App = () => {
   const currentSessionIdRef = useRef(currentSessionId);
   const lastSubmittedUserMessageRef = useRef(null);
   const preloadedReactionsRef = useRef(new Map());
+  const afterglowBySessionRef = useRef(new Map());
   const scrollRef = useRef(null);
   const textareaRef = useRef(null);
   const mountedRef = useRef(true);
@@ -283,6 +285,22 @@ const App = () => {
       finish();
     }
   };
+
+  const readSessionAfterglow = (sessionId) => {
+    if (!sessionId) return null;
+    return afterglowBySessionRef.current.get(sessionId) || null;
+  };
+
+  const writeSessionAfterglowLocal = (sessionId, afterglow) => {
+    if (!sessionId) return;
+    if (afterglow) {
+      afterglowBySessionRef.current.set(sessionId, afterglow);
+    } else {
+      afterglowBySessionRef.current.delete(sessionId);
+    }
+  };
+
+  const getAfterglowSeedForSession = (sessionId) => getAfterglowSeed(readSessionAfterglow(sessionId));
 
   useEffect(() => {
     mountedRef.current = true;
@@ -342,10 +360,24 @@ const App = () => {
     const sessionsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'sessions');
     return onSnapshot(sessionsRef, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      setSessions(docs.sort((a, b) => {
+      const sorted = docs.sort((a, b) => {
         if (b.isPinned !== a.isPinned) return b.isPinned ? 1 : -1;
         return (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0);
-      }));
+      });
+      setSessions(sorted);
+
+      const nextAfterglow = new Map();
+      const existing = afterglowBySessionRef.current;
+
+      for (const doc of sorted) {
+        if (doc.afterglow) {
+          nextAfterglow.set(doc.id, doc.afterglow);
+        } else if (existing.has(doc.id)) {
+          nextAfterglow.set(doc.id, existing.get(doc.id));
+        }
+      }
+
+      afterglowBySessionRef.current = nextAfterglow;
     });
   }, [user]);
 
@@ -528,7 +560,12 @@ const App = () => {
     if (AGENTS.length === 0 || !effectiveSessionId) return;
 
     const lastAgentId = getLastRespondingAgentId(messages);
-    const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), { mode: selectedMode });
+    const afterglowSeed = getAfterglowSeedForSession(effectiveSessionId);
+    const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
+      mode: selectedMode,
+      previousMix: afterglowSeed.previousMix,
+      previousLatentState: afterglowSeed.previousLatentState,
+    });
     const agentId = pickContextualAgent(AGENTS, {
       patternMix: internalOS.patternMix,
       lastAgentId,
@@ -683,12 +720,21 @@ const App = () => {
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
     const latestUserText = getLatestUserText(sessionId, baseMessages);
+    const afterglowSeed = getAfterglowSeedForSession(sessionId);
+    const continuityInternalOS = !isMaster
+      ? runInternalOS(latestUserText, {
+        agentId,
+        mode: selectedMode,
+        previousMix: afterglowSeed.previousMix,
+        previousLatentState: afterglowSeed.previousLatentState,
+      })
+      : null;
     let aiMsgId = null;
     let aiPersistenceState = 'not-created';
 
     let activated = null;
     if (isJoe) {
-      const joeInternalState = runInternalOS(latestUserText, { agentId, mode: selectedMode });
+      const joeInternalState = continuityInternalOS;
       const estimatedState = estimateState(latestUserText);
       activated = activateJoe(estimatedState);
       systemInstruction = buildJoeSystemPrompt({
@@ -791,6 +837,17 @@ const App = () => {
       );
       aiPersistenceState = 'persisted';
 
+      const nextAfterglow = buildNextAfterglow({
+        previousAfterglow: readSessionAfterglow(sessionId),
+        latentState: continuityInternalOS?.latentState,
+        patternMix: continuityInternalOS?.patternMix,
+        respondingAgentId: isMaster ? 'master' : agentId,
+        isMaster,
+      });
+
+      writeSessionAfterglowLocal(sessionId, nextAfterglow);
+      await safeUpdateSession(sessionId, { afterglow: nextAfterglow, updatedAt: serverTimestamp() });
+
       playSound('receive');
       setIsGenerating(false);
       setGeneratingAgent(null);
@@ -851,6 +908,7 @@ const App = () => {
       const msgs = await getDocs(collection(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages'));
       await Promise.all(msgs.docs.map(m => deleteDoc(m.ref)));
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId));
+      afterglowBySessionRef.current.delete(sessionId);
       if (currentSessionId === sessionId) { setCurrentSessionId(null); resetSessionUIState(); }
       setDeleteTargetId(null);
     } catch (error) {
