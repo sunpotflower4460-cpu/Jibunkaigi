@@ -213,12 +213,30 @@ const safeParseJson = (text) => {
   try { return JSON.parse(normalized.slice(start, end + 1)); } catch { return null; }
 };
 
+const getMessageSortValue = (message) =>
+  message.createdAt?.toMillis?.() ?? message.clientCreatedAt ?? 0;
+
+const sortMessagesByTime = (items) =>
+  [...items].sort((a, b) => getMessageSortValue(a) - getMessageSortValue(b));
+
+const mergeSessionMessages = (persistedMessages, optimisticMessages) => {
+  const mergedById = new Map();
+
+  [...optimisticMessages, ...persistedMessages].forEach((message, index) => {
+    const key = message.id || `${message.role}:${getMessageSortValue(message)}:${index}`;
+    mergedById.set(key, message);
+  });
+
+  return sortMessagesByTime(Array.from(mergedById.values()));
+};
+
 const App = () => {
   const [user, setUser] = useState(null);
   const [userName, setUserName] = useState('あなた');
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [messagesSessionId, setMessagesSessionId] = useState(null);
   const [userInput, setUserInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -241,9 +259,12 @@ const App = () => {
   const [autoExpandReactions, setAutoExpandReactions] = useState(null);
   const [surfaceDebugEntries, setSurfaceDebugEntries] = useState([]);
   const [optimisticSessionTitles, setOptimisticSessionTitles] = useState({});
+  const [optimisticMessagesBySession, setOptimisticMessagesBySession] = useState({});
 
+  const activeSessionIdRef = useRef(null);
   const currentSessionIdRef = useRef(currentSessionId);
   const lastSubmittedUserMessageRef = useRef(null);
+  const optimisticMessagesRef = useRef(optimisticMessagesBySession);
   const preloadedReactionsRef = useRef(new Map());
   const afterglowBySessionRef = useRef(new Map());
   const scrollRef = useRef(null);
@@ -326,7 +347,46 @@ const App = () => {
     if (!apiKey) { setErrorMessage("Gemini APIキーが未設定です。"); }
   }, []);
 
+  useEffect(() => {
+    activeSessionIdRef.current = currentSessionId ?? null;
+  }, [currentSessionId]);
+
   useEffect(() => { currentSessionIdRef.current = currentSessionId; }, [currentSessionId]);
+  useEffect(() => { optimisticMessagesRef.current = optimisticMessagesBySession; }, [optimisticMessagesBySession]);
+
+  const upsertOptimisticMessage = (sessionId, optimisticMessage) => {
+    if (!sessionId || !optimisticMessage) return;
+
+    setOptimisticMessagesBySession((prev) => {
+      const sessionMessages = prev[sessionId] || [];
+      if (sessionMessages.some((message) => message.id === optimisticMessage.id)) return prev;
+
+      return {
+        ...prev,
+        [sessionId]: sortMessagesByTime([...sessionMessages, optimisticMessage]),
+      };
+    });
+  };
+
+  const removeOptimisticMessage = (sessionId, messageId) => {
+    if (!sessionId || !messageId) return;
+
+    setOptimisticMessagesBySession((prev) => {
+      const sessionMessages = prev[sessionId];
+      if (!sessionMessages?.length) return prev;
+
+      const remainingMessages = sessionMessages.filter((message) => message.id !== messageId);
+      if (remainingMessages.length === sessionMessages.length) return prev;
+
+      const next = { ...prev };
+      if (remainingMessages.length > 0) {
+        next[sessionId] = remainingMessages;
+      } else {
+        delete next[sessionId];
+      }
+      return next;
+    });
+  };
 
   const resetSessionUIState = () => {
     setShowInput(true);
@@ -383,6 +443,20 @@ const App = () => {
           return (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0);
         });
         setSessions(sorted);
+        setOptimisticSessionTitles((prev) => {
+          const resolvedIds = sorted.filter((session) => !!session.title).map((session) => session.id);
+          if (resolvedIds.length === 0) return prev;
+
+          let changed = false;
+          const next = { ...prev };
+          resolvedIds.forEach((sessionId) => {
+            if (sessionId in next) {
+              delete next[sessionId];
+              changed = true;
+            }
+          });
+          return changed ? next : prev;
+        });
 
         const nextAfterglow = new Map();
         const existing = afterglowBySessionRef.current;
@@ -406,21 +480,45 @@ const App = () => {
 
   useEffect(() => {
     if (!db || !user || !currentSessionId) {
-      setMessages([]); setIsMessagesLoading(false); return;
+      setMessages([]);
+      setMessagesSessionId(null);
+      setIsMessagesLoading(false);
+      return;
     }
-    setIsMessagesLoading(true);
-    const messagesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'sessions', currentSessionId, 'messages');
+    const sessionId = currentSessionId;
+    const localMessages = optimisticMessagesRef.current[sessionId] || [];
+    setMessages([]);
+    setMessagesSessionId(null);
+    setIsMessagesLoading(localMessages.length === 0);
+    const messagesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages');
     return onSnapshot(
       messagesRef,
       (snapshot) => {
+        if (sessionId !== activeSessionIdRef.current) return;
         const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setMessages(docs.sort((a, b) =>
-          (a.createdAt?.toMillis?.() ?? a.clientCreatedAt ?? 0) -
-          (b.createdAt?.toMillis?.() ?? b.clientCreatedAt ?? 0)
-        ));
+        const sortedDocs = sortMessagesByTime(docs);
+        setMessagesSessionId(sessionId);
+        setMessages(sortedDocs);
+        setOptimisticMessagesBySession((prev) => {
+          const sessionOptimisticMessages = prev[sessionId];
+          if (!sessionOptimisticMessages?.length) return prev;
+
+          const persistedIds = new Set(sortedDocs.map((message) => message.id));
+          const remainingMessages = sessionOptimisticMessages.filter((message) => !persistedIds.has(message.id));
+          if (remainingMessages.length === sessionOptimisticMessages.length) return prev;
+
+          const next = { ...prev };
+          if (remainingMessages.length > 0) {
+            next[sessionId] = remainingMessages;
+          } else {
+            delete next[sessionId];
+          }
+          return next;
+        });
         setIsMessagesLoading(false);
       },
       (error) => {
+        if (sessionId !== activeSessionIdRef.current) return;
         console.error("Messages snapshot failed:", error);
         setErrorMessage("メッセージの取得に失敗しました。");
         setIsMessagesLoading(false);
@@ -620,10 +718,12 @@ const App = () => {
   const handleRandomResponse = () => {
     const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
     if (AGENTS.length === 0 || !effectiveSessionId) return;
+    const persistedMessages = messagesSessionId === effectiveSessionId ? messages : [];
+    const sessionMessages = mergeSessionMessages(persistedMessages, optimisticMessagesBySession[effectiveSessionId] || []);
 
-    const lastAgentId = getLastRespondingAgentId(messages);
+    const lastAgentId = getLastRespondingAgentId(sessionMessages);
     const afterglowSeed = getAfterglowSeedForSession(effectiveSessionId);
-    const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
+    const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, sessionMessages), {
       mode: selectedMode,
       previousMix: afterglowSeed.previousMix,
       previousLatentState: afterglowSeed.previousLatentState,
@@ -664,6 +764,7 @@ const App = () => {
     const wasCreatingNewSession = !sid;
     const userMsgId = makeId();
     const clientTimestamp = Date.now();
+    const optimisticMsg = { id: userMsgId, role: 'user', content: text, clientCreatedAt: clientTimestamp };
 
     try {
       if (wasCreatingNewSession) {
@@ -671,14 +772,16 @@ const App = () => {
         const fallbackTitle = text.slice(0, 15);
         // optimistic title を設定
         setOptimisticSessionTitles(prev => ({ ...prev, [sid]: fallbackTitle }));
+        upsertOptimisticMessage(sid, optimisticMsg);
+        activeSessionIdRef.current = sid;
+        currentSessionIdRef.current = sid;
+        setCurrentSessionId(sid);
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sid), {
           title: fallbackTitle,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           isPinned: false
         });
-        currentSessionIdRef.current = sid;
-        setCurrentSessionId(sid);
         callGemini({
           prompt: `文:「${text}」から15字以内の内省タイトルを生成。`,
           systemInstruction: "タイトルのみ出力。余計な記号不要。",
@@ -687,12 +790,6 @@ const App = () => {
           const clean = t.replace(/["'「」]/g, '').trim();
           if (clean) {
             safeUpdateSession(sid, { title: clean });
-            // Firestore に保存したらoptimistic削除（snapshot経由で正式タイトル取得）
-            setOptimisticSessionTitles(prev => {
-              const next = { ...prev };
-              delete next[sid];
-              return next;
-            });
           }
         }).catch(e => {
           const msg = e instanceof Error ? e.message : String(e);
@@ -703,6 +800,7 @@ const App = () => {
           }
         });
       } else {
+        upsertOptimisticMessage(sid, optimisticMsg);
         await safeUpdateSession(sid, { updatedAt: serverTimestamp() });
       }
 
@@ -711,18 +809,24 @@ const App = () => {
         { role: 'user', content: text, createdAt: serverTimestamp(), clientCreatedAt: clientTimestamp }
       );
 
-      const optimisticMsg = { id: userMsgId, role: 'user', content: text, clientCreatedAt: clientTimestamp };
-      setMessages(prev => {
-        if (wasCreatingNewSession) return [optimisticMsg];
-        if (prev.some(m => m.id === userMsgId)) return prev;
-        return [...prev, optimisticMsg];
-      });
-
       lastSubmittedUserMessageRef.current = { sessionId: sid, messageId: userMsgId, text };
-      setIsSending(false);
       setShowInput(false);
     } catch (e) {
       console.error("[handleSend] Error:", e);
+      removeOptimisticMessage(sid, userMsgId);
+      if (wasCreatingNewSession) {
+        setOptimisticSessionTitles((prev) => {
+          if (!(sid in prev)) return prev;
+          const next = { ...prev };
+          delete next[sid];
+          return next;
+        });
+      }
+      if (wasCreatingNewSession && activeSessionIdRef.current === sid) {
+        activeSessionIdRef.current = null;
+        currentSessionIdRef.current = null;
+        setCurrentSessionId(null);
+      }
       setErrorMessage("送信に失敗しました。もう一度お試しください。");
       setUserInput(text);
       setShowInput(true);
@@ -735,9 +839,11 @@ const App = () => {
   const handleAgentClick = (agentId, isMaster = false) => {
     const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
     if (!db || !user || !effectiveSessionId || isGenerating) return;
+    const persistedMessages = messagesSessionId === effectiveSessionId ? messages : [];
+    const sessionMessages = mergeSessionMessages(persistedMessages, optimisticMessagesBySession[effectiveSessionId] || []);
 
     const hasUserMessageInThisSession =
-      messages.some(m => m.role === 'user') ||
+      sessionMessages.some(m => m.role === 'user') ||
       lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId;
 
     if (!hasUserMessageInThisSession) {
@@ -749,7 +855,7 @@ const App = () => {
     const agentInfo = isMaster ? { name: '心の鏡', id: 'master' } : AGENTS.find(a => a.id === agentId);
     const mid = lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId
       ? lastSubmittedUserMessageRef.current?.messageId : null;
-    const messagesAtClick = [...messages];
+    const messagesAtClick = [...sessionMessages];
     const traceId = `${effectiveSessionId}:${mid || makeId()}:${isMaster ? 'master' : agentId}`;
 
     console.info(`[timing][${traceId}] agent button click`);
@@ -961,8 +1067,8 @@ const App = () => {
       }
       const cleanedResponse = cleanResponse(response);
 
-      if (currentSessionIdRef.current !== sessionId) {
-        setIsGenerating(false); setGeneratingAgent(null); setShowInput(true); return;
+      if (sessionId !== activeSessionIdRef.current) {
+        return;
       }
 
       aiMsgId = makeId();
@@ -983,10 +1089,8 @@ const App = () => {
         awaitingResponseRender: true,
       };
 
-      setMessages(prev => {
-        aiPersistenceState = 'optimistic';
-        return [...prev, optimisticAiMessage];
-      });
+      aiPersistenceState = 'optimistic';
+      upsertOptimisticMessage(sessionId, optimisticAiMessage);
 
       await measureFirestoreWrite(traceId, 'AI response save', () =>
         setDoc(
@@ -1007,14 +1111,14 @@ const App = () => {
       writeSessionAfterglowLocal(sessionId, nextAfterglow);
       await safeUpdateSession(sessionId, { afterglow: nextAfterglow, updatedAt: serverTimestamp() });
 
+      if (sessionId !== activeSessionIdRef.current) return;
+
       playSound('receive');
-      setIsGenerating(false);
-      setGeneratingAgent(null);
 
       if (!isMaster && sourceMessageId && pending?.text) {
         setAutoExpandReactions({ msgId: aiMsgId, isLoading: true });
         void preloadReactions(pending.text, sessionId, sourceMessageId, agentId, cleanedResponse).then(async () => {
-          if (currentSessionIdRef.current !== sessionId) { setAutoExpandReactions(null); return; }
+          if (sessionId !== activeSessionIdRef.current) return;
           const cached = preloadedReactionsRef.current.get(sourceMessageId);
 
           if (!cached || cached.sessionId !== sessionId || Object.keys(cached.data).length === 0) {
@@ -1029,7 +1133,7 @@ const App = () => {
                 { reactions: cached.data }
               )
             );
-            if (currentSessionIdRef.current === sessionId) {
+            if (sessionId === activeSessionIdRef.current) {
               setAutoExpandReactions({ msgId: aiMsgId, isLoading: false });
             }
             preloadedReactionsRef.current.delete(sourceMessageId);
@@ -1044,7 +1148,10 @@ const App = () => {
       console.error("[handleAiResponse] Error:", msg);
       // Firestore 保存前にだけ optimistic message を巻き戻す。
       if (aiMsgId && aiPersistenceState === 'optimistic') {
-        setMessages(prev => prev.filter(message => message.id !== aiMsgId));
+        removeOptimisticMessage(sessionId, aiMsgId);
+      }
+      if (sessionId !== activeSessionIdRef.current) {
+        return;
       }
       if (msg.includes("API key is missing")) {
         setErrorMessage("Gemini APIキーが未設定です。");
@@ -1073,6 +1180,18 @@ const App = () => {
       await Promise.all(msgs.docs.map(m => deleteDoc(m.ref)));
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId));
       afterglowBySessionRef.current.delete(sessionId);
+      setOptimisticMessagesBySession((prev) => {
+        if (!(sessionId in prev)) return prev;
+        const next = { ...prev };
+        delete next[sessionId];
+        return next;
+      });
+      setOptimisticSessionTitles((prev) => {
+        if (!(sessionId in prev)) return prev;
+        const next = { ...prev };
+        delete next[sessionId];
+        return next;
+      });
       if (currentSessionId === sessionId) { setCurrentSessionId(null); resetSessionUIState(); }
       setDeleteTargetId(null);
     } catch (error) {
@@ -1112,10 +1231,20 @@ const App = () => {
     }
   };
 
-  const userMessageCount = messages.filter(m => m.role === 'user').length;
   const activeSessionId = currentSessionId || currentSessionIdRef.current;
+  const persistedActiveSessionMessages = messagesSessionId === activeSessionId ? messages : [];
+  const optimisticMessages = activeSessionId ? (optimisticMessagesBySession[activeSessionId] || []) : [];
+  const activeSessionMessages = mergeSessionMessages(persistedActiveSessionMessages, optimisticMessages);
+  const hasVisibleMessages = activeSessionMessages.length > 0;
+  const shouldShowFullMessagesLoading = isMessagesLoading && !hasVisibleMessages;
+  const shouldShowInlineMessagesLoading = isMessagesLoading && hasVisibleMessages;
+  const shouldShowAgentBar = !!activeSessionId && (
+    hasVisibleMessages ||
+    lastSubmittedUserMessageRef.current?.sessionId === activeSessionId
+  );
+  const userMessageCount = activeSessionMessages.filter(m => m.role === 'user').length;
   const hasPromptForActiveSession =
-    messages.some(m => m.role === 'user') ||
+    activeSessionMessages.some(m => m.role === 'user') ||
     lastSubmittedUserMessageRef.current?.sessionId === activeSessionId;
   const canUseAgents = isAppReady && !isGenerating && !isSending && !!activeSessionId && !!hasPromptForActiveSession;
 
@@ -1173,7 +1302,7 @@ const App = () => {
           <header className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 neu-convex-sm gap-2" style={{ borderRadius: '0 0 16px 16px', zIndex: 10 }}>
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
               <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-500 shrink-0"><Menu size={18} /></button>
-              <h2 className="font-bold text-sm tracking-tight truncate text-slate-800">{sessions.find(s => s.id === currentSessionId)?.title || optimisticSessionTitles[currentSessionId] || "思考の領域"}</h2>
+              <h2 className="font-bold text-sm tracking-tight truncate text-slate-800">{sessions.find(s => s.id === activeSessionId)?.title || optimisticSessionTitles[activeSessionId] || "思考の領域"}</h2>
             </div>
             <div className="flex p-0.5 sm:p-1 rounded-xl neu-concave shrink-0">
               {Object.entries(MODES).map(([key, m]) => (
@@ -1199,10 +1328,10 @@ const App = () => {
                       <Send size={18} />
                     </button>
                   </div>
-                  {messages.length > 0 && <button onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><X size={20}/></button>}
+                  {hasVisibleMessages && <button onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><X size={20}/></button>}
                 </div>
               )}
-              {!showInput && (
+              {shouldShowAgentBar && (
                 <div className="relative flex items-center animate-in fade-in slide-in-from-bottom-2 w-full">
                   <div className="flex-1 flex gap-2 py-2 px-1 overflow-x-auto no-scrollbar items-center w-full">
                     <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents || isGenerating || isSending} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
@@ -1229,11 +1358,14 @@ const App = () => {
 
           <main ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 no-scrollbar relative z-10">
             <div className="max-w-2xl mx-auto pb-32">
-              {isMessagesLoading && messages.length === 0 ? (
+              {shouldShowFullMessagesLoading ? (
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-slate-400" size={32} /></div>
               ) : (
                 <>
-                  {messages.length === 0 && !isGenerating && !isSending && showInput && (
+                  {shouldShowInlineMessagesLoading && (
+                    <div className="flex justify-center py-4"><Loader2 className="animate-spin text-slate-400" size={18} /></div>
+                  )}
+                  {activeSessionMessages.length === 0 && !isGenerating && !isSending && showInput && (
                     <div className="h-full flex flex-col items-center justify-center py-20 animate-in fade-in duration-1000">
                       <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-slate-400 mb-6 glass-card"><Feather size={32} /></div>
                       <h3 className="text-lg font-black text-slate-800 mb-2">思考の部屋へようこそ</h3>
@@ -1245,7 +1377,7 @@ const App = () => {
                       </div>
                     </div>
                   )}
-                  {messages.map((msg, i) => {
+                  {activeSessionMessages.map((msg, i) => {
                     const isUser = msg.role === 'user';
                     const agent = AGENTS.find(a => a.id === msg.agentId) || (msg.agentId === 'master' ? { name: '心の鏡' } : null);
                     return (
@@ -1350,7 +1482,7 @@ const App = () => {
                       {generatingAgent && <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{generatingAgent.name} が思考中...</p>}
                     </div>
                   )}
-                  {!isGenerating && messages.length > 0 && messages[messages.length - 1].role === 'ai' && messages[messages.length - 1].agentId !== 'master' && userMessageCount >= 3 && (
+                  {!isGenerating && activeSessionMessages.length > 0 && activeSessionMessages[activeSessionMessages.length - 1].role === 'ai' && activeSessionMessages[activeSessionMessages.length - 1].agentId !== 'master' && userMessageCount >= 3 && (
                     <div className="flex justify-center mt-12 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
                       <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents} className="group flex items-center gap-4 px-6 py-4 rounded-2xl glass-card border border-indigo-200/50 hover:bg-white/60 transition-all active:scale-95 shadow-lg shadow-indigo-900/5 disabled:opacity-30">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-110 transition-transform"><Compass size={18} /></div>
