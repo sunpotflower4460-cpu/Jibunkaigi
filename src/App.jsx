@@ -38,6 +38,8 @@ import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
 import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 import { buildSurfaceFrame } from './runtime/surfaceTranslator';
+import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
+import SurfaceDebugPanel from './components/SurfaceDebugPanel';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -237,6 +239,7 @@ const App = () => {
   const [isMessagesLoading, setIsMessagesLoading] = useState(false);
   const [openToolbarMsgId, setOpenToolbarMsgId] = useState(null);
   const [autoExpandReactions, setAutoExpandReactions] = useState(null);
+  const [surfaceDebugEntries, setSurfaceDebugEntries] = useState([]);
 
   const currentSessionIdRef = useRef(currentSessionId);
   const lastSubmittedUserMessageRef = useRef(null);
@@ -302,6 +305,12 @@ const App = () => {
   };
 
   const getAfterglowSeedForSession = (sessionId) => getAfterglowSeed(readSessionAfterglow(sessionId));
+
+  const pushSurfaceDebugEntry = (entry) => {
+    if (!isSurfaceDebugEnabled()) return;
+    setSurfaceDebugEntries((prev) => [entry, ...prev].slice(0, SURFACE_DEBUG_MAX_ENTRIES));
+  };
+  const clearSurfaceDebugEntries = () => setSurfaceDebugEntries([]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -757,6 +766,15 @@ const App = () => {
         surfaceFrame,
       });
       promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
+      pushSurfaceDebugEntry(buildSurfaceDebugEntry({
+        agentId,
+        isMirror: false,
+        selectedMode,
+        latestUserText,
+        continuityInternalOS,
+        surfaceFrame,
+        afterglowSeed,
+      }));
     } else if (isMaster) {
       const mirrorContext = buildPromptContext({
         messages: baseMessages,
@@ -787,6 +805,15 @@ const App = () => {
         surfaceFrame: mirrorSurfaceFrame,
       });
       promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
+      pushSurfaceDebugEntry(buildSurfaceDebugEntry({
+        agentId: 'master',
+        isMirror: true,
+        selectedMode,
+        latestUserText,
+        continuityInternalOS,
+        surfaceFrame: mirrorSurfaceFrame,
+        afterglowSeed,
+      }));
     } else {
       // Random agent with surface frame support
       let agentPrompt = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}`;
@@ -810,6 +837,15 @@ const App = () => {
       }
 
       systemInstruction = `${agentPrompt}\n【対話履歴】\n${context}`;
+      pushSurfaceDebugEntry(buildSurfaceDebugEntry({
+        agentId,
+        isMirror: false,
+        selectedMode,
+        latestUserText,
+        continuityInternalOS,
+        surfaceFrame,
+        afterglowSeed,
+      }));
     }
     finishPromptBuild();
 
@@ -1334,6 +1370,13 @@ const App = () => {
         @keyframes introCardRise { from { opacity: 0; transform: translateY(30px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .anim-card-rise { animation: introCardRise 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both; }
       ` }} />
+
+      {isSurfaceDebugEnabled() && (
+        <SurfaceDebugPanel
+          entries={surfaceDebugEntries}
+          onClear={clearSurfaceDebugEntries}
+        />
+      )}
     </div>
   );
 };
