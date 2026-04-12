@@ -38,7 +38,7 @@ import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
 import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 import { buildSurfaceFrame } from './runtime/surfaceTranslator';
-import { isSurfaceDebugEnabled, buildSurfaceDebugEntry } from './runtime/surfaceDebug';
+import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
@@ -306,10 +306,9 @@ const App = () => {
 
   const getAfterglowSeedForSession = (sessionId) => getAfterglowSeed(readSessionAfterglow(sessionId));
 
-  const MAX_DEBUG_ENTRIES = 8;
   const pushSurfaceDebugEntry = (entry) => {
     if (!isSurfaceDebugEnabled()) return;
-    setSurfaceDebugEntries((prev) => [entry, ...prev].slice(0, MAX_DEBUG_ENTRIES));
+    setSurfaceDebugEntries((prev) => [entry, ...prev].slice(0, SURFACE_DEBUG_MAX_ENTRIES));
   };
   const clearSurfaceDebugEntries = () => setSurfaceDebugEntries([]);
 

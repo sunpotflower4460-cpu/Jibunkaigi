@@ -1,6 +1,8 @@
 // src/runtime/surfaceDebug.js
 // Surface Translator debug helper — dev-only, no Firestore, no production exposure
 
+export const SURFACE_DEBUG_MAX_ENTRIES = 8;
+
 export const isSurfaceDebugEnabled = () => {
   try {
     if (typeof import.meta !== 'undefined' && !import.meta.env?.DEV) return false;

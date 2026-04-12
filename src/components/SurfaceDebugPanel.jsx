@@ -3,8 +3,7 @@
 // Rendered only when isSurfaceDebugEnabled() returns true.
 
 import React, { useState } from 'react';
-
-const MAX_ENTRIES = 8;
+import { SURFACE_DEBUG_MAX_ENTRIES } from '../runtime/surfaceDebug';
 
 const fmt = (v) => {
   if (v === null || v === undefined) return '—';
@@ -68,7 +67,7 @@ const SurfaceDebugPanel = ({ entries = [], onClear }) => {
     }
   };
 
-  const visible = entries.slice(0, MAX_ENTRIES);
+  const visible = entries.slice(0, SURFACE_DEBUG_MAX_ENTRIES);
 
   return (
     <div
@@ -109,7 +108,7 @@ const SurfaceDebugPanel = ({ entries = [], onClear }) => {
             <p className="text-[9px] text-slate-500 text-center py-3">No entries yet</p>
           ) : (
             visible.map((entry, i) => (
-              <EntryCard key={entry.timestamp + i} entry={entry} index={i} />
+              <EntryCard key={`${entry.timestamp}-${i}`} entry={entry} index={i} />
             ))
           )}
         </div>
