@@ -37,6 +37,7 @@ import { checkResponse, cleanResponse } from './runtime/postCheck';
 import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
 import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchAgent';
+import { buildSurfaceFrame } from './runtime/surfaceTranslator';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -729,6 +730,16 @@ const App = () => {
         previousLatentState: afterglowSeed.previousLatentState,
       })
       : null;
+    const surfaceFrame = continuityInternalOS
+      ? buildSurfaceFrame({
+          latentState: continuityInternalOS.latentState,
+          patternMix: continuityInternalOS.patternMix,
+          surfaceWindow: continuityInternalOS.surfaceWindow,
+          afterglowSeed,
+          agentId,
+          isMirror: false,
+        })
+      : null;
     let aiMsgId = null;
     let aiPersistenceState = 'not-created';
 
@@ -743,6 +754,7 @@ const App = () => {
         mode: selectedMode,
         userText: latestUserText,
         internalOS: joeInternalState,
+        surfaceFrame,
       });
       promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
     } else if (isMaster) {
@@ -758,14 +770,46 @@ const App = () => {
         agents: AGENTS,
         latestUserText,
       });
+      const mirrorSurfaceFrame = continuityInternalOS
+        ? buildSurfaceFrame({
+            latentState: continuityInternalOS.latentState,
+            patternMix: continuityInternalOS.patternMix,
+            surfaceWindow: continuityInternalOS.surfaceWindow,
+            afterglowSeed,
+            agentId: 'master',
+            isMirror: true,
+          })
+        : null;
       systemInstruction = buildMirrorSystemPrompt({
         context: mirrorContext,
         mode: selectedMode,
         signals,
+        surfaceFrame: mirrorSurfaceFrame,
       });
       promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
     } else {
-      systemInstruction = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}\n【対話履歴】\n${context}`;
+      // Random agent with surface frame support
+      let agentPrompt = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}`;
+
+      if (surfaceFrame) {
+        const pacingGuide = surfaceFrame.pacing === 'slow' ? '急がず、少し余白を残してよい。' :
+          surfaceFrame.pacing === 'aware_of_time' ? '時間を意識しつつ進める。' : '';
+        const directnessGuide = surfaceFrame.directness === 'gentle' ? 'いきなり解決に走らず、まず今あるものを軽く言い当てる。' :
+          surfaceFrame.directness === 'clear' ? '少し明確に指し示していい。' : '';
+        const temperatureGuide = surfaceFrame.emotionalTemperature === 'soft' ? '言い切りすぎず、少しやわらかく。' : '';
+        const permissionGuide = surfaceFrame.permissionHints.includes('do_not_rush') ? '急がない。' :
+          surfaceFrame.permissionHints.includes('do_not_over_explain') ? '説明しすぎない。' : '';
+
+        const internalGuidance = [pacingGuide, directnessGuide, temperatureGuide, permissionGuide]
+          .filter(Boolean)
+          .join(' ');
+
+        if (internalGuidance) {
+          agentPrompt += `\n【内部ガイド】${internalGuidance}`;
+        }
+      }
+
+      systemInstruction = `${agentPrompt}\n【対話履歴】\n${context}`;
     }
     finishPromptBuild();
 
