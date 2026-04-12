@@ -89,10 +89,11 @@ const apiKey =
     ? import.meta.env.VITE_GEMINI_API_KEY
     : (getGlobalValue('__api_key') || "");
 
+let fallbackIdCounter = 0;
 const makeId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    : `${Date.now()}-${(fallbackIdCounter += 1).toString(36)}`;
 
 const AGENTS = [
   {
