@@ -368,27 +368,34 @@ const App = () => {
       if (s.exists() && s.data().displayName) setUserName(s.data().displayName);
     });
     const sessionsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'sessions');
-    return onSnapshot(sessionsRef, (snapshot) => {
-      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      const sorted = docs.sort((a, b) => {
-        if (b.isPinned !== a.isPinned) return b.isPinned ? 1 : -1;
-        return (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0);
-      });
-      setSessions(sorted);
+    return onSnapshot(
+      sessionsRef,
+      (snapshot) => {
+        const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const sorted = docs.sort((a, b) => {
+          if (b.isPinned !== a.isPinned) return b.isPinned ? 1 : -1;
+          return (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0);
+        });
+        setSessions(sorted);
 
-      const nextAfterglow = new Map();
-      const existing = afterglowBySessionRef.current;
+        const nextAfterglow = new Map();
+        const existing = afterglowBySessionRef.current;
 
-      for (const doc of sorted) {
-        if (doc.afterglow) {
-          nextAfterglow.set(doc.id, doc.afterglow);
-        } else if (existing.has(doc.id)) {
-          nextAfterglow.set(doc.id, existing.get(doc.id));
+        for (const doc of sorted) {
+          if (doc.afterglow) {
+            nextAfterglow.set(doc.id, doc.afterglow);
+          } else if (existing.has(doc.id)) {
+            nextAfterglow.set(doc.id, existing.get(doc.id));
+          }
         }
-      }
 
-      afterglowBySessionRef.current = nextAfterglow;
-    });
+        afterglowBySessionRef.current = nextAfterglow;
+      },
+      (error) => {
+        console.error("Sessions snapshot failed:", error);
+        setErrorMessage("セッション一覧の取得に失敗しました。");
+      }
+    );
   }, [user]);
 
   useEffect(() => {
@@ -397,14 +404,22 @@ const App = () => {
     }
     setIsMessagesLoading(true);
     const messagesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'sessions', currentSessionId, 'messages');
-    return onSnapshot(messagesRef, (snapshot) => {
-      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      setMessages(docs.sort((a, b) =>
-        (a.createdAt?.toMillis?.() ?? a.clientCreatedAt ?? 0) -
-        (b.createdAt?.toMillis?.() ?? b.clientCreatedAt ?? 0)
-      ));
-      setIsMessagesLoading(false);
-    });
+    return onSnapshot(
+      messagesRef,
+      (snapshot) => {
+        const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setMessages(docs.sort((a, b) =>
+          (a.createdAt?.toMillis?.() ?? a.clientCreatedAt ?? 0) -
+          (b.createdAt?.toMillis?.() ?? b.clientCreatedAt ?? 0)
+        ));
+        setIsMessagesLoading(false);
+      },
+      (error) => {
+        console.error("Messages snapshot failed:", error);
+        setErrorMessage("メッセージの取得に失敗しました。");
+        setIsMessagesLoading(false);
+      }
+    );
   }, [user, currentSessionId]);
 
   useEffect(() => {
@@ -447,9 +462,29 @@ const App = () => {
     });
   }, [messages]);
 
+  const fetchWithTimeout = async (url, options, timeoutMs) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error(`Request timeout after ${timeoutMs}ms`);
+      }
+      throw error;
+    }
+  };
+
   const callGemini = async ({ prompt, systemInstruction, model = GEMINI_CHAT_MODEL, jsonMode = false, reactionSchema = false }) => {
     if (!apiKey) throw new Error("API key is missing");
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    const TIMEOUT_MS = 25000;
     const reactionJsonSchema = {
       type: "object",
       properties: {
@@ -473,17 +508,19 @@ const App = () => {
               }
             } : {})
           };
-          const res = await fetch(endpoint, {
+          console.info(`[callGemini] Attempt ${i + 1}/${retries} for model ${model}`);
+          const res = await fetchWithTimeout(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
             body: JSON.stringify(payload)
-          });
+          }, TIMEOUT_MS);
           if (!res.ok) {
             const errText = await res.text();
             console.error(`Gemini API Error (${model}) status=${res.status}`, errText);
             const retryable = [429, 500, 502, 503, 504].includes(res.status);
             if (!retryable) throw new Error(`Gemini API non-retryable error: ${res.status}`);
             if (i === retries - 1) throw new Error(`Gemini API retryable error: ${res.status}`);
+            console.warn(`[callGemini] Retrying after error (attempt ${i + 1}/${retries})`);
             await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
             continue;
           }
@@ -496,9 +533,18 @@ const App = () => {
         } catch (error) {
           const isLast = i === retries - 1;
           const message = error instanceof Error ? error.message : String(error);
-          if (message.includes("non-retryable") || message.includes("API key is missing")) throw error;
-          if (isLast) throw error;
-          await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+          if (message.includes("timeout")) {
+            console.error(`[callGemini] Timeout on attempt ${i + 1}/${retries}`);
+            if (isLast) throw new Error(`Gemini API timeout after ${retries} attempts`);
+          } else if (message.includes("non-retryable") || message.includes("API key is missing")) {
+            throw error;
+          } else if (isLast) {
+            throw error;
+          }
+          if (!isLast) {
+            console.warn(`[callGemini] Retrying after error (attempt ${i + 1}/${retries}): ${message}`);
+            await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+          }
         }
       }
     };
@@ -631,7 +677,14 @@ const App = () => {
         }).then(t => {
           const clean = t.replace(/["'「」]/g, '').trim();
           if (clean) safeUpdateSession(sid, { title: clean });
-        }).catch(e => console.warn("Title fail", e));
+        }).catch(e => {
+          const msg = e instanceof Error ? e.message : String(e);
+          if (msg.includes("timeout")) {
+            console.warn("[Title generation] Timed out, keeping fallback title");
+          } else {
+            console.warn("[Title generation] Failed:", msg);
+          }
+        });
       } else {
         await safeUpdateSession(sid, { updatedAt: serverTimestamp() });
       }
@@ -652,11 +705,15 @@ const App = () => {
       setIsSending(false);
       setShowInput(false);
     } catch (e) {
-      console.error("handleSend error:", e);
+      console.error("[handleSend] Error:", e);
       setErrorMessage("送信に失敗しました。もう一度お試しください。");
       setUserInput(text);
       setShowInput(true);
-      setIsSending(false);
+    } finally {
+      // 確実に送信中状態を解除
+      if (isSending) {
+        setIsSending(false);
+      }
     }
   };
 
@@ -699,7 +756,14 @@ const App = () => {
   };
 
   const handleAiResponse = async (agentId, isMaster, sessionId, sourceMessageId, messagesAtClick, traceId) => {
-    if (!db || !user || !sessionId) return;
+    if (!db || !user || !sessionId) {
+      console.warn("[handleAiResponse] Aborted before start: missing db, user, or sessionId");
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      setErrorMessage("応答を開始できませんでした。時間を置いて再度お試しください。");
+      return;
+    }
     const agent = isMaster
       ? { name: '心の鏡', title: '総括の鏡', prompt: `あなたは「心の鏡」。ここまでの会話を静かに振り返り、相手自身が気づいていないパターンや感情を、押しつけがましくなく短くまとめる。最後に一つだけ、次の一歩を考えるための問いかけをする。` }
       : AGENTS.find(a => a.id === agentId);
@@ -962,12 +1026,15 @@ const App = () => {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      console.error("[handleAiResponse] Error:", msg);
       // Firestore 保存前にだけ optimistic message を巻き戻す。
       if (aiMsgId && aiPersistenceState === 'optimistic') {
         setMessages(prev => prev.filter(message => message.id !== aiMsgId));
       }
       if (msg.includes("API key is missing")) {
         setErrorMessage("Gemini APIキーが未設定です。");
+      } else if (msg.includes("timeout")) {
+        setErrorMessage("AIの応答がタイムアウトしました。もう一度お試しください。");
       } else if (msg.includes("response_check:empty") || msg.includes("Empty response")) {
         setErrorMessage("AIの応答が空でした。もう一度お試しください。");
       } else if (msg.includes("response_check:json_leak")) {
@@ -975,9 +1042,17 @@ const App = () => {
       } else {
         setErrorMessage("AIとの通信に失敗しました。");
       }
-      setIsGenerating(false);
-      setGeneratingAgent(null);
-      setShowInput(true);
+    } finally {
+      // 確実に UI を復帰させる
+      if (isGenerating) {
+        setIsGenerating(false);
+      }
+      if (generatingAgent) {
+        setGeneratingAgent(null);
+      }
+      if (!showInput) {
+        setShowInput(true);
+      }
     }
   };
 
