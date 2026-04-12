@@ -222,8 +222,8 @@ const sortMessagesByTime = (items) =>
 const mergeSessionMessages = (persistedMessages, optimisticMessages) => {
   const mergedById = new Map();
 
-  [...optimisticMessages, ...persistedMessages].forEach((message, index) => {
-    const key = message.id || `${message.role}:${getMessageSortValue(message)}:${index}`;
+  [...optimisticMessages, ...persistedMessages].forEach((message) => {
+    const key = message.id || `${message.role}:${getMessageSortValue(message)}`;
     mergedById.set(key, message);
   });
 
@@ -773,9 +773,9 @@ const App = () => {
         // optimistic title を設定
         setOptimisticSessionTitles(prev => ({ ...prev, [sid]: fallbackTitle }));
         upsertOptimisticMessage(sid, optimisticMsg);
+        setCurrentSessionId(sid);
         activeSessionIdRef.current = sid;
         currentSessionIdRef.current = sid;
-        setCurrentSessionId(sid);
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sid), {
           title: fallbackTitle,
           createdAt: serverTimestamp(),
