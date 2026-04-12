@@ -123,6 +123,6 @@ export function mixLatentPatterns(latentState = {}, options = {}) {
 
   return {
     selected: normalizedSelected,
-    dominant: normalizedSelected[0]?.id ?? null,
+    dominant: normalizedSelected[0]?.id ?? '',
   };
 }

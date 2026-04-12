@@ -57,8 +57,8 @@ test('mixLatentPatterns accepts previousMix without collapsing to a single winne
   }, {
     previousMix: {
       selected: [
-        { id: 'bright_focus', weight: 0.51 },
-        { id: 'curious_probe', weight: 0.29 },
+        { id: 'bright_focus', group: 'illuminate', weight: 0.51 },
+        { id: 'curious_probe', group: 'probe', weight: 0.29 },
       ],
     },
   });
