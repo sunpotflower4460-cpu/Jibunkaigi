@@ -527,9 +527,8 @@ const App = () => {
     const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
     if (AGENTS.length === 0 || !effectiveSessionId) return;
 
-    const latestUserText = getLatestUserText(effectiveSessionId, messages);
     const lastAgentId = getLastRespondingAgentId(messages);
-    const internalOS = runInternalOS(latestUserText, { mode: selectedMode });
+    const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), { mode: selectedMode });
     const agentId = pickContextualAgent(AGENTS, {
       patternMix: internalOS.patternMix,
       lastAgentId,
