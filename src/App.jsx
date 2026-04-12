@@ -35,7 +35,7 @@ import { runInternalOS } from './runtime/runInternalOS';
 import { checkResponse, cleanResponse } from './runtime/postCheck';
 import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
-import { pickRandomAgent, getLastRespondingAgentId } from './runtime/switchAgent';
+import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -512,12 +512,29 @@ const App = () => {
     }, 50);
   };
 
-  const handleRandomResponse = () => {
-    if (AGENTS.length > 0) {
-      const lastAgentId = getLastRespondingAgentId(messages);
-      const agentId = pickRandomAgent(AGENTS, lastAgentId);
-      handleAgentClick(agentId);
+  const getLatestUserText = (sessionId, baseMessages = messages) => {
+    const pending = lastSubmittedUserMessageRef.current;
+
+    if (pending?.sessionId === sessionId && typeof pending.text === 'string') {
+      return pending.text;
     }
+
+    return [...baseMessages].reverse().find((message) => message.role === 'user')?.content || '';
+  };
+
+  const handleRandomResponse = () => {
+    const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
+    if (AGENTS.length === 0 || !effectiveSessionId) return;
+
+    const latestUserText = getLatestUserText(effectiveSessionId, messages);
+    const lastAgentId = getLastRespondingAgentId(messages);
+    const internalOS = runInternalOS(latestUserText, { mode: selectedMode });
+    const agentId = pickContextualAgent(AGENTS, {
+      patternMix: internalOS.patternMix,
+      lastAgentId,
+    });
+
+    handleAgentClick(agentId);
   };
 
   const handleDeleteMessage = async (msgId) => {
@@ -665,9 +682,7 @@ const App = () => {
     const isJoe = !isMaster && agentId === 'creative';
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
-    const latestUserText = hasPendingUserInThisSession
-      ? pending.text
-      : ([...baseMessages].reverse().find(m => m.role === 'user')?.content || '');
+    const latestUserText = getLatestUserText(sessionId, baseMessages);
     let aiMsgId = null;
     let aiPersistenceState = 'not-created';
 
