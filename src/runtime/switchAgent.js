@@ -36,6 +36,7 @@ const DOMINANT_BONUS = 0.08;
 const LAST_AGENT_PENALTY = 0.74;
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
+const roundWeight = (value) => Math.round(value * 10000) / 10000;
 
 const hashUnit = (text) => {
   let hash = 0;
@@ -45,6 +46,21 @@ const hashUnit = (text) => {
   }
 
   return hash / 4093;
+};
+
+const secureRandomUnit = () => {
+  if (globalThis.crypto?.getRandomValues) {
+    const buffer = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(buffer);
+    return buffer[0] / 4294967296;
+  }
+
+  if (globalThis.crypto?.randomUUID) {
+    const seed = globalThis.crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+    return parseInt(seed, 16) / 4294967296;
+  }
+
+  return 0.5;
 };
 
 const normalizeSelectedPatterns = (patternMix) => {
@@ -71,7 +87,7 @@ const normalizeAgentWeights = (weights) => {
 
   return weights.map((item) => ({
     id: item.id,
-    weight: Number((item.score / total).toFixed(4)),
+    weight: roundWeight(item.score / total),
   }));
 };
 
@@ -100,7 +116,7 @@ export const buildContextualAgentWeights = (agents, patternMix, lastAgentId = nu
     .sort((a, b) => b.weight - a.weight);
 };
 
-export const pickContextualAgent = (agents, { patternMix, lastAgentId = null, randomValue = Math.random() } = {}) => {
+export const pickContextualAgent = (agents, { patternMix, lastAgentId = null, randomValue = secureRandomUnit() } = {}) => {
   const normalizedAgents = Array.isArray(agents) ? agents : [];
 
   if (normalizedAgents.length === 0) {
@@ -128,7 +144,7 @@ export const pickRandomAgent = (agents, excludeId = null) => {
 
   if (pool.length === 0) return agents[0]?.id ?? '';
 
-  const index = Math.floor(Math.random() * pool.length);
+  const index = Math.floor(secureRandomUnit() * pool.length);
   return pool[index].id;
 };
 
