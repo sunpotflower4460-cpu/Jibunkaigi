@@ -76,3 +76,54 @@ test('runInternalOS stays stable for undefined and null input', () => {
   assertNumericShape(runInternalOS(undefined));
   assertNumericShape(runInternalOS(null));
 });
+
+test('runInternalOS lightly blends previous latent state without overtaking current input', () => {
+  const previous = runInternalOS('やりたいのに動けない');
+  const fresh = runInternalOS('もう無理で諦めたい');
+  const blended = runInternalOS('もう無理で諦めたい', {
+    previousLatentState: previous.latentState,
+  });
+
+  assertNumericShape(blended);
+
+  let influencedKeys = 0;
+
+  for (const section of Object.keys(EXPECTED_KEYS)) {
+    for (const key of EXPECTED_KEYS[section]) {
+      const prevVal = previous.latentState[section][key];
+      const freshVal = fresh.latentState[section][key];
+      const blendedVal = blended.latentState[section][key];
+
+      if (prevVal !== freshVal) {
+        influencedKeys += 1;
+        assert.ok(Math.abs(blendedVal - freshVal) < Math.abs(prevVal - freshVal));
+      }
+    }
+  }
+
+  assert.ok(influencedKeys > 0);
+  assert.equal(blended.debugInfo.usedAfterglow, true);
+});
+
+test('runInternalOS respects previousMix inertia in patternMix selection', () => {
+  const base = runInternalOS('最近ちょっと自信ない');
+  const tailPattern = base.patternMix.selected[base.patternMix.selected.length - 1];
+
+  const withPreviousMix = runInternalOS('最近ちょっと自信ない', {
+    previousMix: { selected: [{ id: tailPattern.id, weight: 1 }] },
+  });
+
+  const baseWeight = tailPattern.weight;
+  const carriedWeight = withPreviousMix.patternMix.selected.find((p) => p.id === tailPattern.id)?.weight ?? 0;
+
+  assert.ok(carriedWeight >= baseWeight);
+});
+
+test('runInternalOS keeps legacy behavior when no continuity options are provided', () => {
+  const input = '作品を出したいけど怖い';
+  const withoutOptions = runInternalOS(input);
+  const withEmptyOptions = runInternalOS(input, {});
+
+  assert.deepEqual(withoutOptions.latentState, withEmptyOptions.latentState);
+  assert.deepEqual(withoutOptions.patternMix, withEmptyOptions.patternMix);
+});
