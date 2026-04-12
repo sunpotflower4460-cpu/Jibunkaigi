@@ -34,7 +34,30 @@ const assertNumericShape = (result) => {
     assert.ok(line.length > 0);
   }
 
-  assert.equal(result.debugInfo.version, 'pr1-minimum-os');
+  assert.ok(result.patternMix);
+  assert.ok(Array.isArray(result.patternMix.selected));
+  assert.ok(result.patternMix.selected.length >= 3);
+  assert.ok(result.patternMix.selected.length <= 5);
+  assert.equal(typeof result.patternMix.dominant, 'string');
+  assert.equal(result.patternMix.dominant, result.patternMix.selected[0].id);
+
+  const distinctGroups = new Set();
+  let weightTotal = 0;
+
+  for (const item of result.patternMix.selected) {
+    assert.equal(typeof item.id, 'string');
+    assert.equal(typeof item.group, 'string');
+    assert.equal(typeof item.weight, 'number');
+    assert.ok(Number.isFinite(item.weight));
+    assert.ok(item.weight >= 0);
+    assert.ok(item.weight <= 1);
+    distinctGroups.add(item.group);
+    weightTotal += item.weight;
+  }
+
+  assert.ok(distinctGroups.size >= 2);
+  assert.ok(Math.abs(weightTotal - 1) < 0.01);
+  assert.equal(result.debugInfo.version, 'pr4-router-mixer-minimum');
 };
 
 for (const input of [
@@ -42,6 +65,7 @@ for (const input of [
   '最近ちょっと自信ない',
   '作品を出したいけど怖い',
   'もう無理で諦めたい',
+  '誰にも言っていない、小さな違和感',
 ]) {
   test(`runInternalOS returns stable minimum shape for: ${input}`, () => {
     assertNumericShape(runInternalOS(input));

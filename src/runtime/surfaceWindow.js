@@ -10,7 +10,7 @@ const topTwo = (scores) => Object.entries(scores)
   .slice(0, 2)
   .map(([key]) => key);
 
-export function buildSurfaceWindow(latentState = {}) {
+export function buildSurfaceWindow(latentState = {}, patternMix = {}) {
   const field = latentState.field ?? {};
   const stance = latentState.stance ?? {};
   const permission = latentState.permission ?? {};
@@ -33,6 +33,10 @@ export function buildSurfaceWindow(latentState = {}) {
 
   const permissionLine = `Permission: ${(permissionFlags.slice(0, 2).join('; ')) || 'stay modest'}.`;
   const windowLines = [fieldLine, stanceLine, permissionLine];
+
+  if (typeof patternMix.dominant === 'string' && patternMix.dominant.length > 0) {
+    windowLines.push(`Dominant pattern: ${patternMix.dominant}.`);
+  }
 
   if ((field.fragility ?? 0) >= 0.55) {
     windowLines.push('Note: handle the fragile edge gently.');

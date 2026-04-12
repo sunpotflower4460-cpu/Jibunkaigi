@@ -2,6 +2,7 @@ import { estimateField } from './fieldEstimator.js';
 import { createInitialInternalState } from './internalState.js';
 import { createPermissionLayer } from './permissionLayer.js';
 import { generateReaction } from './reactionGenerator.js';
+import { mixLatentPatterns } from './routerMixer.js';
 import { selectStance } from './stanceSelector.js';
 import { buildSurfaceWindow } from './surfaceWindow.js';
 
@@ -22,15 +23,21 @@ export function runInternalOS(input, options = {}) {
     permission,
   };
 
-  const surfaceWindow = buildSurfaceWindow(latentState);
+  const patternMix = mixLatentPatterns(latentState, {
+    previousMix: normalizedOptions.previousMix,
+  });
+
+  const surfaceWindow = buildSurfaceWindow(latentState, patternMix);
 
   return {
     latentState,
     surfaceWindow,
+    patternMix,
     debugInfo: {
-      version: 'pr1-minimum-os',
+      version: 'pr4-router-mixer-minimum',
       inputLength: normalizedInput.length,
       optionKeys: Object.keys(normalizedOptions),
+      dominantPattern: patternMix.dominant,
     },
   };
 }
