@@ -119,6 +119,7 @@ const getRecencyWeight = (index, total) => {
 
 const getUserEntries = (messages = []) => {
   const totalMessages = messages.length;
+  const latestUserIndex = messages.map((message) => message?.role).lastIndexOf('user');
 
   return messages
     .map((message, index) => ({
@@ -132,7 +133,7 @@ const getUserEntries = (messages = []) => {
       index,
       weight:
         getRecencyWeight(index, totalMessages) +
-        (index === totalMessages - 1 ? LATEST_USER_WEIGHT_BOOST : BASE_USER_WEIGHT_BOOST),
+        (index === latestUserIndex ? LATEST_USER_WEIGHT_BOOST : BASE_USER_WEIGHT_BOOST),
     }));
 };
 
