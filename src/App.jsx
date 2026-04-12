@@ -240,6 +240,7 @@ const App = () => {
   const [openToolbarMsgId, setOpenToolbarMsgId] = useState(null);
   const [autoExpandReactions, setAutoExpandReactions] = useState(null);
   const [surfaceDebugEntries, setSurfaceDebugEntries] = useState([]);
+  const [optimisticSessionTitles, setOptimisticSessionTitles] = useState({});
 
   const currentSessionIdRef = useRef(currentSessionId);
   const lastSubmittedUserMessageRef = useRef(null);
@@ -334,6 +335,11 @@ const App = () => {
     setOpenToolbarMsgId(null);
     if (isAppReady) setErrorMessage(null);
     preloadedReactionsRef.current.clear();
+    // 追加: loading/generating系を確実にクリア
+    setIsGenerating(false);
+    setGeneratingAgent(null);
+    setIsSending(false);
+    setIsMessagesLoading(false);
   };
 
   const handleStartIntro = () => {
@@ -662,8 +668,11 @@ const App = () => {
     try {
       if (wasCreatingNewSession) {
         sid = makeId();
+        const fallbackTitle = text.slice(0, 15);
+        // optimistic title を設定
+        setOptimisticSessionTitles(prev => ({ ...prev, [sid]: fallbackTitle }));
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sid), {
-          title: text.slice(0, 15),
+          title: fallbackTitle,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           isPinned: false
@@ -676,7 +685,15 @@ const App = () => {
           model: GEMINI_CHAT_MODEL
         }).then(t => {
           const clean = t.replace(/["'「」]/g, '').trim();
-          if (clean) safeUpdateSession(sid, { title: clean });
+          if (clean) {
+            safeUpdateSession(sid, { title: clean });
+            // Firestore に保存したらoptimistic削除（snapshot経由で正式タイトル取得）
+            setOptimisticSessionTitles(prev => {
+              const next = { ...prev };
+              delete next[sid];
+              return next;
+            });
+          }
         }).catch(e => {
           const msg = e instanceof Error ? e.message : String(e);
           if (msg.includes("timeout")) {
@@ -710,10 +727,8 @@ const App = () => {
       setUserInput(text);
       setShowInput(true);
     } finally {
-      // 確実に送信中状態を解除
-      if (isSending) {
-        setIsSending(false);
-      }
+      // 確実に送信中状態を解除（無条件）
+      setIsSending(false);
     }
   };
 
@@ -947,7 +962,7 @@ const App = () => {
       const cleanedResponse = cleanResponse(response);
 
       if (currentSessionIdRef.current !== sessionId) {
-        setIsGenerating(false); setGeneratingAgent(null); return;
+        setIsGenerating(false); setGeneratingAgent(null); setShowInput(true); return;
       }
 
       aiMsgId = makeId();
@@ -1043,16 +1058,10 @@ const App = () => {
         setErrorMessage("AIとの通信に失敗しました。");
       }
     } finally {
-      // 確実に UI を復帰させる
-      if (isGenerating) {
-        setIsGenerating(false);
-      }
-      if (generatingAgent) {
-        setGeneratingAgent(null);
-      }
-      if (!showInput) {
-        setShowInput(true);
-      }
+      // 確実に UI を復帰させる（無条件）
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
     }
   };
 
@@ -1164,7 +1173,7 @@ const App = () => {
           <header className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 neu-convex-sm gap-2" style={{ borderRadius: '0 0 16px 16px', zIndex: 10 }}>
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
               <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-500 shrink-0"><Menu size={18} /></button>
-              <h2 className="font-bold text-sm tracking-tight truncate text-slate-800">{sessions.find(s => s.id === currentSessionId)?.title || "思考の領域"}</h2>
+              <h2 className="font-bold text-sm tracking-tight truncate text-slate-800">{sessions.find(s => s.id === currentSessionId)?.title || optimisticSessionTitles[currentSessionId] || "思考の領域"}</h2>
             </div>
             <div className="flex p-0.5 sm:p-1 rounded-xl neu-concave shrink-0">
               {Object.entries(MODES).map(([key, m]) => (
@@ -1193,20 +1202,20 @@ const App = () => {
                   {messages.length > 0 && <button onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><X size={20}/></button>}
                 </div>
               )}
-              {!showInput && !isGenerating && !isSending && (
+              {!showInput && (
                 <div className="relative flex items-center animate-in fade-in slide-in-from-bottom-2 w-full">
                   <div className="flex-1 flex gap-2 py-2 px-1 overflow-x-auto no-scrollbar items-center w-full">
-                    <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
+                    <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents || isGenerating || isSending} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
                       <Compass size={14} className="text-indigo-400" />
                       <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">心の鏡</span><span className="text-[7px] opacity-70 font-bold tracking-tighter truncate">思考を総括する</span></div>
                     </button>
-                    <button onClick={() => handleRandomResponse()} disabled={!canUseAgents} className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
+                    <button onClick={() => handleRandomResponse()} disabled={!canUseAgents || isGenerating || isSending} className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
                       <Sparkles size={14} /> 委ねる
                     </button>
                     <div className="w-px h-6 bg-slate-300 self-center mx-1 shrink-0" />
                     <button onClick={() => setShowInput(true)} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm"><Feather size={14} /> 綴る</button>
                     {AGENTS.map(a => (
-                      <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={!canUseAgents} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
+                      <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={!canUseAgents || isGenerating || isSending} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
                         {a.icon}
                         <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">{a.name}</span><span className="text-[7px] opacity-50 font-bold tracking-tighter truncate">{a.role}</span></div>
                       </button>
@@ -1220,7 +1229,7 @@ const App = () => {
 
           <main ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 no-scrollbar relative z-10">
             <div className="max-w-2xl mx-auto pb-32">
-              {isMessagesLoading ? (
+              {isMessagesLoading && messages.length === 0 ? (
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-slate-400" size={32} /></div>
               ) : (
                 <>
