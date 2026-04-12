@@ -54,6 +54,34 @@ test('selectMirrorSignals weights recent near-user tendencies over raw counts', 
   assert.match(signals.unresolvedPoint, /軽く扱わない|閉じていない|開いている|開いたまま/);
 });
 
+test('selectMirrorSignals applies LATEST_USER_WEIGHT_BOOST to the last user message even when the last message is from AI', () => {
+  // User at index 0: 5 desire-pattern matches (all five desire keywords)
+  // User at index 4 (latest): 3 fear-pattern matches
+  // AI at index 5 (last overall)
+  //
+  // Without the fix, index 4 !== totalMessages-1 (5), so it gets BASE_USER_WEIGHT_BOOST (0.15)
+  // instead of LATEST_USER_WEIGHT_BOOST (0.40).  With the lower boost:
+  //   desire = 5 × (1.0 + 0.15) = 5.75
+  //   fear   = 3 × (1.72 + 0.15) = 5.61  → desire wins (wrong)
+  // With the fix:
+  //   desire = 5 × 1.15 = 5.75
+  //   fear   = 3 × (1.72 + 0.40) = 6.36  → fear wins  (correct)
+  const signals = selectMirrorSignals({
+    messages: [
+      { role: 'user', content: '出したい、進みたい、やりたい、向きたい、踏み出したい' },
+      { role: 'ai', agentId: 'strategist', content: '前向きですね' },
+      { role: 'user', content: 'そうですね' },
+      { role: 'ai', agentId: 'empath', content: '大丈夫ですよ' },
+      { role: 'user', content: '怖い、不安で、傷ついてしまいそう' },
+      { role: 'ai', agentId: 'creative', content: '少しずつ進もう' },
+    ],
+    agents: sampleAgents,
+    latestUserText: '怖い、不安で、傷ついてしまいそう',
+  });
+
+  assert.match(signals.mainEmotion, /怖さや不安/);
+});
+
 test('buildMirrorSystemPrompt defines the quiet synthesis shape and mirror-specific prohibitions', () => {
   const systemPrompt = buildMirrorSystemPrompt({
     mode: 'medium',
