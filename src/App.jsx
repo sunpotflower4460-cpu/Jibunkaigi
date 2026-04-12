@@ -35,7 +35,7 @@ import { runInternalOS } from './runtime/runInternalOS';
 import { checkResponse, cleanResponse } from './runtime/postCheck';
 import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
-import { pickRandomAgent, getLastRespondingAgentId } from './runtime/switchAgent';
+import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -89,10 +89,11 @@ const apiKey =
     ? import.meta.env.VITE_GEMINI_API_KEY
     : (getGlobalValue('__api_key') || "");
 
+let fallbackIdCounter = 0;
 const makeId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    : `${Date.now()}-${(fallbackIdCounter += 1).toString(36)}`;
 
 const AGENTS = [
   {
@@ -512,12 +513,28 @@ const App = () => {
     }, 50);
   };
 
-  const handleRandomResponse = () => {
-    if (AGENTS.length > 0) {
-      const lastAgentId = getLastRespondingAgentId(messages);
-      const agentId = pickRandomAgent(AGENTS, lastAgentId);
-      handleAgentClick(agentId);
+  const getLatestUserText = (sessionId, baseMessages = messages) => {
+    const pending = lastSubmittedUserMessageRef.current;
+
+    if (pending?.sessionId === sessionId && typeof pending.text === 'string') {
+      return pending.text;
     }
+
+    return [...baseMessages].reverse().find((message) => message.role === 'user')?.content || '';
+  };
+
+  const handleRandomResponse = () => {
+    const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
+    if (AGENTS.length === 0 || !effectiveSessionId) return;
+
+    const lastAgentId = getLastRespondingAgentId(messages);
+    const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), { mode: selectedMode });
+    const agentId = pickContextualAgent(AGENTS, {
+      patternMix: internalOS.patternMix,
+      lastAgentId,
+    });
+
+    handleAgentClick(agentId);
   };
 
   const handleDeleteMessage = async (msgId) => {
@@ -665,9 +682,7 @@ const App = () => {
     const isJoe = !isMaster && agentId === 'creative';
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
-    const latestUserText = hasPendingUserInThisSession
-      ? pending.text
-      : ([...baseMessages].reverse().find(m => m.role === 'user')?.content || '');
+    const latestUserText = getLatestUserText(sessionId, baseMessages);
     let aiMsgId = null;
     let aiPersistenceState = 'not-created';
 
