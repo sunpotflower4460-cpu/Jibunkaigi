@@ -774,8 +774,6 @@ const App = () => {
         setOptimisticSessionTitles(prev => ({ ...prev, [sid]: fallbackTitle }));
         upsertOptimisticMessage(sid, optimisticMsg);
         setCurrentSessionId(sid);
-        activeSessionIdRef.current = sid;
-        currentSessionIdRef.current = sid;
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sid), {
           title: fallbackTitle,
           createdAt: serverTimestamp(),
