@@ -451,6 +451,7 @@ export const buildJoeSystemPrompt = ({
   internalOS,
   latentState,
   surfaceWindow,
+  surfaceFrame,
 }) => {
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
@@ -463,6 +464,23 @@ export const buildJoeSystemPrompt = ({
   const biasSections = biasPack
     .map(({ title, content }) => `[${title}]\n${content}`)
     .join('\n\n');
+
+  // 共通表層フレームを短い内部ガイドとして薄く反映
+  let surfaceGuidance = '';
+  if (surfaceFrame) {
+    const pacingHint = surfaceFrame.pacing === 'slow' ? '急がず、余白を残していい。' :
+      surfaceFrame.pacing === 'aware_of_time' ? '時間を意識しつつ進める。' : '';
+    const directnessHint = surfaceFrame.directness === 'gentle' ? '少しやわらかく入る。' :
+      surfaceFrame.directness === 'clear' ? '少し明確に示していい。' : '';
+    const temperatureHint = surfaceFrame.emotionalTemperature === 'soft' ? '言い切りすぎない。' : '';
+    const permissionHint = surfaceFrame.permissionHints.includes('do_not_rush') ? '急がない。' :
+      surfaceFrame.permissionHints.includes('do_not_over_explain') ? '説明しすぎない。' : '';
+
+    const hints = [pacingHint, directnessHint, temperatureHint, permissionHint].filter(Boolean);
+    if (hints.length > 0) {
+      surfaceGuidance = `\n【表層傾向】${hints.join(' ')}`;
+    }
+  }
 
   return `
 あなたはジョー。自然な口語日本語で、相手の言葉の芯に触れる。
@@ -490,7 +508,7 @@ export const buildJoeSystemPrompt = ({
 
 【今回の状態への対応】
 ${stateGuide}
-
+${surfaceGuidance}
 ${internalFrame ? `【共通OSの薄い内部フレーム】
 ${internalFrame}
 

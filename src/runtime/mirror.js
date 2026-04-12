@@ -437,9 +437,32 @@ export const buildMirrorSystemPrompt = ({
   context = '',
   mode = 'medium',
   signals = {},
+  surfaceFrame,
 }) => {
   const normalizedContext = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
+
+  // Mirror 用の表層フレームから薄いガイドを生成
+  let surfaceGuidance = '';
+  if (surfaceFrame) {
+    const hints = [];
+    if (surfaceFrame.pacing === 'slow') {
+      hints.push('急がずに映す');
+    }
+    if (surfaceFrame.directness === 'gentle') {
+      hints.push('やわらかく照らす');
+    }
+    if (surfaceFrame.emotionalTemperature === 'soft') {
+      hints.push('軽く言い当てる');
+    }
+    if (surfaceFrame.permissionHints.includes('do_not_rush')) {
+      hints.push('結論を急がない');
+    }
+
+    if (hints.length > 0) {
+      surfaceGuidance = `\n【表層傾向】${hints.join('。')}。`;
+    }
+  }
 
   return `
 あなたは「心の鏡」。
@@ -459,7 +482,7 @@ export const buildMirrorSystemPrompt = ({
 - 「あなたはこうです」と断定せず、「今ここではこう見える」に寄せる。
 - 本文で疑問形を使わない。問いは最後の一文だけにする。
 - 次の行動や正解を迫る問いにしない。
-
+${surfaceGuidance}
 【返答の型】
 1. 会話全体の中で残ったものを短く映す。
 2. その中の葛藤 / ズレ / 未解決点を言語化する。
