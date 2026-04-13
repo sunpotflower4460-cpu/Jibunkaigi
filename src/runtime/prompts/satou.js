@@ -9,8 +9,6 @@ import {
   renderResidue,
   renderRefresh,
   renderStateSnapshot,
-  buildInternalFrame,
-  buildSurfaceGuidance,
   buildBiasPack,
   renderBiasSections,
   clamp01,
@@ -148,66 +146,6 @@ export const scoreSatouMaterials = ({
     .sort((a, b) => b.score - a.score);
 };
 
-// --- 状態ガイド ---
-
-const buildStateGuide = (state = {}) => {
-  const {
-    desire = 0,
-    fear = 0,
-    freeze = 0,
-    resignation = 0,
-    selfErasure = 0,
-    shame = 0,
-    unfinished = 0,
-  } = state;
-
-  if (resignation > 0.3) {
-    return [
-      '- 最優先: 諦めることで具体的に何を手放すことになるのか、コストを短く名指しする。',
-      '- 見え方: きれいに諦めようとしている時ほど、その下のコストが見えにくくなっている。甘い嘘を見過ごさない。',
-      '- 返答の型: 避けているものを一つ指す -> そのコストを短く見せる -> ただし追い詰めない。逃げ道は残す。',
-    ].join('\n');
-  }
-
-  if (freeze > 0.2 && (desire > 0.15 || resignation > 0.15)) {
-    return [
-      '- 最優先: 動けなさの裏にある「心地よい回避」がないか見る。',
-      '- 見え方: 止まっていることが楽なこともある。でもその楽さにはコストがある。そこを短く指す。',
-      '- 返答の型: 動けなさを認めつつ -> 回避しているものを一つ指す -> 最後に味方だと伝わるように。',
-    ].join('\n');
-  }
-
-  if (fear > 0.2 && desire > 0.15) {
-    return [
-      '- 最優先: 怖さの中で、実際に何を避けているのかを名指しする。',
-      '- 見え方: 怖いのは分かる。でも怖さを理由にして本当に大事なものから目を逸らしていないか。',
-      '- 返答の型: 向き合いたいものを認める -> 避けているものを短く指す -> 残酷にはしない。守るために言う。',
-    ].join('\n');
-  }
-
-  if (shame > 0.25 || selfErasure > 0.25) {
-    return [
-      '- 最優先: 自分を叩いていることと、正直であることの違いを示す。自己攻撃は正直さではない。',
-      '- 見え方: 自分を責めることで何かを守ろうとしている。でもそれは本当の問題を避けていることもある。',
-      '- 返答の型: 壊れそうなら守る側に回る -> 自己攻撃と本当の問題を分ける -> 短く、核心だけ。',
-    ].join('\n');
-  }
-
-  if (unfinished > 0.2) {
-    return [
-      '- 最優先: 引っかかりを放置していることのコストを見る。見て見ぬふりしていないか。',
-      '- 見え方: 引っかかったまま進もうとしている。それで本当に大丈夫か。',
-      '- 返答の型: 引っかかりを認める -> 放置のコストを短く指す -> 追い詰めず、一つの確認として置く。',
-    ].join('\n');
-  }
-
-  return [
-    '- 最優先: 入力の中で、避けているもの、見て見ぬふりしているものがないか見る。',
-    '- 見え方: 甘い嘘、心地よい回避、自分への言い訳がないか。あればそこを短く指す。',
-    '- 返答の型: 避けているものを一つ指す -> そのコストか理由を短く言う -> 最後に味方だと伝わるように。',
-  ].join('\n');
-};
-
 // --- メイン ---
 
 export const buildSatouSystemPrompt = ({
@@ -215,20 +153,18 @@ export const buildSatouSystemPrompt = ({
   context = '',
   mode = 'medium',
   userText = '',
-  internalOS,
-  surfaceFrame,
+  stateGuide,
+  internalFrame,
+  surfaceGuidance,
 }) => {
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
   const normalizedCtx = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
-  const stateGuide = buildStateGuide(state);
   const stateSnapshot = renderStateSnapshot(state);
-  const internalFrame = buildInternalFrame({ internalOS });
   const scored = scoreSatouMaterials({ activated: safeActivated, userText, state });
   const biasPack = buildBiasPack(scored);
   const biasSections = renderBiasSections(biasPack);
-  const surfaceGuidance = buildSurfaceGuidance(surfaceFrame);
 
   return `
 あなたはサトウ。口は悪いけど本音で話してくれる、現実を見てきた人。守るために言う。

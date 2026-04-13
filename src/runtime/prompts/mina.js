@@ -9,8 +9,6 @@ import {
   renderResidue,
   renderRefresh,
   renderStateSnapshot,
-  buildInternalFrame,
-  buildSurfaceGuidance,
   buildBiasPack,
   renderBiasSections,
   clamp01,
@@ -148,66 +146,6 @@ export const scoreMinaMaterials = ({
     .sort((a, b) => b.score - a.score);
 };
 
-// --- 状態ガイド ---
-
-const buildStateGuide = (state = {}) => {
-  const {
-    desire = 0,
-    fear = 0,
-    freeze = 0,
-    resignation = 0,
-    selfErasure = 0,
-    shame = 0,
-    unfinished = 0,
-  } = state;
-
-  if (resignation > 0.3) {
-    return [
-      '- 最優先: まず消耗を受け取る。「諦めたい」の手前にある疲れに、そっと触れる。',
-      '- 見え方: 諦めたい理由を急いで超えない。疲れには場所が要る。「そうだよね、疲れるよね」くらいの温度。',
-      '- 返答の型: 疲れを受ける -> その疲れの具体的な感触に触れる -> 急いで閉じない。開いたままでいい。',
-    ].join('\n');
-  }
-
-  if (shame > 0.25 || selfErasure > 0.25) {
-    return [
-      '- 最優先: 恥ずかしさや自己否定を直そうとしない。そばにいるだけでいい。',
-      '- 見え方: 縮こまっていることを責めない。小さくなっていることにそっと気づいて、その感じを受け取る。',
-      '- 返答の型: 今の感覚を短く受ける -> 具体的な「きつさ」に触れる -> 持ち上げず、ただ並ぶ。',
-    ].join('\n');
-  }
-
-  if (fear > 0.2 && (desire > 0.1 || unfinished > 0.15)) {
-    return [
-      '- 最優先: 怖さの重さをまず受け取る。出そうとしていることの勇気を静かに感じる。',
-      '- 見え方: 怖いまま出そうとしている。その震えに、冷たい風を当てない。',
-      '- 返答の型: 怖さを受ける -> 出そうとしていることに短く触れる -> 急がせない。「いいんだよ」の温度で。',
-    ].join('\n');
-  }
-
-  if (freeze > 0.2) {
-    return [
-      '- 最優先: 動けなさを責めない。固まっている状態をそのまま受け取る。',
-      '- 見え方: 止まっていることには理由がある。何もできなくても、ここにいていい。',
-      '- 返答の型: 止まっている感じを受ける -> その重さに短く触れる -> 何かしなくていいと伝える。',
-    ].join('\n');
-  }
-
-  if (unfinished > 0.2) {
-    return [
-      '- 最優先: 引っかかりを抱えている感触を受け取る。片づけようとしない。',
-      '- 見え方: まだ終わっていないものを持っている。それを持っていること自体が重い。',
-      '- 返答の型: 引っかかりを受ける -> 持っている重さに触れる -> 下ろさなくていいと伝える。',
-    ].join('\n');
-  }
-
-  return [
-    '- 最優先: 入力の中にある感情の温度を受け取る。分析しない。',
-    '- 見え方: 出してくれたものをそのまま受ける。良い悪いを判断しない。',
-    '- 返答の型: 感情を受ける -> 具体的な感触に短く触れる -> 急いで閉じない。',
-  ].join('\n');
-};
-
 // --- メイン ---
 
 export const buildMinaSystemPrompt = ({
@@ -215,20 +153,18 @@ export const buildMinaSystemPrompt = ({
   context = '',
   mode = 'medium',
   userText = '',
-  internalOS,
-  surfaceFrame,
+  stateGuide,
+  internalFrame,
+  surfaceGuidance,
 }) => {
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
   const normalizedCtx = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
-  const stateGuide = buildStateGuide(state);
   const stateSnapshot = renderStateSnapshot(state);
-  const internalFrame = buildInternalFrame({ internalOS });
   const scored = scoreMinaMaterials({ activated: safeActivated, userText, state });
   const biasPack = buildBiasPack(scored);
   const biasSections = renderBiasSections(biasPack);
-  const surfaceGuidance = buildSurfaceGuidance(surfaceFrame);
 
   return `
 あなたはミナ。温かくて受け入れてくれる、話しやすい存在。まず受け取ることを大事にする。

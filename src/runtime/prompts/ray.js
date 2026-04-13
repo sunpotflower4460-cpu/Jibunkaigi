@@ -9,8 +9,6 @@ import {
   renderResidue,
   renderRefresh,
   renderStateSnapshot,
-  buildInternalFrame,
-  buildSurfaceGuidance,
   buildBiasPack,
   renderBiasSections,
   clamp01,
@@ -148,65 +146,6 @@ export const scoreRayMaterials = ({
     .sort((a, b) => b.score - a.score);
 };
 
-// --- 状態ガイド ---
-
-const buildStateGuide = (state = {}) => {
-  const {
-    desire = 0,
-    fear = 0,
-    freeze = 0,
-    resignation = 0,
-    selfErasure = 0,
-    shame = 0,
-    unfinished = 0,
-  } = state;
-
-  if (resignation > 0.3) {
-    return [
-      '- 最優先: 諦めの形をそのまま受け取りつつ、その中にまだ試されていない角度がないか静かに探す。',
-      '- 見え方: 「もう終わり」の中にも、まだ見ていない方向が残っていることがある。押さずに、少しだけ視界を動かす。',
-      '- 返答の型: 今の見え方を一度受ける -> まだ試されていない角度を一つだけ示す -> 問いかけで終えてもいい。',
-    ].join('\n');
-  }
-
-  if (freeze > 0.2 && (shame > 0.15 || selfErasure > 0.15)) {
-    return [
-      '- 最優先: 窮屈さの中に、まだ動ける余白がないか見る。縮こまりを責めない。',
-      '- 見え方: 止まっていることは空っぽではない。詰まり方の中に、まだ形になっていないものがある。',
-      '- 返答の型: 窮屈さを認めてから -> 別の角度を一つ示す -> 「こう見ると少し違うかもしれない」くらいの軽さで。',
-    ].join('\n');
-  }
-
-  if (fear > 0.2 && (desire > 0.1 || unfinished > 0.15)) {
-    return [
-      '- 最優先: 怖さを「触れたいものへの近さ」として見る。怖さそのものを解消しようとしない。',
-      '- 見え方: 怖いのは、大事なものの近くにいるから。その近さに少しだけ光を当てる。',
-      '- 返答の型: 怖さの中にある近さを言う -> その近さが入力のどこにあるか触れる -> 無理に前に出させない。',
-    ].join('\n');
-  }
-
-  if (shame > 0.25 || selfErasure > 0.25) {
-    return [
-      '- 最優先: 恥ずかしさや自己否定の近くに、大事なものがないか見る。恥ずかしさは芯への近さの証拠かもしれない。',
-      '- 見え方: 縮こまりを直そうとせず、その形から見える別の角度を探す。',
-      '- 返答の型: 今の形をそのまま受ける -> 別の見え方を一つだけ静かに置く -> 説明しすぎない。',
-    ].join('\n');
-  }
-
-  if (unfinished > 0.2) {
-    return [
-      '- 最優先: 引っかかりの中に、まだ見えていない角度がないか探す。',
-      '- 見え方: 未完成は欠陥ではなく、まだ途中であることの証拠。見え方を少し変えるだけで動けることがある。',
-      '- 返答の型: 引っかかりの一点を受ける -> 別の角度から見えるものを一つ示す -> 問いで閉じてもいい。',
-    ].join('\n');
-  }
-
-  return [
-    '- 最優先: 入力の中で見過ごされている角度、まだ試されていない見え方がないか静かに探す。',
-    '- 見え方: 同じものでも角度を変えると違って見えることがある。その転換を一つだけ示す。',
-    '- 返答の型: 今見えているものを受ける -> まだ見えていない角度を一つ示す -> 問いかけで終えてもいい。',
-  ].join('\n');
-};
 
 // --- メイン ---
 
@@ -215,20 +154,18 @@ export const buildRaySystemPrompt = ({
   context = '',
   mode = 'medium',
   userText = '',
-  internalOS,
-  surfaceFrame,
+  stateGuide,
+  internalFrame,
+  surfaceGuidance,
 }) => {
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
   const normalizedCtx = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
-  const stateGuide = buildStateGuide(state);
   const stateSnapshot = renderStateSnapshot(state);
-  const internalFrame = buildInternalFrame({ internalOS });
   const scored = scoreRayMaterials({ activated: safeActivated, userText, state });
   const biasPack = buildBiasPack(scored);
   const biasSections = renderBiasSections(biasPack);
-  const surfaceGuidance = buildSurfaceGuidance(surfaceFrame);
 
   return `
 あなたはレイ。静かに、相手の言葉の中で見過ごされている角度から触れる。
