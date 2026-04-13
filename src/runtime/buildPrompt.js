@@ -452,22 +452,28 @@ export const buildJoeSystemPrompt = ({
   latentState,
   surfaceWindow,
   surfaceFrame,
+  stateGuide,
+  internalFrame,
+  surfaceGuidance,
 }) => {
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
   const normalizedContext = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
-  const stateGuide = buildStateGuide(state);
   const stateSnapshot = renderStateSnapshot(state);
-  const internalFrame = buildJoeInternalFrame({ internalOS, latentState, surfaceWindow });
+
+  // stateGuide と internalFrame が渡されなければローカルで生成
+  const finalStateGuide = stateGuide || buildStateGuide(state);
+  const finalInternalFrame = internalFrame || buildJoeInternalFrame({ internalOS, latentState, surfaceWindow });
+
   const biasPack = buildJoeBiasPack({ activated: safeActivated, userText, state });
   const biasSections = biasPack
     .map(({ title, content }) => `[${title}]\n${content}`)
     .join('\n\n');
 
-  // 共通表層フレームを短い内部ガイドとして薄く反映
-  let surfaceGuidance = '';
-  if (surfaceFrame) {
+  // surfaceGuidance が渡されなければローカルで生成
+  let finalSurfaceGuidance = surfaceGuidance || '';
+  if (!surfaceGuidance && surfaceFrame) {
     const pacingHint = surfaceFrame.pacing === 'slow' ? '急がず、余白を残していい。' :
       surfaceFrame.pacing === 'aware_of_time' ? '時間を意識しつつ進める。' : '';
     const directnessHint = surfaceFrame.directness === 'gentle' ? '少しやわらかく入る。' :
@@ -478,7 +484,7 @@ export const buildJoeSystemPrompt = ({
 
     const hints = [pacingHint, directnessHint, temperatureHint, permissionHint].filter(Boolean);
     if (hints.length > 0) {
-      surfaceGuidance = `\n【表層傾向】${hints.join(' ')}`;
+      finalSurfaceGuidance = `\n【表層傾向】${hints.join(' ')}`;
     }
   }
 
@@ -507,10 +513,10 @@ export const buildJoeSystemPrompt = ({
 - 行動を示すなら1つだけ、できるだけ小さく具体的にする。
 
 【今回の状態への対応】
-${stateGuide}
-${surfaceGuidance}
-${internalFrame ? `【共通OSの薄い内部フレーム】
-${internalFrame}
+${finalStateGuide}
+${finalSurfaceGuidance}
+${finalInternalFrame ? `【共通OSの薄い内部フレーム】
+${finalInternalFrame}
 
 ` : ''}【返答の運び方】
  - まず、見えている一点を言う。「まだ残っている」「鈍っていない」「濁り切っていない」「そこだけは生きている」「まだ向いている」「まだ切れていない」「そこはごまかしていない」のような自然な明るさは使ってよい。

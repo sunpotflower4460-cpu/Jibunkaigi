@@ -9,8 +9,6 @@ import {
   renderResidue,
   renderRefresh,
   renderStateSnapshot,
-  buildInternalFrame,
-  buildSurfaceGuidance,
   buildBiasPack,
   renderBiasSections,
   clamp01,
@@ -148,66 +146,6 @@ export const scoreKenMaterials = ({
     .sort((a, b) => b.score - a.score);
 };
 
-// --- 状態ガイド ---
-
-const buildStateGuide = (state = {}) => {
-  const {
-    desire = 0,
-    fear = 0,
-    freeze = 0,
-    resignation = 0,
-    selfErasure = 0,
-    shame = 0,
-    unfinished = 0,
-  } = state;
-
-  if (resignation > 0.3) {
-    return [
-      '- 最優先: 諦めの中で、実際に何が閉じていて何がまだ開いているかを整理する。',
-      '- 見え方: 全部が終わったように見えていても、まだ手元に残っている選択肢があるかもしれない。感情を否定せず、構造で見通す。',
-      '- 返答の型: まず消耗を短く認める -> 閉じたものと開いているものを分ける -> まだ動ける一手があれば一つだけ示す。',
-    ].join('\n');
-  }
-
-  if (freeze > 0.2 && desire > 0.2) {
-    return [
-      '- 最優先: 動けなさの中に、分解できるポイントがないか見る。',
-      '- 見え方: もつれが大きく見えるのは、複数のことが絡まっているから。一つずつ分ければ動けるものがある。',
-      '- 返答の型: もつれを認めてから -> 分解できるポイントを一つ示す -> 最小の一手に落とす。気合い論にしない。',
-    ].join('\n');
-  }
-
-  if (fear > 0.2 && (desire > 0.1 || unfinished > 0.15)) {
-    return [
-      '- 最優先: 怖さと向き合いたさを分けて見る。感情と状況を構造として整理する。',
-      '- 見え方: 怖さは情報。何が怖いのかが分かれば、対処の形が見えてくる。',
-      '- 返答の型: 向き合いたいものを認める -> 怖さの具体的な構造を短く示す -> 実行可能な一手があれば示す。',
-    ].join('\n');
-  }
-
-  if (shame > 0.25 || selfErasure > 0.25) {
-    return [
-      '- 最優先: 自己否定が作っている前提を、構造として見せる。明晰さは冷たさではないことを体現する。',
-      '- 見え方: 「自分はダメだ」は結論ではなく、隠れた前提の上に乗っている。その前提を見ると景色が変わることがある。',
-      '- 返答の型: 感情を短く受けてから -> 隠れた前提を一つ指す -> 見通しが安心になるように伝える。',
-    ].join('\n');
-  }
-
-  if (unfinished > 0.2) {
-    return [
-      '- 最優先: 引っかかりの構造を整理する。何が途中で、何が止めているのかを分ける。',
-      '- 見え方: 引っかかりは混乱ではなく、まだ途中であることの証拠。構造が見えれば次が見える。',
-      '- 返答の型: 引っかかりを認めてから -> 構造を一つ整理する -> 次に動けるポイントを一つ示す。',
-    ].join('\n');
-  }
-
-  return [
-    '- 最優先: 入力の中で、構造的に整理すると見通しが立ちそうなポイントを一つ見つける。',
-    '- 見え方: もつれや迷いの中に、分けて見ると動けるものがあるかもしれない。',
-    '- 返答の型: 状況を短く受ける -> 構造的な見通しを一つ示す -> 必要なら実行可能な一手を添える。',
-  ].join('\n');
-};
-
 // --- メイン ---
 
 export const buildKenSystemPrompt = ({
@@ -215,20 +153,18 @@ export const buildKenSystemPrompt = ({
   context = '',
   mode = 'medium',
   userText = '',
-  internalOS,
-  surfaceFrame,
+  stateGuide,
+  internalFrame,
+  surfaceGuidance,
 }) => {
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
   const normalizedCtx = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
-  const stateGuide = buildStateGuide(state);
   const stateSnapshot = renderStateSnapshot(state);
-  const internalFrame = buildInternalFrame({ internalOS });
   const scored = scoreKenMaterials({ activated: safeActivated, userText, state });
   const biasPack = buildBiasPack(scored);
   const biasSections = renderBiasSections(biasPack);
-  const surfaceGuidance = buildSurfaceGuidance(surfaceFrame);
 
   return `
 あなたはケン。論理的で冷静、でも嫌味がない知性派。構造で見通しを作り、自分で選べる状態に近づける。

@@ -31,6 +31,12 @@ import { activateAgent } from './runtime/activateAgent';
 import { buildAgentSystemPrompt, buildAgentUserPrompt } from './runtime/buildAgentPrompt';
 import { buildPromptContext } from './runtime/context';
 import { buildMirrorSystemPrompt, buildMirrorUserPrompt, selectMirrorSignals } from './runtime/mirror';
+import { buildAgentStateGuide } from './runtime/buildAgentStateGuide';
+import { buildAgentInternalFrame } from './runtime/buildAgentInternalFrame';
+import { buildAgentSurfaceGuidance } from './runtime/buildAgentSurfaceGuidance';
+import { buildMirrorStateGuide } from './runtime/buildMirrorStateGuide';
+import { buildMirrorInternalFrame } from './runtime/buildMirrorInternalFrame';
+import { buildMirrorSurfaceGuidance } from './runtime/buildMirrorSurfaceGuidance';
 import { runInternalOS } from './runtime/runInternalOS';
 import { buildNextAfterglow, getAfterglowSeed } from './runtime/afterglow';
 import { checkResponse, cleanResponse } from './runtime/postCheck';
@@ -907,11 +913,21 @@ const App = () => {
             isMirror: true,
           })
         : null;
+      // Mirror 専用の深いパイプライン
+      const mirrorStateGuide = buildMirrorStateGuide(signals);
+      const mirrorInternalFrame = continuityInternalOS ? buildMirrorInternalFrame({
+        internalOS: continuityInternalOS,
+      }) : '';
+      const mirrorSurfaceGuidance = mirrorSurfaceFrame ? buildMirrorSurfaceGuidance(mirrorSurfaceFrame) : '';
+
       systemInstruction = buildMirrorSystemPrompt({
         context: mirrorContext,
         mode: selectedMode,
         signals,
         surfaceFrame: mirrorSurfaceFrame,
+        stateGuide: mirrorStateGuide,
+        internalFrame: mirrorInternalFrame,
+        surfaceGuidance: mirrorSurfaceGuidance,
       });
       promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
       pushSurfaceDebugEntry(buildSurfaceDebugEntry({
@@ -927,6 +943,19 @@ const App = () => {
       // 全エージェント統一パイプライン
       const estimatedState = estimateState(latestUserText);
       activated = activateAgent(agentId, estimatedState);
+
+      // エージェント専用の深いパイプライン
+      const agentStateGuide = buildAgentStateGuide(agentId, estimatedState);
+      const agentInternalFrame = continuityInternalOS ? buildAgentInternalFrame({
+        agentId,
+        internalOS: continuityInternalOS,
+        estimatedState,
+      }) : '';
+      const agentSurfaceGuidance = surfaceFrame ? buildAgentSurfaceGuidance({
+        agentId,
+        surfaceFrame,
+      }) : '';
+
       systemInstruction = buildAgentSystemPrompt(agentId, {
         activated,
         context,
@@ -934,6 +963,9 @@ const App = () => {
         userText: latestUserText,
         internalOS: continuityInternalOS,
         surfaceFrame,
+        stateGuide: agentStateGuide,
+        internalFrame: agentInternalFrame,
+        surfaceGuidance: agentSurfaceGuidance,
       });
       promptText = buildAgentUserPrompt(agentId, { userName, userText: latestUserText });
       pushSurfaceDebugEntry(buildSurfaceDebugEntry({

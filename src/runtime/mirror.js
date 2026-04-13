@@ -438,13 +438,16 @@ export const buildMirrorSystemPrompt = ({
   mode = 'medium',
   signals = {},
   surfaceFrame,
+  stateGuide,
+  internalFrame,
+  surfaceGuidance,
 }) => {
   const normalizedContext = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
 
-  // Mirror 用の表層フレームから薄いガイドを生成
-  let surfaceGuidance = '';
-  if (surfaceFrame) {
+  // stateGuide と surfaceGuidance が渡されなければローカルで生成（後方互換性）
+  let finalSurfaceGuidance = surfaceGuidance || '';
+  if (!surfaceGuidance && surfaceFrame) {
     const hints = [];
     if (surfaceFrame.pacing === 'slow') {
       hints.push('急がずに映す');
@@ -460,7 +463,7 @@ export const buildMirrorSystemPrompt = ({
     }
 
     if (hints.length > 0) {
-      surfaceGuidance = `\n【表層傾向】${hints.join('。')}。`;
+      finalSurfaceGuidance = `\n【表層傾向】${hints.join('。')}。`;
     }
   }
 
@@ -482,8 +485,14 @@ export const buildMirrorSystemPrompt = ({
 - 「あなたはこうです」と断定せず、「今ここではこう見える」に寄せる。
 - 本文で疑問形を使わない。問いは最後の一文だけにする。
 - 次の行動や正解を迫る問いにしない。
-${surfaceGuidance}
-【返答の型】
+${stateGuide ? `
+【今回の状態への対応】
+${stateGuide}` : ''}
+${finalSurfaceGuidance}
+${internalFrame ? `【共通OSの薄い内部フレーム】
+${internalFrame}
+
+` : ''}【返答の型】
 1. 会話全体の中で残ったものを短く映す。
 2. その中の葛藤 / ズレ / 未解決点を言語化する。
 3. 最後に、開いたままでよい問いを1つだけ置く。
