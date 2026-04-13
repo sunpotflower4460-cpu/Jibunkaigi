@@ -1208,7 +1208,8 @@ const App = () => {
   const hasVisibleMessages = messages.length > 0;
   const shouldShowFullMessagesLoading = isMessagesLoading && !hasVisibleMessages;
   // delegate bar (委ねる) はセッションが存在すれば表示し、busy 時だけ disabled にする
-  const showDelegateBar = !showInput || (!!activeSessionId && !isGenerating && !isSending);
+  // session が存在しかつ非 busy のとき、または入力欄が非表示のときに表示
+  const showDelegateBar = (!!activeSessionId && !isGenerating && !isSending) || !showInput;
   const configIssues = [];
   if (!hasFirebaseConfig) {
     configIssues.push({
@@ -1365,10 +1366,16 @@ const App = () => {
                         <Sparkles size={14} /> 委ねる
                       </button>
                       <div className="w-px h-6 bg-slate-300 self-center mx-1 shrink-0" />
-                      {showInput
-                        ? <button onClick={() => setShowInput(false)} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm"><X size={14} /> 閉じる</button>
-                        : <button onClick={() => setShowInput(true)} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm"><Feather size={14} /> 綴る</button>
-                      }
+                      {(() => {
+                        const toggleProps = showInput
+                          ? { onClick: () => setShowInput(false), icon: <X size={14} />, label: '閉じる' }
+                          : { onClick: () => setShowInput(true), icon: <Feather size={14} />, label: '綴る' };
+                        return (
+                          <button onClick={toggleProps.onClick} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm">
+                            {toggleProps.icon} {toggleProps.label}
+                          </button>
+                        );
+                      })()}
                       {AGENTS.map(a => (
                         <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={!canUseAgents || isGenerating || isSending} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
                           {a.icon}
