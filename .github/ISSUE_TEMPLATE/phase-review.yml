@@ -1,0 +1,116 @@
+name: Phase Review
+description: フェーズレビューのためのIssueテンプレート（自動作成 or 手動作成）
+title: '[Review] phase-1'
+labels:
+  - phase-review
+body:
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      description: レビュー対象のPhaseを選んでください。
+      options:
+        - phase-1 (runtime安定化)
+        - phase-2 (「委ねる」体験の安定化)
+        - phase-3 (voiceの自然さ調整)
+        - phase-4 (MVP完成)
+        - phase-5 (テストと磨き込み)
+        - phase-6 (リリース準備)
+        - phase-7 (リリース後の深化)
+    validations:
+      required: true
+
+  - type: input
+    id: run-url
+    attributes:
+      label: Workflow Run URL
+      description: 対応する GitHub Actions の実行URLを貼ってください。
+      placeholder: https://github.com/owner/repo/actions/runs/xxxxx
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## Narrow Reviewer
+        > 今回の差分だけを確認してください。
+
+  - type: checkboxes
+    id: narrow-review
+    attributes:
+      label: Narrow Reviewer チェックリスト
+      options:
+        - label: バグが増えていないか
+        - label: 型エラーがないか
+        - label: build が通るか
+        - label: 明らかなUI崩れがないか
+        - label: 不要な変更が混ざっていないか
+        - label: 今回のPhaseの範囲を越えて壊していないか
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## Wide Reviewer / Code
+        > コード全体の目線で広く確認してください。
+
+  - type: checkboxes
+    id: wide-code-review
+    attributes:
+      label: Wide Reviewer / Code チェックリスト
+      options:
+        - label: 設計図からズレていないか
+        - label: 責務が散らばりすぎていないか
+        - label: 直した代わりに複雑になりすぎていないか
+        - label: 潜在層より表層の説明制御が強くなりすぎていないか
+        - label: 固定人格寄りに戻っていないか
+        - label: Joe / Mirror の役割が雑に崩れていないか
+        - label: 次のPhaseで困る構造になっていないか
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## Wide Reviewer / User
+        > 実際に触るユーザー目線で広く確認してください。
+
+  - type: checkboxes
+    id: wide-user-review
+    attributes:
+      label: Wide Reviewer / User チェックリスト
+      options:
+        - label: 開いてすぐ使いやすいか
+        - label: session切替が怖くないか
+        - label: 「委ねる」が自然に見えて押しやすいか
+        - label: 押したあとに不安が少ないか
+        - label: 止まったように見えないか
+        - label: 声の違いに不自然なキャラ作り感が強すぎないか
+        - label: 全体として気持ちよく使えるか
+        - label: 「戻ってこられる感じ」があるか
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## Phase Output
+        レビュー完了時に以下を記入してください。
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Phase Output
+      description: review-rules.md の Phase Output Format に沿って記入してください。
+      value: |
+        1. 今回やったこと:
+        2. 良くなったところ:
+        3. まだ残っている問題:
+        4. じぶん会議の核を守れているか:
+        5. 次のPhaseへ進んでよいか: (yes / no / conditional)
+        6. 人が確認した方がいい点:
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        レビュー完了後、GitHub Actions の **Review Gate** 承認ボタンを押してください。

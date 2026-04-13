@@ -1,0 +1,129 @@
+name: Run Phase
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: 'Phase ID to run'
+        required: true
+        default: 'phase-1'
+        type: choice
+        options:
+          - phase-1
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  # -- 1. lint / build / test ---------------------------------------------------
+  verify:
+    name: Verify
+    uses: ./.github/workflows/_verify.yml
+    with:
+      phase: ${{ inputs.phase }}
+
+  # -- 2. レビューIssueを自動作成 -----------------------------------------------
+  open-review-issue:
+    name: Open Review Issue
+    needs: verify
+    runs-on: ubuntu-latest
+    outputs:
+      issue-number: ${{ steps.create.outputs.issue-number }}
+    steps:
+      - name: Create review issue
+        id: create
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const phase    = '${{ inputs.phase }}';
+            const runUrl   = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `## Phase Review: ${phase}`,
+              '',
+              `**Workflow run:** ${runUrl}`,
+              '',
+              '---',
+              '',
+              '### Narrow Reviewer',
+              '> 今回の差分だけを確認してください。',
+              '',
+              '- [ ] バグが増えていないか',
+              '- [ ] 型エラーがないか',
+              '- [ ] build が通るか',
+              '- [ ] 明らかなUI崩れがないか',
+              '- [ ] 不要な変更が混ざっていないか',
+              '- [ ] 今回のPhaseの範囲を越えて壊していないか',
+              '',
+              '### Wide Reviewer / Code',
+              '> コード全体の目線で広く確認してください。',
+              '',
+              '- [ ] 設計図からズレていないか',
+              '- [ ] 責務が散らばりすぎていないか',
+              '- [ ] 直した代わりに複雑になりすぎていないか',
+              '- [ ] 潜在層より表層の説明制御が強くなりすぎていないか',
+              '- [ ] 固定人格寄りに戻っていないか',
+              '- [ ] Joe / Mirror の役割が雑に崩れていないか',
+              '- [ ] 次のPhaseで困る構造になっていないか',
+              '',
+              '### Wide Reviewer / User',
+              '> 実際に触るユーザー目線で広く確認してください。',
+              '',
+              '- [ ] 開いてすぐ使いやすいか',
+              '- [ ] session切替が怖くないか',
+              '- [ ] 「委ねる」が自然に見えて押しやすいか',
+              '- [ ] 押したあとに不安が少ないか',
+              '- [ ] 止まったように見えないか',
+              '- [ ] 声の違いに不自然なキャラ作り感が強すぎないか',
+              '- [ ] 全体として気持ちよく使えるか',
+              '- [ ] 「戻ってこられる感じ」があるか',
+              '',
+              '---',
+              '',
+              '### Phase Output (レビュー完了時に記入)',
+              '',
+              '1. 今回やったこと:',
+              '2. 良くなったところ:',
+              '3. まだ残っている問題:',
+              '4. じぶん会議の核を守れているか:',
+              '5. 次のPhaseへ進んでよいか:',
+              '6. 人が確認した方がいい点:',
+              '',
+              '---',
+              '',
+              'レビュー完了後、GitHub Actions の **Review gate** 承認ボタンを押してください。',
+            ].join('\n');
+
+            const { data: issue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              title: `[Review] ${phase} -- #${context.runId}`,
+              body,
+              labels: ['phase-review'],
+            });
+
+            core.setOutput('issue-number', issue.number);
+            core.notice(`Review issue created: ${issue.html_url}`);
+
+  # -- 3. 人間の承認を待つ (environment: phase-review に Required Reviewers を設定) --
+  review-gate:
+    name: Review Gate (${{ inputs.phase }})
+    needs: open-review-issue
+    runs-on: ubuntu-latest
+    environment: phase-review
+    steps:
+      - name: Gate passed
+        run: |
+          echo "[OK] ${{ inputs.phase }} review gate approved."
+          echo "Review issue: #${{ needs.open-review-issue.outputs.issue-number }}"
+
+  # -- 4. フェーズ完了 ----------------------------------------------------------
+  complete:
+    name: Phase Complete
+    needs: review-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "[done] ${{ inputs.phase }} complete."
+          echo "Next: update phases.yaml and open the next phase issue."
