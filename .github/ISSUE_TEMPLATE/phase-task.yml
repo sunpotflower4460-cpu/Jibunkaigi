@@ -1,0 +1,68 @@
+name: Phase Task
+description: フェーズタスクを追跡するためのIssueテンプレート
+title: '[Task] phase-1: '
+labels:
+  - phase-task
+body:
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      description: このタスクが属するPhaseを選んでください。
+      options:
+        - phase-1 (runtime安定化)
+        - phase-2 (「委ねる」体験の安定化)
+        - phase-3 (voiceの自然さ調整)
+        - phase-4 (MVP完成)
+        - phase-5 (テストと磨き込み)
+        - phase-6 (リリース準備)
+        - phase-7 (リリース後の深化)
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 作業概要
+      description: 何をするのかを簡潔に書いてください。
+      placeholder: 例) handleSend の finally ブロックでローディング状態が確実にリセットされるようにする
+    validations:
+      required: true
+
+  - type: textarea
+    id: do
+    attributes:
+      label: やること (do)
+      description: このフェーズで取り組む具体的な作業を書いてください。
+      placeholder: |
+        - sessionごとの loading / generating state を整理する
+        - handleSend / handleAiResponse の finally 復帰を安定させる
+    validations:
+      required: true
+
+  - type: textarea
+    id: dont
+    attributes:
+      label: やらないこと (dont)
+      description: このフェーズのスコープ外として明示的に除外することを書いてください。
+      placeholder: |
+        - UI全面改修
+        - 大きな新機能追加
+
+  - type: textarea
+    id: done_when
+    attributes:
+      label: 完了条件 (done_when)
+      description: このタスクが「完了した」と言える状態をチェックリスト形式で書いてください。
+      value: |
+        - [ ] 新規チャット直後に固まらない
+        - [ ] session切替で前の loading が残らない
+        - [ ] AI失敗時でもUIが戻る
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: メモ・補足
+      description: その他、レビュアーや次の人が知っておくべきことを自由に書いてください。

@@ -95,3 +95,61 @@ npm run build
 # ビルドのプレビュー
 npm run preview
 ```
+
+## 開発オーケストレーション
+
+じぶん会議の開発は、`docs/phases.yaml` で定義されたフェーズ単位で進めます。
+
+### フェーズを回す手順
+
+1. **Actions タブ → "Run Phase" ワークフロー → "Run workflow"** を開く
+2. `phase` を選択して実行（現在: `phase-1`）
+3. ワークフローが自動的に以下を行う:
+   - `_verify.yml`（lint / build / test）を実行
+   - レビュー用 Issue を自動作成
+   - **Review Gate** で一時停止（人間の承認待ち）
+4. 3人のレビュアー（Narrow / Wide Code / Wide User）が Issue のチェックリストを確認する
+5. 問題なければ、GitHub Actions の **Review Gate 承認ボタン** を押す
+6. `complete` ジョブが完了し、次のフェーズへ進む
+
+### Issue テンプレート
+
+| テンプレート | 用途 |
+|---|---|
+| `Phase Task` | フェーズのタスクを追跡する Issue |
+| `Phase Review` | レビュー用 Issue（ワークフローが自動作成。手動作成も可） |
+
+### レビュアーの役割
+
+| レビュアー | 役割 |
+|---|---|
+| **Narrow Reviewer** | 今回の差分のみ確認。バグ・型エラー・ビルド・スコープ逸脱をチェック |
+| **Wide Reviewer / Code** | コード全体の目線で設計・責務・じぶん会議らしさをチェック |
+| **Wide Reviewer / User** | ユーザー目線で体験・安心感・戻ってこられる感じをチェック |
+
+詳細は [`docs/review-rules.md`](docs/review-rules.md) を参照してください。
+
+### 手動設定が必要な項目
+
+ワークフローを使う前に、**リポジトリ管理者が以下を手動で設定**してください。
+
+#### 1. GitHub Environment の作成
+
+`Settings → Environments → New environment` で `phase-review` を作成し、  
+**Required reviewers** に承認者（Narrow Reviewer 担当者など）を追加します。  
+これにより Review Gate で自動停止し、承認が必要になります。
+
+#### 2. Labels の作成
+
+`Issues → Labels → New label` で以下の2つを作成します:
+
+| Label | 用途 |
+|---|---|
+| `phase-review` | レビュー Issue に付与される |
+| `phase-task` | タスク Issue に付与される |
+
+#### 3. Actions の権限設定
+
+`Settings → Actions → General → Workflow permissions` で  
+**"Read and write permissions"** を有効にしてください。  
+（レビュー Issue の自動作成に `issues: write` が必要です）
