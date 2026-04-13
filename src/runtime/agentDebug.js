@@ -34,6 +34,8 @@ export const buildShowDelegateBarHiddenReasons = ({
   isSending,
   showInput,
 }) => {
+  // Matches App.jsx: the delegate bar stays visible while the input is hidden,
+  // even if the usual session/busy gates would otherwise block it.
   const isVisible = ((hasActiveSession && !isGenerating && !isSending) || !showInput);
   if (isVisible) return [];
 

@@ -32,7 +32,7 @@ const AgentGateDebugPanel = ({
 
   return (
     <div
-      className="fixed bottom-4 left-4 z-[9999] w-80 rounded-xl overflow-hidden shadow-2xl"
+      className="fixed bottom-4 left-4 z-[120] w-80 rounded-xl overflow-hidden shadow-2xl"
       style={{ background: 'rgba(15,23,42,0.94)', border: '1px solid rgba(99,102,241,0.3)' }}
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-700">
@@ -52,6 +52,7 @@ const AgentGateDebugPanel = ({
             <Row label="isGenerating" value={debug.isGenerating} />
             <Row label="isSending" value={debug.isSending} />
             <Row label="showInput" value={debug.showInput} />
+            <Row label="hasActiveSession" value={debug.activeSessionIdPresent} />
             <Row label="activeSessionId" value={debug.activeSessionId} />
             <Row label="hasPrompt" value={debug.hasPromptForActiveSession} />
             <Row label="showDelegateBar" value={debug.showDelegateBar} />

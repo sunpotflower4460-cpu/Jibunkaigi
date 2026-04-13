@@ -708,9 +708,9 @@ const App = () => {
 
   const handleSend = async (overrideText = null) => {
     const text = (overrideText || userInput).trim();
-    const sendRequestId = makeId();
+    const traceId = makeId();
     const getSendLogMeta = (extra = {}) => ({
-      requestId: shortenAgentDebugId(sendRequestId),
+      requestId: shortenAgentDebugId(traceId),
       currentSessionId: currentSessionId || currentSessionIdRef.current,
       hasActiveSession: !!(currentSessionId || currentSessionIdRef.current),
       hasPromptForActiveSession,
@@ -1299,7 +1299,6 @@ const App = () => {
   };
 
   const userMessageCount = messages.filter(m => m.role === 'user').length;
-  const visibleMessages = messages;
   const activeSessionId = currentSessionId || currentSessionIdRef.current;
   const hasPromptForActiveSession =
     messages.some(m => m.role === 'user') ||
@@ -1325,7 +1324,12 @@ const App = () => {
     hasActiveSession,
     hasPromptForActiveSession: !!hasPromptForActiveSession,
   });
-  const canUseAgents = Object.values(canUseAgentsGate).every(Boolean);
+  const canUseAgents =
+    canUseAgentsGate.isAppReady &&
+    canUseAgentsGate.notGenerating &&
+    canUseAgentsGate.notSending &&
+    canUseAgentsGate.hasActiveSession &&
+    canUseAgentsGate.hasPromptForActiveSession;
   // session-scoped loading: full-screen spinner のみ messages が 0 件のときに表示
   const hasVisibleMessages = messages.length > 0;
   const shouldShowFullMessagesLoading = isMessagesLoading && !hasVisibleMessages;
@@ -1338,15 +1342,16 @@ const App = () => {
     isSending,
     showInput,
   });
+  const visibleMessagesCount = messages.length;
   const sharedAgentButtonReason = formatAgentDebugReason(canUseAgentsReasons);
-  const agentButtonsDisabled = canUseAgentsReasons.length > 0;
+  const areAgentButtonsDisabled = canUseAgentsReasons.length > 0;
   const agentButtonStates = [
-    { agentId: 'master', label: '心の鏡', disabled: agentButtonsDisabled, reason: sharedAgentButtonReason },
-    { agentId: 'delegate', label: '委ねる', disabled: agentButtonsDisabled, reason: sharedAgentButtonReason },
+    { agentId: 'master', label: '心の鏡', disabled: areAgentButtonsDisabled, reason: sharedAgentButtonReason },
+    { agentId: 'delegate', label: '委ねる', disabled: areAgentButtonsDisabled, reason: sharedAgentButtonReason },
     ...AGENTS.map((agent) => ({
       agentId: agent.id,
       label: agent.name,
-      disabled: agentButtonsDisabled,
+      disabled: areAgentButtonsDisabled,
       reason: sharedAgentButtonReason,
     })),
   ];
@@ -1355,12 +1360,14 @@ const App = () => {
     isGenerating,
     isSending,
     showInput,
-    activeSessionId: hasActiveSession,
+    activeSessionId: activeSessionId || null,
+    activeSessionIdPresent: hasActiveSession,
+    hasActiveSession,
     hasPromptForActiveSession,
     showDelegateBar,
     canUseAgents,
     messagesCount: messages.length,
-    visibleMessagesCount: visibleMessages.length,
+    visibleMessagesCount,
     currentSessionId,
     generatingAgent: generatingAgent?.id || generatingAgent?.name || null,
     showDelegateBarGate,
@@ -1514,15 +1521,15 @@ const App = () => {
                 <div className="relative flex flex-col animate-in fade-in slide-in-from-bottom-2 w-full gap-2">
                   <div className="flex items-center w-full">
                     <div className="flex-1 flex gap-2 py-2 px-1 overflow-x-auto no-scrollbar items-center w-full">
-                      <button onClick={() => handleAgentClick('master', true)} disabled={agentButtonsDisabled} title={agentDebugEnabled ? `debug:${sharedAgentButtonReason}` : undefined} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
+                      <button onClick={() => handleAgentClick('master', true)} disabled={areAgentButtonsDisabled} title={agentDebugEnabled ? `debug:${sharedAgentButtonReason}` : undefined} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
                         <Compass size={14} className="text-indigo-400" />
                         <div className="flex flex-col min-w-0">
                           <span className="text-[10px] font-black mb-0.5">心の鏡</span>
                           <span className="text-[7px] opacity-70 font-bold tracking-tighter truncate">思考を総括する</span>
-                          {agentDebugEnabled && agentButtonsDisabled && <span className="text-[7px] opacity-70 font-bold tracking-tight truncate">{sharedAgentButtonReason}</span>}
+                          {agentDebugEnabled && areAgentButtonsDisabled && <span className="text-[7px] opacity-70 font-bold tracking-tight truncate">{sharedAgentButtonReason}</span>}
                         </div>
                       </button>
-                      <button onClick={() => handleRandomResponse()} disabled={agentButtonsDisabled} title={agentDebugEnabled ? `debug:${sharedAgentButtonReason}` : undefined} className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
+                      <button onClick={() => handleRandomResponse()} disabled={areAgentButtonsDisabled} title={agentDebugEnabled ? `debug:${sharedAgentButtonReason}` : undefined} className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
                         <div className="flex flex-col items-start">
                           <span className="flex items-center gap-2"><Sparkles size={14} /> 委ねる</span>
                           {agentDebugEnabled && <span className="text-[7px] opacity-80 font-bold tracking-tight">{sharedAgentButtonReason}</span>}
@@ -1540,7 +1547,7 @@ const App = () => {
                         );
                       })()}
                       {AGENTS.map(a => (
-                        <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={agentButtonsDisabled} title={agentDebugEnabled ? `debug:${a.id}:${sharedAgentButtonReason}` : undefined} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
+                        <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={areAgentButtonsDisabled} title={agentDebugEnabled ? `debug:${a.id}:${sharedAgentButtonReason}` : undefined} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
                           {a.icon}
                           <div className="flex flex-col min-w-0">
                             <span className="text-[10px] font-black mb-0.5">{a.name}</span>
@@ -1688,7 +1695,7 @@ const App = () => {
                   )}
                   {!isGenerating && messages.length > 0 && messages[messages.length - 1].role === 'ai' && messages[messages.length - 1].agentId !== 'master' && userMessageCount >= 3 && (
                     <div className="flex justify-center mt-12 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
-                      <button onClick={() => handleAgentClick('master', true)} disabled={agentButtonsDisabled} title={agentDebugEnabled ? `debug:${sharedAgentButtonReason}` : undefined} className="group flex items-center gap-4 px-6 py-4 rounded-2xl glass-card border border-indigo-200/50 hover:bg-white/60 transition-all active:scale-95 shadow-lg shadow-indigo-900/5 disabled:opacity-30">
+                      <button onClick={() => handleAgentClick('master', true)} disabled={areAgentButtonsDisabled} title={agentDebugEnabled ? `debug:${sharedAgentButtonReason}` : undefined} className="group flex items-center gap-4 px-6 py-4 rounded-2xl glass-card border border-indigo-200/50 hover:bg-white/60 transition-all active:scale-95 shadow-lg shadow-indigo-900/5 disabled:opacity-30">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-110 transition-transform"><Compass size={18} /></div>
                         <div className="flex flex-col text-left">
                           <span className="text-sm font-black text-slate-700">ここまでの声を映してみますか？</span>
