@@ -1184,19 +1184,54 @@ const App = () => {
     messages.some(m => m.role === 'user') ||
     lastSubmittedUserMessageRef.current?.sessionId === activeSessionId;
   const canUseAgents = isAppReady && !isGenerating && !isSending && !!activeSessionId && !!hasPromptForActiveSession;
+  const configIssues = [];
+  if (!hasFirebaseConfig) {
+    configIssues.push({
+      id: 'firebase',
+      title: 'Firebase設定が未完了です',
+      detail: 'VITE_FIREBASE_* を設定すると、セッション保存と会議開始が有効にできます。',
+    });
+  }
+  if (!apiKey) {
+    configIssues.push({
+      id: 'gemini',
+      title: 'Gemini APIキーが未設定です',
+      detail: 'VITE_GEMINI_API_KEY を設定すると、各エージェントの応答を生成できます。',
+    });
+  }
+  const hasBlockingConfigIssue = configIssues.length > 0;
+  const inputPlaceholder = hasBlockingConfigIssue
+    ? '設定が完了すると、ここから問いを綴れます'
+    : '魂の声、あるいは迷いを綴る';
+  const composerHelperText = hasBlockingConfigIssue
+    ? '現在は設定待ちです。下の案内を確認すると開始しやすくなります。'
+    : 'Enterで送信 / Shift+Enterで改行';
+  const agentHelperText =
+    hasBlockingConfigIssue
+      ? '設定が完了すると、会議メンバーを呼び出せます。'
+      : !user
+        ? '接続を準備しています…'
+        : !activeSessionId
+          ? 'まずは「綴る」から問いを書き始めてください。'
+          : !hasPromptForActiveSession
+            ? '最初の一文を送ると、会議メンバーが応答できます。'
+            : '気になる視点を選ぶか、「委ねる」で流れに任せられます。';
 
   return (
     <div className="lake-bg relative min-h-screen overflow-hidden flex font-sans text-[#2d3748]">
-      <div className="water-shimmer z-0" />
-      <div className={`flex w-full h-full relative z-10 transition-opacity duration-500 ${isHomeReady || !showIntro ? 'opacity-100' : 'opacity-0'}`}>
+      <div aria-hidden="true" className="water-shimmer z-0" />
+      <div
+        aria-hidden={showIntro ? 'true' : 'false'}
+        className={`flex w-full h-full relative z-10 transition-opacity duration-500 ${isHomeReady || !showIntro ? 'opacity-100' : 'opacity-0'} ${showIntro ? 'pointer-events-none' : ''}`}
+      >
         {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-[60] md:hidden" />}
 
         <aside className={`fixed md:relative inset-y-0 left-0 w-72 bg-[#eef2f7]/50 border-r border-white/20 z-[70] transition-transform duration-300 backdrop-blur-xl flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
           <div className="flex-1 flex flex-col p-6 overflow-hidden">
-            <div className="flex items-center gap-3 mb-10 px-2 cursor-pointer" onClick={() => setShowBeliefs(true)}>
+            <button type="button" onClick={() => setShowBeliefs(true)} className="flex items-center gap-3 mb-10 px-2 cursor-pointer text-left">
               <div className="p-2 rounded-xl bg-[#1e293b] text-white flex items-center justify-center"><Users size={18} /></div>
               <h1 className="text-lg font-black tracking-tighter">じぶん会議</h1>
-            </div>
+            </button>
             <button onClick={() => { setTempName(userName); setIsEditingUserName(true); }} className="group flex items-center gap-4 w-full p-4 mb-8 rounded-2xl hover:bg-white/30 transition-all text-left">
               <div className="w-10 h-10 rounded-full bg-white/40 border border-white/60 flex items-center justify-center text-slate-400 shrink-0"><UserCircle2 size={20} /></div>
               <div className="flex-1 overflow-hidden">
@@ -1221,9 +1256,9 @@ const App = () => {
                       }
                     </div>
                     <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => { e.stopPropagation(); setEditingSessionId(s.id); setEditSessionTitle(s.title || ''); }} className="p-1 hover:text-indigo-600"><Edit3 size={10}/></button>
-                      <button onClick={(e) => { e.stopPropagation(); safeUpdateSession(s.id, { isPinned: !s.isPinned }); }} className={`p-1 ${s.isPinned ? 'text-amber-500' : 'hover:text-amber-500'}`}><Pin size={10}/></button>
-                      <button onClick={(e) => { e.stopPropagation(); setDeleteTargetId(s.id); }} className="p-1 hover:text-rose-500"><Trash2 size={10}/></button>
+                      <button aria-label="タイトルを編集" title="タイトルを編集" onClick={(e) => { e.stopPropagation(); setEditingSessionId(s.id); setEditSessionTitle(s.title || ''); }} className="p-1 hover:text-indigo-600"><Edit3 size={10}/></button>
+                      <button aria-label={s.isPinned ? 'ピン留めを外す' : 'ピン留めする'} title={s.isPinned ? 'ピン留めを外す' : 'ピン留めする'} onClick={(e) => { e.stopPropagation(); safeUpdateSession(s.id, { isPinned: !s.isPinned }); }} className={`p-1 ${s.isPinned ? 'text-amber-500' : 'hover:text-amber-500'}`}><Pin size={10}/></button>
+                      <button aria-label="セッションを削除" title="セッションを削除" onClick={(e) => { e.stopPropagation(); setDeleteTargetId(s.id); }} className="p-1 hover:text-rose-500"><Trash2 size={10}/></button>
                     </div>
                   </div>
                 </div>
@@ -1238,12 +1273,12 @@ const App = () => {
         <div className="flex-1 flex flex-col min-w-0 relative">
           <header className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 neu-convex-sm gap-2" style={{ borderRadius: '0 0 16px 16px', zIndex: 10 }}>
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-              <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-500 shrink-0"><Menu size={18} /></button>
+              <button aria-label="メニューを開く" title="メニューを開く" onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-500 shrink-0"><Menu size={18} /></button>
               <h2 className="font-bold text-sm tracking-tight truncate text-slate-800">{sessions.find(s => s.id === currentSessionId)?.title || optimisticSessionTitles[currentSessionId] || "思考の領域"}</h2>
             </div>
             <div className="flex p-0.5 sm:p-1 rounded-xl neu-concave shrink-0">
               {Object.entries(MODES).map(([key, m]) => (
-                <button key={key} onClick={() => setSelectedMode(key)} className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedMode === key ? 'bg-white/60 text-slate-900 shadow-sm border border-white/50' : 'text-slate-400 hover:text-slate-600 hover:bg-white/20'}`}>{m.icon} <span className="hidden sm:inline">{m.label}</span></button>
+                <button aria-label={`応答モード: ${m.label}`} title={m.label} key={key} onClick={() => setSelectedMode(key)} className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedMode === key ? 'bg-white/60 text-slate-900 shadow-sm border border-white/50' : 'text-slate-400 hover:text-slate-600 hover:bg-white/20'}`}>{m.icon} <span className="hidden sm:inline">{m.label}</span></button>
               ))}
             </div>
           </header>
@@ -1251,7 +1286,29 @@ const App = () => {
           {errorMessage && (
             <div className="mx-6 mt-4 p-3 rounded-xl glass-card border-rose-200/50 flex items-center justify-between animate-in fade-in slide-in-from-top-2 z-40">
               <div className="flex items-center gap-2 text-rose-600 text-xs font-bold"><AlertCircle size={14}/> {errorMessage}</div>
-              <button onClick={() => setErrorMessage(null)} className="p-1 hover:bg-rose-100 rounded-full text-rose-400"><X size={14}/></button>
+              <button aria-label="エラーメッセージを閉じる" title="閉じる" onClick={() => setErrorMessage(null)} className="p-1 hover:bg-rose-100 rounded-full text-rose-400"><X size={14}/></button>
+            </div>
+          )}
+
+          {hasBlockingConfigIssue && (
+            <div className="mx-4 sm:mx-6 mt-4 rounded-3xl glass-card border border-amber-200/60 p-5 sm:p-6 relative z-20">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 p-2 rounded-2xl bg-amber-100 text-amber-700 shrink-0"><AlertCircle size={18} /></div>
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-800">この環境では、まだ会議を開始できません</h3>
+                    <p className="text-xs font-medium text-slate-500 mt-1">不足している設定を補うと、そのままこの画面から対話を始められます。</p>
+                  </div>
+                  <ul className="space-y-2">
+                    {configIssues.map((issue) => (
+                      <li key={issue.id} className="rounded-2xl bg-white/50 border border-white/70 px-4 py-3">
+                        <p className="text-xs font-black text-slate-700">{issue.title}</p>
+                        <p className="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed">{issue.detail}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1259,35 +1316,41 @@ const App = () => {
             <div className="max-w-4xl mx-auto min-h-[72px] flex flex-col justify-center">
               {showInput && !isGenerating && !isSending && (
                 <div className="flex gap-4 animate-in fade-in slide-in-from-top-2 w-full">
-                  <div className="flex-1 relative">
-                    <textarea ref={textareaRef} rows="1" value={userInput} onChange={(e) => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="魂の声、あるいは迷いを綴る" className="w-full rounded-2xl px-6 py-4 text-base font-medium outline-none resize-none transition-all neu-concave border-none focus:ring-2 focus:ring-indigo-200/50" />
-                    <button onClick={() => handleSend()} disabled={!userInput.trim() || !isAppReady} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-[#1e293b] text-white transition-all active:scale-95 disabled:opacity-30 shadow-lg">
-                      <Send size={18} />
-                    </button>
+                  <div className="flex-1">
+                    <p id="composer-helper-text" className="mb-2 px-2 text-[11px] font-bold text-slate-400">{composerHelperText}</p>
+                    <div className="relative">
+                      <textarea ref={textareaRef} rows="1" value={userInput} disabled={hasBlockingConfigIssue} onChange={(e) => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={inputPlaceholder} aria-label="相談内容の入力欄" aria-describedby="composer-helper-text" className="w-full rounded-2xl px-6 py-4 pr-16 text-base font-medium outline-none resize-none transition-all neu-concave border-none focus:ring-2 focus:ring-indigo-200/50 disabled:opacity-60 disabled:cursor-not-allowed" />
+                      <button aria-label="メッセージを送信" title="メッセージを送信" onClick={() => handleSend()} disabled={!userInput.trim() || !isAppReady} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-[#1e293b] text-white transition-all active:scale-95 disabled:opacity-30 shadow-lg">
+                        <Send aria-hidden="true" size={18} />
+                      </button>
+                    </div>
                   </div>
-                  {messages.length > 0 && <button onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><X size={20}/></button>}
+                  {messages.length > 0 && <button aria-label="入力欄を閉じる" title="入力欄を閉じる" onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><X size={20}/></button>}
                 </div>
               )}
               {!showInput && (
-                <div className="relative flex items-center animate-in fade-in slide-in-from-bottom-2 w-full">
-                  <div className="flex-1 flex gap-2 py-2 px-1 overflow-x-auto no-scrollbar items-center w-full">
-                    <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents || isGenerating || isSending} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
-                      <Compass size={14} className="text-indigo-400" />
-                      <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">心の鏡</span><span className="text-[7px] opacity-70 font-bold tracking-tighter truncate">思考を総括する</span></div>
-                    </button>
-                    <button onClick={() => handleRandomResponse()} disabled={!canUseAgents || isGenerating || isSending} className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
-                      <Sparkles size={14} /> 委ねる
-                    </button>
-                    <div className="w-px h-6 bg-slate-300 self-center mx-1 shrink-0" />
-                    <button onClick={() => setShowInput(true)} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm"><Feather size={14} /> 綴る</button>
-                    {AGENTS.map(a => (
-                      <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={!canUseAgents || isGenerating || isSending} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
-                        {a.icon}
-                        <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">{a.name}</span><span className="text-[7px] opacity-50 font-bold tracking-tighter truncate">{a.role}</span></div>
+                <div className="relative flex flex-col animate-in fade-in slide-in-from-bottom-2 w-full gap-2">
+                  <div className="flex items-center w-full">
+                    <div className="flex-1 flex gap-2 py-2 px-1 overflow-x-auto no-scrollbar items-center w-full">
+                      <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents || isGenerating || isSending} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <Compass size={14} className="text-indigo-400" />
+                        <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">心の鏡</span><span className="text-[7px] opacity-70 font-bold tracking-tighter truncate">思考を総括する</span></div>
                       </button>
-                    ))}
-                    <div className="w-4 md:w-0 shrink-0" />
+                      <button onClick={() => handleRandomResponse()} disabled={!canUseAgents || isGenerating || isSending} className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <Sparkles size={14} /> 委ねる
+                      </button>
+                      <div className="w-px h-6 bg-slate-300 self-center mx-1 shrink-0" />
+                      <button onClick={() => setShowInput(true)} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm"><Feather size={14} /> 綴る</button>
+                      {AGENTS.map(a => (
+                        <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={!canUseAgents || isGenerating || isSending} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
+                          {a.icon}
+                          <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">{a.name}</span><span className="text-[7px] opacity-50 font-bold tracking-tighter truncate">{a.role}</span></div>
+                        </button>
+                      ))}
+                      <div className="w-4 md:w-0 shrink-0" />
+                    </div>
                   </div>
+                  <p className="px-2 text-[11px] font-bold text-slate-400">{agentHelperText}</p>
                 </div>
               )}
             </div>
@@ -1327,8 +1390,8 @@ const App = () => {
                             {msg.content}
                             {msg.id && (
                               <div className={`absolute top-2 right-2 flex items-center gap-1 p-1 rounded-lg transition-opacity ${isUser ? 'bg-slate-700/50' : 'bg-white/50 shadow-sm'} ${openToolbarMsgId === msg.id ? 'opacity-100' : 'opacity-0 md:group-hover/msg:opacity-100'}`} onClick={e => e.stopPropagation()}>
-                                <button onClick={() => { handleCopyMessage(msg.id, msg.content); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-indigo-500">{copiedMsgId === msg.id ? <Check size={12}/> : <Copy size={12}/>}</button>
-                                <button onClick={() => { handleDeleteMessage(msg.id); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-rose-500"><Trash2 size={12}/></button>
+                                <button aria-label="メッセージをコピー" title="メッセージをコピー" onClick={() => { handleCopyMessage(msg.id, msg.content); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-indigo-500">{copiedMsgId === msg.id ? <Check size={12}/> : <Copy size={12}/>}</button>
+                                <button aria-label="メッセージを削除" title="メッセージを削除" onClick={() => { handleDeleteMessage(msg.id); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-rose-500"><Trash2 size={12}/></button>
                               </div>
                             )}
                             {!isUser && msg.reactions && Object.keys(msg.reactions).length > 0 && (
@@ -1367,7 +1430,7 @@ const App = () => {
                             <div className="mt-4 p-4 rounded-2xl glass-card flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 shadow-lg border border-indigo-100/50 w-full min-h-[80px] relative">
                               <div className="flex items-center justify-between px-1 mb-1">
                                 <span className="text-[9px] font-black text-indigo-400/80 uppercase tracking-widest">Others</span>
-                                <button onClick={e => { e.stopPropagation(); setAutoExpandReactions(null); }} className="text-slate-400 hover:bg-white/50 rounded-full p-1"><X size={12}/></button>
+                                <button aria-label="Othersを閉じる" title="閉じる" onClick={e => { e.stopPropagation(); setAutoExpandReactions(null); }} className="text-slate-400 hover:bg-white/50 rounded-full p-1"><X size={12}/></button>
                               </div>
                               {autoExpandReactions.isLoading ? (
                                 <div className="py-4 flex flex-col items-center justify-center opacity-70">
@@ -1435,9 +1498,9 @@ const App = () => {
       </div>
 
       {showIntro && (
-        <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 transition-opacity duration-500 ${isHomeReady ? 'opacity-0' : 'opacity-100'}`}>
-          <div className="absolute inset-0 bg-[#eef2f7] z-0" /><div className="water-shimmer z-0" />
-          <div className="max-w-md w-full text-center p-8 md:p-10 rounded-[3rem] glass-card relative z-10 space-y-8 anim-card-rise">
+          <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 transition-opacity duration-500 ${isHomeReady ? 'opacity-0' : 'opacity-100'}`}>
+            <div className="absolute inset-0 bg-[#eef2f7] z-0" /><div className="water-shimmer z-0" />
+            <div className="max-w-md w-full text-center p-8 md:p-10 rounded-[3rem] glass-card relative z-10 space-y-8 anim-card-rise">
             <div className="anim-scale-in"><div className="inline-flex items-center justify-center p-5 rounded-[2rem] bg-[#1e293b] text-white anim-float shadow-2xl"><Users size={36} /></div></div>
             <div className="space-y-2">
               <p className="text-[10px] font-black tracking-[0.4em] text-slate-400 uppercase">Inner Conference Room</p>
@@ -1454,18 +1517,23 @@ const App = () => {
 
       {isEditingUserName && (
         <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-md z-[150] flex items-center justify-center p-6" onClick={() => setIsEditingUserName(false)}>
-          <div className="rounded-[2.5rem] w-full max-w-sm p-10 text-center glass-card" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-black mb-8">お名前を教えてください</h3>
-            <input autoFocus value={tempName} onChange={e => setTempName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); }} className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-8 neu-concave bg-transparent" />
-            <button onClick={handleUpdateUserName} className="w-full py-4 bg-[#1e293b] text-white rounded-2xl font-black text-xs shadow-lg">変更を適用</button>
+          <div role="dialog" aria-modal="true" aria-labelledby="user-name-dialog-title" className="rounded-[2.5rem] w-full max-w-sm p-10 text-center glass-card" onClick={e => e.stopPropagation()}>
+            <h3 id="user-name-dialog-title" className="text-lg font-black mb-3">お名前を教えてください</h3>
+            <p className="text-xs font-medium text-slate-500 mb-6">会議メンバーからの呼ばれ方に使われます。</p>
+            <input aria-labelledby="user-name-dialog-title" aria-describedby="user-name-dialog-help" autoFocus maxLength={24} value={tempName} onChange={e => setTempName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); if (e.key === 'Escape') setIsEditingUserName(false); }} className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-3 neu-concave bg-transparent" />
+            <p id="user-name-dialog-help" className="text-[11px] font-bold text-slate-400 mb-8">24文字まで</p>
+            <div className="flex flex-col gap-2">
+              <button onClick={handleUpdateUserName} className="w-full py-4 bg-[#1e293b] text-white rounded-2xl font-black text-xs shadow-lg">変更を適用</button>
+              <button onClick={() => setIsEditingUserName(false)} className="w-full py-4 text-slate-500 font-black text-xs hover:bg-white/50 rounded-2xl transition-all">キャンセル</button>
+            </div>
           </div>
         </div>
       )}
 
       {deleteTargetId && (
         <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-md z-[150] flex items-center justify-center p-6" onClick={() => setDeleteTargetId(null)}>
-          <div className="rounded-[2.5rem] w-full max-w-sm p-10 text-center glass-card" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-black mb-8">この思考を消去しますか？</h3>
+          <div role="dialog" aria-modal="true" aria-labelledby="delete-session-dialog-title" className="rounded-[2.5rem] w-full max-w-sm p-10 text-center glass-card" onClick={e => e.stopPropagation()}>
+            <h3 id="delete-session-dialog-title" className="text-lg font-black mb-8">この思考を消去しますか？</h3>
             <div className="flex flex-col gap-2">
               <button onClick={() => { playSound('delete'); handleDeleteSession(deleteTargetId); }} disabled={isDeletingSession} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs disabled:opacity-50">消去する</button>
               <button onClick={() => setDeleteTargetId(null)} disabled={isDeletingSession} className="w-full py-4 text-slate-500 font-black text-xs hover:bg-white/50 rounded-2xl transition-all">キャンセル</button>
@@ -1476,10 +1544,10 @@ const App = () => {
 
       {showBeliefs && (
         <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-xl z-[150] flex items-center justify-center p-6" onClick={() => setShowBeliefs(false)}>
-          <div className="rounded-[2.5rem] w-full max-w-xl h-4/5 flex flex-col overflow-hidden glass-card" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" aria-labelledby="beliefs-dialog-title" className="rounded-[2.5rem] w-full max-w-xl h-4/5 flex flex-col overflow-hidden glass-card" onClick={e => e.stopPropagation()}>
             <div className="p-8 pb-4 flex items-center justify-between border-b border-white/10">
-              <h3 className="text-xl font-black tracking-tight">会議メンバーの魂</h3>
-              <button onClick={() => setShowBeliefs(false)} className="p-2 hover:bg-white/40 rounded-full"><X size={20}/></button>
+              <h3 id="beliefs-dialog-title" className="text-xl font-black tracking-tight">会議メンバーの魂</h3>
+              <button aria-label="会議メンバーの魂を閉じる" title="閉じる" onClick={() => setShowBeliefs(false)} className="p-2 hover:bg-white/40 rounded-full"><X size={20}/></button>
             </div>
             <div className="flex-1 overflow-y-auto p-8 pt-6 no-scrollbar space-y-4">
               {AGENTS.map(a => (
