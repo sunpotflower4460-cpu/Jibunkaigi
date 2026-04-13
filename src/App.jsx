@@ -244,6 +244,8 @@ const App = () => {
   const errorTimeoutRef = useRef(null);
 
   const currentSessionIdRef = useRef(currentSessionId);
+  // activeSessionIdRef: guards stale async completions from polluting other sessions
+  const activeSessionIdRef = useRef(currentSessionId ?? null);
   const lastSubmittedUserMessageRef = useRef(null);
   const preloadedReactionsRef = useRef(new Map());
   const afterglowBySessionRef = useRef(new Map());
@@ -339,10 +341,13 @@ const App = () => {
     if (!apiKey) { setErrorWithAutoDismiss("Gemini APIキーが未設定です。", 10000); }
   }, []);
 
-  useEffect(() => { currentSessionIdRef.current = currentSessionId; }, [currentSessionId]);
+  useEffect(() => {
+    currentSessionIdRef.current = currentSessionId;
+    activeSessionIdRef.current = currentSessionId ?? null;
+  }, [currentSessionId]);
 
-  const resetSessionUIState = () => {
-    setShowInput(true);
+  const resetSessionUIState = (showInputDefault = true) => {
+    setShowInput(showInputDefault);
     setActiveReaction(null);
     setAutoExpandReactions(null);
     setOpenToolbarMsgId(null);
@@ -397,6 +402,16 @@ const App = () => {
         });
         setSessions(sorted);
 
+        // 正式 title が来た session の optimistic title を削除
+        setOptimisticSessionTitles(prev => {
+          const updated = { ...prev };
+          let changed = false;
+          for (const d of sorted) {
+            if (d.title && d.id in updated) { delete updated[d.id]; changed = true; }
+          }
+          return changed ? updated : prev;
+        });
+
         const nextAfterglow = new Map();
         const existing = afterglowBySessionRef.current;
 
@@ -421,16 +436,20 @@ const App = () => {
     if (!db || !user || !currentSessionId) {
       setMessages([]); setIsMessagesLoading(false); return;
     }
-    // セッション切り替え時は即座にメッセージをクリアしてローディング表示
-    setMessages([]);
-    setIsMessagesLoading(true);
-    const messagesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'sessions', currentSessionId, 'messages');
     const capturedSessionId = currentSessionId;
+    // 新規 session 直後は optimistic メッセージを守るためクリアを skip
+    const hasPendingOptimistic =
+      lastSubmittedUserMessageRef.current?.sessionId === capturedSessionId;
+    if (!hasPendingOptimistic) {
+      setMessages([]);
+      setIsMessagesLoading(true);
+    }
+    const messagesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'sessions', currentSessionId, 'messages');
     return onSnapshot(
       messagesRef,
       (snapshot) => {
         // セッションが切り替わっていた場合は状態更新をスキップ
-        if (currentSessionIdRef.current !== capturedSessionId) return;
+        if (activeSessionIdRef.current !== capturedSessionId) return;
         const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         setMessages(docs.sort((a, b) =>
           (a.createdAt?.toMillis?.() ?? a.clientCreatedAt ?? 0) -
@@ -439,7 +458,7 @@ const App = () => {
         setIsMessagesLoading(false);
       },
       (error) => {
-        if (currentSessionIdRef.current !== capturedSessionId) return;
+        if (activeSessionIdRef.current !== capturedSessionId) return;
         console.error("Messages snapshot failed:", error);
         setErrorWithAutoDismiss("メッセージの取得に失敗しました。");
         setIsMessagesLoading(false);
@@ -704,6 +723,7 @@ const App = () => {
         setCurrentSessionId(sid);
         // ref も即座に更新して同期を保証
         currentSessionIdRef.current = sid;
+        activeSessionIdRef.current = sid;
         callGemini({
           prompt: `文:「${text}」から15字以内の内省タイトルを生成。`,
           systemInstruction: "タイトルのみ出力。余計な記号不要。",
@@ -995,8 +1015,8 @@ const App = () => {
       const cleanedResponse = cleanResponse(response);
 
       // セッション切り替えチェック（早期中断）
-      if (currentSessionIdRef.current !== sessionId) {
-        console.info(`[handleAiResponse] Session switched from ${sessionId} to ${currentSessionIdRef.current}, aborting`);
+      if (activeSessionIdRef.current !== sessionId) {
+        console.info(`[handleAiResponse] Session switched from ${sessionId} to ${activeSessionIdRef.current}, aborting`);
         return;
       }
 
@@ -1032,7 +1052,7 @@ const App = () => {
       aiPersistenceState = 'persisted';
 
       // セッション切り替えチェック（afterglow更新前）
-      if (currentSessionIdRef.current !== sessionId) {
+      if (activeSessionIdRef.current !== sessionId) {
         console.info(`[handleAiResponse] Session switched before afterglow, aborting`);
         return;
       }
@@ -1056,7 +1076,7 @@ const App = () => {
         setAutoExpandReactions({ msgId: aiMsgId, isLoading: true });
         void preloadReactions(pending.text, sessionId, sourceMessageId, agentId, cleanedResponse).then(async () => {
           // 反応読み込み完了時にセッション切り替えチェック
-          if (currentSessionIdRef.current !== sessionId) {
+          if (activeSessionIdRef.current !== sessionId) {
             setAutoExpandReactions(null);
             console.info(`[preloadReactions] Session switched, reactions discarded`);
             return;
@@ -1076,7 +1096,7 @@ const App = () => {
               )
             );
             // 反応保存後もセッション切り替えチェック
-            if (currentSessionIdRef.current === sessionId) {
+            if (activeSessionIdRef.current === sessionId) {
               setAutoExpandReactions({ msgId: aiMsgId, isLoading: false });
             } else {
               setAutoExpandReactions(null);
@@ -1091,7 +1111,7 @@ const App = () => {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[handleAiResponse] Error:", msg);
-      // セッション切り替え済みの場合はエラー表示をスキップ
+      // セッションが一致する場合のみ UI を復帰
       const currentlyActiveSession = currentSessionIdRef.current === sessionId;
 
       // Firestore 保存前のみ optimistic message を削除
@@ -1115,7 +1135,7 @@ const App = () => {
       }
     } finally {
       // セッションが一致する場合のみ UI を復帰
-      if (currentSessionIdRef.current === sessionId) {
+      if (activeSessionIdRef.current === sessionId) {
         setIsGenerating(false);
         setGeneratingAgent(null);
         setShowInput(true);
@@ -1131,7 +1151,7 @@ const App = () => {
       await Promise.all(msgs.docs.map(m => deleteDoc(m.ref)));
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId));
       afterglowBySessionRef.current.delete(sessionId);
-      if (currentSessionId === sessionId) { setCurrentSessionId(null); resetSessionUIState(); }
+      if (currentSessionId === sessionId) { setCurrentSessionId(null); resetSessionUIState(true); }
       setDeleteTargetId(null);
     } catch (error) {
       console.error("Failed to delete session", error);
@@ -1184,6 +1204,11 @@ const App = () => {
     messages.some(m => m.role === 'user') ||
     lastSubmittedUserMessageRef.current?.sessionId === activeSessionId;
   const canUseAgents = isAppReady && !isGenerating && !isSending && !!activeSessionId && !!hasPromptForActiveSession;
+  // session-scoped loading: full-screen spinner のみ messages が 0 件のときに表示
+  const hasVisibleMessages = messages.length > 0;
+  const shouldShowFullMessagesLoading = isMessagesLoading && !hasVisibleMessages;
+  // delegate bar (委ねる) はセッションが存在すれば表示し、busy 時だけ disabled にする
+  const showDelegateBar = !showInput || (!!activeSessionId && !isGenerating && !isSending);
   const configIssues = [];
   if (!hasFirebaseConfig) {
     configIssues.push({
@@ -1240,13 +1265,13 @@ const App = () => {
               </div>
               <Edit3 size={12} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
             </button>
-            <button onClick={() => { setCurrentSessionId(null); setIsSidebarOpen(false); resetSessionUIState(); }} className="flex items-center justify-center gap-2 w-full py-4 bg-[#1e293b] text-white rounded-2xl font-bold text-xs mb-6 shadow-xl shadow-slate-800/20 hover:opacity-90 transition-colors shrink-0">
+            <button onClick={() => { setCurrentSessionId(null); setIsSidebarOpen(false); resetSessionUIState(true); }} className="flex items-center justify-center gap-2 w-full py-4 bg-[#1e293b] text-white rounded-2xl font-bold text-xs mb-6 shadow-xl shadow-slate-800/20 hover:opacity-90 transition-colors shrink-0">
               <Plus size={16} /> 新しい問い
             </button>
             <div className="flex-1 overflow-y-auto no-scrollbar space-y-1 relative">
               {sessions.length === 0 && <p className="text-[10px] text-slate-400 font-bold px-4 py-2 text-center opacity-70 mt-4">過去の問いはありません</p>}
               {sessions.map(s => (
-                <div key={s.id} onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); resetSessionUIState(); }} className={`group relative flex flex-col px-4 py-3 rounded-xl cursor-pointer transition-all ${currentSessionId === s.id ? 'neu-pressed text-indigo-700' : 'hover:bg-white/20 text-slate-500'}`}>
+                <div key={s.id} onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); resetSessionUIState(false); }} className={`group relative flex flex-col px-4 py-3 rounded-xl cursor-pointer transition-all ${currentSessionId === s.id ? 'neu-pressed text-indigo-700' : 'hover:bg-white/20 text-slate-500'}`}>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0 flex items-center gap-1.5">
                       {s.isPinned && <Pin size={10} className="text-amber-500 shrink-0 fill-amber-500" />}
@@ -1328,7 +1353,7 @@ const App = () => {
                   {messages.length > 0 && <button aria-label="入力欄を閉じる" title="入力欄を閉じる" onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><X size={20}/></button>}
                 </div>
               )}
-              {!showInput && (
+              {showDelegateBar && (
                 <div className="relative flex flex-col animate-in fade-in slide-in-from-bottom-2 w-full gap-2">
                   <div className="flex items-center w-full">
                     <div className="flex-1 flex gap-2 py-2 px-1 overflow-x-auto no-scrollbar items-center w-full">
@@ -1340,7 +1365,10 @@ const App = () => {
                         <Sparkles size={14} /> 委ねる
                       </button>
                       <div className="w-px h-6 bg-slate-300 self-center mx-1 shrink-0" />
-                      <button onClick={() => setShowInput(true)} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm"><Feather size={14} /> 綴る</button>
+                      {showInput
+                        ? <button onClick={() => setShowInput(false)} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm"><X size={14} /> 閉じる</button>
+                        : <button onClick={() => setShowInput(true)} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm"><Feather size={14} /> 綴る</button>
+                      }
                       {AGENTS.map(a => (
                         <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={!canUseAgents || isGenerating || isSending} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
                           {a.icon}
@@ -1358,7 +1386,7 @@ const App = () => {
 
           <main ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 no-scrollbar relative z-10">
             <div className="max-w-2xl mx-auto pb-32">
-              {isMessagesLoading && messages.length === 0 ? (
+              {shouldShowFullMessagesLoading ? (
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-slate-400" size={32} /></div>
               ) : (
                 <>
