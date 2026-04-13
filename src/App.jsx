@@ -641,22 +641,31 @@ const App = () => {
   };
 
   const handleRandomResponse = () => {
-    const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
-    if (AGENTS.length === 0 || !effectiveSessionId) return;
+    try {
+      const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
+      if (AGENTS.length === 0 || !effectiveSessionId) return;
 
-    const lastAgentId = getLastRespondingAgentId(messages);
-    const afterglowSeed = getAfterglowSeedForSession(effectiveSessionId);
-    const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
-      mode: selectedMode,
-      previousMix: afterglowSeed.previousMix,
-      previousLatentState: afterglowSeed.previousLatentState,
-    });
-    const agentId = pickContextualAgent(AGENTS, {
-      patternMix: internalOS.patternMix,
-      lastAgentId,
-    });
+      const lastAgentId = getLastRespondingAgentId(messages);
+      const afterglowSeed = getAfterglowSeedForSession(effectiveSessionId);
+      const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
+        mode: selectedMode,
+        previousMix: afterglowSeed.previousMix,
+        previousLatentState: afterglowSeed.previousLatentState,
+      });
+      const agentId = pickContextualAgent(AGENTS, {
+        patternMix: internalOS.patternMix,
+        lastAgentId,
+      });
 
-    handleAgentClick(agentId);
+      if (!agentId) {
+        throw new Error('No agent selected');
+      }
+
+      handleAgentClick(agentId);
+    } catch (error) {
+      console.error("[handleRandomResponse] Error:", error);
+      setErrorWithAutoDismiss("委ねる処理の開始に失敗しました。もう一度お試しください。");
+    }
   };
 
   const handleDeleteMessage = async (msgId) => {
@@ -812,166 +821,172 @@ const App = () => {
       setErrorWithAutoDismiss("応答を開始できませんでした。時間を置いて再度お試しください。");
       return;
     }
-    const agent = isMaster
-      ? { name: '心の鏡', title: '総括の鏡', prompt: `あなたは「心の鏡」。ここまでの会話を静かに振り返り、相手自身が気づいていないパターンや感情を、押しつけがましくなく短くまとめる。最後に一つだけ、次の一歩を考えるための問いかけをする。` }
-      : AGENTS.find(a => a.id === agentId);
-
-    const pending = lastSubmittedUserMessageRef.current;
-    const baseMessages = [...messagesAtClick];
-
-    const hasPendingUserInThisSession =
-      pending &&
-      pending.sessionId === sessionId &&
-      pending.messageId === sourceMessageId &&
-      !baseMessages.some(m => m.id === pending.messageId);
-
-    if (hasPendingUserInThisSession) {
-      baseMessages.push({ id: pending.messageId, role: 'user', content: pending.text, clientCreatedAt: Date.now() });
-    }
-
-    const finishPromptBuild = beginTimedPhase(traceId, 'prompt build');
-    const context = buildPromptContext({
-      messages: baseMessages,
-      userName,
-      agents: AGENTS,
-      maxMessages: 6,
-      maxCharsPerMessage: 180,
-    });
-
-    const isJoe = !isMaster && agentId === 'creative';
-    let systemInstruction = '';
-    let promptText = `${userName}に言葉を。`;
-    const latestUserText = getLatestUserText(sessionId, baseMessages);
-    const afterglowSeed = getAfterglowSeedForSession(sessionId);
-    const continuityInternalOS = !isMaster
-      ? runInternalOS(latestUserText, {
-        agentId,
-        mode: selectedMode,
-        previousMix: afterglowSeed.previousMix,
-        previousLatentState: afterglowSeed.previousLatentState,
-      })
-      : null;
-    const surfaceFrame = continuityInternalOS
-      ? buildSurfaceFrame({
-          latentState: continuityInternalOS.latentState,
-          patternMix: continuityInternalOS.patternMix,
-          surfaceWindow: continuityInternalOS.surfaceWindow,
-          afterglowSeed,
-          agentId,
-          isMirror: false,
-        })
-      : null;
     let aiMsgId = null;
     let aiPersistenceState = 'not-created';
+    try {
+      const agent = isMaster
+        ? { name: '心の鏡', title: '総括の鏡', prompt: `あなたは「心の鏡」。ここまでの会話を静かに振り返り、相手自身が気づいていないパターンや感情を、押しつけがましくなく短くまとめる。最後に一つだけ、次の一歩を考えるための問いかけをする。` }
+        : AGENTS.find(a => a.id === agentId);
+      if (!agent) {
+        throw new Error(`Unknown agent: ${agentId}`);
+      }
 
-    let activated = null;
-    if (isJoe) {
-      const joeInternalState = continuityInternalOS;
-      const estimatedState = estimateState(latestUserText);
-      activated = activateJoe(estimatedState);
-      systemInstruction = buildJoeSystemPrompt({
-        activated,
-        context,
-        mode: selectedMode,
-        userText: latestUserText,
-        internalOS: joeInternalState,
-        surfaceFrame,
-      });
-      promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
-      pushSurfaceDebugEntry(buildSurfaceDebugEntry({
-        agentId,
-        isMirror: false,
-        selectedMode,
-        latestUserText,
-        continuityInternalOS,
-        surfaceFrame,
-        afterglowSeed,
-      }));
-    } else if (isMaster) {
-      const mirrorContext = buildPromptContext({
+      const pending = lastSubmittedUserMessageRef.current;
+      const baseMessages = [...messagesAtClick];
+
+      const hasPendingUserInThisSession =
+        pending &&
+        pending.sessionId === sessionId &&
+        pending.messageId === sourceMessageId &&
+        !baseMessages.some(m => m.id === pending.messageId);
+
+      if (hasPendingUserInThisSession) {
+        baseMessages.push({ id: pending.messageId, role: 'user', content: pending.text, clientCreatedAt: Date.now() });
+      }
+
+      const finishPromptBuild = beginTimedPhase(traceId, 'prompt build');
+      const context = buildPromptContext({
         messages: baseMessages,
         userName,
         agents: AGENTS,
-        maxMessages: 4,
-        maxCharsPerMessage: 150,
+        maxMessages: 6,
+        maxCharsPerMessage: 180,
       });
-      const signals = selectMirrorSignals({
-        messages: baseMessages,
-        agents: AGENTS,
-        latestUserText,
-      });
-      const mirrorSurfaceFrame = continuityInternalOS
+
+      const isJoe = !isMaster && agentId === 'creative';
+      let systemInstruction = '';
+      let promptText = `${userName}に言葉を。`;
+      const latestUserText = getLatestUserText(sessionId, baseMessages);
+      const afterglowSeed = getAfterglowSeedForSession(sessionId);
+      const continuityInternalOS = !isMaster
+        ? runInternalOS(latestUserText, {
+          agentId,
+          mode: selectedMode,
+          previousMix: afterglowSeed.previousMix,
+          previousLatentState: afterglowSeed.previousLatentState,
+        })
+        : null;
+      const surfaceFrame = continuityInternalOS
         ? buildSurfaceFrame({
             latentState: continuityInternalOS.latentState,
             patternMix: continuityInternalOS.patternMix,
             surfaceWindow: continuityInternalOS.surfaceWindow,
             afterglowSeed,
-            agentId: 'master',
-            isMirror: true,
+            agentId,
+            isMirror: false,
           })
         : null;
-      systemInstruction = buildMirrorSystemPrompt({
-        context: mirrorContext,
-        mode: selectedMode,
-        signals,
-        surfaceFrame: mirrorSurfaceFrame,
-      });
-      promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
-      pushSurfaceDebugEntry(buildSurfaceDebugEntry({
-        agentId: 'master',
-        isMirror: true,
-        selectedMode,
-        latestUserText,
-        continuityInternalOS,
-        surfaceFrame: mirrorSurfaceFrame,
-        afterglowSeed,
-      }));
-    } else {
-      // Random agent with surface frame support
-      let agentPrompt = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}`;
 
-      if (surfaceFrame) {
-        const pacingGuide = surfaceFrame.pacing === 'slow' ? '急がず、少し余白を残してよい。' :
-          surfaceFrame.pacing === 'aware_of_time' ? '時間を意識しつつ進める。' : '';
-        const directnessGuide = surfaceFrame.directness === 'gentle' ? 'いきなり解決に走らず、まず今あるものを軽く言い当てる。' :
-          surfaceFrame.directness === 'clear' ? '少し明確に指し示していい。' : '';
-        const temperatureGuide = surfaceFrame.emotionalTemperature === 'soft' ? '言い切りすぎず、少しやわらかく。' : '';
-        const permissionGuide = surfaceFrame.permissionHints.includes('do_not_rush') ? '急がない。' :
-          surfaceFrame.permissionHints.includes('do_not_over_explain') ? '説明しすぎない。' : '';
+      try {
+        let activated = null;
+        if (isJoe) {
+          const joeInternalState = continuityInternalOS;
+          const estimatedState = estimateState(latestUserText);
+          activated = activateJoe(estimatedState);
+          systemInstruction = buildJoeSystemPrompt({
+            activated,
+            context,
+            mode: selectedMode,
+            userText: latestUserText,
+            internalOS: joeInternalState,
+            surfaceFrame,
+          });
+          promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
+          pushSurfaceDebugEntry(buildSurfaceDebugEntry({
+            agentId,
+            isMirror: false,
+            selectedMode,
+            latestUserText,
+            continuityInternalOS,
+            surfaceFrame,
+            afterglowSeed,
+          }));
+        } else if (isMaster) {
+          const mirrorContext = buildPromptContext({
+            messages: baseMessages,
+            userName,
+            agents: AGENTS,
+            maxMessages: 4,
+            maxCharsPerMessage: 150,
+          });
+          const signals = selectMirrorSignals({
+            messages: baseMessages,
+            agents: AGENTS,
+            latestUserText,
+          });
+          const mirrorSurfaceFrame = continuityInternalOS
+            ? buildSurfaceFrame({
+                latentState: continuityInternalOS.latentState,
+                patternMix: continuityInternalOS.patternMix,
+                surfaceWindow: continuityInternalOS.surfaceWindow,
+                afterglowSeed,
+                agentId: 'master',
+                isMirror: true,
+              })
+            : null;
+          systemInstruction = buildMirrorSystemPrompt({
+            context: mirrorContext,
+            mode: selectedMode,
+            signals,
+            surfaceFrame: mirrorSurfaceFrame,
+          });
+          promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
+          pushSurfaceDebugEntry(buildSurfaceDebugEntry({
+            agentId: 'master',
+            isMirror: true,
+            selectedMode,
+            latestUserText,
+            continuityInternalOS,
+            surfaceFrame: mirrorSurfaceFrame,
+            afterglowSeed,
+          }));
+        } else {
+          // Random agent with surface frame support
+          let agentPrompt = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}`;
 
-        const internalGuidance = [pacingGuide, directnessGuide, temperatureGuide, permissionGuide]
-          .filter(Boolean)
-          .join(' ');
+          if (surfaceFrame) {
+            const pacingGuide = surfaceFrame.pacing === 'slow' ? '急がず、少し余白を残してよい。' :
+              surfaceFrame.pacing === 'aware_of_time' ? '時間を意識しつつ進める。' : '';
+            const directnessGuide = surfaceFrame.directness === 'gentle' ? 'いきなり解決に走らず、まず今あるものを軽く言い当てる。' :
+              surfaceFrame.directness === 'clear' ? '少し明確に指し示していい。' : '';
+            const temperatureGuide = surfaceFrame.emotionalTemperature === 'soft' ? '言い切りすぎず、少しやわらかく。' : '';
+            const permissionGuide = surfaceFrame.permissionHints.includes('do_not_rush') ? '急がない。' :
+              surfaceFrame.permissionHints.includes('do_not_over_explain') ? '説明しすぎない。' : '';
 
-        if (internalGuidance) {
-          agentPrompt += `\n【内部ガイド】${internalGuidance}`;
+            const internalGuidance = [pacingGuide, directnessGuide, temperatureGuide, permissionGuide]
+              .filter(Boolean)
+              .join(' ');
+
+            if (internalGuidance) {
+              agentPrompt += `\n【内部ガイド】${internalGuidance}`;
+            }
+          }
+
+          systemInstruction = `${agentPrompt}\n【対話履歴】\n${context}`;
+          pushSurfaceDebugEntry(buildSurfaceDebugEntry({
+            agentId,
+            isMirror: false,
+            selectedMode,
+            latestUserText,
+            continuityInternalOS,
+            surfaceFrame,
+            afterglowSeed,
+          }));
         }
+      } finally {
+        finishPromptBuild();
       }
 
-      systemInstruction = `${agentPrompt}\n【対話履歴】\n${context}`;
-      pushSurfaceDebugEntry(buildSurfaceDebugEntry({
-        agentId,
-        isMirror: false,
-        selectedMode,
-        latestUserText,
-        continuityInternalOS,
-        surfaceFrame,
-        afterglowSeed,
-      }));
-    }
-    finishPromptBuild();
+      // Apply drift-prevention refresh when the agent has responded many times.
+      // Use a short anchor reminder instead of re-inserting large persona blocks
+      // that are already included in systemInstruction.
+      if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
+        const refreshText = isJoe
+          ? '上記のJoe設定・活性状態・口調を維持し、一貫した応答を続けてください。'
+          : `あなたは${agent.name}として、上記の設定と制約を守って応答してください。`;
+        systemInstruction = applyRefresh(systemInstruction, refreshText);
+      }
 
-    // Apply drift-prevention refresh when the agent has responded many times.
-    // Use a short anchor reminder instead of re-inserting large persona blocks
-    // that are already included in systemInstruction.
-    if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
-      const refreshText = isJoe
-        ? '上記のJoe設定・活性状態・口調を維持し、一貫した応答を続けてください。'
-        : `あなたは${agent.name}として、上記の設定と制約を守って応答してください。`;
-      systemInstruction = applyRefresh(systemInstruction, refreshText);
-    }
-
-    try {
       const clickStartedAt = responseTimingRef.current?.clickStartedAt ?? performance.now();
       console.info(
         `[timing][${traceId}] fetch start: ${(performance.now() - clickStartedAt).toFixed(1)}ms from click`,
