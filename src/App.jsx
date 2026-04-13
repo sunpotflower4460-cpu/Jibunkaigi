@@ -1186,7 +1186,7 @@ const App = () => {
   const canUseAgents = isAppReady && !isGenerating && !isSending && !!activeSessionId && !!hasPromptForActiveSession;
   const configIssues = [
     !hasFirebaseConfig
-      ? { id: 'firebase', title: 'Firebase設定が未完了です', detail: 'VITE_FIREBASE_* を設定すると、セッション保存と会議開始が有効になります。' }
+      ? { id: 'firebase', title: 'Firebase設定が未完了です', detail: 'VITE_FIREBASE_* を設定すると、セッション保存と会議開始が有効にできます。' }
       : null,
     !apiKey
       ? { id: 'gemini', title: 'Gemini APIキーが未設定です', detail: 'VITE_GEMINI_API_KEY を設定すると、各エージェントの応答を生成できます。' }
@@ -1311,12 +1311,12 @@ const App = () => {
                 <div className="flex gap-4 animate-in fade-in slide-in-from-top-2 w-full">
                   <div className="flex-1">
                     <div className="relative">
-                      <textarea ref={textareaRef} rows="1" value={userInput} disabled={hasBlockingConfigIssue} onChange={(e) => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={inputPlaceholder} aria-label="相談内容の入力欄" className="w-full rounded-2xl px-6 py-4 pr-16 text-base font-medium outline-none resize-none transition-all neu-concave border-none focus:ring-2 focus:ring-indigo-200/50 disabled:opacity-60 disabled:cursor-not-allowed" />
+                      <textarea ref={textareaRef} rows="1" value={userInput} disabled={hasBlockingConfigIssue} onChange={(e) => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={inputPlaceholder} aria-label="相談内容の入力欄" aria-describedby="composer-helper-text" className="w-full rounded-2xl px-6 py-4 pr-16 text-base font-medium outline-none resize-none transition-all neu-concave border-none focus:ring-2 focus:ring-indigo-200/50 disabled:opacity-60 disabled:cursor-not-allowed" />
                       <button aria-label="メッセージを送信" title="メッセージを送信" onClick={() => handleSend()} disabled={!userInput.trim() || !isAppReady} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-[#1e293b] text-white transition-all active:scale-95 disabled:opacity-30 shadow-lg">
                         <Send size={18} />
                       </button>
                     </div>
-                    <p className="mt-2 px-2 text-[11px] font-bold text-slate-400">{composerHelperText}</p>
+                    <p id="composer-helper-text" className="mt-2 px-2 text-[11px] font-bold text-slate-400">{composerHelperText}</p>
                   </div>
                   {messages.length > 0 && <button aria-label="入力欄を閉じる" title="入力欄を閉じる" onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><X size={20}/></button>}
                 </div>
