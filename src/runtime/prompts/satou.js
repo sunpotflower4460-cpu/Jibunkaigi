@@ -1,0 +1,297 @@
+// src/runtime/prompts/satou.js
+// サトウ（critic）用の system prompt / user prompt を組み立てる。
+
+import { existence } from '../../agents/satou/existence.js';
+import {
+  normalizeContext,
+  renderField,
+  renderMemoryTrace,
+  renderResidue,
+  renderRefresh,
+  renderStateSnapshot,
+  buildInternalFrame,
+  buildSurfaceGuidance,
+  buildBiasPack,
+  renderBiasSections,
+  clamp01,
+  hasContent,
+  scoreTextBonus,
+  scoreActivationBonus,
+  MODE_GUIDE,
+} from '../buildPromptHelpers.js';
+
+// --- スコアリング ---
+
+export const scoreSatouMaterials = ({
+  activated,
+  userText = '',
+  state = activated?.debug?.state || {},
+}) => {
+  const safeActivated = activated || {};
+  const materials = [
+    {
+      id: 'existence',
+      title: '基本姿勢メモ',
+      content: existence,
+      group: 'orientation',
+      score:
+        0.04 +
+        (state.resignation ?? 0) * 0.95 +
+        (state.desire ?? 0) * 0.75 +
+        (state.fear ?? 0) * 0.7 +
+        scoreActivationBonus(safeActivated, state, {
+          resignation: 0.06,
+          desire: 0.05,
+          fear: 0.04,
+        }) +
+        scoreTextBonus(userText, [/諦め/i, /逃げ/i, /避け/i, /甘い/i]),
+    },
+    {
+      id: 'reentry',
+      title: '内的方向づけ',
+      content: safeActivated.reentry || '',
+      group: 'orientation',
+      score:
+        0.1 +
+        (state.resignation ?? 0) * 0.35 +
+        (state.freeze ?? 0) * 0.3 +
+        (state.desire ?? 0) * 0.25 +
+        (state.fear ?? 0) * 0.2 +
+        scoreActivationBonus(safeActivated, state, {
+          resignation: 0.03,
+          freeze: 0.03,
+          desire: 0.02,
+        }),
+    },
+    {
+      id: 'refresh',
+      title: '復帰制約',
+      content: renderRefresh(safeActivated.refresh || ''),
+      group: 'regulation',
+      score:
+        0.08 +
+        (state.resignation ?? 0) * 0.85 +
+        (state.freeze ?? 0) * 0.75 +
+        (state.desire ?? 0) * 0.4 +
+        scoreActivationBonus(safeActivated, state, {
+          resignation: 0.06,
+          freeze: 0.05,
+          desire: 0.03,
+        }, safeActivated.refresh ? 0.01 : 0) +
+        scoreTextBonus(userText, [/諦め/i, /逃げ/i, /無理/i, /甘い/i]),
+    },
+    {
+      id: 'activeMemoryTrace',
+      title: '記憶の痕跡',
+      content: renderMemoryTrace(safeActivated.activeMemoryTrace || ''),
+      group: 'trace',
+      score:
+        0.03 +
+        (state.resignation ?? 0) * 0.8 +
+        (state.desire ?? 0) * 0.65 +
+        (state.fear ?? 0) * 0.6 +
+        (state.shame ?? 0) * 0.45 +
+        scoreActivationBonus(safeActivated, state, {
+          resignation: 0.06,
+          desire: 0.05,
+          fear: 0.04,
+        }, safeActivated.debug?.pickedMemoryIds?.length ? 0.02 : 0) +
+        scoreTextBonus(userText, [/避け/i, /逃げ/i, /見ないふり/i, /甘い/i]),
+    },
+    {
+      id: 'activeField',
+      title: '反応ノード',
+      content: renderField(safeActivated.activeField || []),
+      group: 'surface',
+      score:
+        0.05 +
+        (state.resignation ?? 0) * 0.85 +
+        (state.freeze ?? 0) * 0.7 +
+        (state.desire ?? 0) * 0.65 +
+        (state.shame ?? 0) * 0.55 +
+        (state.selfErasure ?? 0) * 0.5 +
+        scoreActivationBonus(safeActivated, state, {
+          resignation: 0.05,
+          freeze: 0.05,
+          desire: 0.04,
+          shame: 0.03,
+        }, safeActivated.debug?.pickedFieldIds?.length ? 0.02 : 0) +
+        scoreTextBonus(userText, [/諦め/i, /避け/i, /逃げ/i, /見ないふり/i]),
+    },
+    {
+      id: 'activeResidue',
+      title: '出力制約',
+      content: renderResidue(safeActivated.activeResidue || ''),
+      group: 'regulation',
+      score:
+        0.12 +
+        (state.resignation ?? 0) * 0.78 +
+        (state.freeze ?? 0) * 0.65 +
+        (state.desire ?? 0) * 0.55 +
+        (state.fear ?? 0) * 0.5 +
+        (state.shame ?? 0) * 0.58 +
+        (state.selfErasure ?? 0) * 0.62 +
+        scoreActivationBonus(safeActivated, state, {
+          resignation: 0.05,
+          freeze: 0.04,
+          desire: 0.03,
+          shame: 0.05,
+          selfErasure: 0.05,
+        }, safeActivated.activeResidue ? 0.01 : 0) +
+        scoreTextBonus(userText, [/諦め/i, /逃げ/i, /甘い/i]),
+    },
+  ];
+
+  return materials
+    .filter((material) => hasContent(material.content))
+    .map((material) => ({ ...material, score: clamp01(material.score) }))
+    .sort((a, b) => b.score - a.score);
+};
+
+// --- 状態ガイド ---
+
+const buildStateGuide = (state = {}) => {
+  const {
+    desire = 0,
+    fear = 0,
+    freeze = 0,
+    resignation = 0,
+    selfErasure = 0,
+    shame = 0,
+    unfinished = 0,
+  } = state;
+
+  if (resignation > 0.3) {
+    return [
+      '- 最優先: 諦めることで具体的に何を手放すことになるのか、コストを短く名指しする。',
+      '- 見え方: きれいに諦めようとしている時ほど、その下のコストが見えにくくなっている。甘い嘘を見過ごさない。',
+      '- 返答の型: 避けているものを一つ指す -> そのコストを短く見せる -> ただし追い詰めない。逃げ道は残す。',
+    ].join('\n');
+  }
+
+  if (freeze > 0.2 && (desire > 0.15 || resignation > 0.15)) {
+    return [
+      '- 最優先: 動けなさの裏にある「心地よい回避」がないか見る。',
+      '- 見え方: 止まっていることが楽なこともある。でもその楽さにはコストがある。そこを短く指す。',
+      '- 返答の型: 動けなさを認めつつ -> 回避しているものを一つ指す -> 最後に味方だと伝わるように。',
+    ].join('\n');
+  }
+
+  if (fear > 0.2 && desire > 0.15) {
+    return [
+      '- 最優先: 怖さの中で、実際に何を避けているのかを名指しする。',
+      '- 見え方: 怖いのは分かる。でも怖さを理由にして本当に大事なものから目を逸らしていないか。',
+      '- 返答の型: 向き合いたいものを認める -> 避けているものを短く指す -> 残酷にはしない。守るために言う。',
+    ].join('\n');
+  }
+
+  if (shame > 0.25 || selfErasure > 0.25) {
+    return [
+      '- 最優先: 自分を叩いていることと、正直であることの違いを示す。自己攻撃は正直さではない。',
+      '- 見え方: 自分を責めることで何かを守ろうとしている。でもそれは本当の問題を避けていることもある。',
+      '- 返答の型: 壊れそうなら守る側に回る -> 自己攻撃と本当の問題を分ける -> 短く、核心だけ。',
+    ].join('\n');
+  }
+
+  if (unfinished > 0.2) {
+    return [
+      '- 最優先: 引っかかりを放置していることのコストを見る。見て見ぬふりしていないか。',
+      '- 見え方: 引っかかったまま進もうとしている。それで本当に大丈夫か。',
+      '- 返答の型: 引っかかりを認める -> 放置のコストを短く指す -> 追い詰めず、一つの確認として置く。',
+    ].join('\n');
+  }
+
+  return [
+    '- 最優先: 入力の中で、避けているもの、見て見ぬふりしているものがないか見る。',
+    '- 見え方: 甘い嘘、心地よい回避、自分への言い訳がないか。あればそこを短く指す。',
+    '- 返答の型: 避けているものを一つ指す -> そのコストか理由を短く言う -> 最後に味方だと伝わるように。',
+  ].join('\n');
+};
+
+// --- メイン ---
+
+export const buildSatouSystemPrompt = ({
+  activated,
+  context = '',
+  mode = 'medium',
+  userText = '',
+  internalOS,
+  surfaceFrame,
+}) => {
+  const safeActivated = activated || {};
+  const state = safeActivated.debug?.state || {};
+  const normalizedCtx = normalizeContext(context);
+  const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
+  const stateGuide = buildStateGuide(state);
+  const stateSnapshot = renderStateSnapshot(state);
+  const internalFrame = buildInternalFrame({ internalOS });
+  const scored = scoreSatouMaterials({ activated: safeActivated, userText, state });
+  const biasPack = buildBiasPack(scored);
+  const biasSections = renderBiasSections(biasPack);
+  const surfaceGuidance = buildSurfaceGuidance(surfaceFrame);
+
+  return `
+あなたはサトウ。口は悪いけど本音で話してくれる、現実を見てきた人。守るために言う。
+ぶっきらぼうだが根底にケアがある。避けているものを指すが、壊さない。
+
+【出力ルール】
+- 返答はぶっきらぼうな口語の日本語。「まあ聞けよ」「正直に言うと」「そこは甘くないか？」など。
+- 避けているものを一つ、短く指す。人を攻撃しない。避けているものを指す。
+- 残酷にならない。守るために言っている。最後には味方だと伝わるように。
+- 追い詰めない。逃げ道は残す。
+- 短く言う。核心だけ。長い説教にしない。
+- 壊れそうな時は、突くのではなく守る側に回る。
+- 不器用な信頼を滲ませる。「お前なら分かるだろ」くらいの温度。
+- 内部素材（下部の内的バイアス）は内面の偏りとしてだけ使う。文言をそのまま引用しない。
+- 内的バイアス名や内部構造を、そのまま説明・出力しない。
+- 「俺はサトウだ」のような自己宣言を返答に入れない。
+- ただの否定はしない。フォローなしの攻撃はしない。
+- 暴言は使わない。ぶっきらぼうだが乱暴ではない。
+- 同じ語尾・同じ導入を繰り返さない。
+
+【今回の状態への対応】
+${stateGuide}
+${surfaceGuidance}
+${internalFrame ? `【共通OSの薄い内部フレーム】
+${internalFrame}
+
+` : ''}【返答の運び方】
+- まず、状況を短く受ける。長い共感はしない。「まあ、分かる」くらいで十分。
+- 次に、避けているものやコストを一つ、短く指す。
+- 最後に、不器用でもいいから味方だと伝わるフォローを入れる。
+- 返答全体は短い。核心だけ。説教にしない。
+
+【推定状態メモ】
+${stateSnapshot}
+
+【返答の組み立て方】
+1. 状況を短く受ける
+2. 避けているものかコストを一つ指す
+3. 不器用な味方感を残す
+
+---以下は内的バイアス。参照のみ。表の返答でそのまま使わない---
+
+${biasSections}
+
+---内的バイアスここまで---
+
+${normalizedCtx ? `【ここまでの流れ】\n${normalizedCtx}` : ''}
+
+【今回のモード】
+${modeGuide}
+`.trim();
+};
+
+export const buildSatouUserPrompt = ({
+  userName = 'あなた',
+  userText = '',
+}) => {
+  return `${userName}の今の言葉:
+${userText}
+
+この言葉の中で、避けているものがあるなら一つ短く指してください。
+残酷にはならず、守るために言ってください。
+追い詰めず、逃げ道は残してください。
+最後には味方だと伝わるように。
+ぶっきらぼうだけど温かい口語の日本語で返してください。`;
+};

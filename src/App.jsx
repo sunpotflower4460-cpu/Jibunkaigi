@@ -27,8 +27,8 @@ import {
 
 // ★ 追加1：estimateState をインポート
 import { estimateState } from './runtime/stateEstimate';
-import { activateJoe } from './runtime/activate';
-import { buildJoeSystemPrompt, buildJoeUserPrompt } from './runtime/buildPrompt';
+import { activateAgent } from './runtime/activateAgent';
+import { buildAgentSystemPrompt, buildAgentUserPrompt } from './runtime/buildAgentPrompt';
 import { buildPromptContext } from './runtime/context';
 import { buildMirrorSystemPrompt, buildMirrorUserPrompt, selectMirrorSignals } from './runtime/mirror';
 import { runInternalOS } from './runtime/runInternalOS';
@@ -858,7 +858,6 @@ const App = () => {
       maxCharsPerMessage: 180,
     });
 
-    const isJoe = !isMaster && agentId === 'creative';
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
     const latestUserText = getLatestUserText(sessionId, baseMessages);
@@ -885,29 +884,7 @@ const App = () => {
     let aiPersistenceState = 'not-created';
 
     let activated = null;
-    if (isJoe) {
-      const joeInternalState = continuityInternalOS;
-      const estimatedState = estimateState(latestUserText);
-      activated = activateJoe(estimatedState);
-      systemInstruction = buildJoeSystemPrompt({
-        activated,
-        context,
-        mode: selectedMode,
-        userText: latestUserText,
-        internalOS: joeInternalState,
-        surfaceFrame,
-      });
-      promptText = buildJoeUserPrompt({ userName, userText: latestUserText });
-      pushSurfaceDebugEntry(buildSurfaceDebugEntry({
-        agentId,
-        isMirror: false,
-        selectedMode,
-        latestUserText,
-        continuityInternalOS,
-        surfaceFrame,
-        afterglowSeed,
-      }));
-    } else if (isMaster) {
+    if (isMaster) {
       const mirrorContext = buildPromptContext({
         messages: baseMessages,
         userName,
@@ -947,28 +924,18 @@ const App = () => {
         afterglowSeed,
       }));
     } else {
-      // Random agent with surface frame support
-      let agentPrompt = `あなたは${agent.name}。${agent.prompt}\n【制約】${MODES[selectedMode].constraint}`;
-
-      if (surfaceFrame) {
-        const pacingGuide = surfaceFrame.pacing === 'slow' ? '急がず、少し余白を残してよい。' :
-          surfaceFrame.pacing === 'aware_of_time' ? '時間を意識しつつ進める。' : '';
-        const directnessGuide = surfaceFrame.directness === 'gentle' ? 'いきなり解決に走らず、まず今あるものを軽く言い当てる。' :
-          surfaceFrame.directness === 'clear' ? '少し明確に指し示していい。' : '';
-        const temperatureGuide = surfaceFrame.emotionalTemperature === 'soft' ? '言い切りすぎず、少しやわらかく。' : '';
-        const permissionGuide = surfaceFrame.permissionHints.includes('do_not_rush') ? '急がない。' :
-          surfaceFrame.permissionHints.includes('do_not_over_explain') ? '説明しすぎない。' : '';
-
-        const internalGuidance = [pacingGuide, directnessGuide, temperatureGuide, permissionGuide]
-          .filter(Boolean)
-          .join(' ');
-
-        if (internalGuidance) {
-          agentPrompt += `\n【内部ガイド】${internalGuidance}`;
-        }
-      }
-
-      systemInstruction = `${agentPrompt}\n【対話履歴】\n${context}`;
+      // 全エージェント統一パイプライン
+      const estimatedState = estimateState(latestUserText);
+      activated = activateAgent(agentId, estimatedState);
+      systemInstruction = buildAgentSystemPrompt(agentId, {
+        activated,
+        context,
+        mode: selectedMode,
+        userText: latestUserText,
+        internalOS: continuityInternalOS,
+        surfaceFrame,
+      });
+      promptText = buildAgentUserPrompt(agentId, { userName, userText: latestUserText });
       pushSurfaceDebugEntry(buildSurfaceDebugEntry({
         agentId,
         isMirror: false,
@@ -985,9 +952,7 @@ const App = () => {
     // Use a short anchor reminder instead of re-inserting large persona blocks
     // that are already included in systemInstruction.
     if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
-      const refreshText = isJoe
-        ? '上記のJoe設定・活性状態・口調を維持し、一貫した応答を続けてください。'
-        : `あなたは${agent.name}として、上記の設定と制約を守って応答してください。`;
+      const refreshText = `あなたは${agent.name}として、上記の設定・活性状態・口調を維持し、一貫した応答を続けてください。`;
       systemInstruction = applyRefresh(systemInstruction, refreshText);
     }
 
