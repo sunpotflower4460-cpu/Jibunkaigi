@@ -11,6 +11,9 @@ on:
         options:
           - phase-1
 
+# Deny all permissions by default; each job grants only what it needs.
+permissions: {}
+
 jobs:
   # ── Step 1: 自動検証 ──────────────────────────────────────────────────────────
   verify:
@@ -94,11 +97,15 @@ jobs:
             });
 
   # ── Step 3: Review Gate (手動承認で止まる) ──────────────────────────────────
+  # NOTE: このジョブは GitHub Environment "phase-review" の Required reviewers 設定で
+  # 一時停止します。Environment が未設定の場合は承認なしで通過します（README の
+  # "次に手動でやる設定" を参照）。
   review-gate:
     name: Review Gate
     needs: create-review-issues
     runs-on: ubuntu-latest
     environment: phase-review
+    permissions: {}
     steps:
       - name: Gate passed
         run: |
