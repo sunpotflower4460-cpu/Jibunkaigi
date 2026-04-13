@@ -1317,13 +1317,13 @@ const App = () => {
               {showInput && !isGenerating && !isSending && (
                 <div className="flex gap-4 animate-in fade-in slide-in-from-top-2 w-full">
                   <div className="flex-1">
+                    <p id="composer-helper-text" className="mb-2 px-2 text-[11px] font-bold text-slate-400">{composerHelperText}</p>
                     <div className="relative">
                       <textarea ref={textareaRef} rows="1" value={userInput} disabled={hasBlockingConfigIssue} onChange={(e) => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={inputPlaceholder} aria-label="相談内容の入力欄" aria-describedby="composer-helper-text" className="w-full rounded-2xl px-6 py-4 pr-16 text-base font-medium outline-none resize-none transition-all neu-concave border-none focus:ring-2 focus:ring-indigo-200/50 disabled:opacity-60 disabled:cursor-not-allowed" />
                       <button aria-label="メッセージを送信" title="メッセージを送信" onClick={() => handleSend()} disabled={!userInput.trim() || !isAppReady} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-[#1e293b] text-white transition-all active:scale-95 disabled:opacity-30 shadow-lg">
                         <Send aria-hidden="true" size={18} />
                       </button>
                     </div>
-                    <p id="composer-helper-text" className="mt-2 px-2 text-[11px] font-bold text-slate-400">{composerHelperText}</p>
                   </div>
                   {messages.length > 0 && <button aria-label="入力欄を閉じる" title="入力欄を閉じる" onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><X size={20}/></button>}
                 </div>
@@ -1520,7 +1520,7 @@ const App = () => {
           <div role="dialog" aria-modal="true" aria-labelledby="user-name-dialog-title" className="rounded-[2.5rem] w-full max-w-sm p-10 text-center glass-card" onClick={e => e.stopPropagation()}>
             <h3 id="user-name-dialog-title" className="text-lg font-black mb-3">お名前を教えてください</h3>
             <p className="text-xs font-medium text-slate-500 mb-6">会議メンバーからの呼ばれ方に使われます。</p>
-            <input aria-labelledby="user-name-dialog-title" aria-describedby="user-name-dialog-help" autoFocus maxLength={24} placeholder="呼ばれたい名前" value={tempName} onChange={e => setTempName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); if (e.key === 'Escape') setIsEditingUserName(false); }} className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-3 neu-concave bg-transparent" />
+            <input aria-labelledby="user-name-dialog-title" aria-describedby="user-name-dialog-help" autoFocus maxLength={24} value={tempName} onChange={e => setTempName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); if (e.key === 'Escape') setIsEditingUserName(false); }} className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-3 neu-concave bg-transparent" />
             <p id="user-name-dialog-help" className="text-[11px] font-bold text-slate-400 mb-8">24文字まで</p>
             <div className="flex flex-col gap-2">
               <button onClick={handleUpdateUserName} className="w-full py-4 bg-[#1e293b] text-white rounded-2xl font-black text-xs shadow-lg">変更を適用</button>
