@@ -9,6 +9,9 @@ on:
         default: 'phase-1'
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     name: Verify (${{ inputs.phase }})

@@ -97,7 +97,7 @@ jobs:
             const { data: issue } = await github.rest.issues.create({
               owner: context.repo.owner,
               repo:  context.repo.repo,
-              title: `[Review] ${phase} — #${context.runId}`,
+              title: `[Review] ${phase} -- #${context.runId}`,
               body,
               labels: ['phase-review'],
             });
