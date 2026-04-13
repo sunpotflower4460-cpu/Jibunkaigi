@@ -241,6 +241,7 @@ const App = () => {
   const [autoExpandReactions, setAutoExpandReactions] = useState(null);
   const [surfaceDebugEntries, setSurfaceDebugEntries] = useState([]);
   const [optimisticSessionTitles, setOptimisticSessionTitles] = useState({});
+  const errorTimeoutRef = useRef(null);
 
   const currentSessionIdRef = useRef(currentSessionId);
   const lastSubmittedUserMessageRef = useRef(null);
@@ -251,6 +252,18 @@ const App = () => {
   const mountedRef = useRef(true);
   const timeoutIdsRef = useRef(new Set());
   const responseTimingRef = useRef(null);
+
+  // エラーメッセージを設定して自動で消す
+  const setErrorWithAutoDismiss = (message, duration = 5000) => {
+    setErrorMessage(message);
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current);
+    }
+    errorTimeoutRef.current = setTimeout(() => {
+      setErrorMessage(null);
+      errorTimeoutRef.current = null;
+    }, duration);
+  };
 
   const [showIntro, setShowIntro] = useState(() => {
     try { return localStorage.getItem('jibunkaigi_intro_seen') !== 'true'; } catch { return true; }
@@ -322,8 +335,8 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (!hasFirebaseConfig) { setErrorMessage("Firebase設定が未完了です。"); return; }
-    if (!apiKey) { setErrorMessage("Gemini APIキーが未設定です。"); }
+    if (!hasFirebaseConfig) { setErrorWithAutoDismiss("Firebase設定が未完了です。", 10000); return; }
+    if (!apiKey) { setErrorWithAutoDismiss("Gemini APIキーが未設定です。", 10000); }
   }, []);
 
   useEffect(() => { currentSessionIdRef.current = currentSessionId; }, [currentSessionId]);
@@ -399,7 +412,7 @@ const App = () => {
       },
       (error) => {
         console.error("Sessions snapshot failed:", error);
-        setErrorMessage("セッション一覧の取得に失敗しました。");
+        setErrorWithAutoDismiss("セッション一覧の取得に失敗しました。");
       }
     );
   }, [user]);
@@ -408,11 +421,16 @@ const App = () => {
     if (!db || !user || !currentSessionId) {
       setMessages([]); setIsMessagesLoading(false); return;
     }
+    // セッション切り替え時は即座にメッセージをクリアしてローディング表示
+    setMessages([]);
     setIsMessagesLoading(true);
     const messagesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'sessions', currentSessionId, 'messages');
+    const capturedSessionId = currentSessionId;
     return onSnapshot(
       messagesRef,
       (snapshot) => {
+        // セッションが切り替わっていた場合は状態更新をスキップ
+        if (currentSessionIdRef.current !== capturedSessionId) return;
         const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         setMessages(docs.sort((a, b) =>
           (a.createdAt?.toMillis?.() ?? a.clientCreatedAt ?? 0) -
@@ -421,8 +439,9 @@ const App = () => {
         setIsMessagesLoading(false);
       },
       (error) => {
+        if (currentSessionIdRef.current !== capturedSessionId) return;
         console.error("Messages snapshot failed:", error);
-        setErrorMessage("メッセージの取得に失敗しました。");
+        setErrorWithAutoDismiss("メッセージの取得に失敗しました。");
         setIsMessagesLoading(false);
       }
     );
@@ -587,7 +606,7 @@ const App = () => {
       return true;
     } catch (e) {
       console.error("Session update failed:", e);
-      setErrorMessage("セッションの更新に失敗しました。");
+      setErrorWithAutoDismiss("セッションの更新に失敗しました。");
       return false;
     }
   };
@@ -602,9 +621,13 @@ const App = () => {
   const handleHintClick = (hint) => {
     setUserInput(hint);
     setShowInput(true);
-    scheduleTimeout(() => {
-      if (textareaRef.current) { textareaRef.current.focus(); autoResize(); }
-    }, 50);
+    // autoResize と focus を確実に実行
+    window.requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        autoResize();
+        textareaRef.current.focus();
+      }
+    });
   };
 
   const getLatestUserText = (sessionId, baseMessages = messages) => {
@@ -646,14 +669,14 @@ const App = () => {
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', currentSessionId, 'messages', msgId));
     } catch (error) {
       console.error("Failed to delete message", error);
-      setErrorMessage("メッセージの削除に失敗しました。");
+      setErrorWithAutoDismiss("メッセージの削除に失敗しました。");
     }
   };
 
   const handleSend = async (overrideText = null) => {
     const text = (overrideText || userInput).trim();
     if (!text || isSending || isGenerating) return;
-    if (!db || !user) { setErrorMessage("認証の準備中です。少しお待ちください。"); return; }
+    if (!db || !user) { setErrorWithAutoDismiss("認証の準備中です。少しお待ちください。"); return; }
 
     playSound('send');
     setUserInput('');
@@ -677,8 +700,10 @@ const App = () => {
           updatedAt: serverTimestamp(),
           isPinned: false
         });
-        currentSessionIdRef.current = sid;
+        // セッションIDを先に state にセット（refは useEffect で自動同期）
         setCurrentSessionId(sid);
+        // ref も即座に更新して同期を保証
+        currentSessionIdRef.current = sid;
         callGemini({
           prompt: `文:「${text}」から15字以内の内省タイトルを生成。`,
           systemInstruction: "タイトルのみ出力。余計な記号不要。",
@@ -687,13 +712,13 @@ const App = () => {
           const clean = t.replace(/["'「」]/g, '').trim();
           if (clean) {
             safeUpdateSession(sid, { title: clean });
-            // Firestore に保存したらoptimistic削除（snapshot経由で正式タイトル取得）
-            setOptimisticSessionTitles(prev => {
-              const next = { ...prev };
-              delete next[sid];
-              return next;
-            });
           }
+          // タイトル生成完了後はoptimistic削除（snapshot経由で正式タイトル取得）
+          setOptimisticSessionTitles(prev => {
+            const next = { ...prev };
+            delete next[sid];
+            return next;
+          });
         }).catch(e => {
           const msg = e instanceof Error ? e.message : String(e);
           if (msg.includes("timeout")) {
@@ -701,6 +726,12 @@ const App = () => {
           } else {
             console.warn("[Title generation] Failed:", msg);
           }
+          // エラー時もoptimistic削除して fallback title で固定
+          setOptimisticSessionTitles(prev => {
+            const next = { ...prev };
+            delete next[sid];
+            return next;
+          });
         });
       } else {
         await safeUpdateSession(sid, { updatedAt: serverTimestamp() });
@@ -711,6 +742,9 @@ const App = () => {
         { role: 'user', content: text, createdAt: serverTimestamp(), clientCreatedAt: clientTimestamp }
       );
 
+      // lastSubmittedUserMessageRef を先に設定してから optimistic メッセージを追加
+      lastSubmittedUserMessageRef.current = { sessionId: sid, messageId: userMsgId, text };
+
       const optimisticMsg = { id: userMsgId, role: 'user', content: text, clientCreatedAt: clientTimestamp };
       setMessages(prev => {
         if (wasCreatingNewSession) return [optimisticMsg];
@@ -718,12 +752,11 @@ const App = () => {
         return [...prev, optimisticMsg];
       });
 
-      lastSubmittedUserMessageRef.current = { sessionId: sid, messageId: userMsgId, text };
       setIsSending(false);
       setShowInput(false);
     } catch (e) {
       console.error("[handleSend] Error:", e);
-      setErrorMessage("送信に失敗しました。もう一度お試しください。");
+      setErrorWithAutoDismiss("送信に失敗しました。もう一度お試しください。");
       setUserInput(text);
       setShowInput(true);
     } finally {
@@ -741,7 +774,7 @@ const App = () => {
       lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId;
 
     if (!hasUserMessageInThisSession) {
-      setErrorMessage("先にメッセージを送ってからエージェントを選んでください。");
+      setErrorWithAutoDismiss("先にメッセージを送ってからエージェントを選んでください。");
       return;
     }
 
@@ -776,7 +809,7 @@ const App = () => {
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
-      setErrorMessage("応答を開始できませんでした。時間を置いて再度お試しください。");
+      setErrorWithAutoDismiss("応答を開始できませんでした。時間を置いて再度お試しください。");
       return;
     }
     const agent = isMaster
@@ -961,8 +994,10 @@ const App = () => {
       }
       const cleanedResponse = cleanResponse(response);
 
+      // セッション切り替えチェック（早期中断）
       if (currentSessionIdRef.current !== sessionId) {
-        setIsGenerating(false); setGeneratingAgent(null); setShowInput(true); return;
+        console.info(`[handleAiResponse] Session switched from ${sessionId} to ${currentSessionIdRef.current}, aborting`);
+        return;
       }
 
       aiMsgId = makeId();
@@ -996,6 +1031,12 @@ const App = () => {
       );
       aiPersistenceState = 'persisted';
 
+      // セッション切り替えチェック（afterglow更新前）
+      if (currentSessionIdRef.current !== sessionId) {
+        console.info(`[handleAiResponse] Session switched before afterglow, aborting`);
+        return;
+      }
+
       const nextAfterglow = buildNextAfterglow({
         previousAfterglow: readSessionAfterglow(sessionId),
         latentState: continuityInternalOS?.latentState,
@@ -1014,7 +1055,12 @@ const App = () => {
       if (!isMaster && sourceMessageId && pending?.text) {
         setAutoExpandReactions({ msgId: aiMsgId, isLoading: true });
         void preloadReactions(pending.text, sessionId, sourceMessageId, agentId, cleanedResponse).then(async () => {
-          if (currentSessionIdRef.current !== sessionId) { setAutoExpandReactions(null); return; }
+          // 反応読み込み完了時にセッション切り替えチェック
+          if (currentSessionIdRef.current !== sessionId) {
+            setAutoExpandReactions(null);
+            console.info(`[preloadReactions] Session switched, reactions discarded`);
+            return;
+          }
           const cached = preloadedReactionsRef.current.get(sourceMessageId);
 
           if (!cached || cached.sessionId !== sessionId || Object.keys(cached.data).length === 0) {
@@ -1029,8 +1075,11 @@ const App = () => {
                 { reactions: cached.data }
               )
             );
+            // 反応保存後もセッション切り替えチェック
             if (currentSessionIdRef.current === sessionId) {
               setAutoExpandReactions({ msgId: aiMsgId, isLoading: false });
+            } else {
+              setAutoExpandReactions(null);
             }
             preloadedReactionsRef.current.delete(sourceMessageId);
           } catch (e) {
@@ -1042,26 +1091,35 @@ const App = () => {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[handleAiResponse] Error:", msg);
-      // Firestore 保存前にだけ optimistic message を巻き戻す。
+      // セッション切り替え済みの場合はエラー表示をスキップ
+      const currentlyActiveSession = currentSessionIdRef.current === sessionId;
+
+      // Firestore 保存前のみ optimistic message を削除
       if (aiMsgId && aiPersistenceState === 'optimistic') {
         setMessages(prev => prev.filter(message => message.id !== aiMsgId));
       }
-      if (msg.includes("API key is missing")) {
-        setErrorMessage("Gemini APIキーが未設定です。");
-      } else if (msg.includes("timeout")) {
-        setErrorMessage("AIの応答がタイムアウトしました。もう一度お試しください。");
-      } else if (msg.includes("response_check:empty") || msg.includes("Empty response")) {
-        setErrorMessage("AIの応答が空でした。もう一度お試しください。");
-      } else if (msg.includes("response_check:json_leak")) {
-        setErrorMessage("AIの応答が不正な形式でした（JSONが返されました）。もう一度お試しください。");
-      } else {
-        setErrorMessage("AIとの通信に失敗しました。");
+
+      // 現在アクティブなセッションでのエラーのみユーザーに表示
+      if (currentlyActiveSession) {
+        if (msg.includes("API key is missing")) {
+          setErrorWithAutoDismiss("Gemini APIキーが未設定です。", 10000);
+        } else if (msg.includes("timeout")) {
+          setErrorWithAutoDismiss("AIの応答がタイムアウトしました。もう一度お試しください。");
+        } else if (msg.includes("response_check:empty") || msg.includes("Empty response")) {
+          setErrorWithAutoDismiss("AIの応答が空でした。もう一度お試しください。");
+        } else if (msg.includes("response_check:json_leak")) {
+          setErrorWithAutoDismiss("AIの応答が不正な形式でした（JSONが返されました）。もう一度お試しください。");
+        } else {
+          setErrorWithAutoDismiss("AIとの通信に失敗しました。");
+        }
       }
     } finally {
-      // 確実に UI を復帰させる（無条件）
-      setIsGenerating(false);
-      setGeneratingAgent(null);
-      setShowInput(true);
+      // セッションが一致する場合のみ UI を復帰
+      if (currentSessionIdRef.current === sessionId) {
+        setIsGenerating(false);
+        setGeneratingAgent(null);
+        setShowInput(true);
+      }
     }
   };
 
@@ -1077,7 +1135,7 @@ const App = () => {
       setDeleteTargetId(null);
     } catch (error) {
       console.error("Failed to delete session", error);
-      setErrorMessage("削除に失敗しました。");
+      setErrorWithAutoDismiss("削除に失敗しました。");
     }
     setIsDeletingSession(false);
   };
@@ -1098,17 +1156,25 @@ const App = () => {
 
   const handleUpdateUserName = async () => {
     const name = tempName.trim();
-    if (!name) { setErrorMessage("お名前を入力してください。"); return; }
-    if (!user || !db) { setUserName(name); setIsEditingUserName(false); return; }
+    if (!name) { setErrorWithAutoDismiss("お名前を入力してください。"); return; }
+    if (!user || !db) { setUserName(name); setIsEditingUserName(false); setTempName(''); return; }
+
+    // Optimistic update: UI を即座に更新
+    setUserName(name);
+    setIsEditingUserName(false);
+    setTempName('');
+
     try {
       await setDoc(
         doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'settings'),
         { displayName: name }, { merge: true }
       );
-      setUserName(name); setIsEditingUserName(false); setTempName('');
     } catch (e) {
       console.error("Update user name failed:", e);
-      setErrorMessage("お名前の保存に失敗しました。");
+      setErrorWithAutoDismiss("お名前の保存に失敗しました。");
+      // エラー時は入力欄を再表示して編集を継続可能に
+      setIsEditingUserName(true);
+      setTempName(name);
     }
   };
 
