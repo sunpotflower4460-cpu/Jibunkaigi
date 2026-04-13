@@ -658,7 +658,7 @@ const App = () => {
       });
 
       if (!agentId) {
-        throw new Error('No agent selected');
+        throw new Error('委ねる先のエージェントを選べませんでした');
       }
 
       handleAgentClick(agentId);
@@ -828,7 +828,7 @@ const App = () => {
         ? { name: '心の鏡', title: '総括の鏡', prompt: `あなたは「心の鏡」。ここまでの会話を静かに振り返り、相手自身が気づいていないパターンや感情を、押しつけがましくなく短くまとめる。最後に一つだけ、次の一歩を考えるための問いかけをする。` }
         : AGENTS.find(a => a.id === agentId);
       if (!agent) {
-        throw new Error(`Unknown agent: ${agentId}`);
+        throw new Error(`不明なエージェントです: ${agentId}`);
       }
 
       const pending = lastSubmittedUserMessageRef.current;
@@ -844,40 +844,44 @@ const App = () => {
         baseMessages.push({ id: pending.messageId, role: 'user', content: pending.text, clientCreatedAt: Date.now() });
       }
 
-      const finishPromptBuild = beginTimedPhase(traceId, 'prompt build');
-      const context = buildPromptContext({
-        messages: baseMessages,
-        userName,
-        agents: AGENTS,
-        maxMessages: 6,
-        maxCharsPerMessage: 180,
-      });
-
-      const isJoe = !isMaster && agentId === 'creative';
+      let finishPromptBuild = () => {};
+      finishPromptBuild = beginTimedPhase(traceId, 'prompt build');
       let systemInstruction = '';
       let promptText = `${userName}に言葉を。`;
-      const latestUserText = getLatestUserText(sessionId, baseMessages);
-      const afterglowSeed = getAfterglowSeedForSession(sessionId);
-      const continuityInternalOS = !isMaster
-        ? runInternalOS(latestUserText, {
-          agentId,
-          mode: selectedMode,
-          previousMix: afterglowSeed.previousMix,
-          previousLatentState: afterglowSeed.previousLatentState,
-        })
-        : null;
-      const surfaceFrame = continuityInternalOS
-        ? buildSurfaceFrame({
-            latentState: continuityInternalOS.latentState,
-            patternMix: continuityInternalOS.patternMix,
-            surfaceWindow: continuityInternalOS.surfaceWindow,
-            afterglowSeed,
-            agentId,
-            isMirror: false,
-          })
-        : null;
+      let continuityInternalOS = null;
+      let latestUserText = '';
 
       try {
+        const context = buildPromptContext({
+          messages: baseMessages,
+          userName,
+          agents: AGENTS,
+          maxMessages: 6,
+          maxCharsPerMessage: 180,
+        });
+
+        const isJoe = !isMaster && agentId === 'creative';
+        latestUserText = getLatestUserText(sessionId, baseMessages);
+        const afterglowSeed = getAfterglowSeedForSession(sessionId);
+        continuityInternalOS = !isMaster
+          ? runInternalOS(latestUserText, {
+            agentId,
+            mode: selectedMode,
+            previousMix: afterglowSeed.previousMix,
+            previousLatentState: afterglowSeed.previousLatentState,
+          })
+          : null;
+        const surfaceFrame = continuityInternalOS
+          ? buildSurfaceFrame({
+              latentState: continuityInternalOS.latentState,
+              patternMix: continuityInternalOS.patternMix,
+              surfaceWindow: continuityInternalOS.surfaceWindow,
+              afterglowSeed,
+              agentId,
+              isMirror: false,
+            })
+          : null;
+
         let activated = null;
         if (isJoe) {
           const joeInternalState = continuityInternalOS;
@@ -973,18 +977,18 @@ const App = () => {
             afterglowSeed,
           }));
         }
+
+        // Apply drift-prevention refresh when the agent has responded many times.
+        // Use a short anchor reminder instead of re-inserting large persona blocks
+        // that are already included in systemInstruction.
+        if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
+          const refreshText = isJoe
+            ? '上記のJoe設定・活性状態・口調を維持し、一貫した応答を続けてください。'
+            : `あなたは${agent.name}として、上記の設定と制約を守って応答してください。`;
+          systemInstruction = applyRefresh(systemInstruction, refreshText);
+        }
       } finally {
         finishPromptBuild();
-      }
-
-      // Apply drift-prevention refresh when the agent has responded many times.
-      // Use a short anchor reminder instead of re-inserting large persona blocks
-      // that are already included in systemInstruction.
-      if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
-        const refreshText = isJoe
-          ? '上記のJoe設定・活性状態・口調を維持し、一貫した応答を続けてください。'
-          : `あなたは${agent.name}として、上記の設定と制約を守って応答してください。`;
-        systemInstruction = applyRefresh(systemInstruction, refreshText);
       }
 
       const clickStartedAt = responseTimingRef.current?.clickStartedAt ?? performance.now();
