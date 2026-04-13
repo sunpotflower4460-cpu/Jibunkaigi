@@ -39,7 +39,15 @@ import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionDat
 import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 import { buildSurfaceFrame } from './runtime/surfaceTranslator';
 import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
+import {
+  isAgentDebugEnabled,
+  buildCanUseAgentsReasons,
+  buildShowDelegateBarHiddenReasons,
+  formatAgentDebugReason,
+  shortenAgentDebugId,
+} from './runtime/agentDebug';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
+import AgentGateDebugPanel from './components/AgentGateDebugPanel';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -327,6 +335,12 @@ const App = () => {
     setSurfaceDebugEntries((prev) => [entry, ...prev].slice(0, SURFACE_DEBUG_MAX_ENTRIES));
   };
   const clearSurfaceDebugEntries = () => setSurfaceDebugEntries([]);
+  const agentDebugEnabled = isAgentDebugEnabled();
+  const logAgentDebug = (label, payload = {}, level = 'log') => {
+    if (!agentDebugEnabled) return;
+    const logger = console[level] || console.log;
+    logger(label, payload);
+  };
 
   useEffect(() => {
     mountedRef.current = true;
@@ -694,8 +708,25 @@ const App = () => {
 
   const handleSend = async (overrideText = null) => {
     const text = (overrideText || userInput).trim();
+    const sendRequestId = makeId();
+    const getSendLogMeta = (extra = {}) => ({
+      requestId: shortenAgentDebugId(sendRequestId),
+      currentSessionId: currentSessionId || currentSessionIdRef.current,
+      hasActiveSession: !!(currentSessionId || currentSessionIdRef.current),
+      hasPromptForActiveSession,
+      isSending,
+      isGenerating,
+      showInput,
+      ...extra,
+    });
+
+    logAgentDebug('[send:start]', getSendLogMeta({ textLength: text.length }));
     if (!text || isSending || isGenerating) return;
-    if (!db || !user) { setErrorWithAutoDismiss("認証の準備中です。少しお待ちください。"); return; }
+    if (!db || !user) {
+      logAgentDebug('[send:error]', getSendLogMeta({ reason: 'missing-db-or-user' }), 'warn');
+      setErrorWithAutoDismiss("認証の準備中です。少しお待ちください。");
+      return;
+    }
 
     playSound('send');
     setUserInput('');
@@ -713,6 +744,10 @@ const App = () => {
         const fallbackTitle = text.slice(0, 15);
         // optimistic title を設定
         setOptimisticSessionTitles(prev => ({ ...prev, [sid]: fallbackTitle }));
+        logAgentDebug('[send:optimistic-title-set]', getSendLogMeta({
+          sessionId: sid,
+          fallbackTitleLength: fallbackTitle.length,
+        }));
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sid), {
           title: fallbackTitle,
           createdAt: serverTimestamp(),
@@ -724,6 +759,10 @@ const App = () => {
         // ref も即座に更新して同期を保証
         currentSessionIdRef.current = sid;
         activeSessionIdRef.current = sid;
+        logAgentDebug('[send:new-session-created]', getSendLogMeta({
+          sessionId: sid,
+          activeSessionIdRef: activeSessionIdRef.current,
+        }));
         callGemini({
           prompt: `文:「${text}」から15字以内の内省タイトルを生成。`,
           systemInstruction: "タイトルのみ出力。余計な記号不要。",
@@ -771,22 +810,47 @@ const App = () => {
         if (prev.some(m => m.id === userMsgId)) return prev;
         return [...prev, optimisticMsg];
       });
+      logAgentDebug('[send:optimistic-message-set]', getSendLogMeta({
+        sessionId: sid,
+        userMsgId,
+        activeSessionIdRef: activeSessionIdRef.current,
+        hasPromptForSession: true,
+      }));
 
       setIsSending(false);
       setShowInput(false);
     } catch (e) {
       console.error("[handleSend] Error:", e);
+      logAgentDebug('[send:error]', getSendLogMeta({
+        sessionId: sid,
+        message: e instanceof Error ? e.message : String(e),
+      }), 'error');
       setErrorWithAutoDismiss("送信に失敗しました。もう一度お試しください。");
       setUserInput(text);
       setShowInput(true);
     } finally {
       // 確実に送信中状態を解除（無条件）
+      logAgentDebug('[send:finally]', getSendLogMeta({
+        sessionId: sid,
+        activeSessionIdRef: activeSessionIdRef.current,
+        willResetIsSending: true,
+      }));
       setIsSending(false);
     }
   };
 
   const handleAgentClick = (agentId, isMaster = false) => {
     const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
+    logAgentDebug('[agent-click:start]', {
+      agentId,
+      currentSessionId: effectiveSessionId,
+      canUseAgents,
+      showDelegateBar,
+      isAppReady,
+      isGenerating,
+      isSending,
+      hasPromptForActiveSession,
+    });
     if (!db || !user || !effectiveSessionId || isGenerating) return;
 
     const hasUserMessageInThisSession =
@@ -824,7 +888,21 @@ const App = () => {
   };
 
   const handleAiResponse = async (agentId, isMaster, sessionId, sourceMessageId, messagesAtClick, traceId) => {
+    const getAiLogMeta = (extra = {}) => ({
+      requestId: shortenAgentDebugId(traceId),
+      agentId,
+      sessionId,
+      isMaster,
+      hasDb: !!db,
+      hasUser: !!user,
+      hasSessionId: !!sessionId,
+      activeSessionMatches: activeSessionIdRef.current === sessionId,
+      ...extra,
+    });
+
+    logAgentDebug('[ai-response:start]', getAiLogMeta());
     if (!db || !user || !sessionId) {
+      logAgentDebug('[ai-response:early-return]', getAiLogMeta({ reason: 'missing-db-user-or-session' }), 'warn');
       console.warn("[handleAiResponse] Aborted before start: missing db, user, or sessionId");
       setIsGenerating(false);
       setGeneratingAgent(null);
@@ -996,6 +1074,7 @@ const App = () => {
       console.info(
         `[timing][${traceId}] fetch start: ${(performance.now() - clickStartedAt).toFixed(1)}ms from click`,
       );
+      logAgentDebug('[ai-response:before-gemini]', getAiLogMeta());
       const finishFetch = beginTimedPhase(traceId, 'fetch');
       let response = '';
       try {
@@ -1007,6 +1086,7 @@ const App = () => {
       } finally {
         finishFetch();
       }
+      logAgentDebug('[ai-response:after-gemini]', getAiLogMeta({ responseLength: response.length }));
 
       const responseCheck = checkResponse(response);
       if (!responseCheck.ok) {
@@ -1016,6 +1096,7 @@ const App = () => {
 
       // セッション切り替えチェック（早期中断）
       if (activeSessionIdRef.current !== sessionId) {
+        logAgentDebug('[ai-response:early-return]', getAiLogMeta({ reason: 'session-switched-after-gemini' }), 'warn');
         console.info(`[handleAiResponse] Session switched from ${sessionId} to ${activeSessionIdRef.current}, aborting`);
         return;
       }
@@ -1043,6 +1124,10 @@ const App = () => {
         return [...prev, optimisticAiMessage];
       });
 
+      logAgentDebug('[ai-response:before-save]', getAiLogMeta({
+        aiMessageId: aiMsgId,
+        persistenceState: aiPersistenceState,
+      }));
       await measureFirestoreWrite(traceId, 'AI response save', () =>
         setDoc(
           doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
@@ -1050,9 +1135,14 @@ const App = () => {
         )
       );
       aiPersistenceState = 'persisted';
+      logAgentDebug('[ai-response:after-save]', getAiLogMeta({
+        aiMessageId: aiMsgId,
+        persistenceState: aiPersistenceState,
+      }));
 
       // セッション切り替えチェック（afterglow更新前）
       if (activeSessionIdRef.current !== sessionId) {
+        logAgentDebug('[ai-response:early-return]', getAiLogMeta({ reason: 'session-switched-before-afterglow' }), 'warn');
         console.info(`[handleAiResponse] Session switched before afterglow, aborting`);
         return;
       }
@@ -1110,6 +1200,11 @@ const App = () => {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      logAgentDebug('[ai-response:error]', getAiLogMeta({
+        aiMessageId: aiMsgId,
+        persistenceState: aiPersistenceState,
+        message: msg,
+      }), 'error');
       console.error("[handleAiResponse] Error:", msg);
       // セッションが一致する場合のみ UI を復帰
       const currentlyActiveSession = currentSessionIdRef.current === sessionId;
@@ -1134,6 +1229,11 @@ const App = () => {
         }
       }
     } finally {
+      logAgentDebug('[ai-response:finally]', getAiLogMeta({
+        aiMessageId: aiMsgId,
+        persistenceState: aiPersistenceState,
+        generatingAgent: generatingAgent?.id || generatingAgent?.name || null,
+      }));
       // セッションが一致する場合のみ UI を復帰
       if (activeSessionIdRef.current === sessionId) {
         setIsGenerating(false);
@@ -1199,17 +1299,73 @@ const App = () => {
   };
 
   const userMessageCount = messages.filter(m => m.role === 'user').length;
+  const visibleMessages = messages;
   const activeSessionId = currentSessionId || currentSessionIdRef.current;
   const hasPromptForActiveSession =
     messages.some(m => m.role === 'user') ||
     lastSubmittedUserMessageRef.current?.sessionId === activeSessionId;
-  const canUseAgents = isAppReady && !isGenerating && !isSending && !!activeSessionId && !!hasPromptForActiveSession;
+  const hasActiveSession = !!activeSessionId;
+  const canUseAgentsGate = {
+    isAppReady,
+    notGenerating: !isGenerating,
+    notSending: !isSending,
+    hasActiveSession,
+    hasPromptForActiveSession: !!hasPromptForActiveSession,
+  };
+  const showDelegateBarGate = {
+    hasActiveSession,
+    notGenerating: !isGenerating,
+    notSending: !isSending,
+    inputHidden: !showInput,
+  };
+  const canUseAgentsReasons = buildCanUseAgentsReasons({
+    isAppReady,
+    isGenerating,
+    isSending,
+    hasActiveSession,
+    hasPromptForActiveSession: !!hasPromptForActiveSession,
+  });
+  const canUseAgents = Object.values(canUseAgentsGate).every(Boolean);
   // session-scoped loading: full-screen spinner のみ messages が 0 件のときに表示
   const hasVisibleMessages = messages.length > 0;
   const shouldShowFullMessagesLoading = isMessagesLoading && !hasVisibleMessages;
   // delegate bar (委ねる) はセッションが存在すれば表示し、busy 時だけ disabled にする
   // session が存在しかつ非 busy のとき、または入力欄が非表示のときに表示
-  const showDelegateBar = (!!activeSessionId && !isGenerating && !isSending) || !showInput;
+  const showDelegateBar = (showDelegateBarGate.hasActiveSession && showDelegateBarGate.notGenerating && showDelegateBarGate.notSending) || showDelegateBarGate.inputHidden;
+  const showDelegateBarHiddenReasons = buildShowDelegateBarHiddenReasons({
+    hasActiveSession,
+    isGenerating,
+    isSending,
+    showInput,
+  });
+  const sharedAgentButtonReason = formatAgentDebugReason(canUseAgentsReasons);
+  const agentButtonsDisabled = canUseAgentsReasons.length > 0;
+  const agentButtonStates = [
+    { agentId: 'master', label: '心の鏡', disabled: agentButtonsDisabled, reason: sharedAgentButtonReason },
+    { agentId: 'delegate', label: '委ねる', disabled: agentButtonsDisabled, reason: sharedAgentButtonReason },
+    ...AGENTS.map((agent) => ({
+      agentId: agent.id,
+      label: agent.name,
+      disabled: agentButtonsDisabled,
+      reason: sharedAgentButtonReason,
+    })),
+  ];
+  const agentGateDebug = {
+    isAppReady,
+    isGenerating,
+    isSending,
+    showInput,
+    activeSessionId: hasActiveSession,
+    hasPromptForActiveSession,
+    showDelegateBar,
+    canUseAgents,
+    messagesCount: messages.length,
+    visibleMessagesCount: visibleMessages.length,
+    currentSessionId,
+    generatingAgent: generatingAgent?.id || generatingAgent?.name || null,
+    showDelegateBarGate,
+    canUseAgentsGate,
+  };
   const configIssues = [];
   if (!hasFirebaseConfig) {
     configIssues.push({
@@ -1358,12 +1514,19 @@ const App = () => {
                 <div className="relative flex flex-col animate-in fade-in slide-in-from-bottom-2 w-full gap-2">
                   <div className="flex items-center w-full">
                     <div className="flex-1 flex gap-2 py-2 px-1 overflow-x-auto no-scrollbar items-center w-full">
-                      <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents || isGenerating || isSending} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
+                      <button onClick={() => handleAgentClick('master', true)} disabled={agentButtonsDisabled} title={agentDebugEnabled ? `debug:${sharedAgentButtonReason}` : undefined} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
                         <Compass size={14} className="text-indigo-400" />
-                        <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">心の鏡</span><span className="text-[7px] opacity-70 font-bold tracking-tighter truncate">思考を総括する</span></div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[10px] font-black mb-0.5">心の鏡</span>
+                          <span className="text-[7px] opacity-70 font-bold tracking-tighter truncate">思考を総括する</span>
+                          {agentDebugEnabled && agentButtonsDisabled && <span className="text-[7px] opacity-70 font-bold tracking-tight truncate">{sharedAgentButtonReason}</span>}
+                        </div>
                       </button>
-                      <button onClick={() => handleRandomResponse()} disabled={!canUseAgents || isGenerating || isSending} className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
-                        <Sparkles size={14} /> 委ねる
+                      <button onClick={() => handleRandomResponse()} disabled={agentButtonsDisabled} title={agentDebugEnabled ? `debug:${sharedAgentButtonReason}` : undefined} className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <div className="flex flex-col items-start">
+                          <span className="flex items-center gap-2"><Sparkles size={14} /> 委ねる</span>
+                          {agentDebugEnabled && <span className="text-[7px] opacity-80 font-bold tracking-tight">{sharedAgentButtonReason}</span>}
+                        </div>
                       </button>
                       <div className="w-px h-6 bg-slate-300 self-center mx-1 shrink-0" />
                       {(() => {
@@ -1377,15 +1540,24 @@ const App = () => {
                         );
                       })()}
                       {AGENTS.map(a => (
-                        <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={!canUseAgents || isGenerating || isSending} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
+                        <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={agentButtonsDisabled} title={agentDebugEnabled ? `debug:${a.id}:${sharedAgentButtonReason}` : undefined} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
                           {a.icon}
-                          <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">{a.name}</span><span className="text-[7px] opacity-50 font-bold tracking-tighter truncate">{a.role}</span></div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[10px] font-black mb-0.5">{a.name}</span>
+                            <span className="text-[7px] opacity-50 font-bold tracking-tighter truncate">{a.role}</span>
+                            {agentDebugEnabled && <span className="text-[7px] opacity-70 font-bold tracking-tight truncate">{sharedAgentButtonReason}</span>}
+                          </div>
                         </button>
                       ))}
                       <div className="w-4 md:w-0 shrink-0" />
                     </div>
                   </div>
                   <p className="px-2 text-[11px] font-bold text-slate-400">{agentHelperText}</p>
+                  {agentDebugEnabled && (
+                    <p className="px-2 text-[10px] font-mono text-slate-500">
+                      showDelegateBar:{String(showDelegateBar)} / hidden:{formatAgentDebugReason(showDelegateBarHiddenReasons)} / canUseAgents:{sharedAgentButtonReason}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -1516,11 +1688,12 @@ const App = () => {
                   )}
                   {!isGenerating && messages.length > 0 && messages[messages.length - 1].role === 'ai' && messages[messages.length - 1].agentId !== 'master' && userMessageCount >= 3 && (
                     <div className="flex justify-center mt-12 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
-                      <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents} className="group flex items-center gap-4 px-6 py-4 rounded-2xl glass-card border border-indigo-200/50 hover:bg-white/60 transition-all active:scale-95 shadow-lg shadow-indigo-900/5 disabled:opacity-30">
+                      <button onClick={() => handleAgentClick('master', true)} disabled={agentButtonsDisabled} title={agentDebugEnabled ? `debug:${sharedAgentButtonReason}` : undefined} className="group flex items-center gap-4 px-6 py-4 rounded-2xl glass-card border border-indigo-200/50 hover:bg-white/60 transition-all active:scale-95 shadow-lg shadow-indigo-900/5 disabled:opacity-30">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-110 transition-transform"><Compass size={18} /></div>
                         <div className="flex flex-col text-left">
                           <span className="text-sm font-black text-slate-700">ここまでの声を映してみますか？</span>
                           <span className="text-[10px] font-bold text-slate-400">心の鏡が、散らばった思考を総括します</span>
+                          {agentDebugEnabled && <span className="text-[9px] font-mono text-slate-400">{sharedAgentButtonReason}</span>}
                         </div>
                       </button>
                     </div>
@@ -1628,6 +1801,14 @@ const App = () => {
         <SurfaceDebugPanel
           entries={surfaceDebugEntries}
           onClear={clearSurfaceDebugEntries}
+        />
+      )}
+      {agentDebugEnabled && (
+        <AgentGateDebugPanel
+          debug={agentGateDebug}
+          showDelegateBarHiddenReasons={showDelegateBarHiddenReasons}
+          canUseAgentsReasons={canUseAgentsReasons}
+          buttonStates={agentButtonStates}
         />
       )}
     </div>
