@@ -95,3 +95,53 @@ npm run build
 # ビルドのプレビュー
 npm run preview
 ```
+
+---
+
+## 開発オーケストレーション
+
+`docs/phases.yaml` と `docs/review-rules.md` を正本として、Phase 単位で開発を進める最小オーケストレーション基盤を追加しています。
+
+### 追加ファイル
+
+| ファイル | 役割 |
+|---|---|
+| `.github/workflows/run-phase.yml` | Phase を手動実行するメインワークフロー |
+| `.github/workflows/_verify.yml` | lint / build / test を実行する再利用可能ワークフロー |
+| `.github/ISSUE_TEMPLATE/phase-task.yml` | Phase タスク Issue テンプレート |
+| `.github/ISSUE_TEMPLATE/phase-review.yml` | Phase レビュー Issue テンプレート（Gate output 形式） |
+
+### Phase の回し方
+
+1. **GitHub Actions → "Run Phase" → Run workflow** を開く
+2. `phase` を選択して実行（現在は `phase-1` のみ）
+3. ワークフローが自動的に以下を行う:
+   - `_verify.yml` で lint / build / test を実行
+   - 完了後、Wide Reviewer / Code と Wide Reviewer / User の2つの Issue を自動作成
+   - `review-gate` ジョブで一時停止（手動承認待ち）
+4. 2つのレビュー Issue を記入・close したら、`review-gate` を承認してフローを完了する
+
+### Review Gate の構造
+
+```
+verify → create-review-issues → review-gate (手動承認)
+                                    ↑
+              Wide Review/Code Issue & Wide Review/User Issue
+```
+
+各 Gate output には `review-rules.md` に定義された5項目を記入します:  
+1. 今回やったこと / 2. 何が良くなったか / 3. 残っている問題 / 4. 次 Phase へ進んでよいか / 5. 確認が必要な点
+
+### 次に手動でやる設定
+
+| 設定 | 手順 |
+|---|---|
+| **`phase-review` Environment の作成** | Repository Settings → Environments → New environment → `phase-review` を作成し、Required reviewers にオーナーを追加する。これにより review-gate ジョブが手動承認待ちになる |
+| **Issue ラベルの作成** | `review`、`wide-review-code`、`wide-review-user`、`task` の4ラベルを作成する（ないと自動作成 Issue にラベルが付かない）|
+
+### Assumptions
+
+- `npm run build` が Vite 経由で JSX の型チェックを兼ねる想定（独立した `tsc` スクリプトなし）
+- `npm test` は `package.json` の `test` スクリプトを使用
+- Wide Reviewer / User のレビューは人間が行うことを前提とし、自動化しない
+- `phase-review` Environment を設定しない場合、review-gate は承認なしで通過する

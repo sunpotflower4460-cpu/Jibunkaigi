@@ -1,0 +1,33 @@
+name: _Verify
+
+on:
+  workflow_call:
+    inputs:
+      phase:
+        description: 'Phase ID being verified (e.g. phase-1)'
+        required: true
+        type: string
+
+jobs:
+  verify:
+    name: Verify (${{ inputs.phase }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (includes type check via Vite)
+        run: npm run build
+
+      - name: Test
+        run: npm test

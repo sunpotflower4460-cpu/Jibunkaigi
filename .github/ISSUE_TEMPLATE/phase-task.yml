@@ -1,0 +1,53 @@
+name: Phase Task
+description: 各 Phase の作業タスクを記録する
+title: "[phase-X] タスクタイトル"
+labels:
+  - task
+body:
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      description: このタスクが属する Phase
+      options:
+        - phase-1
+        - phase-2
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: ゴール
+      description: このタスクで達成したいこと（phases.yaml の do に対応）
+      placeholder: |
+        例: チャット画面の基本表示を実装する
+    validations:
+      required: true
+
+  - type: textarea
+    id: done_when
+    attributes:
+      label: 完了条件
+      description: phases.yaml の done_when に基づいて確認事項を列挙
+      value: |
+        - [ ] build が通る
+        - [ ] typecheck が通る
+        - [ ] main chat flow が通る
+        - [ ] 致命的 UI 崩れがない
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: やらないこと (dont)
+      description: phases.yaml の dont に対応するスコープ外事項
+      placeholder: |
+        例: 高度な演出 / 深いメモリ
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: 備考・前提
+      description: 実装上の仮定や不明点など

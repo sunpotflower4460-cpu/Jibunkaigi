@@ -1,0 +1,78 @@
+name: Phase Review
+description: Phase 完了時の Review Gate 記録（Wide Reviewer 用）
+title: "[phase-X] Wide Review / Code or User"
+labels:
+  - review
+body:
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      options:
+        - phase-1
+        - phase-2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reviewer_type
+    attributes:
+      label: Reviewer 種別
+      description: review-rules.md の2系統に対応
+      options:
+        - Wide Review / Code
+        - Wide Review / User
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Wide Review / Code の観点 (review-rules.md)
+        - 設計図 (product-spec.md / phases.yaml) とのズレ
+        - 責務分離
+        - 拡張性
+        - 不要な複雑化
+
+        ### Wide Review / User の観点
+        - 実際に触った時の自然さ
+        - 導線のわかりやすさ
+        - 詰まり感
+        - 「使いたい」と思えるか
+
+  - type: textarea
+    id: done_this_phase
+    attributes:
+      label: 1. 今回やったこと
+    validations:
+      required: true
+
+  - type: textarea
+    id: improved
+    attributes:
+      label: 2. 何が良くなったか
+    validations:
+      required: true
+
+  - type: textarea
+    id: remaining
+    attributes:
+      label: 3. 残っている問題
+    validations:
+      required: true
+
+  - type: dropdown
+    id: go_next
+    attributes:
+      label: 4. 次 Phase へ進んでよいか
+      options:
+        - "yes"
+        - "no — 要修正"
+    validations:
+      required: true
+
+  - type: textarea
+    id: needs_confirmation
+    attributes:
+      label: 5. あなたの確認が必要な点
+      description: オーナーに判断を委ねる事項を記載
