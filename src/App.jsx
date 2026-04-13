@@ -1184,14 +1184,21 @@ const App = () => {
     messages.some(m => m.role === 'user') ||
     lastSubmittedUserMessageRef.current?.sessionId === activeSessionId;
   const canUseAgents = isAppReady && !isGenerating && !isSending && !!activeSessionId && !!hasPromptForActiveSession;
-  const configIssues = [
-    !hasFirebaseConfig
-      ? { id: 'firebase', title: 'Firebase設定が未完了です', detail: 'VITE_FIREBASE_* を設定すると、セッション保存と会議開始が有効にできます。' }
-      : null,
-    !apiKey
-      ? { id: 'gemini', title: 'Gemini APIキーが未設定です', detail: 'VITE_GEMINI_API_KEY を設定すると、各エージェントの応答を生成できます。' }
-      : null,
-  ].filter(Boolean);
+  const configIssues = [];
+  if (!hasFirebaseConfig) {
+    configIssues.push({
+      id: 'firebase',
+      title: 'Firebase設定が未完了です',
+      detail: 'VITE_FIREBASE_* を設定すると、セッション保存と会議開始が有効にできます。',
+    });
+  }
+  if (!apiKey) {
+    configIssues.push({
+      id: 'gemini',
+      title: 'Gemini APIキーが未設定です',
+      detail: 'VITE_GEMINI_API_KEY を設定すると、各エージェントの応答を生成できます。',
+    });
+  }
   const hasBlockingConfigIssue = configIssues.length > 0;
   const inputPlaceholder = hasBlockingConfigIssue
     ? '設定が完了すると、ここから問いを綴れます'
@@ -1214,7 +1221,7 @@ const App = () => {
     <div className="lake-bg relative min-h-screen overflow-hidden flex font-sans text-[#2d3748]">
       <div className="water-shimmer z-0" />
       <div
-        aria-hidden={showIntro}
+        aria-hidden={showIntro ? 'true' : 'false'}
         className={`flex w-full h-full relative z-10 transition-opacity duration-500 ${isHomeReady || !showIntro ? 'opacity-100' : 'opacity-0'} ${showIntro ? 'pointer-events-none' : ''}`}
       >
         {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-[60] md:hidden" />}
@@ -1513,7 +1520,7 @@ const App = () => {
           <div role="dialog" aria-modal="true" aria-labelledby="user-name-dialog-title" className="rounded-[2.5rem] w-full max-w-sm p-10 text-center glass-card" onClick={e => e.stopPropagation()}>
             <h3 id="user-name-dialog-title" className="text-lg font-black mb-3">お名前を教えてください</h3>
             <p className="text-xs font-medium text-slate-500 mb-6">会議メンバーからの呼ばれ方に使われます。</p>
-            <input autoFocus maxLength={24} placeholder="呼ばれたい名前" value={tempName} onChange={e => setTempName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); if (e.key === 'Escape') setIsEditingUserName(false); }} className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-3 neu-concave bg-transparent" />
+            <input aria-label="呼ばれたい名前" autoFocus maxLength={24} placeholder="呼ばれたい名前" value={tempName} onChange={e => setTempName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); if (e.key === 'Escape') setIsEditingUserName(false); }} className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-3 neu-concave bg-transparent" />
             <p className="text-[11px] font-bold text-slate-400 mb-8">24文字まで</p>
             <div className="flex flex-col gap-2">
               <button onClick={handleUpdateUserName} className="w-full py-4 bg-[#1e293b] text-white rounded-2xl font-black text-xs shadow-lg">変更を適用</button>
