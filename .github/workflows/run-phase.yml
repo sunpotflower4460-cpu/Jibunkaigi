@@ -16,14 +16,14 @@ permissions:
   contents: read
 
 jobs:
-  # ── 1. lint / build / test ─────────────────────────────────────────────────
+  # -- 1. lint / build / test ---------------------------------------------------
   verify:
     name: Verify
     uses: ./.github/workflows/_verify.yml
     with:
       phase: ${{ inputs.phase }}
 
-  # ── 2. レビューIssueを自動作成 ────────────────────────────────────────────
+  # -- 2. レビューIssueを自動作成 -----------------------------------------------
   open-review-issue:
     name: Open Review Issue
     needs: verify
@@ -105,7 +105,7 @@ jobs:
             core.setOutput('issue-number', issue.number);
             core.notice(`Review issue created: ${issue.html_url}`);
 
-  # ── 3. 人間の承認を待つ (environment: phase-review に Required Reviewers を設定) ──
+  # -- 3. 人間の承認を待つ (environment: phase-review に Required Reviewers を設定) --
   review-gate:
     name: Review Gate (${{ inputs.phase }})
     needs: open-review-issue
@@ -114,10 +114,10 @@ jobs:
     steps:
       - name: Gate passed
         run: |
-          echo "✅ ${{ inputs.phase }} review gate approved."
+          echo "[OK] ${{ inputs.phase }} review gate approved."
           echo "Review issue: #${{ needs.open-review-issue.outputs.issue-number }}"
 
-  # ── 4. フェーズ完了 ──────────────────────────────────────────────────────
+  # -- 4. フェーズ完了 ----------------------------------------------------------
   complete:
     name: Phase Complete
     needs: review-gate
@@ -125,5 +125,5 @@ jobs:
     steps:
       - name: Summary
         run: |
-          echo "🎉 ${{ inputs.phase }} complete."
+          echo "[done] ${{ inputs.phase }} complete."
           echo "Next: update phases.yaml and open the next phase issue."
