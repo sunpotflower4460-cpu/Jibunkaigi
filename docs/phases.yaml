@@ -1,0 +1,31 @@
+project: Jibunkaigi
+
+phases:
+  - id: phase-1
+    title: MVP土台
+    goal: チャット最小導線を安定動作させる
+    do:
+      - 画面表示
+      - 入力送信
+      - 応答表示
+      - 基本エラーハンドリング
+    dont:
+      - 高度な演出
+      - 深いメモリ
+    done_when:
+      - buildが通る
+      - typecheckが通る
+      - main chat flowが通る
+      - 致命的UI崩れがない
+
+  - id: phase-2
+    title: Router / Mixer最小導入
+    goal: 応答選択の自然さを少し上げる
+    do:
+      - pattern mix導入
+      - 応答選択改善
+    dont:
+      - 大規模な構造変更
+    done_when:
+      - phase-1導線が壊れていない
+      - 応答が以前より自然
