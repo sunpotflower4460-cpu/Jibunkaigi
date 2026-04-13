@@ -1,11 +1,11 @@
-project: Jibunkaigi
+project:
+  name: Jibunkaigi
+  goal: >
+    人の内側にある複数の傾向が、
+    場・反応・姿勢・許可・余韻を通って、
+    一時的に言葉として結晶化する体験をつくる。
 
-product_goal: >
-  人の内側にある複数の傾向が、
-  場・反応・姿勢・許可・余韻を通って、
-  一時的に言葉として結晶化する体験をつくる。
-
-guiding_principles:
+principles:
   - 固定人格ではなく内的傾向を主役にする
   - 指示や命令より内的力学を重視する
   - 潜在層を主役、表層を薄い翻訳として扱う
@@ -15,17 +15,26 @@ guiding_principles:
   - Joe は死んでいないものを照らす
   - Mirror は未解決点を静かに映す
 
+phase_order:
+  - phase-1
+  - phase-2
+  - phase-3
+  - phase-4
+  - phase-5
+  - phase-6
+  - phase-7
+
 phases:
   - id: phase-1
     title: runtime安定化
-    goal: >
+    summary: >
       止まる・漏れる・戻らないを減らし、
       安心して使える土台を作る。
-    focus:
-      - loading / generating の安定性
-      - session切替の自然さ
-      - stale async completion の抑制
-      - 「委ねる」の表示条件と押せる条件の整理
+    goal:
+      - loading / generating の安定性を上げる
+      - session切替の自然さを上げる
+      - stale async completion を抑える
+      - 「委ねる」の表示条件と押せる条件を整理する
     do:
       - sessionごとの loading / generating state を整理する
       - 古い async 完了が今の session を汚さないようにする
@@ -46,14 +55,14 @@ phases:
 
   - id: phase-2
     title: 「委ねる」体験の安定化
-    goal: >
+    summary: >
       じぶん会議らしい入口である「委ねる」を、
       自然で怖くない体験にする。
-    focus:
-      - 見つけやすさ
-      - 押しやすさ
-      - 押した後の安心感
-      - 場に合った感じ
+    goal:
+      - 見つけやすさを上げる
+      - 押しやすさを上げる
+      - 押した後の安心感を上げる
+      - 場に合った感じを強める
     do:
       - 「委ねる」ボタンの存在を安定させる
       - 押したあとに止まらないようにする
@@ -72,15 +81,15 @@ phases:
 
   - id: phase-3
     title: voiceの自然さ調整
-    goal: >
+    summary: >
       Joe / Mirror / random voice が、
       固定人格ごっこではなく、
       同じ場から違う角度で出てくる感じを強める。
-    focus:
-      - Surface Translator の効き方
-      - voice差の出し方
-      - Joe / Mirror の役割の保護
-      - patternMix の自然さ
+    goal:
+      - Surface Translator の効き方を整える
+      - voice差の出し方を整える
+      - Joe / Mirror の役割を守る
+      - patternMix の自然さを上げる
     do:
       - Surface Translator の効き方を観察して調整する
       - 各voiceの差を役割説明ではなく言葉の傾きで出す
@@ -99,13 +108,13 @@ phases:
 
   - id: phase-4
     title: MVP完成
-    goal: >
+    summary: >
       第三者に渡しても使える最低限の完成度にする。
-    focus:
-      - 安定性
-      - 最小限のわかりやすさ
-      - 怖くない体験
-      - 開発中感の整理
+    goal:
+      - 安定性を上げる
+      - 最小限のわかりやすさを整える
+      - 怖くない体験にする
+      - 開発中感を減らす
     do:
       - UIの細部を整える
       - エラー表示を整理する
@@ -124,17 +133,17 @@ phases:
 
   - id: phase-5
     title: テストと磨き込み
-    goal: >
+    summary: >
       「使える」を「良い」に近づける。
-    focus:
-      - 回帰防止
-      - 速度
-      - モバイルでの使い心地
-      - 余韻と声の自然さ
+    goal:
+      - 回帰防止を強める
+      - 速度を改善する
+      - モバイルでの使い心地を整える
+      - 余韻と声の自然さを確認する
     do:
-      - 手動スモークテストの定型化
-      - loading / session切替 / delegate / title の回帰チェック
-      - 複数パターンの対話で質感確認
+      - 手動スモークテストを定型化する
+      - loading / session切替 / delegate / title の回帰チェックを行う
+      - 複数パターンの対話で質感確認を行う
       - モバイルでの使い心地を調整する
       - 速度改善を行う
     dont:
@@ -147,12 +156,12 @@ phases:
 
   - id: phase-6
     title: リリース準備
-    goal: >
+    summary: >
       外に出せる形へ整える。
-    focus:
-      - 説明
-      - スクリーンショット
-      - 最低限の運用準備
+    goal:
+      - 外向け説明を整える
+      - スクリーンショットを整える
+      - 最低限の運用準備をする
     do:
       - 説明文と紹介文を作る
       - スクリーンショットを整える
@@ -166,13 +175,13 @@ phases:
 
   - id: phase-7
     title: リリース後の深化
-    goal: >
+    summary: >
       じぶん会議らしさを壊さずに少しずつ深くする。
-    focus:
-      - afterglow の調整
-      - voice の深度向上
-      - 軽い継続性
-      - 静かな導線の強化
+    goal:
+      - afterglow を自然にする
+      - voice の深度を上げる
+      - 軽い継続性を育てる
+      - 静かな導線を強める
     do:
       - afterglow をより自然にする
       - Joe / Mirror / 他voiceの質感を深める
