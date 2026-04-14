@@ -59,6 +59,9 @@ const QualityChip = ({ observation }) => {
 
 const JoeFlagChip = ({ label, active, positive = false }) => (
   <span
+    role="status"
+    aria-label={`${label}: ${active ? 'on' : 'off'}`}
+    title={`${label}: ${active ? 'on' : 'off'}`}
     className={`px-2 py-1 rounded-full border text-[11px] font-bold ${
       active
         ? positive

@@ -84,8 +84,15 @@ const STOPWORDS = new Set([
 ])
 const SOFTENING_MARKERS = ['大丈夫', '無理に', '一緒に', 'ゆっくり', '少しずつ', 'きっと', '安心', 'やさしく', '焦らなくて']
 const EXPLANATORY_MARKERS = ['つまり', 'というのは', 'なぜなら', 'なので', 'だから', '整理すると', '要するに', '言い換えると']
+// Joe 比較では、冒頭が短く入力に接地しているほど「一点に触れている」扱いに寄せる。
+const JOE_FOCUS_MAX_OPENING_LENGTH = 42
+// 柔らかさ・説明臭さは、単発の語ではなく複数の兆候が揃った時だけフラグ化する。
+const JOE_SOFTENING_HIT_THRESHOLD = 2
+const JOE_EXPLANATION_MARKER_THRESHOLD = 2
+const JOE_EXPLANATION_LENGTH_DELTA = 60
+const JOE_EXPLANATION_SENTENCE_THRESHOLD = 3
 
-const normalize = (text = '') => (text ?? '').toString().trim()
+const normalize = (text = '') => (text == null ? '' : text.toString().trim())
 
 const splitList = (value = '') => normalize(value)
   .split(/[、,，/・\n]/)
@@ -229,10 +236,12 @@ export const buildJoeObservationFlags = ({
 
   return {
     applicable: true,
-    joeFocusStrength: Boolean(opening && opening.length <= 42 && groundedTokens.some((token) => opening.includes(token))),
+    joeFocusStrength: Boolean(opening && opening.length <= JOE_FOCUS_MAX_OPENING_LENGTH && groundedTokens.some((token) => opening.includes(token))),
     joeGrounding: groundedTokens.length > 0,
-    joeOverSoftened: softeningHits.length >= 2 || Boolean((pressureGained || spaciousnessGained) && specificityLost && characterLost),
-    joeTooExplanatory: explanatoryHits.length >= 2 || Boolean(lengthDelta >= 60 && countSentences(normalizedCurrent) >= 3),
+    joeOverSoftened: softeningHits.length >= JOE_SOFTENING_HIT_THRESHOLD || Boolean((pressureGained || spaciousnessGained) && specificityLost && characterLost),
+    joeTooExplanatory:
+      explanatoryHits.length >= JOE_EXPLANATION_MARKER_THRESHOLD
+      || Boolean(lengthDelta >= JOE_EXPLANATION_LENGTH_DELTA && countSentences(normalizedCurrent) >= JOE_EXPLANATION_SENTENCE_THRESHOLD),
   }
 }
 

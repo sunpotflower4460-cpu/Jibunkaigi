@@ -391,16 +391,15 @@ const App = () => {
 
   const handleToggleCompareLabel = (compareKey, label) => {
     if (!compareKey || !label) return;
-
-    setCompareLabelStore((prev) => {
-      const next = toggleCompareRevisionLabel(prev, compareKey, label);
-      setCompareEntries((entries) => entries.map((entry) => (
-        entry.compareKey === compareKey
-          ? { ...entry, revisionLabels: next[compareKey] || [] }
-          : entry
-      )));
-      return next;
-    });
+    const nextStore = toggleCompareRevisionLabel(compareLabelStoreRef.current, compareKey, label);
+    const nextLabels = nextStore[compareKey] || [];
+    compareLabelStoreRef.current = nextStore;
+    setCompareLabelStore(nextStore);
+    setCompareEntries((entries) => entries.map((entry) => (
+      entry.compareKey === compareKey
+        ? { ...entry, revisionLabels: nextLabels }
+        : entry
+    )));
   };
 
   useEffect(() => {
