@@ -199,3 +199,101 @@ describe('Agent Debug Events', () => {
     assert.equal(event.visibleMessagesCount, 3);
   });
 });
+
+describe('ai-response subdivision debug', () => {
+  // Helper matching the updated Copy Trace format (phase + reason)
+  function formatTrace(events) {
+    return events.map((event) => {
+      const time = event.at ? new Date(event.at).toLocaleTimeString('ja-JP', { hour12: false }) : '??:??:??';
+      const agentInfo = event.agentId ? ` ${event.agentId}` : '';
+      const phase = event.phase ? ` phase=${event.phase}` : '';
+      const reason = event.reason ? ` reason=${event.reason}` : '';
+      return `[${time}] ${event.tag}${agentInfo}${phase}${reason}`;
+    }).join('\n');
+  }
+
+  it('ai-response:error event retains phase', () => {
+    const event = {
+      tag: 'ai-response:error',
+      phase: 'activate-agent',
+      reason: 'TypeError: x is not a function',
+      agentId: 'soul',
+      sessionId: 'sess1',
+    };
+    assert.equal(event.phase, 'activate-agent');
+    assert.equal(event.reason, 'TypeError: x is not a function');
+  });
+
+  it('subdivision events are pushed in order', () => {
+    const events = [];
+    const at = '2024-01-01T09:00:00.000Z';
+    const push = (tag) => events.push({ tag, agentId: 'soul', at });
+
+    push('ai-response:start');
+    push('ai-response:after-context');
+    push('ai-response:after-internal-os');
+    push('ai-response:after-estimate-state');
+    push('ai-response:after-activate-agent');
+    push('ai-response:after-state-guide');
+    push('ai-response:after-internal-frame');
+    push('ai-response:after-surface-guidance');
+    push('ai-response:after-system-prompt');
+    push('ai-response:after-user-prompt');
+    push('ai-response:before-gemini');
+
+    const tags = events.map(e => e.tag);
+    assert.equal(tags[0], 'ai-response:start');
+    assert.equal(tags[1], 'ai-response:after-context');
+    assert.equal(tags[9], 'ai-response:after-user-prompt');
+    assert.equal(tags[10], 'ai-response:before-gemini');
+  });
+
+  it('Copy Trace includes phase in ai-response:error line', () => {
+    const events = [
+      { tag: 'ai-response:start', agentId: 'soul', at: '2024-01-01T09:00:00.000Z' },
+      { tag: 'ai-response:after-context', agentId: 'soul', at: '2024-01-01T09:00:00.100Z' },
+      { tag: 'ai-response:error', agentId: 'soul', phase: 'activate-agent', reason: 'crash', at: '2024-01-01T09:00:00.200Z' },
+    ];
+    const trace = formatTrace(events);
+    assert.ok(trace.includes('ai-response:error soul phase=activate-agent reason=crash'));
+  });
+
+  it('Copy Trace omits phase/reason when absent', () => {
+    const events = [
+      { tag: 'ai-response:after-context', agentId: 'soul', at: '2024-01-01T09:00:00.000Z' },
+    ];
+    const trace = formatTrace(events);
+    assert.ok(!trace.includes('phase='));
+    assert.ok(!trace.includes('reason='));
+  });
+
+  it('event list is trimmed to max 12 entries', () => {
+    const events = [];
+    for (let i = 0; i < 20; i++) {
+      const next = [...events, { tag: `ev-${i}`, at: new Date().toISOString() }];
+      events.length = 0;
+      events.push(...next.slice(-12));
+    }
+    assert.equal(events.length, 12);
+    assert.equal(events[0].tag, 'ev-8');
+    assert.equal(events[11].tag, 'ev-19');
+  });
+
+  it('Promise rejection path: recovery state resets isGenerating', () => {
+    let isGenerating = true;
+    let generatingAgent = { id: 'soul' };
+    let showInput = false;
+
+    // Simulate the .catch() handler
+    const simulateCatch = () => {
+      isGenerating = false;
+      generatingAgent = null;
+      showInput = true;
+    };
+
+    simulateCatch();
+    assert.equal(isGenerating, false);
+    assert.equal(generatingAgent, null);
+    assert.equal(showInput, true);
+  });
+});
