@@ -981,8 +981,17 @@ const App = () => {
         surfaceGuidance: agentSurfaceGuidance,
       });
       promptText = buildAgentUserPrompt(agentId, { userName, userText: latestUserText });
+      const hasSelectedAfterglowMix = (mix) => {
+        if (!mix || !mix.selected) return false;
+        if (Array.isArray(mix.selected)) return mix.selected.length > 0;
+        if (typeof mix.selected === 'object') return Object.keys(mix.selected).length > 0;
+        return Boolean(mix.selected);
+      };
       const agentUsedAfterglow = !!(
-        afterglowSeed && (afterglowSeed.previousMix || afterglowSeed.previousLatentState)
+        afterglowSeed && (
+          hasSelectedAfterglowMix(afterglowSeed.previousMix) ||
+          afterglowSeed.previousLatentState
+        )
       );
       const agentQualityPreview = buildAgentDebugPreview({
         agentId,
