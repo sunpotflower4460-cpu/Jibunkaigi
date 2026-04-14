@@ -46,6 +46,8 @@ import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchA
 import { buildSurfaceFrame } from './runtime/surfaceTranslator';
 import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
+import { isCompareModeEnabled, buildCompareEntry, COMPARE_MAX_ENTRIES } from './runtime/compareMode';
+import ComparePanel from './components/ComparePanel';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -246,6 +248,7 @@ const App = () => {
   const [openToolbarMsgId, setOpenToolbarMsgId] = useState(null);
   const [autoExpandReactions, setAutoExpandReactions] = useState(null);
   const [surfaceDebugEntries, setSurfaceDebugEntries] = useState([]);
+  const [compareEntries, setCompareEntries] = useState([]);
   const [optimisticSessionTitles, setOptimisticSessionTitles] = useState({});
   const errorTimeoutRef = useRef(null);
 
@@ -333,6 +336,12 @@ const App = () => {
     setSurfaceDebugEntries((prev) => [entry, ...prev].slice(0, SURFACE_DEBUG_MAX_ENTRIES));
   };
   const clearSurfaceDebugEntries = () => setSurfaceDebugEntries([]);
+
+  const pushCompareEntry = (entry) => {
+    if (!isCompareModeEnabled()) return;
+    setCompareEntries((prev) => [entry, ...prev].slice(0, COMPARE_MAX_ENTRIES));
+  };
+  const clearCompareEntries = () => setCompareEntries([]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -890,6 +899,10 @@ const App = () => {
     let aiPersistenceState = 'not-created';
 
     let activated = null;
+    // Compare Mode: dev-only state. Compute once per call.
+    const compareEnabled = isCompareModeEnabled();
+    let compareOuterGuide = { stateGuide: '', internalFrame: '', surfaceGuidance: '' };
+    let compareBaselineSystemInstruction = '';
     if (isMaster) {
       const mirrorContext = buildPromptContext({
         messages: baseMessages,
@@ -930,6 +943,23 @@ const App = () => {
         surfaceGuidance: mirrorSurfaceGuidance,
       });
       promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
+      // Compare Mode: capture outer guide + build baseline (Outer Guide 空) systemInstruction
+      compareOuterGuide = {
+        stateGuide: mirrorStateGuide || '',
+        internalFrame: mirrorInternalFrame || '',
+        surfaceGuidance: mirrorSurfaceGuidance || '',
+      };
+      if (compareEnabled) {
+        compareBaselineSystemInstruction = buildMirrorSystemPrompt({
+          context: mirrorContext,
+          mode: selectedMode,
+          signals,
+          surfaceFrame: mirrorSurfaceFrame,
+          stateGuide: '',
+          internalFrame: '',
+          surfaceGuidance: '',
+        });
+      }
       const mirrorUsedAfterglow = !!(
         afterglowSeed && (afterglowSeed.previousMix || afterglowSeed.previousLatentState)
       );
@@ -987,6 +1017,25 @@ const App = () => {
         if (typeof mix.selected === 'object') return Object.keys(mix.selected).length > 0;
         return Boolean(mix.selected);
       };
+      // Compare Mode: capture outer guide + build baseline (Outer Guide 空) systemInstruction
+      compareOuterGuide = {
+        stateGuide: agentStateGuide || '',
+        internalFrame: agentInternalFrame || '',
+        surfaceGuidance: agentSurfaceGuidance || '',
+      };
+      if (compareEnabled) {
+        compareBaselineSystemInstruction = buildAgentSystemPrompt(agentId, {
+          activated,
+          context,
+          mode: selectedMode,
+          userText: latestUserText,
+          internalOS: continuityInternalOS,
+          surfaceFrame,
+          stateGuide: '',
+          internalFrame: '',
+          surfaceGuidance: '',
+        });
+      }
       const agentUsedAfterglow = !!(
         afterglowSeed && (
           hasSelectedAfterglowMix(afterglowSeed.previousMix) ||
@@ -1023,6 +1072,21 @@ const App = () => {
       systemInstruction = applyRefresh(systemInstruction, refreshText);
     }
 
+    // Compare Mode: fire baseline call in parallel with current. Fire-and-forget.
+    // baseline は Current と並走し、どちらかが失敗しても他方に影響しない。
+    let baselinePromise = null;
+    if (compareEnabled && compareBaselineSystemInstruction) {
+      baselinePromise = callGemini({
+        prompt: promptText,
+        systemInstruction: compareBaselineSystemInstruction,
+        model: GEMINI_CHAT_MODEL,
+      })
+        .then((reply) => ({ ok: true, reply: cleanResponse(reply) }))
+        .catch((err) => ({ ok: false, error: err }));
+    }
+    let currentReplyForCompare = '';
+    let currentErrorForCompare = null;
+
     try {
       const clickStartedAt = responseTimingRef.current?.clickStartedAt ?? performance.now();
       console.info(
@@ -1045,6 +1109,7 @@ const App = () => {
         throw new Error(`response_check:${responseCheck.reason}`);
       }
       const cleanedResponse = cleanResponse(response);
+      currentReplyForCompare = cleanedResponse;
 
       // セッション切り替えチェック（早期中断）
       if (activeSessionIdRef.current !== sessionId) {
@@ -1141,6 +1206,7 @@ const App = () => {
         });
       }
     } catch (e) {
+      currentErrorForCompare = e;
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[handleAiResponse] Error:", msg);
       // セッションが一致する場合のみ UI を復帰
@@ -1171,6 +1237,31 @@ const App = () => {
         setIsGenerating(false);
         setGeneratingAgent(null);
         setShowInput(true);
+      }
+
+      // Compare Mode: baseline の結果を待って entry を push（fire-and-forget）
+      if (baselinePromise) {
+        baselinePromise
+          .then((baselineResult) => {
+            // セッション切り替え中は捨てる
+            if (activeSessionIdRef.current !== sessionId) return;
+            pushCompareEntry(buildCompareEntry({
+              agentId: isMaster ? 'master' : agentId,
+              isMirror: isMaster,
+              mode: selectedMode,
+              userText: latestUserText,
+              baselineReply: baselineResult.ok ? baselineResult.reply : '',
+              currentReply: currentReplyForCompare,
+              stateGuide: compareOuterGuide.stateGuide,
+              internalFrame: compareOuterGuide.internalFrame,
+              surfaceGuidance: compareOuterGuide.surfaceGuidance,
+              baselineError: baselineResult.ok ? null : baselineResult.error,
+              currentError: currentErrorForCompare,
+            }));
+          })
+          .catch(() => {
+            /* swallow — compare is dev-only, never disturb main flow */
+          });
       }
     }
   };
@@ -1660,6 +1751,13 @@ const App = () => {
         <SurfaceDebugPanel
           entries={surfaceDebugEntries}
           onClear={clearSurfaceDebugEntries}
+        />
+      )}
+
+      {isCompareModeEnabled() && (
+        <ComparePanel
+          entries={compareEntries}
+          onClear={clearCompareEntries}
         />
       )}
     </div>
