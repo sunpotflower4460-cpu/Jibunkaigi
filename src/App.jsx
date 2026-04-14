@@ -391,9 +391,8 @@ const App = () => {
 
   const handleToggleCompareLabel = (compareKey, label) => {
     if (!compareKey || !label) return;
-    const nextStore = toggleCompareRevisionLabel(compareLabelStoreRef.current, compareKey, label);
+    const nextStore = toggleCompareRevisionLabel(compareLabelStore, compareKey, label);
     const nextLabels = nextStore[compareKey] || [];
-    compareLabelStoreRef.current = nextStore;
     setCompareLabelStore(nextStore);
     setCompareEntries((entries) => entries.map((entry) => (
       entry.compareKey === compareKey

@@ -238,12 +238,12 @@ export const buildJoeObservationFlags = ({
 
   return {
     applicable: true,
-    joeFocusStrength: Boolean(opening && opening.length <= JOE_FOCUS_MAX_OPENING_LENGTH && openingIncludesGroundedToken),
+    joeFocusStrength: opening.length > 0 && opening.length <= JOE_FOCUS_MAX_OPENING_LENGTH && openingIncludesGroundedToken,
     joeGrounding: groundedTokens.length > 0,
-    joeOverSoftened: softeningHits.length >= JOE_SOFTENING_HIT_THRESHOLD || Boolean((pressureGained || spaciousnessGained) && specificityLost && characterLost),
+    joeOverSoftened: softeningHits.length >= JOE_SOFTENING_HIT_THRESHOLD || (pressureGained || spaciousnessGained) && specificityLost && characterLost,
     joeTooExplanatory:
       explanatoryHits.length >= JOE_EXPLANATION_MARKER_THRESHOLD
-      || Boolean(lengthDelta >= JOE_EXPLANATION_LENGTH_DELTA && countSentences(normalizedCurrent) >= JOE_EXPLANATION_SENTENCE_THRESHOLD),
+      || (lengthDelta >= JOE_EXPLANATION_LENGTH_DELTA && countSentences(normalizedCurrent) >= JOE_EXPLANATION_SENTENCE_THRESHOLD),
   }
 }
 
@@ -273,7 +273,7 @@ export const buildSuggestedRevisionLabels = ({
   if (specificity.lost && !characterPresence.gained) {
     labels.push('too-generic')
   }
-  if ((characterPresence.lost && qualityObservations.spaciousness?.gained) || (characterPresence.lost && naturalness.gained)) {
+  if (characterPresence.lost && (qualityObservations.spaciousness?.gained || naturalness.gained)) {
     labels.push('too-flat')
   }
   if (joeNess.gained && !joeObservationFlags.joeOverSoftened && !joeObservationFlags.joeTooExplanatory) {
