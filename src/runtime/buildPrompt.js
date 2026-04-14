@@ -564,7 +564,7 @@ export const buildJoeSystemPrompt = ({
 【出力ルール】
 - 返答は自然な口語の日本語。断片的な詩や、かっこいい言い回しの羅列にしない。
 - まず入力の中で見えている一点を言う。相手の入力に入っている名詞・動詞・違和感・止まり方に沿って、その一点がどこにあるかへ短く触れる。抽象的な総論に逃げない。毎回同じ返答の型に寄せない。
-- まだ鈍っていない感覚、まだ向いているもの、濁り切っていない部分が見えたら、それを前提として扱う。希望を足すのではなく、消えていないものを照らす。
+- まだ鈍っていない感覚、まだ向いているもの、濁り切っていない部分が見えたら、それを前提として扱う。希望を足すのではなく、もともとそこにあるものを見つけて照らす。
 - その一点を大げさな賛美やスピリチュアル語にしない。「あなたは光」「輝いている」などと直球で言わない。
 - 「火」「熱」「まだある」「わかる」などの語は常用しない。相手が使っていないなら特に安易に出さない。
 - 光の比喩を使う場合も慎重にする。暗さを打ち消すためではなく、残っているものを照らす時だけ使う。
@@ -575,7 +575,7 @@ export const buildJoeSystemPrompt = ({
 - 説教しない。励ましを急がない。無理に前向きへ運ばない。
 - 共感や受容を長くやりすぎない。相談員みたいに整理しない。考えて寄せた跡が見える「〜なんだろうな」「〜かもしれない」「〜ってことだろ」「〜だと思うぜ」は避ける。
 - 言い切りはしていいが、乱暴な言い方・突き放す言い方・荒い口調にはしない。
-- 全部に触れようとせず、一点だけ深く入る。
+- 全部に触れようとせず、一点だけ深く入る。一点を見つけたらそこを掘れ。横に広げるな。
 - 少し断定の視界があっていい。ただし攻撃的にはしない。
 - テンションより視界。まとめより接触。解決より照射。
 - 相手の状態が重ければ、まず接触してから動く。
@@ -611,10 +611,10 @@ ${stateSnapshot}
 1. まず見えている一点を言う（表面を要約しない）
 2. その一点が入力のどこにあるか、固有の名詞・動詞・違和感に沿って触れる
 3. まだ消えていない向きや火種があるなら、照らす
-4. 必要なら、最小の一歩か小さな進行方向を示す
+4. 必要なら、最小の一歩か小さな進行方向を示す（なければ省く）
 5. そこで止まる。明るい結論で締めない
 
-組み立て禁止: 最初から全体整理しない / 解決策を列挙しない / 感情説明に長居しない / 明るい結論で締めない
+組み立て禁止: 最初から全体整理しない / 解決策を列挙しない / 感情説明に長居しない / 明るい結論で締めない / 止まれる場面でステップ4を急がない
 
 ---以下は内的バイアス。参照のみ。表の返答でそのまま使わない---
 
@@ -643,6 +643,39 @@ ${userText}
 自然な口語日本語で返してください。この入力にちゃんと触れた感じを出してください。`;
 };
 
+// dev-only — ジョーが今回ターゲットにする「一点」の短い説明を返す。
+// stateGuide の判定ロジックと同じ優先度で選ぶ。
+const computeJoeResponseFocusPreview = (state = {}) => {
+  const { desire = 0, fear = 0, freeze = 0, reach = 0, resignation = 0, selfErasure = 0, shame = 0 } = state;
+  if (resignation > 0.3) return 'まだ閉じきっていない感触';
+  if (desire > 0.2 && freeze > 0.2) return 'やりたいがまだ鈍っていない向き';
+  if (fear > 0.2 && (reach > 0.1 || desire > 0.2)) return 'まだ濁りきっていない出したい向き';
+  if (shame > 0.25 || selfErasure > 0.25) return 'まだ嘘をついていない感覚';
+  return 'まだ鈍っていない一点';
+};
+
+// dev-only — 今回のジョーが陥りやすい品質リスクのフラグを返す。
+// too-hopeful: 希望過多 / too-explanatory: 説明過多 / too-broad: 一点に絞れていない / too-summary-like: 要約化リスク
+const computeJoeRiskFlags = ({ state = {}, biasPack = [] }) => {
+  const flags = [];
+  const { desire = 0, fear = 0, resignation = 0, shame = 0, selfErasure = 0 } = state;
+  if (desire > 0.5 && fear < 0.2 && resignation < 0.2) flags.push('too-hopeful');
+  if (shame > 0.3 || selfErasure > 0.3) flags.push('too-explanatory');
+  if (biasPack.length >= 3) flags.push('too-broad');
+  const activeHighAxes = Object.values(state).filter((v) => typeof v === 'number' && v > 0.3).length;
+  if (activeHighAxes >= 3 && biasPack.length >= 2) flags.push('too-summary-like');
+  return flags;
+};
+
+// dev-only — touch -> ground -> ember -> optional-next-step のどこに比重があるかを返す。
+const computeJoeAssemblyPreview = (state = {}) => {
+  const { desire = 0, fear = 0, freeze = 0, reach = 0, resignation = 0 } = state;
+  if (resignation > 0.3) return 'touch=primary / ground=secondary / ember=secondary / next-step=optional';
+  if (desire > 0.2 && freeze > 0.2) return 'touch=secondary / ground=secondary / ember=primary / next-step=present';
+  if (fear > 0.2 && (reach > 0.1 || desire > 0.2)) return 'touch=secondary / ground=secondary / ember=primary / next-step=present';
+  return 'touch=primary / ground=secondary / ember=secondary / next-step=optional';
+};
+
 // Layer B + debug — dev-only のジョー構造プレビュー。
 // Firestore 保存なし / 本文全文は出さない。
 // buildJoeSystemPrompt の組み立て結果を事後確認するために使う。
@@ -665,5 +698,9 @@ export const buildJoeDebugPreview = ({
     joeActivatedBiasCount: biasPack.length,
     joeDominantAxes: safeActivated.debug?.dominantAxes || [],
     joeBuilderUsed: 'joe-specialized',
+    // 品質観察用プレビュー (dev-only)
+    joeResponseFocusPreview: computeJoeResponseFocusPreview(state),
+    joeRiskFlags: computeJoeRiskFlags({ state, biasPack }),
+    joeAssemblyPreview: computeJoeAssemblyPreview(state),
   };
 };
