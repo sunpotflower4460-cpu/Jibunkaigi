@@ -32,9 +32,10 @@ const AgentGateDebugPanel = ({
         .slice(-10)
         .map((event) => {
           const time = event.at ? new Date(event.at).toLocaleTimeString('ja-JP', { hour12: false }) : '??:??:??';
-          const reason = event.reason ? ` ${event.reason}` : '';
           const agentInfo = event.agentId ? ` ${event.agentId}` : '';
-          return `[${time}] ${event.tag}${agentInfo}${reason}`;
+          const phase = event.phase ? ` phase=${event.phase}` : '';
+          const reason = event.reason ? ` reason=${event.reason}` : '';
+          return `[${time}] ${event.tag}${agentInfo}${phase}${reason}`;
         })
         .join('\n');
 
@@ -122,9 +123,10 @@ const AgentGateDebugPanel = ({
             <div style={{ fontSize: 9, lineHeight: 1.4, maxHeight: 120, overflowY: 'auto' }}>
               {agentDebugEvents.slice(-10).map((event, idx) => {
                 const time = event.at ? new Date(event.at).toLocaleTimeString('ja-JP', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '??:??:??';
-                const reason = event.reason ? ` ${event.reason}` : '';
                 const agentInfo = event.agentId ? ` ${event.agentId}` : '';
-                const summary = `${event.tag}${agentInfo}${reason}`;
+                const phase = event.phase ? ` phase=${event.phase}` : '';
+                const reason = event.reason ? ` ${event.reason}` : '';
+                const summary = `${event.tag}${agentInfo}${phase}${reason}`;
                 return (
                   <div key={idx} style={{ marginBottom: 2, color: '#cbd5e1' }}>
                     <span style={{ color: '#64748b' }}>{time}</span> {summary}

@@ -893,16 +893,14 @@ const App = () => {
       setShowInput(false);
 
       window.requestAnimationFrame(() => {
-        try {
-          handleAiResponse(agentId, isMaster, effectiveSessionId, mid, messagesAtClick, traceId);
-        } catch (rafError) {
+        Promise.resolve(handleAiResponse(agentId, isMaster, effectiveSessionId, mid, messagesAtClick, traceId)).catch((rafError) => {
           console.error("[raf:handleAiResponse:error]", rafError);
-          pushAgentDebugEvent({ tag: 'raf:handleAiResponse:error', error: rafError instanceof Error ? rafError.message : String(rafError), agentId, sessionId: effectiveSessionId });
+          pushAgentDebugEvent({ tag: 'raf:handleAiResponse:error', reason: rafError?.message || 'unknown', agentId, sessionId: effectiveSessionId });
           setIsGenerating(false);
           setGeneratingAgent(null);
           setShowInput(true);
           setErrorWithAutoDismiss("応答の開始に失敗しました。");
-        }
+        });
       });
     } catch (error) {
       console.error("[agent-click:error]", error);
@@ -964,26 +962,72 @@ const App = () => {
     }
 
     const finishPromptBuild = beginTimedPhase(traceId, 'prompt build');
-    const context = buildPromptContext({
-      messages: baseMessages,
-      userName,
-      agents: AGENTS,
-      maxMessages: 6,
-      maxCharsPerMessage: 180,
-    });
+
+    // ── phase helper: エラー時に共通処理 ──────────────────────────────────
+    const handlePhaseError = (phase, err) => {
+      const reason = err instanceof Error ? err.message : String(err);
+      console.error(`[ai-response:error] phase=${phase}`, err);
+      pushAgentDebugEvent({ tag: 'ai-response:error', phase, reason, agentId, sessionId, currentSessionId: activeSessionIdRef.current, activeSessionMatches: activeSessionIdRef.current === sessionId });
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      const phaseSuffix = isAgentDebugEnabled() ? `（phase=${phase}）` : '';
+      if (phase === 'system-prompt' || phase === 'user-prompt') {
+        setErrorWithAutoDismiss(`AIプロンプトの構築に失敗しました。${phaseSuffix}`);
+      } else if (phase === 'activate-agent') {
+        setErrorWithAutoDismiss(`「委ねる」の処理中にエラーが発生しました。${phaseSuffix}`);
+      } else {
+        setErrorWithAutoDismiss(`応答の準備中にエラーが発生しました。${phaseSuffix}`);
+      }
+    };
+
+    // A. context 構築
+    let context;
+    try {
+      context = buildPromptContext({
+        messages: baseMessages,
+        userName,
+        agents: AGENTS,
+        maxMessages: 6,
+        maxCharsPerMessage: 180,
+      });
+    } catch (err) {
+      handlePhaseError('context-build', err);
+      return;
+    }
 
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
     const latestUserText = getLatestUserText(sessionId, baseMessages);
     const afterglowSeed = getAfterglowSeedForSession(sessionId);
-    const continuityInternalOS = !isMaster
-      ? runInternalOS(latestUserText, {
-        agentId,
-        mode: selectedMode,
-        previousMix: afterglowSeed.previousMix,
-        previousLatentState: afterglowSeed.previousLatentState,
-      })
-      : null;
+
+    const currentSessionId = activeSessionIdRef.current;
+    const activeSessionMatches = currentSessionId === sessionId;
+
+    const _debugBase = { agentId, sessionId, currentSessionId, activeSessionMatches };
+
+    console.info("[ai-response:after-context]", _debugBase);
+    pushAgentDebugEvent({ tag: 'ai-response:after-context', ..._debugBase, messagesAtClickCount: messagesAtClick.length, mode: selectedMode });
+
+    // B. runInternalOS
+    let continuityInternalOS;
+    try {
+      continuityInternalOS = !isMaster
+        ? runInternalOS(latestUserText, {
+          agentId,
+          mode: selectedMode,
+          previousMix: afterglowSeed.previousMix,
+          previousLatentState: afterglowSeed.previousLatentState,
+        })
+        : null;
+    } catch (err) {
+      handlePhaseError('internal-os', err);
+      return;
+    }
+
+    console.info("[ai-response:after-internal-os]", { ..._debugBase, hasInternalOS: !!continuityInternalOS });
+    pushAgentDebugEvent({ tag: 'ai-response:after-internal-os', ..._debugBase, hasInternalOS: !!continuityInternalOS });
+
     const surfaceFrame = continuityInternalOS
       ? buildSurfaceFrame({
           latentState: continuityInternalOS.latentState,
@@ -1060,35 +1104,116 @@ const App = () => {
           usedAfterglow: mirrorUsedAfterglow,
         },
       }));
+
+      // Mirror path: emit milestones after key steps
+      console.info("[ai-response:after-estimate-state]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-estimate-state', ..._debugBase });
+      console.info("[ai-response:after-activate-agent]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-activate-agent', ..._debugBase });
+      console.info("[ai-response:after-state-guide]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-state-guide', ..._debugBase });
+      console.info("[ai-response:after-internal-frame]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-internal-frame', ..._debugBase });
+      console.info("[ai-response:after-surface-guidance]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-surface-guidance', ..._debugBase });
+      console.info("[ai-response:after-system-prompt]", { ..._debugBase, systemInstructionLength: systemInstruction.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-system-prompt', ..._debugBase, systemInstructionLength: systemInstruction.length });
+      console.info("[ai-response:after-user-prompt]", { ..._debugBase, promptLength: promptText.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-user-prompt', ..._debugBase, promptLength: promptText.length });
     } else {
       // 全エージェント統一パイプライン
-      const estimatedState = estimateState(latestUserText);
-      activated = activateAgent(agentId, estimatedState);
 
-      // エージェント専用の深いパイプライン
-      const agentStateGuide = buildAgentStateGuide(agentId, estimatedState);
-      const agentInternalFrame = continuityInternalOS ? buildAgentInternalFrame({
-        agentId,
-        internalOS: continuityInternalOS,
-        estimatedState,
-      }) : '';
-      const agentSurfaceGuidance = surfaceFrame ? buildAgentSurfaceGuidance({
-        agentId,
-        surfaceFrame,
-      }) : '';
+      // C. estimateState
+      let estimatedState;
+      try {
+        estimatedState = estimateState(latestUserText);
+      } catch (err) {
+        handlePhaseError('estimate-state', err);
+        return;
+      }
+      console.info("[ai-response:after-estimate-state]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-estimate-state', ..._debugBase });
 
-      systemInstruction = buildAgentSystemPrompt(agentId, {
-        activated,
-        context,
-        mode: selectedMode,
-        userText: latestUserText,
-        internalOS: continuityInternalOS,
-        surfaceFrame,
-        stateGuide: agentStateGuide,
-        internalFrame: agentInternalFrame,
-        surfaceGuidance: agentSurfaceGuidance,
-      });
-      promptText = buildAgentUserPrompt(agentId, { userName, userText: latestUserText });
+      // D. activateAgent
+      try {
+        activated = activateAgent(agentId, estimatedState);
+      } catch (err) {
+        handlePhaseError('activate-agent', err);
+        return;
+      }
+      console.info("[ai-response:after-activate-agent]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-activate-agent', ..._debugBase });
+
+      // E. buildAgentStateGuide
+      let agentStateGuide;
+      try {
+        agentStateGuide = buildAgentStateGuide(agentId, estimatedState);
+      } catch (err) {
+        handlePhaseError('state-guide', err);
+        return;
+      }
+      console.info("[ai-response:after-state-guide]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-state-guide', ..._debugBase });
+
+      // F. buildAgentInternalFrame
+      let agentInternalFrame;
+      try {
+        agentInternalFrame = continuityInternalOS ? buildAgentInternalFrame({
+          agentId,
+          internalOS: continuityInternalOS,
+          estimatedState,
+        }) : '';
+      } catch (err) {
+        handlePhaseError('internal-frame', err);
+        return;
+      }
+      console.info("[ai-response:after-internal-frame]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-internal-frame', ..._debugBase });
+
+      // G. buildAgentSurfaceGuidance
+      let agentSurfaceGuidance;
+      try {
+        agentSurfaceGuidance = surfaceFrame ? buildAgentSurfaceGuidance({
+          agentId,
+          surfaceFrame,
+        }) : '';
+      } catch (err) {
+        handlePhaseError('surface-guidance', err);
+        return;
+      }
+      console.info("[ai-response:after-surface-guidance]", { ..._debugBase, hasSurfaceFrame: !!surfaceFrame });
+      pushAgentDebugEvent({ tag: 'ai-response:after-surface-guidance', ..._debugBase, hasSurfaceFrame: !!surfaceFrame });
+
+      // H. buildAgentSystemPrompt
+      try {
+        systemInstruction = buildAgentSystemPrompt(agentId, {
+          activated,
+          context,
+          mode: selectedMode,
+          userText: latestUserText,
+          internalOS: continuityInternalOS,
+          surfaceFrame,
+          stateGuide: agentStateGuide,
+          internalFrame: agentInternalFrame,
+          surfaceGuidance: agentSurfaceGuidance,
+        });
+      } catch (err) {
+        handlePhaseError('system-prompt', err);
+        return;
+      }
+      console.info("[ai-response:after-system-prompt]", { ..._debugBase, systemInstructionLength: systemInstruction.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-system-prompt', ..._debugBase, systemInstructionLength: systemInstruction.length });
+
+      // I. buildAgentUserPrompt
+      try {
+        promptText = buildAgentUserPrompt(agentId, { userName, userText: latestUserText });
+      } catch (err) {
+        handlePhaseError('user-prompt', err);
+        return;
+      }
+      console.info("[ai-response:after-user-prompt]", { ..._debugBase, promptLength: promptText.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-user-prompt', ..._debugBase, promptLength: promptText.length });
+
       const hasSelectedAfterglowMix = (mix) => {
         if (!mix || !mix.selected) return false;
         if (Array.isArray(mix.selected)) return mix.selected.length > 0;
@@ -1258,8 +1383,9 @@ const App = () => {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[ai-response:error]", { msg, ...aiDebugState });
-      pushAgentDebugEvent({ tag: 'ai-response:error', error: msg, agentId, sessionId, persistenceState: aiPersistenceState });
+      const errPhase = aiPersistenceState === 'persisted' ? 'save' : aiPersistenceState === 'optimistic' ? 'save' : 'gemini';
+      console.error("[ai-response:error]", { msg, phase: errPhase, ...aiDebugState });
+      pushAgentDebugEvent({ tag: 'ai-response:error', phase: errPhase, reason: msg, agentId, sessionId, persistenceState: aiPersistenceState });
       // セッションが一致する場合のみ UI を復帰
       const currentlyActiveSession = currentSessionIdRef.current === sessionId;
 
@@ -1270,6 +1396,7 @@ const App = () => {
 
       // 現在アクティブなセッションでのエラーのみユーザーに表示
       if (currentlyActiveSession) {
+        const phaseSuffix = isAgentDebugEnabled() ? `（phase=${errPhase}）` : '';
         const debugSuffix = isAgentDebugEnabled() ? ` (${msg.slice(0, 30)})` : '';
         if (msg.includes("API key is missing")) {
           setErrorWithAutoDismiss("Gemini APIキーが未設定です。", 10000);
@@ -1279,8 +1406,10 @@ const App = () => {
           setErrorWithAutoDismiss(`AIの応答が空でした。もう一度お試しください。${debugSuffix}`);
         } else if (msg.includes("response_check:json_leak")) {
           setErrorWithAutoDismiss(`AIの応答が不正な形式でした（JSONが返されました）。もう一度お試しください。${debugSuffix}`);
+        } else if (errPhase === 'save') {
+          setErrorWithAutoDismiss(`応答の保存に失敗しました。${phaseSuffix}`);
         } else {
-          setErrorWithAutoDismiss(`AIとの通信に失敗しました。${debugSuffix}`);
+          setErrorWithAutoDismiss(`AIとの通信に失敗しました。${phaseSuffix}${debugSuffix}`);
         }
       }
     } finally {
