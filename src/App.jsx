@@ -248,6 +248,7 @@ const App = () => {
   const [autoExpandReactions, setAutoExpandReactions] = useState(null);
   const [surfaceDebugEntries, setSurfaceDebugEntries] = useState([]);
   const [optimisticSessionTitles, setOptimisticSessionTitles] = useState({});
+  const [agentDebugEvents, setAgentDebugEvents] = useState([]);
   const errorTimeoutRef = useRef(null);
 
   const currentSessionIdRef = useRef(currentSessionId);
@@ -272,6 +273,15 @@ const App = () => {
       setErrorMessage(null);
       errorTimeoutRef.current = null;
     }, duration);
+  };
+
+  // dev-only debug trace helper
+  const pushAgentDebugEvent = (event) => {
+    if (!isAgentDebugEnabled()) return;
+    setAgentDebugEvents((prev) => {
+      const next = [...prev, { ...event, at: new Date().toISOString() }];
+      return next.slice(-12);
+    });
   };
 
   const [showIntro, setShowIntro] = useState(() => {
@@ -670,6 +680,7 @@ const App = () => {
     const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
     if (AGENTS.length === 0 || !effectiveSessionId) {
       console.warn("[handleRandomResponse] Blocked: no agents or no session", { AGENTS: AGENTS.length, effectiveSessionId });
+      pushAgentDebugEvent({ tag: 'handleRandomResponse:blocked', reason: 'no-agents-or-session', agentCount: AGENTS.length, sessionId: effectiveSessionId });
       return;
     }
 
@@ -725,6 +736,7 @@ const App = () => {
     const userMsgId = makeId();
     const clientTimestamp = Date.now();
     console.info("[send:start]", { text: text.slice(0, 30), wasCreatingNewSession });
+    pushAgentDebugEvent({ tag: 'send:start', wasCreatingNewSession, textLength: text.length });
 
     try {
       if (wasCreatingNewSession) {
@@ -742,6 +754,7 @@ const App = () => {
         // セッションIDを先に state にセット（refは useEffect で自動同期）
         setCurrentSessionId(sid);
         console.info("[send:new-session-created]", { sid });
+        pushAgentDebugEvent({ tag: 'send:new-session-created', sessionId: sid });
         // ref も即座に更新して同期を保証
         currentSessionIdRef.current = sid;
         activeSessionIdRef.current = sid;
@@ -796,6 +809,7 @@ const App = () => {
       setShowInput(false);
     } catch (e) {
       console.error("[send:error]", e);
+      pushAgentDebugEvent({ tag: 'send:error', error: e instanceof Error ? e.message : String(e) });
       setErrorWithAutoDismiss("送信に失敗しました。もう一度お試しください。");
       setUserInput(text);
       setShowInput(true);
@@ -821,21 +835,26 @@ const App = () => {
     };
 
     console.info("[agent-click:start]", debugState);
+    pushAgentDebugEvent({ tag: 'agent-click:start', agentId, sessionId: effectiveSessionId });
 
     if (!isAppReady) {
       console.warn("[agent-click:blocked]", { reason: 'app-not-ready', ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'app-not-ready', agentId, sessionId: effectiveSessionId });
       return;
     }
     if (isGenerating) {
       console.warn("[agent-click:blocked]", { reason: 'busy:isGenerating', ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'busy:isGenerating', agentId, sessionId: effectiveSessionId });
       return;
     }
     if (isSending) {
       console.warn("[agent-click:blocked]", { reason: 'busy:isSending', ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'busy:isSending', agentId, sessionId: effectiveSessionId });
       return;
     }
     if (!effectiveSessionId) {
       console.warn("[agent-click:blocked]", { reason: 'no-session', ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'no-session', agentId });
       return;
     }
 
@@ -845,6 +864,7 @@ const App = () => {
 
     if (!hasUserMessageInThisSession) {
       console.warn("[agent-click:blocked]", { reason: 'no-prompt', ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'no-prompt', agentId, sessionId: effectiveSessionId, messagesCount: messages.length, visibleMessagesCount: messages.filter(m => m.role === 'user' || m.role === 'assistant').length });
       setErrorWithAutoDismiss("先にメッセージを送ってからエージェントを選んでください。");
       return;
     }
@@ -859,6 +879,7 @@ const App = () => {
 
       console.info(`[timing][${traceId}] agent button click`);
       console.info("[agent-click:dispatch]", { traceId, ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:dispatch', agentId, sessionId: effectiveSessionId, traceId });
       responseTimingRef.current = {
         traceId,
         clickStartedAt: performance.now(),
@@ -876,6 +897,7 @@ const App = () => {
           handleAiResponse(agentId, isMaster, effectiveSessionId, mid, messagesAtClick, traceId);
         } catch (rafError) {
           console.error("[raf:handleAiResponse:error]", rafError);
+          pushAgentDebugEvent({ tag: 'raf:handleAiResponse:error', error: rafError instanceof Error ? rafError.message : String(rafError), agentId, sessionId: effectiveSessionId });
           setIsGenerating(false);
           setGeneratingAgent(null);
           setShowInput(true);
@@ -884,6 +906,7 @@ const App = () => {
       });
     } catch (error) {
       console.error("[agent-click:error]", error);
+      pushAgentDebugEvent({ tag: 'agent-click:error', error: error instanceof Error ? error.message : String(error), agentId, sessionId: effectiveSessionId });
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
@@ -904,13 +927,23 @@ const App = () => {
       isMaster,
     };
     console.info("[ai-response:start]", aiDebugState);
+    pushAgentDebugEvent({ tag: 'ai-response:start', agentId, sessionId, hasDb: !!db, hasUser: !!user, hasSessionId: !!sessionId });
 
     if (!db || !user || !sessionId) {
-      console.warn("[ai-response:early-return]", { reason: 'missing-deps', ...aiDebugState });
+      const missing = {
+        db: !db,
+        user: !user,
+        sessionId: !sessionId,
+      };
+      const missingKeys = Object.keys(missing).filter(k => missing[k]);
+      const reason = `missing:${missingKeys.join(',')}`;
+      console.warn("[ai-response:early-return]", { reason, ...aiDebugState });
+      pushAgentDebugEvent({ tag: 'ai-response:early-return', reason, agentId, sessionId, missing });
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
-      setErrorWithAutoDismiss("応答を開始できませんでした。時間を置いて再度お試しください。");
+      const detailMsg = isAgentDebugEnabled() ? ` (${reason})` : '';
+      setErrorWithAutoDismiss(`応答を開始できませんでした。時間を置いて再度お試しください。${detailMsg}`);
       return;
     }
     const agent = isMaster
@@ -1104,6 +1137,7 @@ const App = () => {
         `[timing][${traceId}] fetch start: ${(performance.now() - clickStartedAt).toFixed(1)}ms from click`,
       );
       console.info("[ai-response:before-gemini]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:before-gemini', agentId, sessionId });
       const finishFetch = beginTimedPhase(traceId, 'fetch');
       let response = '';
       try {
@@ -1122,6 +1156,7 @@ const App = () => {
       }
       const cleanedResponse = cleanResponse(response);
       console.info("[ai-response:after-gemini]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:after-gemini', agentId, sessionId, responseLength: cleanedResponse.length });
 
       // セッション切り替えチェック（早期中断）
       if (activeSessionIdRef.current !== sessionId) {
@@ -1153,6 +1188,7 @@ const App = () => {
       });
 
       console.info("[ai-response:before-save]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:before-save', agentId, sessionId });
       await measureFirestoreWrite(traceId, 'AI response save', () =>
         setDoc(
           doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
@@ -1161,6 +1197,7 @@ const App = () => {
       );
       aiPersistenceState = 'persisted';
       console.info("[ai-response:after-save]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:after-save', agentId, sessionId });
 
       // セッション切り替えチェック（afterglow更新前）
       if (activeSessionIdRef.current !== sessionId) {
@@ -1222,6 +1259,7 @@ const App = () => {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[ai-response:error]", { msg, ...aiDebugState });
+      pushAgentDebugEvent({ tag: 'ai-response:error', error: msg, agentId, sessionId, persistenceState: aiPersistenceState });
       // セッションが一致する場合のみ UI を復帰
       const currentlyActiveSession = currentSessionIdRef.current === sessionId;
 
@@ -1232,16 +1270,17 @@ const App = () => {
 
       // 現在アクティブなセッションでのエラーのみユーザーに表示
       if (currentlyActiveSession) {
+        const debugSuffix = isAgentDebugEnabled() ? ` (${msg.slice(0, 30)})` : '';
         if (msg.includes("API key is missing")) {
           setErrorWithAutoDismiss("Gemini APIキーが未設定です。", 10000);
         } else if (msg.includes("timeout")) {
-          setErrorWithAutoDismiss("AIの応答がタイムアウトしました。もう一度お試しください。");
+          setErrorWithAutoDismiss(`AIの応答がタイムアウトしました。もう一度お試しください。${debugSuffix}`);
         } else if (msg.includes("response_check:empty") || msg.includes("Empty response")) {
-          setErrorWithAutoDismiss("AIの応答が空でした。もう一度お試しください。");
+          setErrorWithAutoDismiss(`AIの応答が空でした。もう一度お試しください。${debugSuffix}`);
         } else if (msg.includes("response_check:json_leak")) {
-          setErrorWithAutoDismiss("AIの応答が不正な形式でした（JSONが返されました）。もう一度お試しください。");
+          setErrorWithAutoDismiss(`AIの応答が不正な形式でした（JSONが返されました）。もう一度お試しください。${debugSuffix}`);
         } else {
-          setErrorWithAutoDismiss("AIとの通信に失敗しました。");
+          setErrorWithAutoDismiss(`AIとの通信に失敗しました。${debugSuffix}`);
         }
       }
     } finally {
@@ -1770,6 +1809,7 @@ const App = () => {
           visibleMessagesCount={messages.filter(m => m.role !== 'system').length}
           currentSessionId={currentSessionId}
           generatingAgent={generatingAgent}
+          agentDebugEvents={agentDebugEvents}
         />
       )}
     </div>

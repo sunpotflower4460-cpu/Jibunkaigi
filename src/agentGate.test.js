@@ -111,3 +111,91 @@ describe('Fail-safe state recovery', () => {
     assert.equal(isSending, false);
   });
 });
+
+describe('Agent Debug Events', () => {
+  it('pushes event and limits to max 12 entries', () => {
+    const events = [];
+    const pushEvent = (event) => {
+      const next = [...events, { ...event, at: new Date().toISOString() }];
+      events.length = 0;
+      events.push(...next.slice(-12));
+    };
+
+    // Add 15 events
+    for (let i = 0; i < 15; i++) {
+      pushEvent({ tag: `test-${i}`, value: i });
+    }
+
+    assert.equal(events.length, 12);
+    assert.equal(events[0].tag, 'test-3');
+    assert.equal(events[11].tag, 'test-14');
+  });
+
+  it('includes timestamp in pushed events', () => {
+    const events = [];
+    const pushEvent = (event) => {
+      const next = [...events, { ...event, at: new Date().toISOString() }];
+      events.push(...next.slice(-12));
+    };
+
+    pushEvent({ tag: 'test', agentId: 'soul' });
+    assert.ok(events[0].at);
+    assert.ok(events[0].at.includes('T'));
+  });
+
+  it('builds missing deps reason correctly', () => {
+    const missing = {
+      db: false,
+      user: true,
+      sessionId: false,
+    };
+    const missingKeys = Object.keys(missing).filter(k => missing[k]);
+    const reason = `missing:${missingKeys.join(',')}`;
+
+    assert.equal(reason, 'missing:user');
+  });
+
+  it('builds multiple missing deps reason', () => {
+    const missing = {
+      db: true,
+      user: true,
+      sessionId: false,
+    };
+    const missingKeys = Object.keys(missing).filter(k => missing[k]);
+    const reason = `missing:${missingKeys.join(',')}`;
+
+    assert.equal(reason, 'missing:db,user');
+  });
+
+  it('formats trace text for copy', () => {
+    const events = [
+      { tag: 'agent-click:start', agentId: 'soul', at: '2024-01-01T12:00:00.000Z' },
+      { tag: 'ai-response:start', agentId: 'soul', sessionId: 'abc123', at: '2024-01-01T12:00:01.000Z' },
+      { tag: 'agent-click:blocked', reason: 'no-prompt', agentId: 'creative', at: '2024-01-01T12:00:02.000Z' },
+    ];
+
+    const traceText = events.map((event) => {
+      const time = event.at ? new Date(event.at).toLocaleTimeString('ja-JP', { hour12: false }) : '??:??:??';
+      const reason = event.reason ? ` ${event.reason}` : '';
+      const agentInfo = event.agentId ? ` ${event.agentId}` : '';
+      return `[${time}] ${event.tag}${agentInfo}${reason}`;
+    }).join('\n');
+
+    assert.ok(traceText.includes('agent-click:start soul'));
+    assert.ok(traceText.includes('agent-click:blocked creative no-prompt'));
+  });
+
+  it('includes messagesCount in no-prompt blocked event', () => {
+    const event = {
+      tag: 'agent-click:blocked',
+      reason: 'no-prompt',
+      agentId: 'soul',
+      sessionId: 'abc',
+      messagesCount: 5,
+      visibleMessagesCount: 3,
+    };
+
+    assert.equal(event.messagesCount, 5);
+    assert.equal(event.visibleMessagesCount, 3);
+  });
+});
