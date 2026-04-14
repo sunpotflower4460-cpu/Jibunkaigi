@@ -1,7 +1,15 @@
 // src/runtime/activate.js
-// 役割：stateEstimate の結果を受けて、
-// ジョーの belief / memory / field / residue のうち
-// 今回「前に出るもの」だけを選ぶ。
+// 役割（Layer B — Joe 固有）:
+//   stateEstimate (Layer A) の結果を受けて、
+//   「まだ消えていない一点」を見つけるためのジョー専用焦点化を行う。
+//
+//   共通OS (Layer A) との違い:
+//   - Layer A: 場全体の力学（field / reaction / stance / permission）を計算する
+//   - Layer B: その場の中で「まだ死んでいない一点」を選び出す専用推定
+//
+//   belief / memory / field / residue のうち今回「前に出るもの」だけを選ぶ。
+//   追加の軸を増やして複雑化するのではなく、
+//   一点への絞り込みと「選ばないこと」が Layer B の本質。
 
 import { getJoeReentry } from '../agents/joe/reentry.js';
 import { JOE_REFRESH } from '../agents/joe/refresh.js';
