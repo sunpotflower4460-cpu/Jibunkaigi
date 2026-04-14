@@ -38,6 +38,10 @@ import { buildMirrorStateGuide } from './runtime/buildMirrorStateGuide';
 import { buildMirrorInternalFrame } from './runtime/buildMirrorInternalFrame';
 import { buildMirrorSurfaceGuidance } from './runtime/buildMirrorSurfaceGuidance';
 import { runInternalOS } from './runtime/runInternalOS';
+import { buildBaselineSystemPrompt, buildBaselineUserPrompt } from './runtime/buildBaselinePrompt';
+import { buildOuterGuidePrompt } from './runtime/buildOuterGuidePrompt';
+import { buildCompareViewModel } from './runtime/buildCompareViewModel';
+import { readCompareModeFlag, shouldShowComparePanel } from './runtime/compareMode';
 import { buildNextAfterglow, getAfterglowSeed } from './runtime/afterglow';
 import { checkResponse, cleanResponse } from './runtime/postCheck';
 import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
@@ -47,6 +51,7 @@ import { buildSurfaceFrame } from './runtime/surfaceTranslator';
 import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
 import AgentGateDebugPanel, { isAgentDebugEnabled } from './components/AgentGateDebugPanel';
+import CompareModePanel from './components/CompareModePanel';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -249,6 +254,9 @@ const App = () => {
   const [surfaceDebugEntries, setSurfaceDebugEntries] = useState([]);
   const [optimisticSessionTitles, setOptimisticSessionTitles] = useState({});
   const [agentDebugEvents, setAgentDebugEvents] = useState([]);
+  const [isCompareModeEnabled, setIsCompareModeEnabled] = useState(() => readCompareModeFlag());
+  const [compareEntries, setCompareEntries] = useState([]);
+  const [isCompareCollapsed, setIsCompareCollapsed] = useState(false);
   const errorTimeoutRef = useRef(null);
 
   const currentSessionIdRef = useRef(currentSessionId);
@@ -351,6 +359,20 @@ const App = () => {
       mountedRef.current = false;
       clearAllScheduledTimeouts();
     };
+  }, []);
+
+  useEffect(() => {
+    const updateFlag = () => setIsCompareModeEnabled(readCompareModeFlag());
+    updateFlag();
+
+    if (typeof window === 'undefined') return undefined;
+    const handleStorage = (event) => {
+      if (!event || event.key === null || event.key === 'jibunkaigi:compareMode') {
+        updateFlag();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   useEffect(() => {
@@ -633,6 +655,75 @@ const App = () => {
       if (Object.keys(validData).length === 0) return;
       preloadedReactionsRef.current.set(sourceMessageId, { sessionId, sourceMessageId, data: validData });
     } catch (e) { console.warn("Preload fail", e); }
+  };
+
+  const runCompareModeCapture = async ({
+    agentId,
+    userText,
+    currentReply,
+    context,
+    sessionId,
+    messageId,
+    usedInternalOS,
+  }) => {
+    if (!isCompareModeEnabled) return;
+    if (agentId !== 'creative') return; // Phase1: Joe 優先
+    if (!currentReply) return;
+
+    const baselineSystem = buildBaselineSystemPrompt(agentId, { userText, mode: selectedMode, context });
+    const baselineUser = buildBaselineUserPrompt(agentId, { userName, userText });
+    if (!baselineSystem || !baselineUser) return;
+
+    try {
+      const baselineReply = await callGemini({
+        prompt: baselineUser,
+        systemInstruction: baselineSystem,
+        model: GEMINI_CHAT_MODEL,
+      });
+
+      const outerPrompts = buildOuterGuidePrompt({
+        agentId,
+        userText,
+        baselineReply,
+        currentReply,
+        mode: selectedMode,
+      });
+
+      const outerGuide = await callGemini({
+        prompt: outerPrompts.userPrompt,
+        systemInstruction: outerPrompts.systemInstruction,
+        model: GEMINI_CHAT_MODEL,
+      });
+
+      if (activeSessionIdRef.current !== sessionId) return;
+
+      const vm = buildCompareViewModel({
+        agentId,
+        userText,
+        baselineReply,
+        currentReply,
+        outerGuide,
+        currentUsesInternalOS: usedInternalOS,
+        mode: selectedMode,
+      });
+
+      if (!mountedRef.current) return;
+      setCompareEntries(prev => [...prev.slice(-2), { ...vm, sessionId, messageId }]);
+    } catch (error) {
+      console.warn("[compare-mode] generation failed", error);
+      if (activeSessionIdRef.current !== sessionId) return;
+      if (!mountedRef.current) return;
+      const fallback = buildCompareViewModel({
+        agentId,
+        userText,
+        baselineReply: '',
+        currentReply,
+        outerGuide: '比較の生成に失敗しました。',
+        currentUsesInternalOS: usedInternalOS,
+        mode: selectedMode,
+      });
+      setCompareEntries(prev => [...prev.slice(-2), { ...fallback, sessionId, messageId }]);
+    }
   };
 
   const safeUpdateSession = async (sessionId, data) => {
@@ -1424,6 +1515,16 @@ const App = () => {
       writeSessionAfterglowLocal(sessionId, nextAfterglow);
       await safeUpdateSession(sessionId, { afterglow: nextAfterglow, updatedAt: serverTimestamp() });
 
+      void runCompareModeCapture({
+        agentId: isMaster ? 'master' : agentId,
+        userText: latestUserText,
+        currentReply: cleanedResponse,
+        context,
+        sessionId,
+        messageId: aiMsgId,
+        usedInternalOS: !!continuityInternalOS,
+      });
+
       playSound('receive');
       setIsGenerating(false);
       setGeneratingAgent(null);
@@ -1613,6 +1714,7 @@ const App = () => {
     return null;
   };
   const agentDisabledReason = getAgentDisabledReason();
+  const comparePanelVisible = shouldShowComparePanel({ enabled: isCompareModeEnabled, entries: compareEntries });
 
   return (
     <div className="lake-bg relative min-h-screen overflow-hidden flex font-sans text-[#2d3748]">
@@ -1970,6 +2072,15 @@ const App = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {comparePanelVisible && (
+        <CompareModePanel
+          enabled={isCompareModeEnabled}
+          entries={compareEntries}
+          collapsed={isCompareCollapsed}
+          onToggleCollapse={() => setIsCompareCollapsed(prev => !prev)}
+        />
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `
