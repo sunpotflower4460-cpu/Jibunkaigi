@@ -42,6 +42,7 @@ import { buildBaselineSystemPrompt, buildBaselineUserPrompt } from './runtime/bu
 import { buildOuterGuidePrompt } from './runtime/buildOuterGuidePrompt';
 import { buildCompareViewModel } from './runtime/buildCompareViewModel';
 import { readCompareModeFlag, shouldShowComparePanel } from './runtime/compareMode';
+import { readCompareLabelStore, toggleCompareRevisionLabel, writeCompareLabelStore } from './runtime/compareInsights';
 import { buildNextAfterglow, getAfterglowSeed } from './runtime/afterglow';
 import { checkResponse, cleanResponse } from './runtime/postCheck';
 import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
@@ -259,6 +260,7 @@ const App = () => {
   const [isCompareModeEnabled, setIsCompareModeEnabled] = useState(() => readCompareModeFlag());
   const [compareEntries, setCompareEntries] = useState([]);
   const [isCompareCollapsed, setIsCompareCollapsed] = useState(false);
+  const [compareLabelStore, setCompareLabelStore] = useState(() => readCompareLabelStore());
   const errorTimeoutRef = useRef(null);
 
   const currentSessionIdRef = useRef(currentSessionId);
@@ -272,6 +274,7 @@ const App = () => {
   const mountedRef = useRef(true);
   const timeoutIdsRef = useRef(new Set());
   const responseTimingRef = useRef(null);
+  const compareLabelStoreRef = useRef(compareLabelStore);
 
   // エラーメッセージを設定して自動で消す
   const setErrorWithAutoDismiss = (message, duration = 5000) => {
@@ -376,6 +379,29 @@ const App = () => {
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
+
+  useEffect(() => {
+    try {
+      compareLabelStoreRef.current = compareLabelStore;
+      writeCompareLabelStore(compareLabelStore);
+    } catch (error) {
+      console.warn('[compare-mode] label persistence failed', error);
+    }
+  }, [compareLabelStore]);
+
+  const handleToggleCompareLabel = (compareKey, label) => {
+    if (!compareKey || !label) return;
+
+    setCompareLabelStore((prev) => {
+      const next = toggleCompareRevisionLabel(prev, compareKey, label);
+      setCompareEntries((entries) => entries.map((entry) => (
+        entry.compareKey === compareKey
+          ? { ...entry, revisionLabels: next[compareKey] || [] }
+          : entry
+      )));
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!hasFirebaseConfig) { setErrorWithAutoDismiss("Firebase設定が未完了です。", 10000); return; }
@@ -708,9 +734,11 @@ const App = () => {
         currentUsesInternalOS: usedInternalOS,
         mode: selectedMode,
       });
+      const compareKey = `${sessionId}:${messageId || 'compare'}`
+      const revisionLabels = compareLabelStoreRef.current[compareKey] || []
 
       if (!mountedRef.current) return;
-      setCompareEntries(prev => [...prev.slice(-2), { ...vm, sessionId, messageId }]);
+      setCompareEntries(prev => [...prev.slice(-2), { ...vm, sessionId, messageId, compareKey, revisionLabels }]);
     } catch (error) {
       console.warn("[compare-mode] generation failed", error);
       if (activeSessionIdRef.current !== sessionId) return;
@@ -724,7 +752,9 @@ const App = () => {
         currentUsesInternalOS: usedInternalOS,
         mode: selectedMode,
       });
-      setCompareEntries(prev => [...prev.slice(-2), { ...fallback, sessionId, messageId }]);
+      const compareKey = `${sessionId}:${messageId || 'compare'}`
+      const revisionLabels = compareLabelStoreRef.current[compareKey] || []
+      setCompareEntries(prev => [...prev.slice(-2), { ...fallback, sessionId, messageId, compareKey, revisionLabels }]);
     }
   };
 
@@ -2137,6 +2167,7 @@ const App = () => {
           entries={compareEntries}
           collapsed={isCompareCollapsed}
           onToggleCollapse={() => setIsCompareCollapsed(prev => !prev)}
+          onToggleLabel={handleToggleCompareLabel}
         />
       )}
 

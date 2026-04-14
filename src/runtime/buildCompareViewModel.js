@@ -1,6 +1,14 @@
 // src/runtime/buildCompareViewModel.js
 // Compare Mode 向けの軽量 ViewModel を構築する。
 
+import {
+  buildJoeObservationFlags,
+  buildQualityObservations,
+  buildSuggestedRevisionLabels,
+  normalizeRevisionLabels,
+  parseOuterGuideSections,
+} from './compareInsights.js'
+
 const normalize = (text = '') => (text ?? '').toString().trim();
 const openingKey = (text = '') => {
   const cleaned = normalize(text).replace(/[\s。、,.「」!！?？]/g, '');
@@ -28,6 +36,7 @@ export const buildCompareViewModel = ({
   outerGuide = '',
   currentUsesInternalOS = false,
   mode = null,
+  revisionLabels = [],
 } = {}) => {
   const baseline = normalize(baselineReply);
   const current = normalize(currentReply);
@@ -37,6 +46,23 @@ export const buildCompareViewModel = ({
   const baseKey = openingKey(baseline);
   const currentKey = openingKey(current);
   const sameOpening = !!(baseKey && currentKey && baseKey.slice(0, 4) === currentKey.slice(0, 4));
+  const compareSummary = parseOuterGuideSections(guide)
+  const qualityObservations = buildQualityObservations({
+    agentId,
+    outerGuide: guide,
+    compareSummary,
+  })
+  const joeObservationFlags = buildJoeObservationFlags({
+    agentId,
+    userText: user,
+    baselineReply: baseline,
+    currentReply: current,
+    qualityObservations,
+  })
+  const suggestedRevisionLabels = buildSuggestedRevisionLabels({
+    qualityObservations,
+    joeObservationFlags,
+  })
 
   return {
     agentId,
@@ -44,6 +70,11 @@ export const buildCompareViewModel = ({
     baselineReply: baseline,
     currentReply: current,
     outerGuide: guide,
+    compareSummary,
+    qualityObservations,
+    joeObservationFlags,
+    revisionLabels: normalizeRevisionLabels(revisionLabels),
+    suggestedRevisionLabels,
     summary: {
       baselineLength: baseline.length,
       currentLength: current.length,

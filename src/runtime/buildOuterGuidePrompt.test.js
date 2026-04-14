@@ -14,10 +14,14 @@ test('outer guide prompt contains comparison cues and short guidance', () => {
 
   assert.match(systemInstruction, /Outer Guide/);
   assert.match(systemInstruction, /採点や勝敗は決めない/);
-  assert.match(systemInstruction, /1〜2 個の短いコメント/);
+  assert.match(systemInstruction, /得たもの: \.\.\./);
+  assert.match(systemInstruction, /失ったもの: \.\.\./);
+  assert.match(systemInstruction, /提案: \.\.\./);
+  assert.match(systemInstruction, /ジョー比較では特に/);
 
   assert.match(userPrompt, /\[Baseline\]/);
   assert.match(userPrompt, /\[Current\]/);
   assert.match(userPrompt, /何を得て/);
   assert.match(userPrompt, /何を失ったか/);
+  assert.match(userPrompt, /必ず以下の3行だけ/);
 });

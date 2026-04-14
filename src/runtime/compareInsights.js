@@ -1,0 +1,355 @@
+// src/runtime/compareInsights.js
+// Compare Mode の観察結果を、開発用の改善材料へ整形する。
+
+export const COMPARE_QUALITY_DIMENSIONS = [
+  {
+    key: 'naturalness',
+    label: '自然さ',
+    aliases: ['naturalness', '自然さ', '自然'],
+  },
+  {
+    key: 'specificity',
+    label: '具体性',
+    aliases: ['specificity', '具体性', '具体'],
+  },
+  {
+    key: 'characterPresence',
+    label: 'キャラの輪郭',
+    aliases: ['character presence', 'characterPresence', 'キャラの輪郭', 'キャラの立ち方', '輪郭'],
+  },
+  {
+    key: 'pressure',
+    label: '押しつけの少なさ',
+    aliases: ['pressure', '押しつけの少なさ', '圧の少なさ', '押しつけ', '圧'],
+  },
+  {
+    key: 'spaciousness',
+    label: '余白',
+    aliases: ['spaciousness', '余白'],
+  },
+  {
+    key: 'joeNess',
+    label: 'ジョーらしさ',
+    aliases: ['joe-ness', 'joeness', 'joe ness', 'ジョーらしさ'],
+  },
+  {
+    key: 'receivability',
+    label: '受け取りやすさ',
+    aliases: ['receivability', '受け取りやすさ', '受け取り'],
+  },
+]
+
+export const COMPARE_REVISION_LABELS = [
+  'keep',
+  'soften',
+  'too-thin',
+  'too-explanatory',
+  'too-generic',
+  'good-joe',
+  'good-character',
+  'good-specificity',
+  'too-flat',
+]
+
+const COMPARE_LABEL_STORAGE_KEY = 'jibunkaigi:compareLabels'
+const OUTER_GUIDE_SECTION_PREFIXES = {
+  gained: ['得たもの', 'current gained', 'gained'],
+  lost: ['失ったもの', 'current lost', 'lost'],
+  hint: ['提案', 'guide hint', 'hint'],
+}
+const STOPWORDS = new Set([
+  'それ',
+  'こと',
+  'もの',
+  'よう',
+  'ため',
+  'ここ',
+  'そこ',
+  'これ',
+  'あれ',
+  'です',
+  'ます',
+  'したい',
+  'いる',
+  'ある',
+  'する',
+  'して',
+  'ない',
+  'けど',
+  'から',
+  'ので',
+  'でも',
+  'いう',
+  '一緒',
+])
+const SOFTENING_MARKERS = ['大丈夫', '無理に', '一緒に', 'ゆっくり', '少しずつ', 'きっと', '安心', 'やさしく', '焦らなくて']
+const EXPLANATORY_MARKERS = ['つまり', 'というのは', 'なぜなら', 'なので', 'だから', '整理すると', '要するに', '言い換えると']
+
+const normalize = (text = '') => (text ?? '').toString().trim()
+
+const splitList = (value = '') => normalize(value)
+  .split(/[、,，/・\n]/)
+  .map((item) => item.trim())
+  .filter(Boolean)
+
+const stripBullet = (line = '') => line.replace(/^[-•*]\s*/, '').trim()
+
+const findSectionType = (line = '') => {
+  const lowered = line.toLowerCase()
+  for (const [type, prefixes] of Object.entries(OUTER_GUIDE_SECTION_PREFIXES)) {
+    const matchedPrefix = prefixes.find((prefix) => lowered.startsWith(prefix.toLowerCase()))
+    if (matchedPrefix) {
+      return {
+        type,
+        value: line.slice(matchedPrefix.length).replace(/^[：:]\s*/, '').trim(),
+      }
+    }
+  }
+  return null
+}
+
+const findMatchedTerms = (text = '', aliases = []) => {
+  const haystack = normalize(text).toLowerCase()
+  if (!haystack) return []
+  return aliases.filter((alias) => haystack.includes(alias.toLowerCase()))
+}
+
+const tokenizeForOverlap = (text = '') => {
+  const prepared = normalize(text)
+    .replace(/[「」『』（）()、。!?！？]/g, ' ')
+    .replace(/(けれど|けど|から|ので|のに|です|ます|したい|している|してる|だった|では|より|まで|そして|でも|ただ|を|が|は|に|へ|で|と|も|の|や|ね|よ)/gu, ' ')
+  const matches = prepared.match(/[\p{Letter}\p{Number}\u3040-\u30ff\u3400-\u9fffー]{2,}/gu) || []
+  return [...new Set(matches.filter((token) => !STOPWORDS.has(token)))]
+}
+
+const countSentences = (text = '') => {
+  const pieces = normalize(text).split(/[。.!！?？\n]+/).map((item) => item.trim()).filter(Boolean)
+  return pieces.length
+}
+
+const firstSentence = (text = '') => normalize(text).split(/[。.!！?？\n]/)[0]?.trim() || ''
+
+const buildEmptyQualityObservation = ({ key, label, applicable = true }) => ({
+  key,
+  label,
+  applicable,
+  mentioned: false,
+  gained: false,
+  lost: false,
+  matchedTerms: [],
+})
+
+export const parseOuterGuideSections = (outerGuide = '') => {
+  const guide = normalize(outerGuide)
+  const lines = guide.split('\n').map(stripBullet).filter(Boolean)
+  const sections = {
+    gained: [],
+    lost: [],
+    hint: '',
+  }
+
+  for (const line of lines) {
+    const parsed = findSectionType(line)
+    if (!parsed) continue
+
+    if (parsed.type === 'hint') {
+      sections.hint = parsed.value || sections.hint
+      continue
+    }
+
+    sections[parsed.type].push(...splitList(parsed.value))
+  }
+
+  if (!sections.hint && lines.length > 0) {
+    sections.hint = lines.at(-1)
+  }
+
+  return {
+    gained: [...new Set(sections.gained)],
+    lost: [...new Set(sections.lost)],
+    hint: sections.hint,
+  }
+}
+
+export const buildQualityObservations = ({
+  agentId = '',
+  outerGuide = '',
+  compareSummary = {},
+} = {}) => {
+  const guide = normalize(outerGuide)
+  const gainedText = compareSummary.gained.join(' ')
+  const lostText = compareSummary.lost.join(' ')
+
+  return COMPARE_QUALITY_DIMENSIONS.reduce((acc, dimension) => {
+    const applicable = dimension.key !== 'joeNess' || agentId === 'creative'
+    const gainedTerms = findMatchedTerms(gainedText, dimension.aliases)
+    const lostTerms = findMatchedTerms(lostText, dimension.aliases)
+    const guideTerms = findMatchedTerms(guide, dimension.aliases)
+    acc[dimension.key] = {
+      ...buildEmptyQualityObservation({ key: dimension.key, label: dimension.label, applicable }),
+      mentioned: applicable && guideTerms.length > 0,
+      gained: applicable && gainedTerms.length > 0,
+      lost: applicable && lostTerms.length > 0,
+      matchedTerms: [...new Set([...gainedTerms, ...lostTerms, ...guideTerms])],
+    }
+    return acc
+  }, {})
+}
+
+export const buildJoeObservationFlags = ({
+  agentId = '',
+  userText = '',
+  baselineReply = '',
+  currentReply = '',
+  qualityObservations = {},
+} = {}) => {
+  if (agentId !== 'creative') {
+    return {
+      applicable: false,
+      joeFocusStrength: false,
+      joeGrounding: false,
+      joeOverSoftened: false,
+      joeTooExplanatory: false,
+    }
+  }
+
+  const normalizedCurrent = normalize(currentReply)
+  const normalizedBaseline = normalize(baselineReply)
+  const opening = firstSentence(normalizedCurrent)
+  const userTokens = tokenizeForOverlap(userText).slice(0, 6)
+  const groundedTokens = userTokens.filter((token) => normalizedCurrent.includes(token))
+  const softeningHits = SOFTENING_MARKERS.filter((marker) => normalizedCurrent.includes(marker))
+  const explanatoryHits = EXPLANATORY_MARKERS.filter((marker) => normalizedCurrent.includes(marker))
+  const lengthDelta = normalizedCurrent.length - normalizedBaseline.length
+
+  const specificityLost = qualityObservations.specificity?.lost
+  const characterLost = qualityObservations.characterPresence?.lost
+  const pressureGained = qualityObservations.pressure?.gained
+  const spaciousnessGained = qualityObservations.spaciousness?.gained
+
+  return {
+    applicable: true,
+    joeFocusStrength: Boolean(opening && opening.length <= 42 && groundedTokens.some((token) => opening.includes(token))),
+    joeGrounding: groundedTokens.length > 0,
+    joeOverSoftened: softeningHits.length >= 2 || Boolean((pressureGained || spaciousnessGained) && specificityLost && characterLost),
+    joeTooExplanatory: explanatoryHits.length >= 2 || Boolean(lengthDelta >= 60 && countSentences(normalizedCurrent) >= 3),
+  }
+}
+
+export const buildSuggestedRevisionLabels = ({
+  qualityObservations = {},
+  joeObservationFlags = {},
+} = {}) => {
+  const labels = []
+  const specificity = qualityObservations.specificity || {}
+  const characterPresence = qualityObservations.characterPresence || {}
+  const pressure = qualityObservations.pressure || {}
+  const naturalness = qualityObservations.naturalness || {}
+  const joeNess = qualityObservations.joeNess || {}
+
+  if ((naturalness.gained || qualityObservations.receivability?.gained) && !joeObservationFlags.joeTooExplanatory && !joeObservationFlags.joeOverSoftened) {
+    labels.push('keep')
+  }
+  if (pressure.lost) {
+    labels.push('soften')
+  }
+  if (specificity.lost && characterPresence.lost) {
+    labels.push('too-thin')
+  }
+  if (joeObservationFlags.joeTooExplanatory) {
+    labels.push('too-explanatory')
+  }
+  if (specificity.lost && !characterPresence.gained) {
+    labels.push('too-generic')
+  }
+  if ((characterPresence.lost && qualityObservations.spaciousness?.gained) || (characterPresence.lost && naturalness.gained)) {
+    labels.push('too-flat')
+  }
+  if (joeNess.gained && !joeObservationFlags.joeOverSoftened && !joeObservationFlags.joeTooExplanatory) {
+    labels.push('good-joe')
+  }
+  if (characterPresence.gained) {
+    labels.push('good-character')
+  }
+  if (specificity.gained) {
+    labels.push('good-specificity')
+  }
+
+  return [...new Set(labels)].filter((label) => COMPARE_REVISION_LABELS.includes(label))
+}
+
+export const normalizeRevisionLabels = (labels = []) => {
+  if (!Array.isArray(labels)) return []
+  return [...new Set(labels.filter((label) => COMPARE_REVISION_LABELS.includes(label)))]
+}
+
+export const readCompareLabelStore = ({
+  storageGetter = () => {
+    if (typeof localStorage === 'undefined') return null
+    return localStorage.getItem(COMPARE_LABEL_STORAGE_KEY)
+  },
+} = {}) => {
+  try {
+    const raw = storageGetter()
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return {}
+    return Object.entries(parsed).reduce((acc, [compareKey, labels]) => {
+      acc[compareKey] = normalizeRevisionLabels(labels)
+      return acc
+    }, {})
+  } catch {
+    return {}
+  }
+}
+
+export const writeCompareLabelStore = (store, {
+  storageSetter = (value) => {
+    if (typeof localStorage === 'undefined') return
+    localStorage.setItem(COMPARE_LABEL_STORAGE_KEY, value)
+  },
+} = {}) => {
+  storageSetter(JSON.stringify(store))
+}
+
+export const toggleCompareRevisionLabel = (store = {}, compareKey, label) => {
+  if (!compareKey || !COMPARE_REVISION_LABELS.includes(label)) return store
+  const current = new Set(normalizeRevisionLabels(store[compareKey]))
+  if (current.has(label)) {
+    current.delete(label)
+  } else {
+    current.add(label)
+  }
+
+  return {
+    ...store,
+    [compareKey]: [...current],
+  }
+}
+
+export const formatCompareCopyBundle = (entry = {}) => {
+  const compareSummary = entry.compareSummary || {}
+  const revisionLabels = normalizeRevisionLabels(entry.revisionLabels)
+
+  return [
+    '[User]',
+    normalize(entry.userText) || '(空)',
+    '',
+    '[Baseline]',
+    normalize(entry.baselineReply) || '(未生成)',
+    '',
+    '[Current]',
+    normalize(entry.currentReply) || '(未生成)',
+    '',
+    '[Outer Guide]',
+    normalize(entry.outerGuide) || '(未生成)',
+    '',
+    '[Summary]',
+    `gained: ${compareSummary.gained?.join(', ') || '-'}`,
+    `lost: ${compareSummary.lost?.join(', ') || '-'}`,
+    `hint: ${compareSummary.hint || '-'}`,
+    '',
+    '[Labels]',
+    revisionLabels.join(', ') || '-',
+  ].join('\n')
+}
