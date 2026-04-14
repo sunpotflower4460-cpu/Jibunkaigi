@@ -84,6 +84,7 @@ const STOPWORDS = new Set([
 ])
 const SOFTENING_MARKERS = ['大丈夫', '無理に', '一緒に', 'ゆっくり', '少しずつ', 'きっと', '安心', 'やさしく', '焦らなくて']
 const EXPLANATORY_MARKERS = ['つまり', 'というのは', 'なぜなら', 'なので', 'だから', '整理すると', '要するに', '言い換えると']
+const JAPANESE_PARTICLE_PATTERN = /(けれど|けど|から|ので|のに|です|ます|したい|している|してる|だった|では|より|まで|そして|でも|ただ|を|が|は|に|へ|で|と|も|の|や|ね|よ)/gu
 // Joe 比較では、冒頭が短く入力に接地しているほど「一点に触れている」扱いに寄せる。
 const JOE_FOCUS_MAX_OPENING_LENGTH = 42
 // 柔らかさ・説明臭さは、単発の語ではなく複数の兆候が揃った時だけフラグ化する。
@@ -124,7 +125,7 @@ const findMatchedTerms = (text = '', aliases = []) => {
 const tokenizeForOverlap = (text = '') => {
   const prepared = normalize(text)
     .replace(/[「」『』（）()、。!?！？]/g, ' ')
-    .replace(/(けれど|けど|から|ので|のに|です|ます|したい|している|してる|だった|では|より|まで|そして|でも|ただ|を|が|は|に|へ|で|と|も|の|や|ね|よ)/gu, ' ')
+    .replace(JAPANESE_PARTICLE_PATTERN, ' ')
   const matches = prepared.match(/[\p{Letter}\p{Number}\u3040-\u30ff\u3400-\u9fffー]{2,}/gu) || []
   return [...new Set(matches.filter((token) => !STOPWORDS.has(token)))]
 }
@@ -233,10 +234,11 @@ export const buildJoeObservationFlags = ({
   const characterLost = qualityObservations.characterPresence?.lost
   const pressureGained = qualityObservations.pressure?.gained
   const spaciousnessGained = qualityObservations.spaciousness?.gained
+  const openingIncludesGroundedToken = groundedTokens.some((token) => opening.includes(token))
 
   return {
     applicable: true,
-    joeFocusStrength: Boolean(opening && opening.length <= JOE_FOCUS_MAX_OPENING_LENGTH && groundedTokens.some((token) => opening.includes(token))),
+    joeFocusStrength: Boolean(opening && opening.length <= JOE_FOCUS_MAX_OPENING_LENGTH && openingIncludesGroundedToken),
     joeGrounding: groundedTokens.length > 0,
     joeOverSoftened: softeningHits.length >= JOE_SOFTENING_HIT_THRESHOLD || Boolean((pressureGained || spaciousnessGained) && specificityLost && characterLost),
     joeTooExplanatory:

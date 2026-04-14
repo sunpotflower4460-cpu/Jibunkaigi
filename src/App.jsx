@@ -696,6 +696,7 @@ const App = () => {
     if (!isCompareModeEnabled) return;
     if (agentId !== 'creative') return; // Phase1: Joe 優先
     if (!currentReply) return;
+    const compareKey = `${sessionId}:${messageId || 'compare'}`;
 
     const baselineSystem = buildBaselineSystemPrompt(agentId, { userText, mode: selectedMode, context });
     const baselineUser = buildBaselineUserPrompt(agentId, { userName, userText });
@@ -733,7 +734,6 @@ const App = () => {
         currentUsesInternalOS: usedInternalOS,
         mode: selectedMode,
       });
-      const compareKey = `${sessionId}:${messageId || 'compare'}`
       const revisionLabels = compareLabelStoreRef.current[compareKey] || []
 
       if (!mountedRef.current) return;
@@ -751,7 +751,6 @@ const App = () => {
         currentUsesInternalOS: usedInternalOS,
         mode: selectedMode,
       });
-      const compareKey = `${sessionId}:${messageId || 'compare'}`
       const revisionLabels = compareLabelStoreRef.current[compareKey] || []
       setCompareEntries(prev => [...prev.slice(-2), { ...fallback, sessionId, messageId, compareKey, revisionLabels }]);
     }
