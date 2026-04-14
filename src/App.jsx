@@ -28,7 +28,7 @@ import {
 // ★ 追加1：estimateState をインポート
 import { estimateState } from './runtime/stateEstimate';
 import { activateAgent } from './runtime/activateAgent';
-import { buildAgentSystemPrompt, buildAgentUserPrompt } from './runtime/buildAgentPrompt';
+import { buildAgentSystemPrompt, buildAgentUserPrompt, buildAgentDebugPreview } from './runtime/buildAgentPrompt';
 import { buildPromptContext } from './runtime/context';
 import { buildMirrorSystemPrompt, buildMirrorUserPrompt, selectMirrorSignals } from './runtime/mirror';
 import { buildAgentStateGuide } from './runtime/buildAgentStateGuide';
@@ -930,6 +930,9 @@ const App = () => {
         surfaceGuidance: mirrorSurfaceGuidance,
       });
       promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
+      const mirrorUsedAfterglow = !!(
+        afterglowSeed && (afterglowSeed.previousMix || afterglowSeed.previousLatentState)
+      );
       pushSurfaceDebugEntry(buildSurfaceDebugEntry({
         agentId: 'master',
         isMirror: true,
@@ -938,6 +941,16 @@ const App = () => {
         continuityInternalOS,
         surfaceFrame: mirrorSurfaceFrame,
         afterglowSeed,
+        agentQualityPreview: {
+          agentId: 'master',
+          builderUsed: 'mirror-specialized',
+          dominantAxes: [],
+          stateGuidePreview: mirrorStateGuide ? mirrorStateGuide.slice(0, 140) : '',
+          internalFramePreview: mirrorInternalFrame ? mirrorInternalFrame.slice(0, 140) : '',
+          surfaceGuidancePreview: mirrorSurfaceGuidance ? mirrorSurfaceGuidance.slice(0, 140) : '',
+          activatedBiasCount: 0,
+          usedAfterglow: mirrorUsedAfterglow,
+        },
       }));
     } else {
       // 全エージェント統一パイプライン
@@ -968,6 +981,18 @@ const App = () => {
         surfaceGuidance: agentSurfaceGuidance,
       });
       promptText = buildAgentUserPrompt(agentId, { userName, userText: latestUserText });
+      const agentUsedAfterglow = !!(
+        afterglowSeed && (afterglowSeed.previousMix || afterglowSeed.previousLatentState)
+      );
+      const agentQualityPreview = buildAgentDebugPreview({
+        agentId,
+        activated,
+        userText: latestUserText,
+        stateGuide: agentStateGuide,
+        internalFrame: agentInternalFrame,
+        surfaceGuidance: agentSurfaceGuidance,
+        usedAfterglow: agentUsedAfterglow,
+      });
       pushSurfaceDebugEntry(buildSurfaceDebugEntry({
         agentId,
         isMirror: false,
@@ -976,6 +1001,7 @@ const App = () => {
         continuityInternalOS,
         surfaceFrame,
         afterglowSeed,
+        agentQualityPreview,
       }));
     }
     finishPromptBuild();
