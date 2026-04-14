@@ -49,6 +49,7 @@ import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionDat
 import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 import { buildSurfaceFrame } from './runtime/surfaceTranslator';
 import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
+import { getOthersVisibilityState, getOthersEmptyMessage, getOthersDebugLabel } from './runtime/getOthersVisibilityState';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
 import AgentGateDebugPanel, { isAgentDebugEnabled } from './components/AgentGateDebugPanel';
 import CompareModePanel from './components/CompareModePanel';
@@ -1907,21 +1908,63 @@ const App = () => {
                                 <button aria-label="メッセージを削除" title="メッセージを削除" onClick={() => { handleDeleteMessage(msg.id); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-rose-500"><Trash2 size={12}/></button>
                               </div>
                             )}
-                            {!isUser && msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                              <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-white/20">
-                                <button onClick={e => { e.stopPropagation(); if (autoExpandReactions?.msgId === msg.id && !activeReaction) setAutoExpandReactions(null); else { setActiveReaction(null); setAutoExpandReactions({msgId: msg.id, isLoading: false}); } }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${(autoExpandReactions?.msgId === msg.id && !activeReaction) ? 'bg-slate-800 text-white border-slate-900 shadow-md' : 'bg-white/40 text-slate-500 border-white/60 hover:bg-white/60'}`}>
-                                  <Users size={10} /> OTHERS
-                                </button>
-                                {Object.entries(msg.reactions).map(([rId]) => {
-                                  const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
-                                  return (
-                                    <button key={rId} onClick={e => { e.stopPropagation(); setActiveReaction(activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? null : {msgId: msg.id, agentId: rId}); setAutoExpandReactions(null); }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? 'bg-slate-800 text-white border-slate-900' : 'bg-white/40 text-slate-400 border-white/60 hover:bg-white/60'}`}>
-                                      {rAgent.icon} {rAgent.name}
+                            {(() => {
+                              // OTHERS 表示状態を集約判定
+                              const othersState = getOthersVisibilityState({
+                                activeSessionId: currentSessionId,
+                                hasPromptForActiveSession,
+                                isMessagesLoading,
+                                visibleMessagesCount: messages.filter(m => m.role === 'user' || m.role === 'ai').length,
+                                compareModeEnabled: isCompareModeEnabled,
+                                reactions: msg.reactions,
+                                isGenerating,
+                              });
+
+                              // 通常は reactions がある AI メッセージのみ
+                              if (!isUser && othersState.shouldRenderOthers && othersState.hasReactionData) {
+                                return (
+                                  <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-white/20">
+                                    <button onClick={e => { e.stopPropagation(); if (autoExpandReactions?.msgId === msg.id && !activeReaction) setAutoExpandReactions(null); else { setActiveReaction(null); setAutoExpandReactions({msgId: msg.id, isLoading: false}); } }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${(autoExpandReactions?.msgId === msg.id && !activeReaction) ? 'bg-slate-800 text-white border-slate-900 shadow-md' : 'bg-white/40 text-slate-500 border-white/60 hover:bg-white/60'}`}>
+                                      <Users size={10} /> OTHERS
+                                      {(isCompareModeEnabled || isAgentDebugEnabled()) && (
+                                        <span className="text-[8px] opacity-60 ml-0.5">({othersState.othersCount})</span>
+                                      )}
                                     </button>
-                                  );
-                                })}
-                              </div>
-                            )}
+                                    {Object.entries(msg.reactions).map(([rId]) => {
+                                      const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
+                                      return (
+                                        <button key={rId} onClick={e => { e.stopPropagation(); setActiveReaction(activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? null : {msgId: msg.id, agentId: rId}); setAutoExpandReactions(null); }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? 'bg-slate-800 text-white border-slate-900' : 'bg-white/40 text-slate-400 border-white/60 hover:bg-white/60'}`}>
+                                          {rAgent.icon} {rAgent.name}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              }
+
+                              // Compare Mode 中は、reactions がなくても状態表示
+                              if (!isUser && isCompareModeEnabled && othersState.shouldRenderOthers && !othersState.hasReactionData) {
+                                const emptyMsg = getOthersEmptyMessage(othersState.reason, isCompareModeEnabled);
+                                const debugLabel = getOthersDebugLabel(othersState);
+                                return (
+                                  <div className="mt-4 pt-3 border-t border-white/20">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                                        <Users size={10} /> OTHERS
+                                      </span>
+                                      {isAgentDebugEnabled() && (
+                                        <span className="text-[8px] text-slate-400 opacity-70 font-mono">{debugLabel}</span>
+                                      )}
+                                    </div>
+                                    {emptyMsg && (
+                                      <p className="text-[11px] text-slate-400 italic">{emptyMsg}</p>
+                                    )}
+                                  </div>
+                                );
+                              }
+
+                              return null;
+                            })()}
                           </div>
 
                           {!isUser && activeReaction?.msgId === msg.id && msg.reactions?.[activeReaction.agentId] && (
@@ -1942,7 +1985,14 @@ const App = () => {
                           {!isUser && autoExpandReactions?.msgId === msg.id && !activeReaction && (
                             <div className="mt-4 p-4 rounded-2xl glass-card flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 shadow-lg border border-indigo-100/50 w-full min-h-[80px] relative">
                               <div className="flex items-center justify-between px-1 mb-1">
-                                <span className="text-[9px] font-black text-indigo-400/80 uppercase tracking-widest">Others</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] font-black text-indigo-400/80 uppercase tracking-widest">Others</span>
+                                  {(isCompareModeEnabled || isAgentDebugEnabled()) && msg.reactions && (
+                                    <span className="text-[8px] text-slate-400 opacity-70 font-mono">
+                                      ({Object.keys(msg.reactions).length} voices)
+                                    </span>
+                                  )}
+                                </div>
                                 <button aria-label="Othersを閉じる" title="閉じる" onClick={e => { e.stopPropagation(); setAutoExpandReactions(null); }} className="text-slate-400 hover:bg-white/50 rounded-full p-1"><X size={12}/></button>
                               </div>
                               {autoExpandReactions.isLoading ? (
@@ -1954,8 +2004,8 @@ const App = () => {
                                   </div>
                                   <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Fetching thoughts...</p>
                                 </div>
-                              ) : (
-                                msg.reactions && Object.entries(msg.reactions).map(([rId, data]) => {
+                              ) : msg.reactions && Object.keys(msg.reactions).length > 0 ? (
+                                Object.entries(msg.reactions).map(([rId, data]) => {
                                   const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
                                   return (
                                     <div key={rId} className="flex gap-3 items-start bg-white/60 p-3 rounded-xl border border-white/80 animate-in fade-in">
@@ -1975,6 +2025,12 @@ const App = () => {
                                     </div>
                                   );
                                 })
+                              ) : (
+                                <div className="py-4 flex flex-col items-center justify-center opacity-70">
+                                  <p className="text-[11px] text-slate-400 italic">
+                                    {isCompareModeEnabled ? 'まだ比較対象がありません' : '他の声はまだありません'}
+                                  </p>
+                                </div>
                               )}
                             </div>
                           )}
@@ -2133,6 +2189,8 @@ const App = () => {
           currentSessionId={currentSessionId}
           generatingAgent={generatingAgent}
           agentDebugEvents={agentDebugEvents}
+          isMessagesLoading={isMessagesLoading}
+          compareModeEnabled={isCompareModeEnabled}
         />
       )}
     </div>
