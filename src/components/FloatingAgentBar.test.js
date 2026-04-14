@@ -205,6 +205,32 @@ describe('FloatingAgentBar - disabled state', () => {
     );
   });
 
+  it('disabled reason is busy:isSending when sending', () => {
+    assert.equal(
+      getAgentDisabledReason({
+        isAppReady: true,
+        isGenerating: false,
+        isSending: true,
+        activeSessionId: 'sess',
+        hasPromptForActiveSession: true,
+      }),
+      'busy:isSending',
+    );
+  });
+
+  it('disabled reason is no-prompt when session exists but no prompt', () => {
+    assert.equal(
+      getAgentDisabledReason({
+        isAppReady: true,
+        isGenerating: false,
+        isSending: false,
+        activeSessionId: 'sess',
+        hasPromptForActiveSession: false,
+      }),
+      'no-prompt',
+    );
+  });
+
   it('disabled reason is null when all conditions met', () => {
     assert.equal(
       getAgentDisabledReason({
