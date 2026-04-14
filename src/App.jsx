@@ -46,6 +46,7 @@ import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchA
 import { buildSurfaceFrame } from './runtime/surfaceTranslator';
 import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
+import AgentGateDebugPanel, { isAgentDebugEnabled } from './components/AgentGateDebugPanel';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -667,21 +668,32 @@ const App = () => {
 
   const handleRandomResponse = () => {
     const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
-    if (AGENTS.length === 0 || !effectiveSessionId) return;
+    if (AGENTS.length === 0 || !effectiveSessionId) {
+      console.warn("[handleRandomResponse] Blocked: no agents or no session", { AGENTS: AGENTS.length, effectiveSessionId });
+      return;
+    }
 
-    const lastAgentId = getLastRespondingAgentId(messages);
-    const afterglowSeed = getAfterglowSeedForSession(effectiveSessionId);
-    const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
-      mode: selectedMode,
-      previousMix: afterglowSeed.previousMix,
-      previousLatentState: afterglowSeed.previousLatentState,
-    });
-    const agentId = pickContextualAgent(AGENTS, {
-      patternMix: internalOS.patternMix,
-      lastAgentId,
-    });
+    try {
+      const lastAgentId = getLastRespondingAgentId(messages);
+      const afterglowSeed = getAfterglowSeedForSession(effectiveSessionId);
+      const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
+        mode: selectedMode,
+        previousMix: afterglowSeed.previousMix,
+        previousLatentState: afterglowSeed.previousLatentState,
+      });
+      const agentId = pickContextualAgent(AGENTS, {
+        patternMix: internalOS.patternMix,
+        lastAgentId,
+      });
 
-    handleAgentClick(agentId);
+      handleAgentClick(agentId);
+    } catch (error) {
+      console.error("[handleRandomResponse:error]", error);
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      setErrorWithAutoDismiss("「委ねる」の処理中にエラーが発生しました。");
+    }
   };
 
   const handleDeleteMessage = async (msgId) => {
@@ -712,6 +724,7 @@ const App = () => {
     const wasCreatingNewSession = !sid;
     const userMsgId = makeId();
     const clientTimestamp = Date.now();
+    console.info("[send:start]", { text: text.slice(0, 30), wasCreatingNewSession });
 
     try {
       if (wasCreatingNewSession) {
@@ -719,6 +732,7 @@ const App = () => {
         const fallbackTitle = text.slice(0, 15);
         // optimistic title を設定
         setOptimisticSessionTitles(prev => ({ ...prev, [sid]: fallbackTitle }));
+        console.info("[send:optimistic-title-set]", { sid, fallbackTitle });
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sid), {
           title: fallbackTitle,
           createdAt: serverTimestamp(),
@@ -727,6 +741,7 @@ const App = () => {
         });
         // セッションIDを先に state にセット（refは useEffect で自動同期）
         setCurrentSessionId(sid);
+        console.info("[send:new-session-created]", { sid });
         // ref も即座に更新して同期を保証
         currentSessionIdRef.current = sid;
         activeSessionIdRef.current = sid;
@@ -777,15 +792,15 @@ const App = () => {
         if (prev.some(m => m.id === userMsgId)) return prev;
         return [...prev, optimisticMsg];
       });
-
-      setIsSending(false);
+      console.info("[send:optimistic-message-set]", { sid, userMsgId });
       setShowInput(false);
     } catch (e) {
-      console.error("[handleSend] Error:", e);
+      console.error("[send:error]", e);
       setErrorWithAutoDismiss("送信に失敗しました。もう一度お試しください。");
       setUserInput(text);
       setShowInput(true);
     } finally {
+      console.info("[send:finally]", { sid });
       // 確実に送信中状態を解除（無条件）
       setIsSending(false);
     }
@@ -793,45 +808,105 @@ const App = () => {
 
   const handleAgentClick = (agentId, isMaster = false) => {
     const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
-    if (!db || !user || !effectiveSessionId || isGenerating) return;
+    const debugState = {
+      agentId,
+      currentSessionId: effectiveSessionId,
+      isAppReady,
+      isGenerating,
+      isSending,
+      showInput,
+      hasPromptForActiveSession,
+      canUseAgents,
+      showDelegateBar,
+    };
+
+    console.info("[agent-click:start]", debugState);
+
+    if (!isAppReady) {
+      console.warn("[agent-click:blocked]", { reason: 'app-not-ready', ...debugState });
+      return;
+    }
+    if (isGenerating) {
+      console.warn("[agent-click:blocked]", { reason: 'busy:isGenerating', ...debugState });
+      return;
+    }
+    if (isSending) {
+      console.warn("[agent-click:blocked]", { reason: 'busy:isSending', ...debugState });
+      return;
+    }
+    if (!effectiveSessionId) {
+      console.warn("[agent-click:blocked]", { reason: 'no-session', ...debugState });
+      return;
+    }
 
     const hasUserMessageInThisSession =
       messages.some(m => m.role === 'user') ||
       lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId;
 
     if (!hasUserMessageInThisSession) {
+      console.warn("[agent-click:blocked]", { reason: 'no-prompt', ...debugState });
       setErrorWithAutoDismiss("先にメッセージを送ってからエージェントを選んでください。");
       return;
     }
 
-    playSound('click');
-    const agentInfo = isMaster ? { name: '心の鏡', id: 'master' } : AGENTS.find(a => a.id === agentId);
-    const mid = lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId
-      ? lastSubmittedUserMessageRef.current?.messageId : null;
-    const messagesAtClick = [...messages];
-    const traceId = `${effectiveSessionId}:${mid || makeId()}:${isMaster ? 'master' : agentId}`;
+    try {
+      playSound('click');
+      const agentInfo = isMaster ? { name: '心の鏡', id: 'master' } : AGENTS.find(a => a.id === agentId);
+      const mid = lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId
+        ? lastSubmittedUserMessageRef.current?.messageId : null;
+      const messagesAtClick = [...messages];
+      const traceId = `${effectiveSessionId}:${mid || makeId()}:${isMaster ? 'master' : agentId}`;
 
-    console.info(`[timing][${traceId}] agent button click`);
-    responseTimingRef.current = {
-      traceId,
-      clickStartedAt: performance.now(),
-      awaitingThinkingRender: true,
-      awaitingResponseRender: false,
-      aiMessageId: null,
-    };
+      console.info(`[timing][${traceId}] agent button click`);
+      console.info("[agent-click:dispatch]", { traceId, ...debugState });
+      responseTimingRef.current = {
+        traceId,
+        clickStartedAt: performance.now(),
+        awaitingThinkingRender: true,
+        awaitingResponseRender: false,
+        aiMessageId: null,
+      };
 
-    setIsGenerating(true);
-    setGeneratingAgent(agentInfo);
-    setShowInput(false);
+      setIsGenerating(true);
+      setGeneratingAgent(agentInfo);
+      setShowInput(false);
 
-    window.requestAnimationFrame(() => {
-      handleAiResponse(agentId, isMaster, effectiveSessionId, mid, messagesAtClick, traceId);
-    });
+      window.requestAnimationFrame(() => {
+        try {
+          handleAiResponse(agentId, isMaster, effectiveSessionId, mid, messagesAtClick, traceId);
+        } catch (rafError) {
+          console.error("[raf:handleAiResponse:error]", rafError);
+          setIsGenerating(false);
+          setGeneratingAgent(null);
+          setShowInput(true);
+          setErrorWithAutoDismiss("応答の開始に失敗しました。");
+        }
+      });
+    } catch (error) {
+      console.error("[agent-click:error]", error);
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      setErrorWithAutoDismiss("エージェントの起動に失敗しました。");
+    } finally {
+      console.info("[agent-click:finally]", { agentId, effectiveSessionId });
+    }
   };
 
   const handleAiResponse = async (agentId, isMaster, sessionId, sourceMessageId, messagesAtClick, traceId) => {
+    const aiDebugState = {
+      agentId,
+      sessionId,
+      hasDb: !!db,
+      hasUser: !!user,
+      hasSessionId: !!sessionId,
+      activeSessionMatches: activeSessionIdRef.current === sessionId,
+      isMaster,
+    };
+    console.info("[ai-response:start]", aiDebugState);
+
     if (!db || !user || !sessionId) {
-      console.warn("[handleAiResponse] Aborted before start: missing db, user, or sessionId");
+      console.warn("[ai-response:early-return]", { reason: 'missing-deps', ...aiDebugState });
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
@@ -1028,6 +1103,7 @@ const App = () => {
       console.info(
         `[timing][${traceId}] fetch start: ${(performance.now() - clickStartedAt).toFixed(1)}ms from click`,
       );
+      console.info("[ai-response:before-gemini]", aiDebugState);
       const finishFetch = beginTimedPhase(traceId, 'fetch');
       let response = '';
       try {
@@ -1045,6 +1121,7 @@ const App = () => {
         throw new Error(`response_check:${responseCheck.reason}`);
       }
       const cleanedResponse = cleanResponse(response);
+      console.info("[ai-response:after-gemini]", aiDebugState);
 
       // セッション切り替えチェック（早期中断）
       if (activeSessionIdRef.current !== sessionId) {
@@ -1075,6 +1152,7 @@ const App = () => {
         return [...prev, optimisticAiMessage];
       });
 
+      console.info("[ai-response:before-save]", aiDebugState);
       await measureFirestoreWrite(traceId, 'AI response save', () =>
         setDoc(
           doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
@@ -1082,6 +1160,7 @@ const App = () => {
         )
       );
       aiPersistenceState = 'persisted';
+      console.info("[ai-response:after-save]", aiDebugState);
 
       // セッション切り替えチェック（afterglow更新前）
       if (activeSessionIdRef.current !== sessionId) {
@@ -1142,7 +1221,7 @@ const App = () => {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[handleAiResponse] Error:", msg);
+      console.error("[ai-response:error]", { msg, ...aiDebugState });
       // セッションが一致する場合のみ UI を復帰
       const currentlyActiveSession = currentSessionIdRef.current === sessionId;
 
@@ -1166,12 +1245,11 @@ const App = () => {
         }
       }
     } finally {
-      // セッションが一致する場合のみ UI を復帰
-      if (activeSessionIdRef.current === sessionId) {
-        setIsGenerating(false);
-        setGeneratingAgent(null);
-        setShowInput(true);
-      }
+      console.info("[ai-response:finally]", aiDebugState);
+      // 無条件で state を復帰（stale closure や条件分岐で state が残るのを防ぐ）
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
     }
   };
 
@@ -1274,6 +1352,16 @@ const App = () => {
           : !hasPromptForActiveSession
             ? '最初の一文を送ると、会議メンバーが応答できます。'
             : '気になる視点を選ぶか、「委ねる」で流れに任せられます。';
+
+  const getAgentDisabledReason = () => {
+    if (!isAppReady) return 'app-not-ready';
+    if (isGenerating) return 'busy:isGenerating';
+    if (isSending) return 'busy:isSending';
+    if (!activeSessionId) return 'no-session';
+    if (!hasPromptForActiveSession) return 'no-prompt';
+    return null;
+  };
+  const agentDisabledReason = getAgentDisabledReason();
 
   return (
     <div className="lake-bg relative min-h-screen overflow-hidden flex font-sans text-[#2d3748]">
@@ -1418,6 +1506,11 @@ const App = () => {
                     </div>
                   </div>
                   <p className="px-2 text-[11px] font-bold text-slate-400">{agentHelperText}</p>
+                  {isAgentDebugEnabled() && agentDisabledReason && (
+                    <p className="px-2 text-[10px] font-black text-orange-500 font-mono">
+                      disabled: {agentDisabledReason}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -1660,6 +1753,23 @@ const App = () => {
         <SurfaceDebugPanel
           entries={surfaceDebugEntries}
           onClear={clearSurfaceDebugEntries}
+        />
+      )}
+
+      {isAgentDebugEnabled() && (
+        <AgentGateDebugPanel
+          isAppReady={isAppReady}
+          isGenerating={isGenerating}
+          isSending={isSending}
+          showInput={showInput}
+          activeSessionId={activeSessionId}
+          hasPromptForActiveSession={hasPromptForActiveSession}
+          showDelegateBar={showDelegateBar}
+          canUseAgents={canUseAgents}
+          messagesCount={messages.length}
+          visibleMessagesCount={messages.filter(m => m.role !== 'system').length}
+          currentSessionId={currentSessionId}
+          generatingAgent={generatingAgent}
         />
       )}
     </div>
