@@ -170,6 +170,12 @@ const buildJoeDrift = ({ joeOverSoftened, joeTooExplanatory }) => {
   return 'okay'
 }
 
+const getJoeDriftEmphasis = (drift = 'n/a') => {
+  if (drift === 'okay') return 'positive'
+  if (drift === 'mixed' || drift.includes('too-')) return 'warning'
+  return 'watch'
+}
+
 export const parseOuterGuideSections = (outerGuide = '') => {
   const guide = normalize(outerGuide)
   const lines = guide.split('\n').map(stripBullet).filter(Boolean)
@@ -285,6 +291,8 @@ export const buildJoeObservationFlags = ({
 
   const joeOverSoftened =
     softeningHits.length >= JOE_SOFTENING_HIT_THRESHOLD
+    // 「圧が減った / 余白が増えた」のに具体性と輪郭を同時に落としている時は、
+    // 自然になったというより、芯を抜いて柔らかくしすぎた可能性として扱う。
     || ((pressureGained || spaciousnessGained) && specificityLost && characterLost)
   const joeTooExplanatory =
     explanatoryHits.length >= JOE_EXPLANATION_MARKER_THRESHOLD
@@ -382,7 +390,7 @@ export const buildJoeReview = ({
       key: 'joeDrift',
       label: 'Joe drift',
       value: joeObservationFlags.joeDrift,
-      emphasis: joeObservationFlags.joeDrift === 'okay' ? 'positive' : joeObservationFlags.joeDrift === 'mixed' ? 'warning' : joeObservationFlags.joeDrift.includes('too-') ? 'warning' : 'watch',
+      emphasis: getJoeDriftEmphasis(joeObservationFlags.joeDrift),
     },
   ]
 
