@@ -39,7 +39,7 @@ test('joe compare view model emits joe observation flags and suggested labels', 
     agentId: 'creative',
     userText: '作品を出したいけど怖い',
     baselineReply: '怖いなら、その怖さの芯をひとつ掴もう。',
-    currentReply: '大丈夫。きっと大丈夫だから、一緒にゆっくり整理すると、その怖さの理由も見えてくる。',
+    currentReply: '大丈夫。きっと大丈夫だから、一緒にゆっくり整理すると、作品を出したいけど怖い気持ちの理由も見えてくる。',
     outerGuide: '得たもの: 自然さ, 受け取りやすさ\n失ったもの: 具体性, キャラの輪郭, ジョーらしさ\n提案: 冒頭で怖さの芯にもう一度触れる',
   });
 
