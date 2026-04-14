@@ -1,5 +1,6 @@
 // src/runtime/stateEstimate.js
-// ユーザーの発言から心理状態を推定する（全エージェント共通）
+// 役割（Layer A — 共通OS）: ユーザーの発言から心理状態を推定する（全エージェント共通）。
+// ジョー固有の焦点化は行わない。activateJoe (Layer B) がこの結果を受けて一点を絞る。
 
 /**
  * @param {string} text - ユーザーの発言

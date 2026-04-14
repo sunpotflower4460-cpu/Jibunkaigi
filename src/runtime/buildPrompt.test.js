@@ -9,6 +9,7 @@ import { runInternalOS } from './runInternalOS.js';
 import {
   MAX_INTERNAL_FRAME_LINES,
   buildJoeBiasPack,
+  buildJoeDebugPreview,
   buildJoeSystemPrompt,
   buildJoeUserPrompt,
   scoreJoeMaterials,
@@ -294,4 +295,88 @@ test('scoreJoeMaterials only applies activation-axis bonuses when those axes are
   assert.ok(Math.abs(activeScores.activeMemoryTrace - 0.45) < 0.001);
   // 0.05 = 0.03(base) + 0.02(memory presence bonus). zero-state axes do not add activation bonuses.
   assert.ok(Math.abs(inactiveScores.activeMemoryTrace - 0.05) < 0.001);
+});
+
+test('buildJoeSystemPrompt contains sharpened Joe-specific forbidden behaviors', () => {
+  const text = 'もう無理で諦めたい';
+  const prompt = buildJoeSystemPrompt({
+    activated: activateJoe(estimateState(text)),
+    context: '',
+    mode: 'medium',
+    userText: text,
+  });
+
+  // ジョー固有の禁止事項が明示されている
+  assert.match(prompt, /前向きさを足さない/);
+  assert.match(prompt, /相手を元気づけにいかない/);
+  assert.match(prompt, /問題解決モードに流れすぎない/);
+  assert.match(prompt, /見えていないのに見えたふりをしない/);
+  assert.match(prompt, /過去の説明の要約屋にならない/);
+  // 組み立て禁止が返答の組み立て方セクションに含まれている
+  assert.match(prompt, /そこで止まる。明るい結論で締めない/);
+  assert.match(prompt, /組み立て禁止/);
+});
+
+test('buildJoeSystemPrompt keeps stateGuide / internalFrame / biasSections as distinct blocks', () => {
+  const text = '作品を出したいけど怖い';
+  const prompt = buildJoeSystemPrompt({
+    activated: activateJoe(estimateState(text)),
+    context: '',
+    mode: 'medium',
+    userText: text,
+    internalOS: runInternalOS(text, { agentId: 'creative', mode: 'medium' }),
+  });
+
+  // 各セクションが独立したヘッダーを持つ
+  assert.match(prompt, /【今回の状態への対応】/);
+  assert.match(prompt, /【共通OSの薄い内部フレーム】/);
+  assert.match(prompt, /---以下は内的バイアス/);
+
+  // stateGuide はバイアスタイトル形式 [X] を含まない（biasSections と混在していない）
+  const stateGuide = readSection(prompt, '【今回の状態への対応】', '【返答の運び方】');
+  assert.ok(stateGuide.length > 0);
+  assert.doesNotMatch(stateGuide, /\[.*\]/);
+
+  // 返答の組み立て方が 5 ステップに拡張されている
+  assert.match(prompt, /3\. まだ消えていない向きや火種があるなら、照らす/);
+  assert.match(prompt, /5\. そこで止まる/);
+});
+
+test('buildJoeSystemPrompt does not grow excessively large', () => {
+  const text = 'もう無理で諦めたい';
+  const prompt = buildJoeSystemPrompt({
+    activated: activateJoe(estimateState(text)),
+    context: '',
+    mode: 'medium',
+    userText: text,
+    internalOS: runInternalOS(text, { agentId: 'creative', mode: 'medium' }),
+  });
+
+  assert.ok(prompt.length < 5000, `Prompt too long: ${prompt.length} chars`);
+});
+
+test('buildJoeDebugPreview returns Joe-specific debug fields in expected shape', () => {
+  const text = 'もう無理で諦めたい';
+  const activated = activateJoe(estimateState(text));
+  const preview = buildJoeDebugPreview({ activated, userText: text });
+
+  assert.equal(preview.joeBuilderUsed, 'joe-specialized');
+  assert.ok(typeof preview.joeStateGuidePreview === 'string');
+  assert.ok(preview.joeStateGuidePreview.length > 0);
+  assert.equal(preview.joeInternalFramePreview, null);
+  assert.equal(preview.joeSurfaceGuidancePreview, null);
+  assert.ok(typeof preview.joeActivatedBiasCount === 'number');
+  assert.ok(preview.joeActivatedBiasCount > 0);
+  assert.ok(Array.isArray(preview.joeDominantAxes));
+  assert.ok(preview.joeDominantAxes.includes('resignation'));
+
+  // internalFrame を渡した場合はプレビューが返る
+  const withFrame = buildJoeDebugPreview({
+    activated,
+    userText: text,
+    internalFrame: '- 場: 少し深めに触れていい。結論を急がない。',
+    surfaceGuidance: '急がない。',
+  });
+  assert.ok(typeof withFrame.joeInternalFramePreview === 'string');
+  assert.ok(typeof withFrame.joeSurfaceGuidancePreview === 'string');
 });

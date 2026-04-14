@@ -1,6 +1,28 @@
 // src/runtime/buildPrompt.js
 // 役割：ジョー用の system prompt / user prompt を組み立てる。
 // 内部素材は「内的バイアス」として扱い、表の返答にそのまま出さない。
+//
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ジョーの処理 3 層アーキテクチャ
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// Layer A (共通OS)
+//   estimateState / runInternalOS が担う「場全体の力学」。
+//   field / reaction / stance / permission / latentState /
+//   patternMix / afterglow / surfaceWindow が属する。
+//   ジョー固有の処理はここに置かない。
+//
+// Layer B (Joe 固有)
+//   activateJoe / buildStateGuide / scoreJoeMaterials /
+//   buildJoeBiasPack が担う「まだ消えていない一点の専用焦点化」。
+//   - 何を「まだ死んでいない一点」として拾うか
+//   - どの方向へ焦点を当てるか
+//   - 何をしすぎないか / どこで止まるか
+//
+// Layer C (表層調整)
+//   buildJoeInternalFrame / surfaceGuidance / MODE_GUIDE が担う
+//   「言い方の傾き」。温度・速さ・直接ness・説明量・余白の残し方。
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import { existence } from '../agents/joe/existence.js';
 import { truncatePromptText } from './context.js';
@@ -23,6 +45,14 @@ const THIRD_BIAS_SCORE_THRESHOLD = 0.65;
 const PERMISSION_ACTIVE_THRESHOLD = 0.4;
 const FRAGILITY_SOFT_HANDLING_THRESHOLD = 0.55;
 export const MAX_INTERNAL_FRAME_LINES = 4;
+
+// Layer B / debug preview 用の短縮ユーティリティ。
+// dev-only のプレビューのみに使う。本文全文は出さない。
+const truncateDebugText = (text, max = 140) => {
+  if (!text || typeof text !== 'string') return '';
+  const t = text.trim();
+  return t.length > max ? t.slice(0, max) + '…' : t;
+};
 
 const normalizeContext = (context) => {
   if (!context) return '';
@@ -97,6 +127,8 @@ const scoreActivationBonus = (activated = {}, state = {}, axisWeights = {}, mate
   return axisBonus + materialPresenceBonus;
 };
 
+// Layer B (Joe 固有) — state との共鳴スコアを計算して素材を評価する。
+// 共通OS が計算した state を読むが、スコアリング自体はジョー専用の重み付けで行う。
 export const scoreJoeMaterials = ({
   activated,
   userText = '',
@@ -234,6 +266,8 @@ export const scoreJoeMaterials = ({
     .sort((a, b) => b.score - a.score);
 };
 
+// Layer B (Joe 固有) — スコア上位の素材だけを絞り込む。
+// グループ制約と閾値で「2点以上まとめて拾いすぎない」原則を維持する。
 export const selectRelevantInternalBias = ({
   activated,
   userText = '',
@@ -267,6 +301,8 @@ export const selectRelevantInternalBias = ({
   return selected.length ? selected : scored.slice(0, 1);
 };
 
+// Layer B (Joe 固有) — activated bias のパックを公開インターフェースとして返す。
+// group / score はデバッグ用。表の返答にそのまま使わない。
 export const buildJoeBiasPack = ({
   activated,
   userText = '',
@@ -310,6 +346,8 @@ const selectTopScoredKeys = (scores = {}, limit = 2) => Object.entries(scores)
   .slice(0, limit)
   .map(([key]) => key);
 
+// Layer C (表層調整) — 共通OS の数値を Layer B / C の境界でジョー向け内部ガイド文へ変換する。
+// stateGuide (Layer B) とは異なり、場の重力・姿勢・fragility を扱う。
 const normalizeJoeInternalOS = ({
   internalOS,
   latentState,
@@ -321,6 +359,9 @@ const normalizeJoeInternalOS = ({
     : (Array.isArray(surfaceWindow) ? surfaceWindow : []),
 });
 
+// Layer C (表層調整) — 共通OS の latentState を読み、ジョー向けの薄い内部フレームへ変換する。
+// stateGuide との違い: stateGuide はジョー専用の「一点焦点化の指針」だが、
+// internalFrame は「場の重力・姿勢・fragility」を扱う共通OS 由来の調整層。
 const buildJoeInternalFrame = ({
   internalOS,
   latentState,
@@ -383,7 +424,9 @@ const buildJoeInternalFrame = ({
   return lines.slice(0, MAX_INTERNAL_FRAME_LINES).join('\n');
 };
 
-// 状態に応じた対応指針を生成する
+// Layer B (Joe 固有) — 今回の入力にどう触れるか（stateGuide）を生成する。
+// internalFrame (共通OS 由来の場の重力) や surfaceGuidance (言い方の傾き) とは別の塊。
+// 役割: 今回の入力の「まだ消えていない一点」をどう拾い、どこから照らすかの指針。
 const buildStateGuide = (state = {}) => {
   const {
     desire = 0,
@@ -443,6 +486,13 @@ const buildStateGuide = (state = {}) => {
   ].join('\n');
 };
 
+// Layer A + B + C の組み立てエントリポイント。
+// 各層の出力を受け取り、ジョーのシステムプロンプトとして統合する。
+// 責務の分担:
+//   stateGuide       → Layer B: 今回の入力にどう触れるか
+//   internalFrame    → Layer C: 今の場の重力 / 姿勢 / fragility
+//   surfaceGuidance  → Layer C: 言い方の傾き
+//   activated bias   → Layer B: ジョーが内側で参照する素材
 export const buildJoeSystemPrompt = ({
   activated,
   context = '',
@@ -511,6 +561,11 @@ export const buildJoeSystemPrompt = ({
 - テンションより視界。まとめより接触。解決より照射。
 - 相手の状態が重ければ、まず接触してから動く。
 - 行動を示すなら1つだけ、できるだけ小さく具体的にする。
+- 前向きさを足さない。相手を元気づけにいかない。
+- 問題解決モードに流れすぎない。何でも「才能」や「希望」に変換しない。
+- 見えていないのに見えたふりをしない。
+- 2点以上まとめて拾いすぎない。
+- 過去の説明の要約屋にならない。
 
 【今回の状態への対応】
 ${finalStateGuide}
@@ -530,7 +585,11 @@ ${stateSnapshot}
 【返答の組み立て方】
 1. まず見えている一点を言う（表面を要約しない）
 2. その一点が入力のどこにあるか、固有の名詞・動詞・違和感に沿って触れる
-3. 必要なら、最小の一歩か小さな進行方向を示す
+3. まだ消えていない向きや火種があるなら、照らす
+4. 必要なら、最小の一歩か小さな進行方向を示す
+5. そこで止まる。明るい結論で締めない
+
+組み立て禁止: 最初から全体整理しない / 解決策を列挙しない / 感情説明に長居しない / 明るい結論で締めない
 
 ---以下は内的バイアス。参照のみ。表の返答でそのまま使わない---
 
@@ -557,4 +616,29 @@ ${userText}
 表面を要約しないでください。抽象的にまとめず、入力にある名詞・動詞・違和感・止まり方を少し使ってください。
 前向きにしようと急がず、暗さを解説しすぎず、その奥でまだ残っているものが見えたら主張しすぎず触れてください。
 自然な口語日本語で返してください。この入力にちゃんと触れた感じを出してください。`;
+};
+
+// Layer B + debug — dev-only のジョー構造プレビュー。
+// Firestore 保存なし / 本文全文は出さない。
+// buildJoeSystemPrompt の組み立て結果を事後確認するために使う。
+export const buildJoeDebugPreview = ({
+  activated,
+  userText = '',
+  stateGuide,
+  internalFrame,
+  surfaceGuidance,
+} = {}) => {
+  const safeActivated = activated || {};
+  const state = safeActivated.debug?.state || {};
+  const finalStateGuide = stateGuide || buildStateGuide(state);
+  const biasPack = buildJoeBiasPack({ activated: safeActivated, userText, state });
+
+  return {
+    joeStateGuidePreview: truncateDebugText(finalStateGuide),
+    joeInternalFramePreview: internalFrame ? truncateDebugText(internalFrame) : null,
+    joeSurfaceGuidancePreview: surfaceGuidance ? truncateDebugText(surfaceGuidance) : null,
+    joeActivatedBiasCount: biasPack.length,
+    joeDominantAxes: safeActivated.debug?.dominantAxes || [],
+    joeBuilderUsed: 'joe-specialized',
+  };
 };
