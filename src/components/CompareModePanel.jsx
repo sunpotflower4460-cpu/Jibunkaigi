@@ -68,7 +68,10 @@ const SummaryBlock = ({ title, value, empty = '-' }) => (
 )
 
 const ResponseCard = ({ title, text, emphasis = false, onCopy }) => (
-  <div className={`flex flex-col gap-2 rounded-2xl border p-3 sm:p-4 shadow-sm ${emphasis ? 'border-indigo-200 bg-indigo-50/50' : 'border-slate-200 bg-white/60'}`}>
+  <div
+    aria-label={emphasis ? `${title} response (current candidate)` : `${title} response`}
+    className={`flex flex-col gap-2 rounded-2xl border p-3 sm:p-4 shadow-sm ${emphasis ? 'border-indigo-200 bg-indigo-50/50' : 'border-slate-200 bg-white/60'}`}
+  >
     <div className="flex items-center justify-between gap-2">
       <p className="text-[11px] font-black text-slate-500 uppercase tracking-wide">{title}</p>
       <button

@@ -389,6 +389,8 @@ const App = () => {
     }
   }, [compareLabelStore]);
 
+  const getCompareRevisionLabels = (compareKey) => compareLabelStoreRef.current[compareKey] || [];
+
   const handleToggleCompareLabel = (compareKey, label) => {
     if (!compareKey || !label) return;
     const nextStore = toggleCompareRevisionLabel(compareLabelStore, compareKey, label);
@@ -709,7 +711,7 @@ const App = () => {
     if (!baselineSystem || !baselineUser) return;
 
     try {
-      const revisionLabels = compareLabelStoreRef.current[compareKey] || []
+      const revisionLabels = getCompareRevisionLabels(compareKey)
       const baselineReply = await callGemini({
         prompt: baselineUser,
         systemInstruction: baselineSystem,
@@ -749,7 +751,7 @@ const App = () => {
       console.warn("[compare-mode] generation failed", error);
       if (activeSessionIdRef.current !== sessionId) return;
       if (!mountedRef.current) return;
-      const revisionLabels = compareLabelStoreRef.current[compareKey] || []
+      const revisionLabels = getCompareRevisionLabels(compareKey)
       const fallback = buildCompareViewModel({
         agentId,
         userText,
