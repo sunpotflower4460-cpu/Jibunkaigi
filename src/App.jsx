@@ -53,6 +53,7 @@ import { getOthersVisibilityState, getOthersEmptyMessage, getOthersDebugLabel } 
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
 import AgentGateDebugPanel, { isAgentDebugEnabled } from './components/AgentGateDebugPanel';
 import CompareModePanel from './components/CompareModePanel';
+import FloatingAgentBar from './components/FloatingAgentBar';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -2166,6 +2167,26 @@ const App = () => {
         @keyframes introCardRise { from { opacity: 0; transform: translateY(30px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .anim-card-rise { animation: introCardRise 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both; }
       ` }} />
+
+      <FloatingAgentBar
+        activeSessionId={activeSessionId}
+        hasMessages={messages.length > 0}
+        canUseAgents={canUseAgents}
+        isGenerating={isGenerating}
+        isSending={isSending}
+        agentDisabledReason={agentDisabledReason}
+        compareModeEnabled={isCompareModeEnabled}
+        isDebugMode={isAgentDebugEnabled()}
+        isDebugPanelVisible={isAgentDebugEnabled()}
+        onRandomResponse={handleRandomResponse}
+        onAgentClick={handleAgentClick}
+        onScrollToOthers={() => {
+          if (scrollRef.current) {
+            scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+          }
+        }}
+        agents={AGENTS}
+      />
 
       {isSurfaceDebugEnabled() && (
         <SurfaceDebugPanel
