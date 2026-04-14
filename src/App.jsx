@@ -22,7 +22,7 @@ import {
   Users, Send, ShieldAlert, Heart, Trash2,
   Plus, Menu, MessageSquare, UserCircle2, X, Target, Sparkles,
   Edit3, Pin, Zap, AlertCircle, Loader2, Feather, LayoutDashboard,
-  Info, Compass, ChevronRight, Check, Copy, Flame, Star
+  Info, Compass, ChevronRight, Check, Copy, Flame, Star, Cpu
 } from 'lucide-react';
 
 // ★ 追加1：estimateState をインポート
@@ -46,6 +46,10 @@ import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchA
 import { buildSurfaceFrame } from './runtime/surfaceTranslator';
 import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
+import ApiSelectionPanel from './components/ApiSelectionPanel';
+import { loadApiSelection, saveApiSelection } from './storage/apiSelectionStorage';
+import { generateSurfaceReply } from './surface/generateSurfaceReply';
+import { findProvider } from './config/apiProviders';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -247,6 +251,8 @@ const App = () => {
   const [autoExpandReactions, setAutoExpandReactions] = useState(null);
   const [surfaceDebugEntries, setSurfaceDebugEntries] = useState([]);
   const [optimisticSessionTitles, setOptimisticSessionTitles] = useState({});
+  const [apiSelection, setApiSelection] = useState(() => loadApiSelection());
+  const [showApiPanel, setShowApiPanel] = useState(false);
   const errorTimeoutRef = useRef(null);
 
   const currentSessionIdRef = useRef(currentSessionId);
@@ -333,6 +339,12 @@ const App = () => {
     setSurfaceDebugEntries((prev) => [entry, ...prev].slice(0, SURFACE_DEBUG_MAX_ENTRIES));
   };
   const clearSurfaceDebugEntries = () => setSurfaceDebugEntries([]);
+
+  const handleApiProviderSelect = (id) => {
+    const next = { baseProvider: id, lastUpdatedAt: new Date().toISOString() };
+    setApiSelection(next);
+    saveApiSelection(next);
+  };
 
   useEffect(() => {
     mountedRef.current = true;
@@ -1011,6 +1023,13 @@ const App = () => {
       }
       const cleanedResponse = cleanResponse(response);
 
+      // Surface adapter: apply the selected provider's surface pass.
+      // Only the final utterance text is affected; internal pipeline is unchanged.
+      const surfacedResponse = await generateSurfaceReply({
+        provider: apiSelection.baseProvider,
+        adjustedReplyPreview: cleanedResponse,
+      });
+
       // セッション切り替えチェック（早期中断）
       if (activeSessionIdRef.current !== sessionId) {
         console.info(`[handleAiResponse] Session switched from ${sessionId} to ${activeSessionIdRef.current}, aborting`);
@@ -1021,7 +1040,7 @@ const App = () => {
       const optimisticAiMessage = {
         id: aiMsgId,
         role: 'ai',
-        content: cleanedResponse,
+        content: surfacedResponse,
         agentId: isMaster ? 'master' : agentId,
         reactions: null,
         clientCreatedAt: Date.now(),
@@ -1071,7 +1090,7 @@ const App = () => {
 
       if (!isMaster && sourceMessageId && pending?.text) {
         setAutoExpandReactions({ msgId: aiMsgId, isLoading: true });
-        void preloadReactions(pending.text, sessionId, sourceMessageId, agentId, cleanedResponse).then(async () => {
+        void preloadReactions(pending.text, sessionId, sourceMessageId, agentId, surfacedResponse).then(async () => {
           // 反応読み込み完了時にセッション切り替えチェック
           if (activeSessionIdRef.current !== sessionId) {
             setAutoExpandReactions(null);
@@ -1304,6 +1323,15 @@ const App = () => {
                 <button aria-label={`応答モード: ${m.label}`} title={m.label} key={key} onClick={() => setSelectedMode(key)} className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedMode === key ? 'bg-white/60 text-slate-900 shadow-sm border border-white/50' : 'text-slate-400 hover:text-slate-600 hover:bg-white/20'}`}>{m.icon} <span className="hidden sm:inline">{m.label}</span></button>
               ))}
             </div>
+            <button
+              aria-label="基準API 選択"
+              title={`Surface: ${findProvider(apiSelection.baseProvider)?.label ?? apiSelection.baseProvider}`}
+              onClick={() => setShowApiPanel(true)}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[9px] font-black text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/60 transition-all shrink-0 border border-transparent hover:border-indigo-200/50"
+            >
+              <Cpu size={12} />
+              <span className="hidden sm:inline">{findProvider(apiSelection.baseProvider)?.label ?? apiSelection.baseProvider}</span>
+            </button>
           </header>
 
           {errorMessage && (
@@ -1625,6 +1653,14 @@ const App = () => {
         <SurfaceDebugPanel
           entries={surfaceDebugEntries}
           onClear={clearSurfaceDebugEntries}
+        />
+      )}
+
+      {showApiPanel && (
+        <ApiSelectionPanel
+          baseProvider={apiSelection.baseProvider}
+          onSelect={handleApiProviderSelect}
+          onClose={() => setShowApiPanel(false)}
         />
       )}
     </div>
