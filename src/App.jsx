@@ -1325,7 +1325,7 @@ const App = () => {
             </div>
             <button
               aria-label="基準API 選択"
-              title={`Surface: ${findProvider(apiSelection.baseProvider)?.label ?? apiSelection.baseProvider}`}
+              title={`表面化: ${findProvider(apiSelection.baseProvider)?.label ?? apiSelection.baseProvider}`}
               onClick={() => setShowApiPanel(true)}
               className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[9px] font-black text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/60 transition-all shrink-0 border border-transparent hover:border-indigo-200/50"
             >

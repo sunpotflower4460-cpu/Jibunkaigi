@@ -8,7 +8,7 @@
 /**
  * @typedef {Object} SurfaceReplyInput
  * @property {ApiProviderId} provider
- * @property {string} adjustedReplyPreview  The reply text produced by the internal pipeline.
+ * @property {string} adjustedReplyPreview - The reply text produced by the internal pipeline.
  */
 
 /**
