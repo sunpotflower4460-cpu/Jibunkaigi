@@ -389,6 +389,8 @@ const App = () => {
     }
   }, [compareLabelStore]);
 
+  const getCompareRevisionLabels = (compareKey) => compareLabelStoreRef.current[compareKey] || [];
+
   const handleToggleCompareLabel = (compareKey, label) => {
     if (!compareKey || !label) return;
     const nextStore = toggleCompareRevisionLabel(compareLabelStore, compareKey, label);
@@ -396,7 +398,14 @@ const App = () => {
     setCompareLabelStore(nextStore);
     setCompareEntries((entries) => entries.map((entry) => (
       entry.compareKey === compareKey
-        ? { ...entry, revisionLabels: nextLabels }
+        ? {
+            ...entry,
+            revisionLabels: nextLabels,
+            labels: {
+              ...(entry.labels || {}),
+              selected: nextLabels,
+            },
+          }
         : entry
     )));
   };
@@ -702,6 +711,7 @@ const App = () => {
     if (!baselineSystem || !baselineUser) return;
 
     try {
+      const revisionLabels = getCompareRevisionLabels(compareKey)
       const baselineReply = await callGemini({
         prompt: baselineUser,
         systemInstruction: baselineSystem,
@@ -732,8 +742,8 @@ const App = () => {
         outerGuide,
         currentUsesInternalOS: usedInternalOS,
         mode: selectedMode,
+        revisionLabels,
       });
-      const revisionLabels = compareLabelStoreRef.current[compareKey] || []
 
       if (!mountedRef.current) return;
       setCompareEntries(prev => [...prev.slice(-2), { ...vm, sessionId, messageId, compareKey, revisionLabels }]);
@@ -741,6 +751,7 @@ const App = () => {
       console.warn("[compare-mode] generation failed", error);
       if (activeSessionIdRef.current !== sessionId) return;
       if (!mountedRef.current) return;
+      const revisionLabels = getCompareRevisionLabels(compareKey)
       const fallback = buildCompareViewModel({
         agentId,
         userText,
@@ -749,8 +760,8 @@ const App = () => {
         outerGuide: '比較の生成に失敗しました。',
         currentUsesInternalOS: usedInternalOS,
         mode: selectedMode,
+        revisionLabels,
       });
-      const revisionLabels = compareLabelStoreRef.current[compareKey] || []
       setCompareEntries(prev => [...prev.slice(-2), { ...fallback, sessionId, messageId, compareKey, revisionLabels }]);
     }
   };

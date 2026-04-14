@@ -2,18 +2,21 @@
 // Compare Mode 向けの軽量 ViewModel を構築する。
 
 import {
+  COMPARE_REVISION_LABELS,
   buildJoeObservationFlags,
+  buildJoeReview,
+  buildQualityDimensionList,
   buildQualityObservations,
   buildSuggestedRevisionLabels,
   normalizeRevisionLabels,
   parseOuterGuideSections,
 } from './compareInsights.js'
 
-const normalize = (text = '') => (text ?? '').toString().trim();
+const normalize = (text = '') => (text ?? '').toString().trim()
 const openingKey = (text = '') => {
-  const cleaned = normalize(text).replace(/[\s。、,.「」!！?？]/g, '');
-  return cleaned.slice(0, 6).toLowerCase();
-};
+  const cleaned = normalize(text).replace(/[\s。、,.「」!！?？]/g, '')
+  return cleaned.slice(0, 6).toLowerCase()
+}
 
 /**
  * Baseline / Current / Outer Guide をひとまとめにする。
@@ -38,14 +41,14 @@ export const buildCompareViewModel = ({
   mode = null,
   revisionLabels = [],
 } = {}) => {
-  const baseline = normalize(baselineReply);
-  const current = normalize(currentReply);
-  const guide = normalize(outerGuide);
-  const user = normalize(userText);
+  const baseline = normalize(baselineReply)
+  const current = normalize(currentReply)
+  const guide = normalize(outerGuide)
+  const user = normalize(userText)
 
-  const baseKey = openingKey(baseline);
-  const currentKey = openingKey(current);
-  const sameOpening = !!(baseKey && currentKey && baseKey.slice(0, 4) === currentKey.slice(0, 4));
+  const baseKey = openingKey(baseline)
+  const currentKey = openingKey(current)
+  const sameOpening = !!(baseKey && currentKey && baseKey.slice(0, 4) === currentKey.slice(0, 4))
   const compareSummary = parseOuterGuideSections(guide)
   const qualityObservations = buildQualityObservations({
     agentId,
@@ -59,10 +62,18 @@ export const buildCompareViewModel = ({
     currentReply: current,
     qualityObservations,
   })
+  const qualityDimensions = buildQualityDimensionList({
+    qualityObservations,
+  })
+  const joeReview = buildJoeReview({
+    agentId,
+    joeObservationFlags,
+  })
   const suggestedRevisionLabels = buildSuggestedRevisionLabels({
     qualityObservations,
     joeObservationFlags,
   })
+  const selectedRevisionLabels = normalizeRevisionLabels(revisionLabels)
 
   return {
     agentId,
@@ -71,10 +82,24 @@ export const buildCompareViewModel = ({
     currentReply: current,
     outerGuide: guide,
     compareSummary,
+    guideHint: compareSummary.hint,
+    compareCoach: {
+      gained: compareSummary.gained,
+      lost: compareSummary.lost,
+      hint: compareSummary.hint,
+      text: guide,
+    },
     qualityObservations,
+    qualityDimensions,
     joeObservationFlags,
-    revisionLabels: normalizeRevisionLabels(revisionLabels),
+    joeReview,
+    revisionLabels: selectedRevisionLabels,
     suggestedRevisionLabels,
+    labels: {
+      available: COMPARE_REVISION_LABELS,
+      selected: selectedRevisionLabels,
+      suggested: suggestedRevisionLabels,
+    },
     summary: {
       baselineLength: baseline.length,
       currentLength: current.length,
@@ -82,5 +107,5 @@ export const buildCompareViewModel = ({
       currentUsesInternalOS: Boolean(currentUsesInternalOS),
       mode,
     },
-  };
-};
+  }
+}
