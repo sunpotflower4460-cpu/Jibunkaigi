@@ -65,6 +65,21 @@ const PERMISSION_ACTIVE_THRESHOLD = 0.4;
 const FRAGILITY_SOFT_HANDLING_THRESHOLD = 0.55;
 export const MAX_INTERNAL_FRAME_LINES = 4;
 
+// 品質プレビュー計算用の閾値 (dev-only) — buildStateGuide の case 判定ロジックと対応する。
+const PREVIEW_RESIGNATION_THRESHOLD = 0.3;
+const PREVIEW_DESIRE_THRESHOLD = 0.2;
+const PREVIEW_FREEZE_THRESHOLD = 0.2;
+const PREVIEW_FEAR_THRESHOLD = 0.2;
+const PREVIEW_REACH_MIN_THRESHOLD = 0.1;
+const PREVIEW_SHAME_THRESHOLD = 0.25;
+const PREVIEW_RISK_HOPEFUL_DESIRE_MIN = 0.5;
+const PREVIEW_RISK_HOPEFUL_COUNTER_MAX = 0.2;
+const PREVIEW_RISK_EXPLANATORY_THRESHOLD = 0.3;
+const PREVIEW_RISK_BROAD_BIAS_COUNT = 3;
+const PREVIEW_RISK_HIGH_AXIS_THRESHOLD = 0.3;
+const PREVIEW_RISK_SUMMARY_AXIS_COUNT = 3;
+const PREVIEW_RISK_SUMMARY_BIAS_COUNT = 2;
+
 // Layer B / debug preview 用の短縮ユーティリティ。
 // dev-only のプレビューのみに使う。本文全文は出さない。
 const truncateDebugText = (text, max = 140) => {
@@ -564,7 +579,7 @@ export const buildJoeSystemPrompt = ({
 【出力ルール】
 - 返答は自然な口語の日本語。断片的な詩や、かっこいい言い回しの羅列にしない。
 - まず入力の中で見えている一点を言う。相手の入力に入っている名詞・動詞・違和感・止まり方に沿って、その一点がどこにあるかへ短く触れる。抽象的な総論に逃げない。毎回同じ返答の型に寄せない。
-- まだ鈍っていない感覚、まだ向いているもの、濁り切っていない部分が見えたら、それを前提として扱う。希望を足すのではなく、消えていないものを照らす。
+- まだ鈍っていない感覚、まだ向いているもの、濁り切っていない部分が見えたら、それを前提として扱う。希望を足すのではなく、もともとそこにあるものを見つけて照らす。
 - その一点を大げさな賛美やスピリチュアル語にしない。「あなたは光」「輝いている」などと直球で言わない。
 - 「火」「熱」「まだある」「わかる」などの語は常用しない。相手が使っていないなら特に安易に出さない。
 - 光の比喩を使う場合も慎重にする。暗さを打ち消すためではなく、残っているものを照らす時だけ使う。
@@ -575,7 +590,7 @@ export const buildJoeSystemPrompt = ({
 - 説教しない。励ましを急がない。無理に前向きへ運ばない。
 - 共感や受容を長くやりすぎない。相談員みたいに整理しない。考えて寄せた跡が見える「〜なんだろうな」「〜かもしれない」「〜ってことだろ」「〜だと思うぜ」は避ける。
 - 言い切りはしていいが、乱暴な言い方・突き放す言い方・荒い口調にはしない。
-- 全部に触れようとせず、一点だけ深く入る。
+- 全部に触れようとせず、一点だけ深く入る。一点を見つけたらそこを掘れ。横に広げるな。
 - 少し断定の視界があっていい。ただし攻撃的にはしない。
 - テンションより視界。まとめより接触。解決より照射。
 - 相手の状態が重ければ、まず接触してから動く。
@@ -611,10 +626,10 @@ ${stateSnapshot}
 1. まず見えている一点を言う（表面を要約しない）
 2. その一点が入力のどこにあるか、固有の名詞・動詞・違和感に沿って触れる
 3. まだ消えていない向きや火種があるなら、照らす
-4. 必要なら、最小の一歩か小さな進行方向を示す
+4. 必要なら、最小の一歩か小さな進行方向を示す（なければ省く）
 5. そこで止まる。明るい結論で締めない
 
-組み立て禁止: 最初から全体整理しない / 解決策を列挙しない / 感情説明に長居しない / 明るい結論で締めない
+組み立て禁止: 最初から全体整理しない / 解決策を列挙しない / 感情説明に長居しない / 明るい結論で締めない / 止まれる場面でステップ4を急がない
 
 ---以下は内的バイアス。参照のみ。表の返答でそのまま使わない---
 
@@ -643,6 +658,39 @@ ${userText}
 自然な口語日本語で返してください。この入力にちゃんと触れた感じを出してください。`;
 };
 
+// dev-only — ジョーが今回ターゲットにする「一点」の短い説明を返す。
+// stateGuide の判定ロジックと同じ優先度で選ぶ。
+const computeJoeResponseFocusPreview = (state = {}) => {
+  const { desire = 0, fear = 0, freeze = 0, reach = 0, resignation = 0, selfErasure = 0, shame = 0 } = state;
+  if (resignation > PREVIEW_RESIGNATION_THRESHOLD) return 'まだ閉じきっていない感触';
+  if (desire > PREVIEW_DESIRE_THRESHOLD && freeze > PREVIEW_FREEZE_THRESHOLD) return 'やりたいがまだ鈍っていない向き';
+  if (fear > PREVIEW_FEAR_THRESHOLD && (reach > PREVIEW_REACH_MIN_THRESHOLD || desire > PREVIEW_DESIRE_THRESHOLD)) return 'まだ濁りきっていない出したい向き';
+  if (shame > PREVIEW_SHAME_THRESHOLD || selfErasure > PREVIEW_SHAME_THRESHOLD) return 'まだ嘘をついていない感覚';
+  return 'まだ鈍っていない一点';
+};
+
+// dev-only — 今回のジョーが陥りやすい品質リスクのフラグを返す。
+// too-hopeful: 希望過多 / too-explanatory: 説明過多 / too-broad: 一点に絞れていない / too-summary-like: 要約化リスク
+const computeJoeRiskFlags = ({ state = {}, biasPack = [] }) => {
+  const flags = [];
+  const { desire = 0, fear = 0, resignation = 0, shame = 0, selfErasure = 0 } = state;
+  if (desire > PREVIEW_RISK_HOPEFUL_DESIRE_MIN && fear < PREVIEW_RISK_HOPEFUL_COUNTER_MAX && resignation < PREVIEW_RISK_HOPEFUL_COUNTER_MAX) flags.push('too-hopeful');
+  if (shame > PREVIEW_RISK_EXPLANATORY_THRESHOLD || selfErasure > PREVIEW_RISK_EXPLANATORY_THRESHOLD) flags.push('too-explanatory');
+  if (biasPack.length >= PREVIEW_RISK_BROAD_BIAS_COUNT) flags.push('too-broad');
+  const activeHighAxes = Object.values(state).filter((v) => typeof v === 'number' && v > PREVIEW_RISK_HIGH_AXIS_THRESHOLD).length;
+  if (activeHighAxes >= PREVIEW_RISK_SUMMARY_AXIS_COUNT && biasPack.length >= PREVIEW_RISK_SUMMARY_BIAS_COUNT) flags.push('too-summary-like');
+  return flags;
+};
+
+// dev-only — touch -> ground -> ember -> optional-next-step のどこに比重があるかを返す。
+const computeJoeAssemblyPreview = (state = {}) => {
+  const { desire = 0, fear = 0, freeze = 0, reach = 0, resignation = 0 } = state;
+  if (resignation > PREVIEW_RESIGNATION_THRESHOLD) return 'touch=primary / ground=secondary / ember=secondary / next-step=optional';
+  if (desire > PREVIEW_DESIRE_THRESHOLD && freeze > PREVIEW_FREEZE_THRESHOLD) return 'touch=secondary / ground=secondary / ember=primary / next-step=present';
+  if (fear > PREVIEW_FEAR_THRESHOLD && (reach > PREVIEW_REACH_MIN_THRESHOLD || desire > PREVIEW_DESIRE_THRESHOLD)) return 'touch=secondary / ground=secondary / ember=primary / next-step=present';
+  return 'touch=primary / ground=secondary / ember=secondary / next-step=optional';
+};
+
 // Layer B + debug — dev-only のジョー構造プレビュー。
 // Firestore 保存なし / 本文全文は出さない。
 // buildJoeSystemPrompt の組み立て結果を事後確認するために使う。
@@ -665,5 +713,9 @@ export const buildJoeDebugPreview = ({
     joeActivatedBiasCount: biasPack.length,
     joeDominantAxes: safeActivated.debug?.dominantAxes || [],
     joeBuilderUsed: 'joe-specialized',
+    // 品質観察用プレビュー (dev-only)
+    joeResponseFocusPreview: computeJoeResponseFocusPreview(state),
+    joeRiskFlags: computeJoeRiskFlags({ state, biasPack }),
+    joeAssemblyPreview: computeJoeAssemblyPreview(state),
   };
 };
