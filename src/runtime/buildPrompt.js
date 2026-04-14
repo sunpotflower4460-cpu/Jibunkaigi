@@ -65,6 +65,21 @@ const PERMISSION_ACTIVE_THRESHOLD = 0.4;
 const FRAGILITY_SOFT_HANDLING_THRESHOLD = 0.55;
 export const MAX_INTERNAL_FRAME_LINES = 4;
 
+// 品質プレビュー計算用の閾値 (dev-only) — buildStateGuide の case 判定ロジックと対応する。
+const PREVIEW_RESIGNATION_THRESHOLD = 0.3;
+const PREVIEW_DESIRE_THRESHOLD = 0.2;
+const PREVIEW_FREEZE_THRESHOLD = 0.2;
+const PREVIEW_FEAR_THRESHOLD = 0.2;
+const PREVIEW_REACH_MIN_THRESHOLD = 0.1;
+const PREVIEW_SHAME_THRESHOLD = 0.25;
+const PREVIEW_RISK_HOPEFUL_DESIRE_MIN = 0.5;
+const PREVIEW_RISK_HOPEFUL_COUNTER_MAX = 0.2;
+const PREVIEW_RISK_EXPLANATORY_THRESHOLD = 0.3;
+const PREVIEW_RISK_BROAD_BIAS_COUNT = 3;
+const PREVIEW_RISK_HIGH_AXIS_THRESHOLD = 0.3;
+const PREVIEW_RISK_SUMMARY_AXIS_COUNT = 3;
+const PREVIEW_RISK_SUMMARY_BIAS_COUNT = 2;
+
 // Layer B / debug preview 用の短縮ユーティリティ。
 // dev-only のプレビューのみに使う。本文全文は出さない。
 const truncateDebugText = (text, max = 140) => {
@@ -647,10 +662,10 @@ ${userText}
 // stateGuide の判定ロジックと同じ優先度で選ぶ。
 const computeJoeResponseFocusPreview = (state = {}) => {
   const { desire = 0, fear = 0, freeze = 0, reach = 0, resignation = 0, selfErasure = 0, shame = 0 } = state;
-  if (resignation > 0.3) return 'まだ閉じきっていない感触';
-  if (desire > 0.2 && freeze > 0.2) return 'やりたいがまだ鈍っていない向き';
-  if (fear > 0.2 && (reach > 0.1 || desire > 0.2)) return 'まだ濁りきっていない出したい向き';
-  if (shame > 0.25 || selfErasure > 0.25) return 'まだ嘘をついていない感覚';
+  if (resignation > PREVIEW_RESIGNATION_THRESHOLD) return 'まだ閉じきっていない感触';
+  if (desire > PREVIEW_DESIRE_THRESHOLD && freeze > PREVIEW_FREEZE_THRESHOLD) return 'やりたいがまだ鈍っていない向き';
+  if (fear > PREVIEW_FEAR_THRESHOLD && (reach > PREVIEW_REACH_MIN_THRESHOLD || desire > PREVIEW_DESIRE_THRESHOLD)) return 'まだ濁りきっていない出したい向き';
+  if (shame > PREVIEW_SHAME_THRESHOLD || selfErasure > PREVIEW_SHAME_THRESHOLD) return 'まだ嘘をついていない感覚';
   return 'まだ鈍っていない一点';
 };
 
@@ -659,20 +674,20 @@ const computeJoeResponseFocusPreview = (state = {}) => {
 const computeJoeRiskFlags = ({ state = {}, biasPack = [] }) => {
   const flags = [];
   const { desire = 0, fear = 0, resignation = 0, shame = 0, selfErasure = 0 } = state;
-  if (desire > 0.5 && fear < 0.2 && resignation < 0.2) flags.push('too-hopeful');
-  if (shame > 0.3 || selfErasure > 0.3) flags.push('too-explanatory');
-  if (biasPack.length >= 3) flags.push('too-broad');
-  const activeHighAxes = Object.values(state).filter((v) => typeof v === 'number' && v > 0.3).length;
-  if (activeHighAxes >= 3 && biasPack.length >= 2) flags.push('too-summary-like');
+  if (desire > PREVIEW_RISK_HOPEFUL_DESIRE_MIN && fear < PREVIEW_RISK_HOPEFUL_COUNTER_MAX && resignation < PREVIEW_RISK_HOPEFUL_COUNTER_MAX) flags.push('too-hopeful');
+  if (shame > PREVIEW_RISK_EXPLANATORY_THRESHOLD || selfErasure > PREVIEW_RISK_EXPLANATORY_THRESHOLD) flags.push('too-explanatory');
+  if (biasPack.length >= PREVIEW_RISK_BROAD_BIAS_COUNT) flags.push('too-broad');
+  const activeHighAxes = Object.values(state).filter((v) => typeof v === 'number' && v > PREVIEW_RISK_HIGH_AXIS_THRESHOLD).length;
+  if (activeHighAxes >= PREVIEW_RISK_SUMMARY_AXIS_COUNT && biasPack.length >= PREVIEW_RISK_SUMMARY_BIAS_COUNT) flags.push('too-summary-like');
   return flags;
 };
 
 // dev-only — touch -> ground -> ember -> optional-next-step のどこに比重があるかを返す。
 const computeJoeAssemblyPreview = (state = {}) => {
   const { desire = 0, fear = 0, freeze = 0, reach = 0, resignation = 0 } = state;
-  if (resignation > 0.3) return 'touch=primary / ground=secondary / ember=secondary / next-step=optional';
-  if (desire > 0.2 && freeze > 0.2) return 'touch=secondary / ground=secondary / ember=primary / next-step=present';
-  if (fear > 0.2 && (reach > 0.1 || desire > 0.2)) return 'touch=secondary / ground=secondary / ember=primary / next-step=present';
+  if (resignation > PREVIEW_RESIGNATION_THRESHOLD) return 'touch=primary / ground=secondary / ember=secondary / next-step=optional';
+  if (desire > PREVIEW_DESIRE_THRESHOLD && freeze > PREVIEW_FREEZE_THRESHOLD) return 'touch=secondary / ground=secondary / ember=primary / next-step=present';
+  if (fear > PREVIEW_FEAR_THRESHOLD && (reach > PREVIEW_REACH_MIN_THRESHOLD || desire > PREVIEW_DESIRE_THRESHOLD)) return 'touch=secondary / ground=secondary / ember=primary / next-step=present';
   return 'touch=primary / ground=secondary / ember=secondary / next-step=optional';
 };
 
