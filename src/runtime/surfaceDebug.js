@@ -56,8 +56,13 @@ export const buildSurfaceDebugEntry = ({
   surfaceFrame = null,
   surfaceGuidance = '',
   afterglowSeed = null,
+  agentQualityPreview = null,
 }) => {
   const frame = surfaceFrame || {};
+  const usedAfterglow = !!(
+    afterglowSeed &&
+    (afterglowSeed.previousMix || afterglowSeed.previousLatentState)
+  );
 
   return {
     timestamp: Date.now(),
@@ -65,10 +70,7 @@ export const buildSurfaceDebugEntry = ({
     isMirror,
     mode: selectedMode,
     latestUserPreview: truncateForDebug(latestUserText),
-    usedAfterglow: !!(
-      afterglowSeed &&
-      (afterglowSeed.previousMix || afterglowSeed.previousLatentState)
-    ),
+    usedAfterglow,
     dominantPatterns: Array.isArray(frame.dominantPatterns) ? frame.dominantPatterns : [],
     permissionHints: Array.isArray(frame.permissionHints) ? frame.permissionHints : [],
     pacing: frame.pacing ?? null,
@@ -82,5 +84,7 @@ export const buildSurfaceDebugEntry = ({
     mirrorMode: isMirror,
     // internal OS summary (no raw prompts)
     hasInternalOS: !!continuityInternalOS,
+    // dev-only agent quality preview (no raw prompts)
+    agentQualityPreview: agentQualityPreview || null,
   };
 };

@@ -100,7 +100,7 @@ test('buildMirrorSystemPrompt defines the quiet synthesis shape and mirror-speci
   assert.match(systemPrompt, /ジョーほど熱くも重くもならず/);
   assert.match(systemPrompt, /箇条書き要約にしない。説教しない。無理に前向きにしない。/);
   assert.match(systemPrompt, /エージェント同士の意見を勝敗化しない。/);
-  assert.match(systemPrompt, /要約より、今ここに残っている重さ・引力・未解決点を優先する。/);
+  assert.match(systemPrompt, /要約より、今ここに残っている重さ・引力・両義性・未解決点を優先する。/);
   assert.match(systemPrompt, /本文で疑問形を使わない。問いは最後の一文だけにする。/);
   assert.match(systemPrompt, /1\. 会話全体の中で残ったものを短く映す。/);
   assert.match(systemPrompt, /【mirror signals】/);
