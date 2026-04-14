@@ -1,4 +1,5 @@
 import React from 'react';
+import { getOthersVisibilityState, getOthersDebugLabel } from '../runtime/getOthersVisibilityState';
 
 const isAgentDebugEnabled = () => {
   try {
@@ -23,8 +24,23 @@ const AgentGateDebugPanel = ({
   currentSessionId,
   generatingAgent,
   agentDebugEvents = [],
+  isMessagesLoading = false,
+  compareModeEnabled = false,
 }) => {
   if (!isAgentDebugEnabled()) return null;
+
+  // OTHERS visibility state を計算
+  const othersState = getOthersVisibilityState({
+    activeSessionId,
+    hasPromptForActiveSession,
+    isMessagesLoading,
+    visibleMessagesCount,
+    compareModeEnabled,
+    reactions: null, // ここでは全体の状態のみを見る
+    isGenerating,
+  });
+
+  const othersDebugLabel = getOthersDebugLabel(othersState);
 
   const handleCopyTrace = () => {
     try {
@@ -62,6 +78,7 @@ const AgentGateDebugPanel = ({
     ['visibleMessagesCount', visibleMessagesCount],
     ['currentSessionId', currentSessionId ? currentSessionId.slice(0, 8) + '…' : 'null'],
     ['generatingAgent', generatingAgent?.id ?? 'null'],
+    ['othersState', othersDebugLabel],
   ];
 
   return (

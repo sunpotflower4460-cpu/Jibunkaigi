@@ -10,7 +10,6 @@
  * @param {boolean} [params.hasPromptForActiveSession] - アクティブセッションにプロンプトがあるか
  * @param {boolean} [params.isMessagesLoading] - メッセージ読み込み中か
  * @param {number} [params.visibleMessagesCount] - 表示可能なメッセージ数
- * @param {number} [params.messagesCount] - 全メッセージ数
  * @param {boolean} [params.compareModeEnabled] - Compare Mode が有効か
  * @param {object|null} [params.reactions] - reactions データ
  * @param {boolean} [params.isGenerating] - AI 生成中か
@@ -32,7 +31,6 @@ export const getOthersVisibilityState = ({
   hasPromptForActiveSession = false,
   isMessagesLoading = false,
   visibleMessagesCount = 0,
-  messagesCount = 0,
   compareModeEnabled = false,
   reactions = null,
   isGenerating = false,
