@@ -10,6 +10,18 @@ import { blendLatentState, normalizeLatentState } from './afterglow.js';
 export function runInternalOS(input, options = {}) {
   const normalizedInput = typeof input === 'string' ? input : '';
   const normalizedOptions = options && typeof options === 'object' ? options : {};
+
+  // Double defense: normalize previousMix and previousLatentState
+  const safePreviousMix =
+    normalizedOptions.previousMix && typeof normalizedOptions.previousMix === 'object'
+      ? normalizedOptions.previousMix
+      : null;
+
+  const safePreviousLatentState =
+    normalizedOptions.previousLatentState && typeof normalizedOptions.previousLatentState === 'object'
+      ? normalizedOptions.previousLatentState
+      : null;
+
   const initialState = createInitialInternalState();
   const field = estimateField(normalizedInput);
   const reaction = generateReaction(normalizedInput, field);
@@ -24,13 +36,13 @@ export function runInternalOS(input, options = {}) {
     permission,
   };
 
-  const previousLatentState = normalizeLatentState(normalizedOptions.previousLatentState);
+  const previousLatentState = normalizeLatentState(safePreviousLatentState);
   const latentState = previousLatentState
     ? blendLatentState(previousLatentState, freshLatentState)
     : freshLatentState;
 
   const patternMix = mixLatentPatterns(latentState, {
-    previousMix: normalizedOptions.previousMix,
+    previousMix: safePreviousMix,
   });
 
   const surfaceWindow = buildSurfaceWindow(latentState);

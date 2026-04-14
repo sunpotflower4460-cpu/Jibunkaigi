@@ -66,3 +66,63 @@ test('mixLatentPatterns accepts previousMix without collapsing to a single winne
   assert.ok(result.selected.length >= 3);
   assert.notEqual(result.selected[1].weight, 0);
 });
+
+test('mixLatentPatterns handles null previousMix', () => {
+  const result = mixLatentPatterns({
+    field: { softness: 0.52, depth: 0.76, urgency: 0.24, fragility: 0.81, playfulness: 0.08 },
+    reaction: { touched: 0.73, protect: 0.88, clarify: 0.21, curiosity: 0.32, holdBackJudgment: 0.7 },
+    stance: { receive: 0.69, illuminate: 0.41, structure: 0.18, guard: 0.77, nudge: 0.12 },
+    permission: { noHurry: 0.61, noOverExplain: 0.44, noPerformativeHelpfulness: 0.66, allowPartialUncertainty: 0.57 },
+  }, {
+    previousMix: null,
+  });
+
+  assert.ok(Array.isArray(result.selected));
+  assert.ok(result.selected.length >= 3);
+  assert.equal(typeof result.dominant, 'string');
+});
+
+test('mixLatentPatterns handles previousMix with null selected', () => {
+  const result = mixLatentPatterns({
+    field: { softness: 0.52, depth: 0.76, urgency: 0.24, fragility: 0.81, playfulness: 0.08 },
+    reaction: { touched: 0.73, protect: 0.88, clarify: 0.21, curiosity: 0.32, holdBackJudgment: 0.7 },
+    stance: { receive: 0.69, illuminate: 0.41, structure: 0.18, guard: 0.77, nudge: 0.12 },
+    permission: { noHurry: 0.61, noOverExplain: 0.44, noPerformativeHelpfulness: 0.66, allowPartialUncertainty: 0.57 },
+  }, {
+    previousMix: { selected: null },
+  });
+
+  assert.ok(Array.isArray(result.selected));
+  assert.ok(result.selected.length >= 3);
+  assert.equal(typeof result.dominant, 'string');
+});
+
+test('mixLatentPatterns handles previousMix with undefined selected', () => {
+  const result = mixLatentPatterns({
+    field: { softness: 0.52, depth: 0.76, urgency: 0.24, fragility: 0.81, playfulness: 0.08 },
+    reaction: { touched: 0.73, protect: 0.88, clarify: 0.21, curiosity: 0.32, holdBackJudgment: 0.7 },
+    stance: { receive: 0.69, illuminate: 0.41, structure: 0.18, guard: 0.77, nudge: 0.12 },
+    permission: { noHurry: 0.61, noOverExplain: 0.44, noPerformativeHelpfulness: 0.66, allowPartialUncertainty: 0.57 },
+  }, {
+    previousMix: { selected: undefined },
+  });
+
+  assert.ok(Array.isArray(result.selected));
+  assert.ok(result.selected.length >= 3);
+  assert.equal(typeof result.dominant, 'string');
+});
+
+test('mixLatentPatterns handles previousMix with unexpected selected type', () => {
+  const result = mixLatentPatterns({
+    field: { softness: 0.52, depth: 0.76, urgency: 0.24, fragility: 0.81, playfulness: 0.08 },
+    reaction: { touched: 0.73, protect: 0.88, clarify: 0.21, curiosity: 0.32, holdBackJudgment: 0.7 },
+    stance: { receive: 0.69, illuminate: 0.41, structure: 0.18, guard: 0.77, nudge: 0.12 },
+    permission: { noHurry: 0.61, noOverExplain: 0.44, noPerformativeHelpfulness: 0.66, allowPartialUncertainty: 0.57 },
+  }, {
+    previousMix: { selected: 'unexpected' },
+  });
+
+  assert.ok(Array.isArray(result.selected));
+  assert.ok(result.selected.length >= 3);
+  assert.equal(typeof result.dominant, 'string');
+});

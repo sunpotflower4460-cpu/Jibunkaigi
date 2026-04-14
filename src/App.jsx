@@ -687,10 +687,22 @@ const App = () => {
     try {
       const lastAgentId = getLastRespondingAgentId(messages);
       const afterglowSeed = getAfterglowSeedForSession(effectiveSessionId);
+
+      // Normalize afterglowSeed before passing to runInternalOS
+      const safePreviousMix =
+        afterglowSeed?.previousMix && typeof afterglowSeed.previousMix === 'object'
+          ? afterglowSeed.previousMix
+          : null;
+
+      const safePreviousLatentState =
+        afterglowSeed?.previousLatentState && typeof afterglowSeed.previousLatentState === 'object'
+          ? afterglowSeed.previousLatentState
+          : null;
+
       const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
         mode: selectedMode,
-        previousMix: afterglowSeed.previousMix,
-        previousLatentState: afterglowSeed.previousLatentState,
+        previousMix: safePreviousMix,
+        previousLatentState: safePreviousLatentState,
       });
       const agentId = pickContextualAgent(AGENTS, {
         patternMix: internalOS.patternMix,
@@ -1009,6 +1021,52 @@ const App = () => {
     console.info("[ai-response:after-context]", _debugBase);
     pushAgentDebugEvent({ tag: 'ai-response:after-context', ..._debugBase, messagesAtClickCount: messagesAtClick.length, mode: selectedMode });
 
+    // Normalize afterglowSeed before passing to runInternalOS
+    const safePreviousMix =
+      afterglowSeed?.previousMix && typeof afterglowSeed.previousMix === 'object'
+        ? afterglowSeed.previousMix
+        : null;
+
+    const safePreviousLatentState =
+      afterglowSeed?.previousLatentState && typeof afterglowSeed.previousLatentState === 'object'
+        ? afterglowSeed.previousLatentState
+        : null;
+
+    // Add before-internal-os debug event
+    console.info("[ai-response:before-internal-os]", {
+      ..._debugBase,
+      hasPreviousMix: !!safePreviousMix,
+      previousMixType: safePreviousMix === null ? 'null' : typeof safePreviousMix,
+      previousMixHasSelected:
+        !!safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix,
+      previousMixSelectedType:
+        safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix
+          ? typeof safePreviousMix.selected
+          : 'none',
+      hasPreviousLatentState: !!safePreviousLatentState,
+    });
+    pushAgentDebugEvent({
+      tag: 'ai-response:before-internal-os',
+      ..._debugBase,
+      hasPreviousMix: !!safePreviousMix,
+      previousMixType: safePreviousMix === null ? 'null' : typeof safePreviousMix,
+      previousMixHasSelected:
+        !!safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix,
+      previousMixSelectedType:
+        safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix
+          ? typeof safePreviousMix.selected
+          : 'none',
+      hasPreviousLatentState: !!safePreviousLatentState,
+    });
+
     // B. runInternalOS
     let continuityInternalOS;
     try {
@@ -1016,12 +1074,37 @@ const App = () => {
         ? runInternalOS(latestUserText, {
           agentId,
           mode: selectedMode,
-          previousMix: afterglowSeed.previousMix,
-          previousLatentState: afterglowSeed.previousLatentState,
+          previousMix: safePreviousMix,
+          previousLatentState: safePreviousLatentState,
         })
         : null;
     } catch (err) {
-      handlePhaseError('internal-os', err);
+      // Enhanced error reporting for internal-os phase
+      const previousMixSelectedType =
+        safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix
+          ? typeof safePreviousMix.selected
+          : 'none';
+
+      const reason = err instanceof Error ? err.message : String(err);
+      console.error('[ai-response:error] phase=internal-os', err);
+      pushAgentDebugEvent({
+        tag: 'ai-response:error',
+        phase: 'internal-os',
+        reason,
+        previousMixSelectedType,
+        hasPreviousMix: !!safePreviousMix,
+        agentId,
+        sessionId,
+        currentSessionId: activeSessionIdRef.current,
+        activeSessionMatches: activeSessionIdRef.current === sessionId,
+      });
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      const phaseSuffix = isAgentDebugEnabled() ? '（phase=internal-os）' : '';
+      setErrorWithAutoDismiss(`内部処理でエラーが発生しました。${phaseSuffix}`);
       return;
     }
 
