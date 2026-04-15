@@ -4,6 +4,55 @@
 // 各 agent に渡せる短い共通 surface frame に変換する
 
 export const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+const STRONG_FOCUS_THRESHOLD = 0.72;
+const MODERATE_FOCUS_THRESHOLD = 0.45;
+
+const describeMeaningHintFromBeliefAxis = (preconditionBias = {}) => {
+  switch (preconditionBias?.meaning?.dominantBeliefAxis) {
+    case 'illumination':
+      return 'let one live angle come forward before explaining it';
+    case 'structure':
+      return 'let the shape become visible before solving it';
+    case 'holding':
+    case 'presence':
+      return 'treat contact and safety as part of what matters';
+    case 'grounding':
+      return 'keep meaning close to what is here now';
+    case 'reflection':
+      return 'stay with what keeps echoing instead of closing it fast';
+    case 'preverbal':
+      return 'touch what is not fully said before naming it';
+    case 'mission':
+      return 'keep the reply oriented without turning it into a pitch';
+    default:
+      return '';
+  }
+};
+
+const describeIdentityHint = (preconditionBias = {}) => {
+  const identityKey = preconditionBias?.identity?.identityKey ?? '';
+
+  if (identityKey.includes('creative')) return 'keep the response alive rather than performative';
+  if (identityKey.includes('strateg')) return 'keep the response deliberate but not overbuilt';
+  if (identityKey.includes('empath')) return 'keep the response close and breathable';
+  if (identityKey.includes('critic')) return 'keep the edge brief and protective';
+  if (identityKey.includes('soul') || identityKey.includes('master')) return 'keep the presence quiet and settled';
+
+  return '';
+};
+
+const describeFocusHint = (preconditionBias = {}) => {
+  const focus = preconditionBias?.focus ?? {};
+
+  if ((focus.oneThreadBias ?? 0) >= STRONG_FOCUS_THRESHOLD || (focus.antiOverExpansion ?? 0) >= STRONG_FOCUS_THRESHOLD) {
+    return 'stay with one living thread';
+  }
+  if ((focus.oneThreadBias ?? 0) >= MODERATE_FOCUS_THRESHOLD) {
+    return 'do not fan out too early';
+  }
+
+  return '';
+};
 
 export const pickDominantPatterns = (patternMix, limit = 2) => {
   if (!patternMix || typeof patternMix !== 'object') return [];
@@ -117,8 +166,10 @@ const describeToneBias = (latentState = {}) => {
 const describePacing = (latentState = {}) => {
   const urgency = clamp01(latentState.field?.urgency ?? 0);
   const noHurry = clamp01(latentState.permission?.noHurry ?? 0);
+  const biasSlowDown = clamp01(latentState.preconditionBias?.pacing?.slowDown ?? 0);
+  const biasReturn = clamp01(latentState.preconditionBias?.pacing?.returnBias ?? 0);
 
-  if (noHurry >= 0.5 || urgency < 0.3) return 'slow';
+  if (noHurry >= 0.5 || biasSlowDown >= 0.55 || biasReturn >= 0.55 || urgency < 0.3) return 'slow';
   if (urgency >= 0.6) return 'aware_of_time';
 
   return 'medium';
@@ -128,11 +179,15 @@ const describeDirectness = (latentState = {}) => {
   const illuminate = clamp01(latentState.stance?.illuminate ?? 0);
   const structure = clamp01(latentState.stance?.structure ?? 0);
   const receive = clamp01(latentState.stance?.receive ?? 0);
+  const antiEarlySummary = clamp01(latentState.preconditionBias?.meaning?.antiEarlySummary ?? 0);
+  const oneThreadBias = clamp01(latentState.preconditionBias?.focus?.oneThreadBias ?? 0);
+  const dominantBeliefAxis = latentState.preconditionBias?.meaning?.dominantBeliefAxis ?? null;
 
   const direct = illuminate * 0.5 + structure * 0.5;
-  const indirect = receive * 0.7;
+  const indirect = receive * 0.7 + antiEarlySummary * 0.15;
 
-  if (direct > 0.6) return 'clear';
+  if (dominantBeliefAxis === 'structure' && direct > 0.45) return 'clear';
+  if (direct > 0.6 && oneThreadBias < 0.7) return 'clear';
   if (indirect > 0.5) return 'gentle';
 
   return 'medium';
@@ -154,6 +209,9 @@ const describeEmotionalTemperature = (latentState = {}) => {
 const buildSurfaceHint = (latentState = {}, dominantPatterns = [], isMirror = false) => {
   const field = latentState.field ?? {};
   const permission = latentState.permission ?? {};
+  const preconditionBias = latentState.preconditionBias ?? {};
+  const meaningHint = describeMeaningHintFromBeliefAxis(preconditionBias);
+  const focusHint = describeFocusHint(preconditionBias);
 
   if (isMirror) {
     if ((field.fragility ?? 0) >= 0.55) {
@@ -172,6 +230,14 @@ const buildSurfaceHint = (latentState = {}, dominantPatterns = [], isMirror = fa
 
   if (noOverExplain) {
     return 'touch lightly without explanation';
+  }
+
+  if (meaningHint && focusHint) {
+    return `${meaningHint}; ${focusHint}`;
+  }
+
+  if (meaningHint) {
+    return meaningHint;
   }
 
   if (dominantPatterns.includes('comfort_soft') || dominantPatterns.includes('protective_hold')) {
@@ -205,6 +271,9 @@ export const buildSurfaceFrame = ({
   const permissionHints = summarizePermission(normalizedLatent.permission);
   const fieldHint = summarizeField(normalizedLatent.field);
   const afterglowHint = summarizeAfterglow(normalizedAfterglow);
+  const focusHint = describeFocusHint(normalizedLatent.preconditionBias);
+  const meaningHint = describeMeaningHintFromBeliefAxis(normalizedLatent.preconditionBias);
+  const identityHint = describeIdentityHint(normalizedLatent.preconditionBias);
 
   // Mirror mode adjustments
   if (isMirror) {
@@ -224,6 +293,9 @@ export const buildSurfaceFrame = ({
     dominantPatterns,
     permissionHints,
     fieldHint,
+    focusHint,
+    meaningHint,
+    identityHint,
     surfaceHint,
     afterglowHint,
     mirrorMode: isMirror,

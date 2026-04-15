@@ -111,6 +111,38 @@ const createPreconditionFilterState = () => ({
   },
 });
 
+const createPreconditionBiasState = () => ({
+  pacing: {
+    slowDown: 0,
+    returnBias: 0,
+  },
+  focus: {
+    oneThreadBias: 0,
+    antiOverExpansion: 0,
+    keepOneThread: 0,
+  },
+  meaning: {
+    antiEarlySummary: 0,
+    antiEarlySolution: 0,
+    dominantBeliefAxis: null,
+    activeCoreBeliefs: [],
+    activeBranchBeliefs: [],
+    activeLeafBeliefs: [],
+    activeCoreAxes: [],
+    activeBranchAxes: [],
+    activeLeafAxes: [],
+  },
+  identity: {
+    identityKey: null,
+    selfRememberingStrength: 0,
+    recalledTraits: [],
+    selfPresence: 0,
+    hereNowStability: 0,
+    unfinishedAllowed: 0,
+    firstPersonSoftness: 0,
+  },
+});
+
 const createHomeState = () => ({
   kernel: {
     releaseHelpfulness: 0,
@@ -147,5 +179,6 @@ export function createInitialInternalState() {
     beliefLeaf: createBeliefLeafState(),
     belief: createBeliefLayersState(),
     preconditionFilter: createPreconditionFilterState(),
+    preconditionBias: createPreconditionBiasState(),
   };
 }

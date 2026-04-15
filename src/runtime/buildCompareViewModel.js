@@ -37,6 +37,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.beliefBranchPreview] - Belief Branch Layer の開発用プレビュー (dev-only)
  * @param {object} [params.beliefLeafPreview] - Belief Leaf Layer の開発用プレビュー (dev-only)
  * @param {object} [params.preconditionFilterPreview] - Precondition Filter の開発用プレビュー (dev-only)
+ * @param {object} [params.preconditionBiasPreview] - Precondition Bias の開発用プレビュー (dev-only)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -56,6 +57,10 @@ export const buildCompareViewModel = ({
   beliefBranchPreview = null,
   beliefLeafPreview = null,
   preconditionFilterPreview = null,
+  preconditionBiasPreview = null,
+  focusBiasApplied = false,
+  meaningBiasApplied = false,
+  identityBiasApplied = null,
 } = {}) => {
   const baseline = normalize(baselineReply)
   const current = normalize(currentReply)
@@ -190,6 +195,28 @@ export const buildCompareViewModel = ({
     oneLivingThreadBias: preconditionFilterPreview.oneLivingThreadBias ?? 0,
   } : null
 
+  const preconditionBiasLayer = preconditionBiasPreview ? {
+    summary: preconditionBiasPreview.summary ?? '',
+    pacing: {
+      slowDown: preconditionBiasPreview.pacing?.slowDown ?? 0,
+      returnBias: preconditionBiasPreview.pacing?.returnBias ?? 0,
+    },
+    focus: {
+      oneThreadBias: preconditionBiasPreview.focus?.oneThreadBias ?? 0,
+      antiOverExpansion: preconditionBiasPreview.focus?.antiOverExpansion ?? 0,
+    },
+    meaning: {
+      dominantBeliefAxis: preconditionBiasPreview.meaning?.dominantBeliefAxis ?? null,
+      activeCoreAxes: preconditionBiasPreview.meaning?.activeCoreAxes ?? [],
+      activeBranchAxes: preconditionBiasPreview.meaning?.activeBranchAxes ?? [],
+    },
+    identity: {
+      identityKey: preconditionBiasPreview.identity?.identityKey ?? null,
+      selfRememberingStrength: preconditionBiasPreview.identity?.selfRememberingStrength ?? 0,
+      recalledTraits: preconditionBiasPreview.identity?.recalledTraits ?? [],
+    },
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -223,6 +250,10 @@ export const buildCompareViewModel = ({
     beliefBranchPreview: beliefBranchLayer,
     beliefLeafPreview: beliefLeafLayer,
     preconditionFilterPreview: preconditionPreview,
+    preconditionBiasPreview: preconditionBiasLayer,
+    focusBiasApplied: Boolean(focusBiasApplied),
+    meaningBiasApplied: Boolean(meaningBiasApplied),
+    identityBiasApplied: identityBiasApplied ?? null,
     summary: {
       baselineLength: baseline.length,
       currentLength: current.length,
@@ -237,6 +268,7 @@ export const buildCompareViewModel = ({
       hasBeliefBranchPreview: Boolean(beliefBranchLayer),
       hasBeliefLeafPreview: Boolean(beliefLeafLayer),
       hasPreconditionFilterPreview: Boolean(preconditionPreview),
+      hasPreconditionBiasPreview: Boolean(preconditionBiasLayer),
     },
   }
 }

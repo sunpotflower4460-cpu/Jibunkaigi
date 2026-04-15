@@ -77,6 +77,9 @@ export const buildSurfaceDebugEntry = ({
     directness: frame.directness ?? null,
     emotionalTemperature: frame.emotionalTemperature ?? null,
     fieldHint: frame.fieldHint ?? null,
+    focusHint: frame.focusHint ?? null,
+    meaningHint: frame.meaningHint ?? null,
+    identityHint: frame.identityHint ?? null,
     surfaceHint: frame.surfaceHint ?? null,
     guidancePreview: surfaceGuidance
       ? truncateForDebug(surfaceGuidance)
@@ -84,6 +87,10 @@ export const buildSurfaceDebugEntry = ({
     mirrorMode: isMirror,
     // internal OS summary (no raw prompts)
     hasInternalOS: !!continuityInternalOS,
+    preconditionBiasPreview: continuityInternalOS?.debugInfo?.preconditionBiasPreview ?? null,
+    focusBiasApplied: continuityInternalOS?.debugInfo?.focusBiasApplied ?? false,
+    meaningBiasApplied: continuityInternalOS?.debugInfo?.meaningBiasApplied ?? false,
+    identityBiasApplied: continuityInternalOS?.debugInfo?.identityBiasApplied ?? null,
     // dev-only agent quality preview (no raw prompts)
     agentQualityPreview: agentQualityPreview || null,
   };

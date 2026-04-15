@@ -144,6 +144,14 @@ const normalizeLatentState = (state) => {
     normalized.beliefCore = beliefCore;
   }
 
+  if (state.preconditionFilter && typeof state.preconditionFilter === 'object') {
+    normalized.preconditionFilter = state.preconditionFilter;
+  }
+
+  if (state.preconditionBias && typeof state.preconditionBias === 'object') {
+    normalized.preconditionBias = state.preconditionBias;
+  }
+
   const hasValues =
     (normalized.field && Object.keys(normalized.field).length > 0) ||
     (normalized.reaction && Object.keys(normalized.reaction).length > 0) ||
@@ -154,7 +162,9 @@ const normalizeLatentState = (state) => {
     Boolean(normalized.existence) ||
     Boolean(normalized.beliefBranch) ||
     Boolean(normalized.belief) ||
-    Boolean(normalized.beliefCore);
+    Boolean(normalized.beliefCore) ||
+    Boolean(normalized.preconditionFilter) ||
+    Boolean(normalized.preconditionBias);
 
   return hasValues ? normalized : null;
 };
@@ -263,6 +273,14 @@ const blendLatentState = (previousState, currentState) => {
   // Always use current beliefCore (core beliefs are regenerated fresh each turn)
   if (current.beliefCore || prev.beliefCore) {
     blended.beliefCore = current.beliefCore || prev.beliefCore || null;
+  }
+
+  if (current.preconditionFilter || prev.preconditionFilter) {
+    blended.preconditionFilter = current.preconditionFilter || prev.preconditionFilter || null;
+  }
+
+  if (current.preconditionBias || prev.preconditionBias) {
+    blended.preconditionBias = current.preconditionBias || prev.preconditionBias || null;
   }
 
   return blended;

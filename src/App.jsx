@@ -739,6 +739,8 @@ const App = () => {
       const homeLayerPreview = internalOS?.latentState?.home ?? null;
       const existenceLayerPreview = internalOS?.latentState?.existence ?? null;
       const beliefLayerPreview = internalOS?.latentState?.belief ?? null;
+      const preconditionFilterPreview = internalOS?.debugInfo?.preconditionFilterPreview ?? null;
+      const preconditionBiasPreview = internalOS?.debugInfo?.preconditionBiasPreview ?? null;
 
       const vm = buildCompareViewModel({
         agentId,
@@ -753,6 +755,11 @@ const App = () => {
         homeLayerPreview,
         existenceLayerPreview,
         beliefLayerPreview,
+        preconditionFilterPreview,
+        preconditionBiasPreview,
+        focusBiasApplied: internalOS?.debugInfo?.focusBiasApplied ?? false,
+        meaningBiasApplied: internalOS?.debugInfo?.meaningBiasApplied ?? false,
+        identityBiasApplied: internalOS?.debugInfo?.identityBiasApplied ?? null,
       });
 
       if (!mountedRef.current) return;

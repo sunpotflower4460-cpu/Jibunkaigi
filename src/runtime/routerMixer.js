@@ -1,6 +1,10 @@
 import { LATENT_PATTERNS } from './patternLibrary.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
+const AXIS_PREFERENCE_BOOST = 0.08;
+const TRAIT_PREFERENCE_BOOST = 0.06;
+const MIN_PATTERN_MULTIPLIER = 0.72;
+const FOCUS_TIGHTENING_THRESHOLD = 0.68;
 
 const normalizeVector = (vector = {}) => Object.fromEntries(
   Object.entries(vector)
@@ -91,9 +95,86 @@ const normalizeSelected = (selected) => {
   }));
 };
 
+const BELIEF_PATTERN_MAP = {
+  illumination: ['bright_focus', 'truth_gentle', 'quiet_reframe'],
+  structure: ['structural_map', 'steady_guard', 'truth_gentle'],
+  holding: ['comfort_soft', 'protective_hold', 'steady_guard'],
+  grounding: ['steady_guard', 'comfort_soft', 'structural_map'],
+  reflection: ['quiet_reframe', 'truth_gentle', 'comfort_soft'],
+  preverbal: ['quiet_reframe', 'comfort_soft', 'curious_probe'],
+  presence: ['comfort_soft', 'steady_guard', 'truth_gentle'],
+  mission: ['bright_focus', 'curious_probe', 'truth_gentle'],
+};
+
+/**
+ * recalledTraits から、相性のよい latent pattern id を薄く引く。
+ * regex は trait をざっくり cluster 化するための軽量マップで、固定ルールではない。
+ *
+ * @param {string[]} traits
+ * @returns {Set<string>}
+ */
+const resolveTraitPatternIds = (traits = []) => {
+  const joined = traits.join(' ').toLowerCase();
+  const ids = new Set();
+
+  if (/(direct|bold|alive|bright|clear)/.test(joined)) {
+    ids.add('bright_focus');
+    ids.add('truth_gentle');
+  }
+  if (/(soft|gentle|quiet|calm|warm)/.test(joined)) {
+    ids.add('comfort_soft');
+    ids.add('quiet_reframe');
+  }
+  if (/(steady|ground|stable|hold|care)/.test(joined)) {
+    ids.add('steady_guard');
+    ids.add('protective_hold');
+  }
+  if (/(curious|playful|open)/.test(joined)) {
+    ids.add('curious_probe');
+  }
+  if (/(structure|clear|precise|sharp|strategic)/.test(joined)) {
+    ids.add('structural_map');
+  }
+
+  return ids;
+};
+
+/**
+ * preconditionBias に応じて latent pattern の倍率を返す。
+ * belief axis / recalled traits と相性のよい pattern を少し押し上げ、
+ * one-thread / anti-over-expansion が強い時は広がりすぎる pattern を少し抑える。
+ *
+ * @param {object} pattern
+ * @param {object} preconditionBias
+ * @returns {number}
+ */
+const preconditionPatternMultiplier = (pattern, preconditionBias = {}) => {
+  const focus = preconditionBias?.focus ?? {};
+  const meaning = preconditionBias?.meaning ?? {};
+  const identity = preconditionBias?.identity ?? {};
+  const preferredFromAxis = new Set(BELIEF_PATTERN_MAP[meaning.dominantBeliefAxis] ?? []);
+  const preferredFromTraits = resolveTraitPatternIds(identity.recalledTraits);
+
+  let multiplier = 1;
+
+  if (preferredFromAxis.has(pattern.id)) multiplier += AXIS_PREFERENCE_BOOST;
+  if (preferredFromTraits.has(pattern.id)) multiplier += TRAIT_PREFERENCE_BOOST;
+
+  if ((focus.oneThreadBias ?? 0) >= 0.45 && pattern.id === 'curious_probe') {
+    multiplier -= (focus.oneThreadBias ?? 0) * 0.12;
+  }
+
+  if ((focus.antiOverExpansion ?? 0) >= 0.45 && ['curious_probe', 'structural_map'].includes(pattern.id)) {
+    multiplier -= (focus.antiOverExpansion ?? 0) * 0.08;
+  }
+
+  return Math.max(MIN_PATTERN_MULTIPLIER, multiplier);
+};
+
 export function mixLatentPatterns(latentState = {}, options = {}) {
   const previousMixWeights = previousMixMap(options.previousMix);
   const homeInfluence = clamp01(options.homeInfluence ?? 0);
+  const preconditionBias = options.preconditionBias ?? latentState.preconditionBias ?? {};
 
   const normalizedLatentState = {
     field: normalizeVector(latentState.field),
@@ -110,6 +191,8 @@ export function mixLatentPatterns(latentState = {}, options = {}) {
       rawScore *= (1 - homeInfluence * 0.12);
     }
 
+    rawScore *= preconditionPatternMultiplier(pattern, preconditionBias);
+
     return {
       ...pattern,
       rawScore,
@@ -118,7 +201,12 @@ export function mixLatentPatterns(latentState = {}, options = {}) {
 
   const groupCounts = new Map();
   const selected = [];
-  const targetCount = Math.min(Math.max(options.topK ?? 4, 3), 5);
+  const focus = preconditionBias?.focus ?? {};
+  const requestedTopK = Math.min(Math.max(options.topK ?? 4, 3), 5);
+  const shouldTightenFocus =
+    (focus.oneThreadBias ?? 0) >= FOCUS_TIGHTENING_THRESHOLD ||
+    (focus.antiOverExpansion ?? 0) >= FOCUS_TIGHTENING_THRESHOLD;
+  const targetCount = Math.min(Math.max(requestedTopK - (shouldTightenFocus ? 1 : 0), 3), 5);
 
   while (selected.length < targetCount && selected.length < scoredPatterns.length) {
     const remaining = scoredPatterns
@@ -144,5 +232,9 @@ export function mixLatentPatterns(latentState = {}, options = {}) {
   return {
     selected: normalizedSelected,
     dominant: normalizedSelected[0]?.id ?? '',
+    meta: {
+      focusBiasApplied: shouldTightenFocus || Boolean(preconditionBias?.meaning?.dominantBeliefAxis),
+      targetCount,
+    },
   };
 }

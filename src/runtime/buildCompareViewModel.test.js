@@ -155,10 +155,12 @@ test('compare view model handles null layer previews', () => {
   assert.equal(vm.beliefPreview, null)
   assert.equal(vm.beliefCorePreview, null)
   assert.equal(vm.beliefBranchPreview, null)
+  assert.equal(vm.preconditionBiasPreview, null)
   assert.equal(vm.summary.hasExistencePreview, false)
   assert.equal(vm.summary.hasBeliefPreview, false)
   assert.equal(vm.summary.hasBeliefCorePreview, false)
   assert.equal(vm.summary.hasBeliefBranchPreview, false)
+  assert.equal(vm.summary.hasPreconditionBiasPreview, false)
 })
 
 test('compare view model accepts and normalizes beliefCorePreview', () => {
@@ -232,4 +234,34 @@ test('compare view model accepts beliefBranchPreview', () => {
   assert.equal(vm.beliefBranchPreview.activeBranchBeliefs[0].axis, 'presence')
   assert.equal(vm.beliefBranchPreview.dominantBranchAxis, 'presence')
   assert.equal(vm.summary.hasBeliefBranchPreview, true)
+})
+
+test('compare view model accepts preconditionBiasPreview and applied flags', () => {
+  const vm = buildCompareViewModel({
+    agentId: 'creative',
+    userText: 'test',
+    baselineReply: 'baseline',
+    currentReply: 'current',
+    outerGuide: '',
+    preconditionBiasPreview: {
+      summary: 'oneThread=0.80 / slow=0.85 / axis=illumination',
+      pacing: { slowDown: 0.85, returnBias: 0.74 },
+      focus: { oneThreadBias: 0.8, antiOverExpansion: 0.62 },
+      meaning: { dominantBeliefAxis: 'illumination', activeCoreAxes: ['illumination'], activeBranchAxes: ['presence'] },
+      identity: { identityKey: 'creative-light-bearer', selfRememberingStrength: 0.91, recalledTraits: ['bold'] },
+    },
+    focusBiasApplied: true,
+    meaningBiasApplied: true,
+    identityBiasApplied: 'creative-light-bearer',
+  })
+
+  assert.ok(vm.preconditionBiasPreview)
+  assert.equal(vm.preconditionBiasPreview.summary, 'oneThread=0.80 / slow=0.85 / axis=illumination')
+  assert.equal(vm.preconditionBiasPreview.focus.oneThreadBias, 0.8)
+  assert.equal(vm.preconditionBiasPreview.meaning.dominantBeliefAxis, 'illumination')
+  assert.equal(vm.preconditionBiasPreview.identity.identityKey, 'creative-light-bearer')
+  assert.equal(vm.focusBiasApplied, true)
+  assert.equal(vm.meaningBiasApplied, true)
+  assert.equal(vm.identityBiasApplied, 'creative-light-bearer')
+  assert.equal(vm.summary.hasPreconditionBiasPreview, true)
 })
