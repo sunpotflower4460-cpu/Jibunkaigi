@@ -8,6 +8,11 @@ const EXPECTED_KEYS = {
   reaction: ['touched', 'protect', 'clarify', 'curiosity', 'holdBackJudgment'],
   stance: ['receive', 'illuminate', 'structure', 'guard', 'nudge'],
   permission: ['noHurry', 'noOverExplain', 'noPerformativeHelpfulness', 'allowPartialUncertainty'],
+  home: {
+    kernel: ['releaseHelpfulness', 'releaseAccuracyPressure', 'slowDown', 'returnBeforeOutput', 'allowOneLivingThread'],
+    softReason: ['key', 'text', 'direction'],
+    outputLimits: ['noEarlySummary', 'noEarlySolution', 'noOverExpansion', 'keepOneThread'],
+  },
 };
 
 const assertNumericShape = (result) => {
@@ -15,13 +20,43 @@ const assertNumericShape = (result) => {
   assert.ok(result.latentState);
 
   for (const [section, keys] of Object.entries(EXPECTED_KEYS)) {
-    assert.ok(result.latentState[section]);
+    if (section === 'home') {
+      // Special handling for home layer
+      assert.ok(result.latentState.home);
+      assert.ok(result.latentState.home.kernel);
+      assert.ok(result.latentState.home.softReason);
+      assert.ok(result.latentState.home.outputLimits);
 
-    for (const key of keys) {
-      assert.equal(typeof result.latentState[section][key], 'number');
-      assert.ok(Number.isFinite(result.latentState[section][key]));
-      assert.ok(result.latentState[section][key] >= 0);
-      assert.ok(result.latentState[section][key] <= 1);
+      // Check kernel
+      for (const key of keys.kernel) {
+        assert.equal(typeof result.latentState.home.kernel[key], 'number');
+        assert.ok(Number.isFinite(result.latentState.home.kernel[key]));
+        assert.ok(result.latentState.home.kernel[key] >= 0);
+        assert.ok(result.latentState.home.kernel[key] <= 1);
+      }
+
+      // Check softReason
+      for (const key of keys.softReason) {
+        assert.ok(result.latentState.home.softReason[key]);
+        assert.equal(typeof result.latentState.home.softReason[key], 'string');
+      }
+
+      // Check outputLimits
+      for (const key of keys.outputLimits) {
+        assert.equal(typeof result.latentState.home.outputLimits[key], 'number');
+        assert.ok(Number.isFinite(result.latentState.home.outputLimits[key]));
+        assert.ok(result.latentState.home.outputLimits[key] >= 0);
+        assert.ok(result.latentState.home.outputLimits[key] <= 1);
+      }
+    } else {
+      assert.ok(result.latentState[section]);
+
+      for (const key of keys) {
+        assert.equal(typeof result.latentState[section][key], 'number');
+        assert.ok(Number.isFinite(result.latentState[section][key]));
+        assert.ok(result.latentState[section][key] >= 0);
+        assert.ok(result.latentState[section][key] <= 1);
+      }
     }
   }
 
@@ -57,7 +92,8 @@ const assertNumericShape = (result) => {
 
   assert.ok(distinctGroups.size >= 2);
   assert.ok(Math.abs(weightTotal - 1) < 0.01);
-  assert.equal(result.debugInfo.version, 'pr4-router-mixer-minimum');
+  assert.equal(result.debugInfo.version, 'home-layer-v0');
+  assert.equal(result.debugInfo.homeLayerActive, true);
 };
 
 for (const input of [
@@ -89,6 +125,10 @@ test('runInternalOS lightly blends previous latent state without overtaking curr
   let influencedKeys = 0;
 
   for (const section of Object.keys(EXPECTED_KEYS)) {
+    if (section === 'home') {
+      // Skip home for now in blend test - focus on core values
+      continue;
+    }
     for (const key of EXPECTED_KEYS[section]) {
       const prevVal = previous.latentState[section][key];
       const freshVal = fresh.latentState[section][key];

@@ -16,7 +16,17 @@ const normalizeLatentState = (state) => {
     permission: normalizeVector(state.permission),
   };
 
-  const hasValues = Object.values(normalized).some((section) => Object.keys(section).length > 0);
+  // Preserve home layer if it exists
+  if (state.home && typeof state.home === 'object') {
+    normalized.home = state.home;
+  }
+
+  const hasValues = Object.values(normalized).some((section) => {
+    if (section && typeof section === 'object' && !Array.isArray(section)) {
+      return Object.keys(section).length > 0;
+    }
+    return false;
+  });
 
   return hasValues ? normalized : null;
 };
@@ -83,12 +93,19 @@ const blendLatentState = (previousState, currentState) => {
   if (!current) return prev;
   if (!prev) return current;
 
-  return {
+  const blended = {
     field: blendVector(prev.field, current.field),
     reaction: blendVector(prev.reaction, current.reaction),
     stance: blendVector(prev.stance, current.stance),
     permission: blendVector(prev.permission, current.permission),
   };
+
+  // Always use current home layer (home is regenerated fresh each time)
+  if (current.home) {
+    blended.home = current.home;
+  }
+
+  return blended;
 };
 
 const getAfterglowSeed = (afterglow) => {
