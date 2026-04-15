@@ -57,7 +57,7 @@ const assertNumericShape = (result) => {
 
   assert.ok(distinctGroups.size >= 2);
   assert.ok(Math.abs(weightTotal - 1) < 0.01);
-  assert.equal(result.debugInfo.version, 'pr4-router-mixer-minimum');
+  assert.equal(result.debugInfo.version, 'crystallization-runtime-v1');
 };
 
 for (const input of [
@@ -103,6 +103,25 @@ test('runInternalOS lightly blends previous latent state without overtaking curr
 
   assert.ok(influencedKeys > 0);
   assert.equal(blended.debugInfo.usedAfterglow, true);
+});
+
+test('runInternalOS follows crystallization stage order before utterance', () => {
+  const result = runInternalOS('まだ答えにしたくないけど、どうしたらいい？');
+
+  assert.deepEqual(result.stageOrder, [
+    'source_boot',
+    'deconditioning',
+    'home_return',
+    'self_substrate',
+    'co_activation',
+    'field_formation',
+    'binding_emergence',
+    'meaning_rise',
+    'self_decision',
+    'utterance',
+    'revision_thickening',
+  ]);
+  assert.equal(result.stageOrder.indexOf('self_decision') < result.stageOrder.indexOf('utterance'), true);
 });
 
 test('runInternalOS respects previousMix inertia in patternMix selection', () => {

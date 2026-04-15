@@ -29,16 +29,16 @@ export const summarizePermission = (permission = {}) => {
 };
 
 export const summarizeField = (field = {}) => {
-  const softness = clamp01(field.softness ?? 0);
-  const depth = clamp01(field.depth ?? 0);
+  const gravity = clamp01(field.gravity ?? field.depth ?? 0);
+  const closeness = clamp01(field.closeness ?? field.softness ?? 0);
   const urgency = clamp01(field.urgency ?? 0);
   const fragility = clamp01(field.fragility ?? 0);
 
   if (fragility >= 0.55) return 'fragile_edge';
-  if (depth >= 0.55 && softness >= 0.45) return 'deep_and_soft';
+  if (gravity >= 0.55 && closeness >= 0.45) return 'deep_and_soft';
   if (urgency >= 0.55) return 'time_sensitive';
-  if (softness >= 0.55) return 'gentle_space';
-  if (depth >= 0.45) return 'medium_depth';
+  if (closeness >= 0.55) return 'gentle_space';
+  if (gravity >= 0.45) return 'medium_depth';
 
   return 'plain_field';
 };
@@ -203,7 +203,7 @@ export const buildSurfaceFrame = ({
   const emotionalTemperature = describeEmotionalTemperature(normalizedLatent);
   const dominantPatterns = pickDominantPatterns(normalizedPatternMix, 2);
   const permissionHints = summarizePermission(normalizedLatent.permission);
-  const fieldHint = summarizeField(normalizedLatent.field);
+  const fieldHint = summarizeField(normalizedLatent.relationalField ?? normalizedLatent.field);
   const afterglowHint = summarizeAfterglow(normalizedAfterglow);
 
   // Mirror mode adjustments

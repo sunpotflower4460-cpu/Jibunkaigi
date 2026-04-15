@@ -832,6 +832,7 @@ const App = () => {
 
       const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
         mode: selectedMode,
+        source: 'internal_mock',
         previousMix: safePreviousMix,
         previousLatentState: safePreviousLatentState,
       });
@@ -1201,10 +1202,11 @@ const App = () => {
     // B. runInternalOS
     let continuityInternalOS;
     try {
-      continuityInternalOS = !isMaster
-        ? runInternalOS(latestUserText, {
+        continuityInternalOS = !isMaster
+          ? runInternalOS(latestUserText, {
           agentId,
           mode: selectedMode,
+          source: 'google',
           previousMix: safePreviousMix,
           previousLatentState: safePreviousLatentState,
         })

@@ -12,15 +12,17 @@ const topTwo = (scores) => Object.entries(scores)
 
 export function buildSurfaceWindow(latentState = {}) {
   const field = latentState.field ?? {};
+  const relationalField = latentState.relationalField ?? {};
   const stance = latentState.stance ?? {};
   const permission = latentState.permission ?? {};
 
-  const fieldDescriptors = [
-    describeLevel(field.softness ?? 0, { high: 'soft', mid: 'steady-soft', low: 'slightly soft', min: 'plain' }),
-    describeLevel(field.depth ?? 0, { high: 'deep', mid: 'medium-deep', low: 'light-depth', min: 'surface-level' }),
-    describeLevel(field.urgency ?? 0, { high: 'urgent', mid: 'time-sensitive', low: 'not rushed', min: 'not urgent' }),
-  ];
-  const fieldLine = `Field: ${fieldDescriptors.join(', ')}.`;
+  const fieldLine = Object.keys(relationalField).length
+    ? `Field: gravity ${describeLevel(relationalField.gravity ?? 0, { high: 'dense', mid: 'present', low: 'light', min: 'plain' })}, closeness ${describeLevel(relationalField.closeness ?? 0, { high: 'near', mid: 'approaching', low: 'cautious', min: 'distant' })}, urgency ${describeLevel(relationalField.urgency ?? 0, { high: 'pressing', mid: 'time-aware', low: 'unhurried', min: 'open' })}.`
+    : `Field: ${[
+      describeLevel(field.softness ?? 0, { high: 'soft', mid: 'steady-soft', low: 'slightly soft', min: 'plain' }),
+      describeLevel(field.depth ?? 0, { high: 'deep', mid: 'medium-deep', low: 'light-depth', min: 'surface-level' }),
+      describeLevel(field.urgency ?? 0, { high: 'urgent', mid: 'time-sensitive', low: 'not rushed', min: 'not urgent' }),
+    ].join(', ')}.`;
 
   const [firstStance = 'receive', secondStance = 'illuminate'] = topTwo(stance);
   const stanceLine = `Stance: ${firstStance} first, ${secondStance} second.`;
@@ -34,7 +36,7 @@ export function buildSurfaceWindow(latentState = {}) {
   const permissionLine = `Permission: ${(permissionFlags.slice(0, 2).join('; ')) || 'stay modest'}.`;
   const windowLines = [fieldLine, stanceLine, permissionLine];
 
-  if ((field.fragility ?? 0) >= 0.55) {
+  if ((relationalField.fragility ?? field.fragility ?? 0) >= 0.55) {
     windowLines.push('Note: handle the fragile edge gently.');
   }
 

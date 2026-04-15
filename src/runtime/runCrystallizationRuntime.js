@@ -30,7 +30,7 @@ const buildRevision = ({ homeState, coActivation, fieldState, decisionState }) =
       revisit: decisionState.withheldBias ?? [],
       reuseCandidates: [
         decisionState.replyIntent ? `stance:${decisionState.stance}->intent:${decisionState.replyIntent}` : null,
-        `field:${fieldState.relationalField?.fragility ?? 0 >= 0.45 ? 'fragility' : 'permission'}->utterance_shape`,
+        `field:${((fieldState.relationalField?.fragility ?? 0) >= 0.45) ? 'fragility' : 'permission'}->utterance_shape`,
       ].filter(Boolean),
     },
   };
@@ -89,13 +89,16 @@ export function runCrystallizationRuntime(input, options = {}) {
   };
 
   const previousLatentState = normalizeLatentState(safePreviousLatentState);
+  const blendedLatentState = previousLatentState
+    ? blendLatentState(previousLatentState, freshLatentState)
+    : null;
   const latentState = previousLatentState
     ? {
       ...freshLatentState,
-      field: blendLatentState(previousLatentState, freshLatentState).field,
-      reaction: blendLatentState(previousLatentState, freshLatentState).reaction,
-      stance: blendLatentState(previousLatentState, freshLatentState).stance,
-      permission: blendLatentState(previousLatentState, freshLatentState).permission,
+      field: blendedLatentState.field,
+      reaction: blendedLatentState.reaction,
+      stance: blendedLatentState.stance,
+      permission: blendedLatentState.permission,
     }
     : freshLatentState;
 
@@ -145,4 +148,3 @@ export function runCrystallizationRuntime(input, options = {}) {
     },
   };
 }
-
