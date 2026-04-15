@@ -47,7 +47,8 @@ Maker Seed
 → Home Layer
 → Existence Layer 1
 → Existence Layer 2
-→ Belief Core Layer（信念層1）← ここ
+→ Belief Core Layer（信念層1）
+→ Belief Branch Layer（信念層2）← ここを今回追加
 → その後の既存後段
 ```
 
@@ -103,6 +104,43 @@ type BeliefCore = {
 type BeliefCoreLayerState = {
   activeCoreBeliefs: BeliefCore[]    // 有効な core belief 一覧
   dominantBeliefAxis: string | null  // 最重みの信念の axis
+}
+```
+
+---
+
+## 信念層2（BeliefBranchLayer）
+
+### 役割
+
+信念層1から分岐する「中くらいの見方・傾き」を前提フィルタとして持つ。  
+返答文に直接混ぜず、後段の焦点や意味づけを染める枝として扱う。
+
+### 性質
+
+- Core より軽く、Leaf より重い
+- Core の id を `parentId` で参照して枝分かれする
+- 数は中程度（各エージェント 2〜4 本）
+- 発話ではなく前提層 / フィルタとして使う
+
+### BeliefBranch 型
+
+```typescript
+type BeliefBranch = {
+  id: string        // 一意のキー
+  parentId: string  // Core Belief への参照
+  textJa: string    // 信念のテキスト（日本語）
+  weight: number    // 重み (0-1) - Core より軽い、Leaf より重い
+  axis: string      // 見方の軸（presence / mission / ...）
+}
+```
+
+### BeliefBranchLayerState 型
+
+```typescript
+type BeliefBranchLayerState = {
+  activeBranchBeliefs: BeliefBranch[]
+  dominantBranchAxis: string | null
 }
 ```
 
@@ -186,18 +224,42 @@ type BeliefCoreLayerState = {
 
 ---
 
+## 信念層2の実装（Branch）
+
+**ファイル**:
+- `src/runtime/beliefBranchLayer.js` — `createBeliefBranchLayer()` 関数
+- `src/agents/beliefBranchProfiles.js` — 各エージェントの branch belief 初期プロフィール
+
+**ポイント**:
+- `parentId` で必ず Core と接続する
+- `selfRememberingStrength` を軽く参照しつつ、Core より少し軽く、Leaf より重い重みづけ
+- `dominantBranchAxis` = 最重み branch の axis
+
+**各エージェントの例（抜粋）**:
+- ジョー: 直すより先に触れる / 小さな光でも十分 / もともとある光を見つける
+- ケン: 表面より結び目を見る / 混乱の中にも構造 / ズレの位置が大事
+- ミナ: 進ませる前にほどける場所 / 崩れたまま置ける場所 / 受け止めることは停滞ではない
+- サトウ: 漂いすぎる前に足場を探す / 条件を無視した理想は続かない / 具体は希望を支える
+- レイ: 言葉になる前の残り / 曖昧さは失敗ではない / 気配のまま触れていい
+- 心の鏡: まだ閉じていないことに意味 / 重いものは急がない / 両方あることを映す
+
+---
+
 ## runInternalOS への統合
 
 `src/runtime/runInternalOS.js` において、以下の順序で実行される。
 
 ```javascript
 const existenceLayer2 = createExistenceLayer2({ agentId });
-const beliefCore = createBeliefCoreLayer({ agentId, existenceLayer2 }); // ← 存在層2のすぐあと
+const beliefCore = createBeliefCoreLayer({ agentId, existenceLayer2 });
+const beliefBranch = createBeliefBranchLayer({ agentId, beliefCore, existenceLayer2 });
 const belief = createBeliefLayers({ agentId, existenceLayer1, existenceLayer2 });
 // ...
 const freshLatentState = {
   // ...
   beliefCore,
+  beliefBranch,
+  belief,
 };
 ```
 
@@ -205,18 +267,24 @@ const freshLatentState = {
 
 ## internalState の拡張
 
-`src/runtime/internalState.js` に `beliefCore` 初期状態を追加している。
+`src/runtime/internalState.js` に `beliefCore` / `beliefBranch` 初期状態を追加している。
 
 ```javascript
 const createBeliefCoreState = () => ({
   activeCoreBeliefs: [],
   dominantBeliefAxis: null,
 });
+const createBeliefBranchState = () => ({
+  activeBranchBeliefs: [],
+  dominantBranchAxis: null,
+});
 
 export function createInitialInternalState() {
   return {
     // ... 既存フィールド ...
     beliefCore: createBeliefCoreState(),
+    beliefBranch: createBeliefBranchState(),
+    belief: createBeliefLayersState(),
   };
 }
 ```
@@ -225,9 +293,9 @@ export function createInitialInternalState() {
 
 ## compare / debug での表示
 
-`beliefCorePreview` は dev-only の compare/debug モードでのみ表示される。
+`beliefCorePreview` / `beliefBranchPreview` は dev-only の compare/debug モードでのみ表示される。
 
-`buildCompareViewModel` に `beliefCorePreview` パラメータを渡すと、`vm.beliefCorePreview` にプレビューが入る。
+`buildCompareViewModel` に各プレビューを渡すと、ViewModel に反映される。
 
 ```javascript
 vm.beliefCorePreview = {
@@ -237,14 +305,18 @@ vm.beliefCorePreview = {
   ],
   dominantBeliefAxis: 'identity',
 }
+
+vm.beliefBranchPreview = {
+  activeBranchBeliefs: [
+    { id: 'touch_before_fixing', parentId: 'joe_world_unlighted_still_shines', textJa: '直すより先に、そこにあるものへ触れるほうが先だ', weight: 0.55, axis: 'presence' },
+    // ...
+  ],
+  dominantBranchAxis: 'presence',
+}
 ```
 
-`vm.summary.hasBeliefCorePreview` でプレビューの有無を確認できる。
-
-`debugInfo` には以下が追加されている。
-
-- `beliefCorePreview` — 上位2件の belief id 一覧
-- `dominantBeliefAxis` — 最重み belief の axis
+`vm.summary.hasBeliefCorePreview` / `hasBeliefBranchPreview` でプレビュー有無を確認できる。  
+`debugInfo` には `beliefCorePreview / dominantBeliefAxis / beliefBranchPreview / dominantBranchAxis` が入る。
 
 ---
 
@@ -260,17 +332,28 @@ vm.beliefCorePreview = {
 - selfRememberingStrength が weight に影響する
 - DEFAULT_BELIEF_CORE_PROFILE の shape が正しい
 
+### beliefBranchLayer.test.js
+
+- null-safe に返る
+- agentId ごとに activeBranchBeliefs が返る
+- 各 branch に parentId があり、Core に接続されている
+- weight は Core より軽く、Leaf より重い（0.45 以上、親より小さい）
+- dominantBranchAxis が最重み axis に一致する
+- selfRememberingStrength によって合計 weight が上がる
+
 ### runInternalOS.test.js（追加分）
 
-- 存在層2のあとに beliefCore が接続される
-- beliefCore が latentState に正しく含まれる
-- debugInfo に beliefCorePreview と dominantBeliefAxis が含まれる
+- 存在層2のあとに beliefCore / beliefBranch が接続される
+- beliefCore / beliefBranch が latentState に正しく含まれる
+- debugInfo に beliefCorePreview / beliefBranchPreview と各 dominantAxis が含まれる
 
 ### buildCompareViewModel.test.js（追加分）
 
 - beliefCorePreview が shape を保つ
 - null のとき hasBeliefCorePreview = false
 - 空 activeCoreBeliefs でもクラッシュしない
+- beliefBranchPreview が shape を保つ
+- null のとき hasBeliefBranchPreview = false
 
 ---
 

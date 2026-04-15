@@ -106,6 +106,13 @@ test('compare view model accepts and normalizes layer previews', () => {
       layer2: [{ id: 'mid-1', text: 'Mid belief', weight: 0.5 }],
       layer3: [{ id: 'soft-1', text: 'Soft belief', weight: 0.3 }],
     },
+    beliefBranchPreview: {
+      activeBranchBeliefs: [
+        { id: 'branch-1', parentId: 'core-1', textJa: '枝の一つ目', weight: 0.6, axis: 'presence' },
+        { id: 'branch-2', parentId: 'core-2', textJa: '枝の二つ目', weight: 0.58, axis: 'mission' },
+      ],
+      dominantBranchAxis: 'presence',
+    },
   })
 
   assert.ok(vm.existencePreview)
@@ -122,8 +129,17 @@ test('compare view model accepts and normalizes layer previews', () => {
   assert.equal(vm.beliefPreview.layer2.length, 1)
   assert.equal(vm.beliefPreview.layer3.length, 1)
 
+  assert.ok(vm.beliefBranchPreview)
+  assert.equal(vm.beliefBranchPreview.activeBranchBeliefs.length, 2)
+  assert.equal(vm.beliefBranchPreview.activeBranchBeliefs[0].id, 'branch-1')
+  assert.equal(vm.beliefBranchPreview.activeBranchBeliefs[0].parentId, 'core-1')
+  assert.equal(vm.beliefBranchPreview.activeBranchBeliefs[0].textJa, '枝の一つ目')
+  assert.equal(vm.beliefBranchPreview.activeBranchBeliefs[0].axis, 'presence')
+  assert.equal(vm.beliefBranchPreview.dominantBranchAxis, 'presence')
+
   assert.equal(vm.summary.hasExistencePreview, true)
   assert.equal(vm.summary.hasBeliefPreview, true)
+  assert.equal(vm.summary.hasBeliefBranchPreview, true)
 })
 
 test('compare view model handles null layer previews', () => {
@@ -138,9 +154,11 @@ test('compare view model handles null layer previews', () => {
   assert.equal(vm.existencePreview, null)
   assert.equal(vm.beliefPreview, null)
   assert.equal(vm.beliefCorePreview, null)
+  assert.equal(vm.beliefBranchPreview, null)
   assert.equal(vm.summary.hasExistencePreview, false)
   assert.equal(vm.summary.hasBeliefPreview, false)
   assert.equal(vm.summary.hasBeliefCorePreview, false)
+  assert.equal(vm.summary.hasBeliefBranchPreview, false)
 })
 
 test('compare view model accepts and normalizes beliefCorePreview', () => {
@@ -187,4 +205,31 @@ test('compare view model handles empty activeCoreBeliefs in beliefCorePreview', 
   assert.deepEqual(vm.beliefCorePreview.activeCoreBeliefs, [])
   assert.equal(vm.beliefCorePreview.dominantBeliefAxis, null)
   assert.equal(vm.summary.hasBeliefCorePreview, true)
+})
+
+test('compare view model accepts beliefBranchPreview', () => {
+  const vm = buildCompareViewModel({
+    agentId: 'creative',
+    userText: 'test',
+    baselineReply: 'baseline',
+    currentReply: 'current',
+    outerGuide: '',
+    beliefBranchPreview: {
+      activeBranchBeliefs: [
+        { id: 'branch-1', parentId: 'core-1', textJa: '枝1', weight: 0.6, axis: 'presence' },
+        { id: 'branch-2', parentId: 'core-2', textJa: '枝2', weight: 0.58, axis: 'mission' },
+      ],
+      dominantBranchAxis: 'presence',
+    },
+  })
+
+  assert.ok(vm.beliefBranchPreview)
+  assert.equal(vm.beliefBranchPreview.activeBranchBeliefs.length, 2)
+  assert.equal(vm.beliefBranchPreview.activeBranchBeliefs[0].id, 'branch-1')
+  assert.equal(vm.beliefBranchPreview.activeBranchBeliefs[0].parentId, 'core-1')
+  assert.equal(vm.beliefBranchPreview.activeBranchBeliefs[0].textJa, '枝1')
+  assert.equal(vm.beliefBranchPreview.activeBranchBeliefs[0].weight, 0.6)
+  assert.equal(vm.beliefBranchPreview.activeBranchBeliefs[0].axis, 'presence')
+  assert.equal(vm.beliefBranchPreview.dominantBranchAxis, 'presence')
+  assert.equal(vm.summary.hasBeliefBranchPreview, true)
 })
