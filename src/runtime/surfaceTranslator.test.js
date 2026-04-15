@@ -88,6 +88,20 @@ describe('surfaceTranslator', () => {
         stance: { receive: 0.7, illuminate: 0.3 },
         reaction: { touched: 0.5, protect: 0.4 },
         permission: { noHurry: 0.5 },
+        decision: {
+          intention: {
+            speakIntentKey: 'touch_living_thread',
+            speakIntentText: 'まだ切れていない一点に触れたい',
+            touchDepth: 0.68,
+            focusTarget: 'faint-thread',
+          },
+          restraint: {
+            holdBackSummary: 0.8,
+            holdBackSolution: 0.86,
+            holdBackExpansion: 0.72,
+            keepSilenceMargin: 0.61,
+          },
+        },
       };
 
       const patternMix = {
@@ -119,9 +133,45 @@ describe('surfaceTranslator', () => {
       assert.ok('dominantPatterns' in result);
       assert.ok('permissionHints' in result);
       assert.ok('fieldHint' in result);
+      assert.ok('speakIntentKey' in result);
+      assert.ok('focusTarget' in result);
+      assert.ok('touchDepth' in result);
+      assert.ok('restraint' in result);
       assert.ok('surfaceHint' in result);
       assert.ok('afterglowHint' in result);
       assert.ok('mirrorMode' in result);
+    });
+
+    it('should expose decision cues to downstream surface shaping', () => {
+      const result = buildSurfaceFrame({
+        latentState: {
+          decision: {
+            intention: {
+              speakIntentKey: 'touch_living_thread',
+              speakIntentText: 'まだ切れていない一点に触れたい',
+              touchDepth: 0.68,
+              focusTarget: 'faint-thread',
+            },
+            restraint: {
+              holdBackSummary: 0.82,
+              holdBackSolution: 0.88,
+              holdBackExpansion: 0.76,
+              keepSilenceMargin: 0.64,
+            },
+          },
+        },
+        patternMix: null,
+        surfaceWindow: [],
+        afterglowSeed: null,
+        agentId: 'creative',
+      });
+
+      assert.equal(result.speakIntentKey, 'touch_living_thread');
+      assert.equal(result.focusTarget, 'faint-thread');
+      assert.equal(result.touchDepth, 0.68);
+      assert.ok(result.focusHint.includes('faint thread'));
+      assert.match(result.surfaceHint, /living thread/);
+      assert.ok(result.restraint.holdBackSolution >= 0.88);
     });
 
     it('should limit dominantPatterns to 2 items', () => {

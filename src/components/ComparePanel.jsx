@@ -54,6 +54,34 @@ const OuterGuideBlock = ({ outerGuide }) => {
   );
 };
 
+const DecisionBlock = ({ entry }) => {
+  const sections = [
+    ['feltSense', entry.feltSensePreview?.summary],
+    ['intent', entry.speakIntentPreview?.summary],
+    ['focus', entry.speakIntentPreview?.focusTarget],
+    ['restraint', entry.restraintPreview?.summary],
+    ['decision', entry.decisionMetaPreview?.summary],
+  ];
+
+  if (!sections.some(([, value]) => value)) return null;
+
+  return (
+    <div className="space-y-1">
+      <div className="text-[9px] text-violet-300 font-bold">Decision Preview</div>
+      <div className="space-y-0.5 pl-1 border-l border-slate-700">
+        {sections.map(([label, value]) => (
+          <div key={label}>
+            <div className="text-[9px] text-slate-500">{label}</div>
+            <pre className="text-[10px] whitespace-pre-wrap break-words leading-snug text-slate-300 bg-slate-800/60 rounded px-1.5 py-1 max-h-24 overflow-y-auto">
+              {value && value.length > 0 ? value : '—'}
+            </pre>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const EntryCard = ({ entry, index }) => {
   const [open, setOpen] = useState(index === 0);
   const tag = entry.isMirror ? '🪞Mirror' : `🟢${entry.agentId}`;
@@ -86,6 +114,7 @@ const EntryCard = ({ entry, index }) => {
             tone={entry.currentError ? 'amber' : 'emerald'}
           />
           <OuterGuideBlock outerGuide={entry.outerGuide} />
+          <DecisionBlock entry={entry} />
         </div>
       )}
     </div>

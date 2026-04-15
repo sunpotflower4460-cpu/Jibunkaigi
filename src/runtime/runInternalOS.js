@@ -16,6 +16,7 @@ import { createMakerSeed } from '../agents/shared/makerSeed.js';
 import { buildPreconditionFilter } from './buildPreconditionFilter.js';
 import { buildPreconditionBias, buildPreconditionBiasPreview } from './buildPreconditionBias.js';
 import { createBeliefTensionLayer } from './beliefTensionLayer.js';
+import { buildDecisionPreviews, createDecisionLayer } from './decisionLayer.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 
@@ -243,19 +244,7 @@ export function runInternalOS(input, options = {}) {
   const beliefLeaf = createBeliefLeafLayer({ agentId, beliefBranch, existenceLayer2 });
   preconditionTrace.push('precondition:after-belief-leaf');
 
-  // Step 8: Belief Tension Layer
-  // preconditionFilter / preconditionBias の前に tension を立てておく。
-  // active belief に対して入力文脈のズレ / 引っかかり / 守りたさを検出し、
-  // 後段の反応・焦点・意味づけを少し変えるための内的 state として保持する。
-  const beliefTension = createBeliefTensionLayer({
-    input: normalizedInput,
-    activeCoreBeliefs: beliefCore.activeCoreBeliefs ?? [],
-    activeBranchBeliefs: beliefBranch.activeBranchBeliefs ?? [],
-    activeLeafBeliefs: beliefLeaf.activeLeafBeliefs ?? [],
-  });
-  preconditionTrace.push('precondition:after-belief-tension');
-
-  // Step 9: Build Precondition Filter (first pass — before bias)
+  // Step 8: Build Precondition Filter (first pass — before bias)
   const basePreconditionFilter = buildPreconditionFilter({
     makerSeed,
     home: baseHome,
@@ -265,7 +254,6 @@ export function runInternalOS(input, options = {}) {
     beliefBranch,
     beliefLeaf,
   });
-  preconditionTrace.push('precondition:after-build-filter');
 
   // ════════════════════════════════════════════════════════════════════
   // DOWNSTREAM: bias application → rebuilt reaction / stance / home / existence
@@ -293,7 +281,26 @@ export function runInternalOS(input, options = {}) {
     beliefBranch,
     beliefLeaf,
   });
+  preconditionTrace.push('precondition:after-build-filter');
   const preconditionBias = buildPreconditionBias(preconditionFilter);
+  preconditionTrace.push('precondition:after-precondition-bias');
+
+  const beliefTension = createBeliefTensionLayer({
+    input: normalizedInput,
+    activeCoreBeliefs: beliefCore.activeCoreBeliefs ?? [],
+    activeBranchBeliefs: beliefBranch.activeBranchBeliefs ?? [],
+    activeLeafBeliefs: beliefLeaf.activeLeafBeliefs ?? [],
+  });
+  preconditionTrace.push('precondition:after-belief-tension');
+
+  const decision = createDecisionLayer({
+    preconditionFilter,
+    preconditionBias,
+    beliefTension,
+    reaction,
+    stance,
+  });
+  preconditionTrace.push('precondition:after-decision');
 
   // Normalized top-level existence1 / existence2 derived from the final (biased) layers.
   // These provide a flat, canonical shape that downstream and debug can read directly.
@@ -338,6 +345,7 @@ export function runInternalOS(input, options = {}) {
     belief,
     preconditionFilter,
     preconditionBias,
+    decision,
   };
 
   const previousLatentState = normalizeLatentState(safePreviousLatentState);
@@ -351,7 +359,14 @@ export function runInternalOS(input, options = {}) {
     : freshLatentState;
 
   const biasForDebug = latentState.preconditionBias ?? preconditionBias;
+  const decisionForDebug = latentState.decision ?? decision;
   const preconditionBiasPreview = buildPreconditionBiasPreview(biasForDebug);
+  const {
+    feltSensePreview,
+    speakIntentPreview,
+    restraintPreview,
+    decisionMetaPreview,
+  } = buildDecisionPreviews(decisionForDebug);
   const dominantBeliefAxis = biasForDebug?.meaning?.dominantBeliefAxis ?? null;
   const focusBiasApplied =
     (biasForDebug?.focus?.oneThreadBias ?? 0) >= 0.35 ||
@@ -440,6 +455,10 @@ export function runInternalOS(input, options = {}) {
       })),
       dominantTensionAxis: latentState.beliefTension?.dominantTensionAxis ?? null,
       totalTensionStrength: latentState.beliefTension?.totalTensionStrength ?? 0,
+      feltSensePreview,
+      speakIntentPreview,
+      restraintPreview,
+      decisionMetaPreview,
       preconditionFilterPresent: Boolean(latentState.preconditionFilter),
     },
   };

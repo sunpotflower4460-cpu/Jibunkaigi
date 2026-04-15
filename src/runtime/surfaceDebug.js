@@ -43,6 +43,7 @@ const buildGuidancePreview = (surfaceFrame, isMirror) => {
   }
 
   if (surfaceFrame.surfaceHint) hints.push(surfaceFrame.surfaceHint);
+  if (surfaceFrame.speakIntentKey) hints.push(`intent=${surfaceFrame.speakIntentKey}`);
 
   return truncateForDebug(hints.join(' / '));
 };
@@ -80,6 +81,10 @@ export const buildSurfaceDebugEntry = ({
     focusHint: frame.focusHint ?? null,
     meaningHint: frame.meaningHint ?? null,
     identityHint: frame.identityHint ?? null,
+    speakIntentKey: frame.speakIntentKey ?? null,
+    focusTarget: frame.focusTarget ?? null,
+    touchDepth: frame.touchDepth ?? 0,
+    restraint: frame.restraint ?? null,
     surfaceHint: frame.surfaceHint ?? null,
     guidancePreview: surfaceGuidance
       ? truncateForDebug(surfaceGuidance)
@@ -88,6 +93,10 @@ export const buildSurfaceDebugEntry = ({
     // internal OS summary (no raw prompts)
     hasInternalOS: !!continuityInternalOS,
     preconditionBiasPreview: continuityInternalOS?.debugInfo?.preconditionBiasPreview ?? null,
+    feltSensePreview: continuityInternalOS?.debugInfo?.feltSensePreview ?? null,
+    speakIntentPreview: continuityInternalOS?.debugInfo?.speakIntentPreview ?? null,
+    restraintPreview: continuityInternalOS?.debugInfo?.restraintPreview ?? null,
+    decisionMetaPreview: continuityInternalOS?.debugInfo?.decisionMetaPreview ?? null,
     focusBiasApplied: continuityInternalOS?.debugInfo?.focusBiasApplied ?? false,
     meaningBiasApplied: continuityInternalOS?.debugInfo?.meaningBiasApplied ?? false,
     identityBiasApplied: continuityInternalOS?.debugInfo?.identityBiasApplied ?? null,

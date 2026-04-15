@@ -49,6 +49,12 @@ const EntryCard = ({ entry, index }) => {
           <Row label="focusHint" value={entry.focusHint} />
           <Row label="meaningHint" value={entry.meaningHint} />
           <Row label="identityHint" value={entry.identityHint} />
+          <Row label="feltSense" value={entry.feltSensePreview?.summary} />
+          <Row label="speakIntent" value={entry.speakIntentPreview?.summary} />
+          <Row label="focusTarget" value={entry.speakIntentPreview?.focusTarget ?? entry.focusTarget} />
+          <Row label="touchDepth" value={entry.speakIntentPreview?.touchDepth ?? entry.touchDepth} />
+          <Row label="restraint" value={entry.restraintPreview?.summary} />
+          <Row label="decisionMeta" value={entry.decisionMetaPreview?.summary} />
           <Row label="surfaceHint" value={entry.surfaceHint} />
           <Row label="preconditionBias" value={entry.preconditionBiasPreview?.summary} />
           <Row label="focusBiasApplied" value={entry.focusBiasApplied} />

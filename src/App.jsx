@@ -741,6 +741,10 @@ const App = () => {
       const beliefLayerPreview = internalOS?.latentState?.belief ?? null;
       const preconditionFilterPreview = internalOS?.debugInfo?.preconditionFilterPreview ?? null;
       const preconditionBiasPreview = internalOS?.debugInfo?.preconditionBiasPreview ?? null;
+      const feltSensePreview = internalOS?.debugInfo?.feltSensePreview ?? null;
+      const speakIntentPreview = internalOS?.debugInfo?.speakIntentPreview ?? null;
+      const restraintPreview = internalOS?.debugInfo?.restraintPreview ?? null;
+      const decisionMetaPreview = internalOS?.debugInfo?.decisionMetaPreview ?? null;
 
       const vm = buildCompareViewModel({
         agentId,
@@ -757,6 +761,10 @@ const App = () => {
         beliefLayerPreview,
         preconditionFilterPreview,
         preconditionBiasPreview,
+        feltSensePreview,
+        speakIntentPreview,
+        restraintPreview,
+        decisionMetaPreview,
         focusBiasApplied: internalOS?.debugInfo?.focusBiasApplied ?? false,
         meaningBiasApplied: internalOS?.debugInfo?.meaningBiasApplied ?? false,
         identityBiasApplied: internalOS?.debugInfo?.identityBiasApplied ?? null,

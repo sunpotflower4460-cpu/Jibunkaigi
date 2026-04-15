@@ -54,6 +54,44 @@ const describeFocusHint = (preconditionBias = {}) => {
   return '';
 };
 
+const describeDecisionFocusHint = (decision = {}) => {
+  switch (decision?.intention?.focusTarget) {
+    case 'faint-thread':
+      return 'stay with the faint thread that is still alive';
+    case 'hidden-knot':
+      return 'touch the knot before trying to untie it';
+    case 'fragile-edge':
+      return 'stay near the fragile edge without pushing it';
+    case 'preverbal-edge':
+      return 'stay close to what is not fully said yet';
+    case 'unclosed-weight':
+      return 'keep contact with what is still unclosed';
+    case 'here-now':
+      return 'come back to what is here now';
+    default:
+      return '';
+  }
+};
+
+const describeDecisionSurfaceHint = (decision = {}) => {
+  switch (decision?.intention?.speakIntentKey) {
+    case 'touch_living_thread':
+      return 'touch the living thread before explaining it';
+    case 'name_hidden_knot':
+      return 'name the hidden knot without over-solving it';
+    case 'make_room_before_move':
+      return 'make room before asking for movement';
+    case 'stay_with_preverbal':
+      return 'stay with the preverbal edge before naming it';
+    case 'reflect_unclosed_weight':
+      return 'reflect the unclosed weight without wrapping it up';
+    case 'return_to_ground':
+      return 'return to ground before expanding the reply';
+    default:
+      return '';
+  }
+};
+
 export const pickDominantPatterns = (patternMix, limit = 2) => {
   if (!patternMix || typeof patternMix !== 'object') return [];
 
@@ -210,10 +248,13 @@ const buildSurfaceHint = (latentState = {}, dominantPatterns = [], isMirror = fa
   const field = latentState.field ?? {};
   const permission = latentState.permission ?? {};
   const preconditionBias = latentState.preconditionBias ?? {};
+  const decision = latentState.decision ?? {};
   const meaningHint = describeMeaningHintFromBeliefAxis(preconditionBias);
-  const focusHint = describeFocusHint(preconditionBias);
+  const focusHint = describeDecisionFocusHint(decision) || describeFocusHint(preconditionBias);
+  const decisionSurfaceHint = describeDecisionSurfaceHint(decision);
 
   if (isMirror) {
+    if (decisionSurfaceHint) return decisionSurfaceHint;
     if ((field.fragility ?? 0) >= 0.55) {
       return 'reflect gravity and unresolved points without forcing resolution';
     }
@@ -230,6 +271,10 @@ const buildSurfaceHint = (latentState = {}, dominantPatterns = [], isMirror = fa
 
   if (noOverExplain) {
     return 'touch lightly without explanation';
+  }
+
+  if (decisionSurfaceHint) {
+    return decisionSurfaceHint;
   }
 
   if (meaningHint && focusHint) {
@@ -271,9 +316,12 @@ export const buildSurfaceFrame = ({
   const permissionHints = summarizePermission(normalizedLatent.permission);
   const fieldHint = summarizeField(normalizedLatent.field);
   const afterglowHint = summarizeAfterglow(normalizedAfterglow);
-  const focusHint = describeFocusHint(normalizedLatent.preconditionBias);
+  const focusHint =
+    describeDecisionFocusHint(normalizedLatent.decision) ||
+    describeFocusHint(normalizedLatent.preconditionBias);
   const meaningHint = describeMeaningHintFromBeliefAxis(normalizedLatent.preconditionBias);
   const identityHint = describeIdentityHint(normalizedLatent.preconditionBias);
+  const decision = normalizedLatent.decision ?? {};
 
   // Mirror mode adjustments
   if (isMirror) {
@@ -296,6 +344,16 @@ export const buildSurfaceFrame = ({
     focusHint,
     meaningHint,
     identityHint,
+    speakIntentKey: decision?.intention?.speakIntentKey ?? null,
+    speakIntentText: decision?.intention?.speakIntentText ?? null,
+    touchDepth: clamp01(decision?.intention?.touchDepth ?? 0),
+    focusTarget: decision?.intention?.focusTarget ?? null,
+    restraint: {
+      holdBackSummary: clamp01(decision?.restraint?.holdBackSummary ?? 0),
+      holdBackSolution: clamp01(decision?.restraint?.holdBackSolution ?? 0),
+      holdBackExpansion: clamp01(decision?.restraint?.holdBackExpansion ?? 0),
+      keepSilenceMargin: clamp01(decision?.restraint?.keepSilenceMargin ?? 0),
+    },
     surfaceHint,
     afterglowHint,
     mirrorMode: isMirror,

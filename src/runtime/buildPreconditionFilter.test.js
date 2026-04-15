@@ -291,15 +291,20 @@ test('preconditionFilter ordering is confirmed by preconditionTrace in debugInfo
     'BeliefLeaf should precede buildFilter in trace'
   );
 
-  // buildFilter is the last precondition event
-  assert.equal(
-    trace.lastIndexOf('precondition:after-build-filter'),
-    trace.indexOf('precondition:after-build-filter'),
-    'precondition:after-build-filter should appear exactly once'
+  assert.ok(
+    trace.indexOf('precondition:after-build-filter') < trace.indexOf('precondition:after-precondition-bias'),
+    'buildFilter should precede preconditionBias in trace'
+  );
+  assert.ok(
+    trace.indexOf('precondition:after-precondition-bias') < trace.indexOf('precondition:after-belief-tension'),
+    'preconditionBias should precede beliefTension in trace'
+  );
+  assert.ok(
+    trace.indexOf('precondition:after-belief-tension') < trace.indexOf('precondition:after-decision'),
+    'beliefTension should precede decision in trace'
   );
 
   // preconditionFilter must be present in latentState after the chain
   assert.ok(result.latentState.preconditionFilter, 'preconditionFilter should be in latentState');
   assert.equal(result.debugInfo.preconditionFilterPresent, true);
 });
-

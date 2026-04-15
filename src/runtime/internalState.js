@@ -149,6 +149,32 @@ const createPreconditionBiasState = () => ({
   },
 });
 
+const createDecisionState = () => ({
+  feltSense: {
+    primaryFeeling: null,
+    secondaryFeeling: null,
+    tensionType: null,
+    tensionStrength: 0,
+  },
+  intention: {
+    speakIntentKey: null,
+    speakIntentText: null,
+    touchDepth: 0,
+    focusTarget: null,
+  },
+  restraint: {
+    holdBackSummary: 0,
+    holdBackSolution: 0,
+    holdBackExpansion: 0,
+    keepSilenceMargin: 0,
+  },
+  decisionMeta: {
+    identityAxis: null,
+    dominantBeliefAxis: null,
+    delegatedBy: null,
+  },
+});
+
 const createHomeState = () => ({
   kernel: {
     releaseHelpfulness: 0,
@@ -207,5 +233,6 @@ export function createInitialInternalState() {
     belief: createBeliefLayersState(),
     preconditionFilter: createPreconditionFilterState(),
     preconditionBias: createPreconditionBiasState(),
+    decision: createDecisionState(),
   };
 }

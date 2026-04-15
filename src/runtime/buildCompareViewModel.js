@@ -39,6 +39,10 @@ const openingKey = (text = '') => {
  * @param {object} [params.beliefTensionPreview] - Belief Tension Layer の開発用プレビュー (dev-only)
  * @param {object} [params.preconditionFilterPreview] - Precondition Filter の開発用プレビュー (dev-only)
  * @param {object} [params.preconditionBiasPreview] - Precondition Bias の開発用プレビュー (dev-only)
+ * @param {object} [params.feltSensePreview] - Decision Layer feltSense preview (dev-only)
+ * @param {object} [params.speakIntentPreview] - Decision Layer intention preview (dev-only)
+ * @param {object} [params.restraintPreview] - Decision Layer restraint preview (dev-only)
+ * @param {object} [params.decisionMetaPreview] - Decision Layer meta preview (dev-only)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -60,6 +64,10 @@ export const buildCompareViewModel = ({
   beliefTensionPreview = null,
   preconditionFilterPreview = null,
   preconditionBiasPreview = null,
+  feltSensePreview = null,
+  speakIntentPreview = null,
+  restraintPreview = null,
+  decisionMetaPreview = null,
   focusBiasApplied = false,
   meaningBiasApplied = false,
   identityBiasApplied = null,
@@ -232,6 +240,37 @@ export const buildCompareViewModel = ({
     },
   } : null
 
+  const normalizedFeltSensePreview = feltSensePreview ? {
+    summary: feltSensePreview.summary ?? '',
+    primaryFeeling: feltSensePreview.primaryFeeling ?? null,
+    secondaryFeeling: feltSensePreview.secondaryFeeling ?? null,
+    tensionType: feltSensePreview.tensionType ?? null,
+    tensionStrength: feltSensePreview.tensionStrength ?? 0,
+  } : null
+
+  const normalizedSpeakIntentPreview = speakIntentPreview ? {
+    summary: speakIntentPreview.summary ?? '',
+    speakIntentKey: speakIntentPreview.speakIntentKey ?? null,
+    speakIntentText: speakIntentPreview.speakIntentText ?? null,
+    touchDepth: speakIntentPreview.touchDepth ?? 0,
+    focusTarget: speakIntentPreview.focusTarget ?? null,
+  } : null
+
+  const normalizedRestraintPreview = restraintPreview ? {
+    summary: restraintPreview.summary ?? '',
+    holdBackSummary: restraintPreview.holdBackSummary ?? 0,
+    holdBackSolution: restraintPreview.holdBackSolution ?? 0,
+    holdBackExpansion: restraintPreview.holdBackExpansion ?? 0,
+    keepSilenceMargin: restraintPreview.keepSilenceMargin ?? 0,
+  } : null
+
+  const normalizedDecisionMetaPreview = decisionMetaPreview ? {
+    summary: decisionMetaPreview.summary ?? '',
+    identityAxis: decisionMetaPreview.identityAxis ?? null,
+    dominantBeliefAxis: decisionMetaPreview.dominantBeliefAxis ?? null,
+    delegatedBy: decisionMetaPreview.delegatedBy ?? null,
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -267,6 +306,10 @@ export const buildCompareViewModel = ({
     beliefTensionPreview: beliefTensionLayer,
     preconditionFilterPreview: preconditionPreview,
     preconditionBiasPreview: preconditionBiasLayer,
+    feltSensePreview: normalizedFeltSensePreview,
+    speakIntentPreview: normalizedSpeakIntentPreview,
+    restraintPreview: normalizedRestraintPreview,
+    decisionMetaPreview: normalizedDecisionMetaPreview,
     focusBiasApplied: Boolean(focusBiasApplied),
     meaningBiasApplied: Boolean(meaningBiasApplied),
     identityBiasApplied: identityBiasApplied ?? null,
@@ -286,6 +329,10 @@ export const buildCompareViewModel = ({
       hasBeliefTensionPreview: Boolean(beliefTensionLayer),
       hasPreconditionFilterPreview: Boolean(preconditionPreview),
       hasPreconditionBiasPreview: Boolean(preconditionBiasLayer),
+      hasFeltSensePreview: Boolean(normalizedFeltSensePreview),
+      hasSpeakIntentPreview: Boolean(normalizedSpeakIntentPreview),
+      hasRestraintPreview: Boolean(normalizedRestraintPreview),
+      hasDecisionMetaPreview: Boolean(normalizedDecisionMetaPreview),
     },
   }
 }
