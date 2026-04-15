@@ -1,31 +1,5 @@
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 
-const createEmptyDecisionState = () => ({
-  feltSense: {
-    primaryFeeling: null,
-    secondaryFeeling: null,
-    tensionType: null,
-    tensionStrength: 0,
-  },
-  intention: {
-    speakIntentKey: null,
-    speakIntentText: null,
-    touchDepth: 0,
-    focusTarget: null,
-  },
-  restraint: {
-    holdBackSummary: 0,
-    holdBackSolution: 0,
-    holdBackExpansion: 0,
-    keepSilenceMargin: 0,
-  },
-  decisionMeta: {
-    identityAxis: null,
-    dominantBeliefAxis: null,
-    delegatedBy: null,
-  },
-});
-
 const getStrongestTension = (beliefTension = {}) => {
   const tensions = Array.isArray(beliefTension?.activeTensions) ? beliefTension.activeTensions : [];
   return tensions.reduce(
@@ -145,7 +119,6 @@ export function createDecisionLayer({
   reaction = {},
   stance = {},
 } = {}) {
-  const empty = createEmptyDecisionState();
   const derived = preconditionFilter?.derived ?? {};
   const home = preconditionFilter?.home ?? {};
   const meaning = preconditionBias?.meaning ?? {};

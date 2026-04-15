@@ -355,7 +355,7 @@ export function runInternalOS(input, options = {}) {
     ? blendLatentState(previousLatentState, freshLatentState)
     : freshLatentState;
   const latentState = previousLatentState
-    ? { ...blendedBase, existence1, existence2 }
+    ? { ...blendedBase, existence1, existence2, beliefTension, decision }
     : freshLatentState;
 
   const biasForDebug = latentState.preconditionBias ?? preconditionBias;
