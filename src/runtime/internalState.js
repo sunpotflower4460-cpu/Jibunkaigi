@@ -163,6 +163,24 @@ const createHomeState = () => ({
   },
 });
 
+// Normalized top-level existence1: flattened shape derived from existenceLayer1 data
+const createExistence1State = () => ({
+  selfPresence: 0,
+  hereNowStability: 0,
+  unfinishedAllowed: 0,
+  firstPersonSoftness: 0,
+  existenceHintKey: null,
+  existenceHintText: null,
+});
+
+// Normalized top-level existence2: flattened shape derived from existenceLayer2 data
+const createExistence2State = () => ({
+  agentIdentityKey: null,
+  identityFeelingText: null,
+  recalledSelfTraits: [],
+  selfRememberingStrength: 0,
+});
+
 export function createInitialInternalState() {
   return {
     field: createFieldState(),
@@ -174,6 +192,8 @@ export function createInitialInternalState() {
       layer1: createExistenceLayer1State(),
       layer2: createExistenceLayer2State(),
     },
+    existence1: createExistence1State(),
+    existence2: createExistence2State(),
     beliefCore: createBeliefCoreState(),
     beliefBranch: createBeliefBranchState(),
     beliefLeaf: createBeliefLeafState(),

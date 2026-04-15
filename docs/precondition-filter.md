@@ -22,7 +22,22 @@ Maker Seed
 → Belief Branch Layer
 → Belief Leaf Layer
 → buildPreconditionFilter(...)   ← ここで前提層が閉じる
-→ 既存後段（field / reaction / stance / pattern / surface など）
+→ 既存後段（biased reaction / stance / home / existence / pattern / surface など）
+```
+
+この順番は `runInternalOS(...)` の内部でそのまま実行されます。
+`debugInfo.preconditionTrace` に以下のイベントが記録され、
+実際に前提層が上記の順に通ったことを confirm/debug で確認できます。
+
+```
+precondition:before-home
+precondition:after-home
+precondition:after-existence1
+precondition:after-existence2
+precondition:after-belief-core
+precondition:after-belief-branch
+precondition:after-belief-leaf
+precondition:after-build-filter
 ```
 
 ---
@@ -43,6 +58,41 @@ Maker Seed
 `preconditionFilter` の中にある文言や identity / belief は、
 ユーザー向け返答へそのまま出力しません。
 内側で染み込むだけです。
+
+---
+
+## internalState の拡張
+
+Phase 6 以降、`runInternalOS(...)` が返す `latentState` には以下の前提層フィールドが
+正規に保持されます。
+
+### 既存（後方互換）
+- `latentState.existence.layer1` — existenceLayer1 の生の出力
+- `latentState.existence.layer2` — existenceLayer2 の生の出力
+
+### 新規（前提層の正規フィールド）
+- `latentState.existence1` — existenceLayer1 から導出した正規フラット形
+- `latentState.existence2` — existenceLayer2 から導出した正規フラット形
+
+```ts
+type Existence1 = {
+  selfPresence: number            // [0,1]
+  hereNowStability: number        // [0,1] groundedHereNow + selfLocationStability の平均
+  unfinishedAllowed: number       // [0,1]
+  firstPersonSoftness: number     // [0,1]
+  existenceHintKey: string | null
+  existenceHintText: string | null
+}
+
+type Existence2 = {
+  agentIdentityKey: string | null
+  identityFeelingText: string | null
+  recalledSelfTraits: string[]
+  selfRememberingStrength: number  // [0,1]
+}
+```
+
+これらは afterglow ブレンドを経ても常にフレッシュな値で保たれます。
 
 ---
 
@@ -200,11 +250,45 @@ identityBiasApplied: creative-light-bearer
 }
 ```
 
+`debugInfo.preconditionTrace` に前提層の通過順が記録されます:
+
+```js
+[
+  "precondition:before-home",
+  "precondition:after-home",
+  "precondition:after-existence1",
+  "precondition:after-existence2",
+  "precondition:after-belief-core",
+  "precondition:after-belief-branch",
+  "precondition:after-belief-leaf",
+  "precondition:after-build-filter",
+]
+```
+
+`debugInfo.existence1Present / existence2Key / beliefCoreCount / beliefBranchCount /
+beliefLeafCount / preconditionFilterPresent` で各前提層の到達確認ができます。
+
 ---
 
 `debugInfo.preconditionBiasPreview` には Phase 7 の bias 要約が入り、
 `focusBiasApplied / meaningBiasApplied / identityBiasApplied` で
 どこへ効かせたかを最小限追えます。
+
+---
+
+## 現フェーズの位置づけ
+
+現在のフェーズでは **「前提層を本当に最初に通る主役層にすること」** が目的です。
+
+- Home が最初に通る
+- そのあと Existence Layer 1 / 2 が通る
+- そのあと Belief Core / Branch / Leaf が通る
+- buildPreconditionFilter で前提層が閉じる
+- その後に biased reaction / stance / home が通る（既存後段）
+
+まだ後段へ bias を深く染み込ませる「preconditionBias 本格実装フェーズ」には入っていません。
+次フェーズでは、この preconditionFilter / preconditionBias を素材選択・stateGuide・
+意思決定層へさらに深く接続します。
 
 ---
 
@@ -215,9 +299,9 @@ identityBiasApplied: creative-light-bearer
 | `src/runtime/buildPreconditionFilter.js` | 前提フィルタ構築関数 |
 | `src/runtime/buildPreconditionBias.js` | 後段向け bias object の構築 |
 | `src/runtime/buildPreconditionBias.test.js` | bias 構築の null-safe / shape テスト |
-| `src/runtime/buildPreconditionFilter.test.js` | テスト |
-| `src/runtime/internalState.js` | `preconditionFilter` の初期状態を追加 |
-| `src/runtime/runInternalOS.js` | 前提層の最後で `buildPreconditionFilter` / `buildPreconditionBias` を呼び出す |
+| `src/runtime/buildPreconditionFilter.test.js` | テスト（順序保証を含む） |
+| `src/runtime/internalState.js` | `existence1` / `existence2` / `preconditionFilter` の初期状態 |
+| `src/runtime/runInternalOS.js` | 前提層チェーンを主役順で実行し `preconditionTrace` を収集 |
 | `src/runtime/routerMixer.js` | 焦点選択へ oneThread / belief axis / trait bias を薄く反映 |
 | `src/runtime/surfaceTranslator.js` | meaning / identity / pacing bias を surface frame へ反映 |
 | `src/runtime/buildCompareViewModel.js` | `preconditionFilterPreview` / `preconditionBiasPreview` をサポート |
@@ -236,3 +320,4 @@ identityBiasApplied: creative-light-bearer
 
 現時点では全面置換ではなく、
 前提層が焦点 / 反応 / 意味づけ / 表層へ **軽く、でも確実に届く** 状態までを担います。
+

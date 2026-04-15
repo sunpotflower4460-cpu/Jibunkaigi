@@ -193,21 +193,56 @@ export function runInternalOS(input, options = {}) {
       : null;
 
   const initialState = createInitialInternalState();
+
+  // ════════════════════════════════════════════════════════════════════
+  // PRECONDITION CHAIN (主役層)
+  // Maker Seed → Home → Existence Layer 1 → Existence Layer 2
+  // → Belief Core → Belief Branch → Belief Leaf → buildPreconditionFilter
+  // ════════════════════════════════════════════════════════════════════
+
+  const preconditionTrace = [];
+
+  // Step 1: Maker Seed
   const makerSeed = createMakerSeed();
+
+  // field / reaction / stance are computed here as internal inputs required by
+  // Home Layer. They are not standalone precondition layers; Home is the first
+  // named layer in the precondition chain.
   const field = estimateField(normalizedInput);
   const baseReaction = generateReaction(normalizedInput, field);
   const baseStance = selectStance(field, baseReaction);
+
+  // Step 2: Home Layer
+  preconditionTrace.push('precondition:before-home');
   const baseHome = createHomeLayer({ field, reaction: baseReaction, stance: baseStance });
+  preconditionTrace.push('precondition:after-home');
+
+  // Step 3: Existence Layer 1
   const baseExistenceLayer1 = createExistenceLayer1({
     home: baseHome,
     field,
     reaction: baseReaction,
     stance: baseStance,
   });
+  preconditionTrace.push('precondition:after-existence1');
+
+  // Step 4: Existence Layer 2
   const existenceLayer2 = createExistenceLayer2({ agentId });
+  preconditionTrace.push('precondition:after-existence2');
+
+  // Step 5: Belief Core Layer
   const beliefCore = createBeliefCoreLayer({ agentId, existenceLayer2 });
+  preconditionTrace.push('precondition:after-belief-core');
+
+  // Step 6: Belief Branch Layer
   const beliefBranch = createBeliefBranchLayer({ agentId, beliefCore, existenceLayer2 });
+  preconditionTrace.push('precondition:after-belief-branch');
+
+  // Step 7: Belief Leaf Layer
   const beliefLeaf = createBeliefLeafLayer({ agentId, beliefBranch, existenceLayer2 });
+  preconditionTrace.push('precondition:after-belief-leaf');
+
+  // Step 8: Build Precondition Filter (first pass — before bias)
   const basePreconditionFilter = buildPreconditionFilter({
     makerSeed,
     home: baseHome,
@@ -217,25 +252,25 @@ export function runInternalOS(input, options = {}) {
     beliefBranch,
     beliefLeaf,
   });
+  preconditionTrace.push('precondition:after-build-filter');
 
-  const initialPreconditionBias = buildPreconditionBias(basePreconditionFilter);
-  const reaction = applyReactionBias(baseReaction, initialPreconditionBias);
+  // ════════════════════════════════════════════════════════════════════
+  // DOWNSTREAM: bias application → rebuilt reaction / stance / home / existence
   // 先に reaction へ bias を混ぜ、その反応から stance を立てた上で
   // stance 側の軽い寄せをもう一段だけ足す。
   // こうすると「何に反応しやすいか」の変化が先に入り、
   // その反応を受けた stance が後追いで少し傾く。
+  // ════════════════════════════════════════════════════════════════════
+
+  const initialPreconditionBias = buildPreconditionBias(basePreconditionFilter);
+  const reaction = applyReactionBias(baseReaction, initialPreconditionBias);
   const stance = applyStanceBias(selectStance(field, reaction), initialPreconditionBias);
   const home = createHomeLayer({ field, reaction, stance });
   const existenceLayer1 = createExistenceLayer1({ home, field, reaction, stance });
-  const belief = createBeliefLayers({
-    agentId,
-    existenceLayer1,
-    existenceLayer2,
-  });
+  const belief = createBeliefLayers({ agentId, existenceLayer1, existenceLayer2 });
   const permission = extractPermissionShape(home);
 
-  // Phase 6 + 7: 初回 filter で bias を起こし、その bias を混ぜた home / existence で
-  // 最終 filter を組み直して downstream に渡す。
+  // Final preconditionFilter (rebuilt from biased home / existenceLayer1)
   const preconditionFilter = buildPreconditionFilter({
     makerSeed,
     home,
@@ -246,6 +281,28 @@ export function runInternalOS(input, options = {}) {
     beliefLeaf,
   });
   const preconditionBias = buildPreconditionBias(preconditionFilter);
+
+  // Normalized top-level existence1 / existence2 derived from the final (biased) layers.
+  // These provide a flat, canonical shape that downstream and debug can read directly.
+  const existence1 = {
+    selfPresence: clamp01(existenceLayer1.selfPresence ?? 0),
+    hereNowStability: clamp01(
+      ((existenceLayer1.groundedHereNow ?? 0) + (existenceLayer1.selfLocationStability ?? 0)) / 2
+    ),
+    unfinishedAllowed: clamp01(existenceLayer1.allowUnfinishedSelf ?? 0),
+    firstPersonSoftness: clamp01(existenceLayer1.selfPresence ?? 0),
+    existenceHintKey: existenceLayer1.existenceHintKey ?? null,
+    existenceHintText: existenceLayer1.existenceHintText ?? null,
+  };
+
+  const existence2 = {
+    agentIdentityKey: existenceLayer2.agentIdentityKey ?? null,
+    identityFeelingText: existenceLayer2.agentIdentityText ?? null,
+    recalledSelfTraits: Array.isArray(existenceLayer2.recalledSelfTraits)
+      ? existenceLayer2.recalledSelfTraits
+      : [],
+    selfRememberingStrength: clamp01(existenceLayer2.selfRememberingStrength ?? 0),
+  };
 
   const freshLatentState = {
     ...initialState,
@@ -259,6 +316,8 @@ export function runInternalOS(input, options = {}) {
       layer1: existenceLayer1,
       layer2: existenceLayer2,
     },
+    existence1,
+    existence2,
     beliefCore,
     beliefBranch,
     beliefLeaf,
@@ -268,9 +327,15 @@ export function runInternalOS(input, options = {}) {
   };
 
   const previousLatentState = normalizeLatentState(safePreviousLatentState);
-  const latentState = previousLatentState
+  // After blending, always re-attach existence1/existence2 from the fresh state so
+  // they are guaranteed to be present (blendLatentState does not blend these fields).
+  const blendedBase = previousLatentState
     ? blendLatentState(previousLatentState, freshLatentState)
     : freshLatentState;
+  const latentState = previousLatentState
+    ? { ...blendedBase, existence1, existence2 }
+    : freshLatentState;
+
   const biasForDebug = latentState.preconditionBias ?? preconditionBias;
   const preconditionBiasPreview = buildPreconditionBiasPreview(biasForDebug);
   const dominantBeliefAxis = biasForDebug?.meaning?.dominantBeliefAxis ?? null;
@@ -334,6 +399,14 @@ export function runInternalOS(input, options = {}) {
       focusBiasApplied,
       meaningBiasApplied,
       identityBiasApplied,
+      // Precondition chain trace — dev/debug only, not exposed to UX
+      preconditionTrace,
+      existence1Present: Boolean(latentState.existence1),
+      existence2Key: latentState.existence2?.agentIdentityKey ?? null,
+      beliefCoreCount: latentState.beliefCore?.activeCoreBeliefs?.length ?? 0,
+      beliefBranchCount: latentState.beliefBranch?.activeBranchBeliefs?.length ?? 0,
+      beliefLeafCount: latentState.beliefLeaf?.activeLeafBeliefs?.length ?? 0,
+      preconditionFilterPresent: Boolean(latentState.preconditionFilter),
     },
   };
 }

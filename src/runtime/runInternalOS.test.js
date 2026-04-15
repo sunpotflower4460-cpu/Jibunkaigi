@@ -439,3 +439,110 @@ test('runInternalOS beliefBranchPreview in debugInfo is an array of ids', () => 
     result.debugInfo.dominantBranchAxis === null || typeof result.debugInfo.dominantBranchAxis === 'string'
   );
 });
+
+// ── Precondition chain trace tests ───────────────────────────────────────────
+
+test('runInternalOS preconditionTrace contains all expected events in order', () => {
+  const result = runInternalOS('やりたいのに動けない', { agentId: 'creative' });
+  const trace = result.debugInfo.preconditionTrace;
+
+  assert.ok(Array.isArray(trace), 'preconditionTrace should be an array');
+
+  const EXPECTED_EVENTS = [
+    'precondition:before-home',
+    'precondition:after-home',
+    'precondition:after-existence1',
+    'precondition:after-existence2',
+    'precondition:after-belief-core',
+    'precondition:after-belief-branch',
+    'precondition:after-belief-leaf',
+    'precondition:after-build-filter',
+  ];
+
+  for (const event of EXPECTED_EVENTS) {
+    assert.ok(trace.includes(event), `preconditionTrace should include "${event}"`);
+  }
+
+  // Verify ordering: each event must appear before the next
+  for (let i = 0; i < EXPECTED_EVENTS.length - 1; i++) {
+    const aIdx = trace.indexOf(EXPECTED_EVENTS[i]);
+    const bIdx = trace.indexOf(EXPECTED_EVENTS[i + 1]);
+    assert.ok(aIdx < bIdx, `"${EXPECTED_EVENTS[i]}" should appear before "${EXPECTED_EVENTS[i + 1]}"`);
+  }
+});
+
+test('runInternalOS latentState holds top-level existence1 with correct shape', () => {
+  const result = runInternalOS('最近ちょっと自信ない', { agentId: 'empath' });
+  const e1 = result.latentState.existence1;
+
+  assert.ok(e1, 'existence1 should be present in latentState');
+  for (const key of ['selfPresence', 'hereNowStability', 'unfinishedAllowed', 'firstPersonSoftness']) {
+    assert.equal(typeof e1[key], 'number', `existence1.${key} should be number`);
+    assert.ok(Number.isFinite(e1[key]), `existence1.${key} should be finite`);
+    assert.ok(e1[key] >= 0 && e1[key] <= 1, `existence1.${key} should be in [0,1]`);
+  }
+  assert.ok(e1.existenceHintKey === null || typeof e1.existenceHintKey === 'string');
+  assert.ok(e1.existenceHintText === null || typeof e1.existenceHintText === 'string');
+});
+
+test('runInternalOS latentState holds top-level existence2 with correct shape', () => {
+  for (const agentId of ['creative', 'strategist', 'empath', 'critic', 'soul', 'master']) {
+    const result = runInternalOS('test', { agentId });
+    const e2 = result.latentState.existence2;
+
+    assert.ok(e2, `${agentId}: existence2 should be present in latentState`);
+    assert.ok(e2.agentIdentityKey === null || typeof e2.agentIdentityKey === 'string',
+      `${agentId}: existence2.agentIdentityKey should be string or null`);
+    assert.ok(e2.identityFeelingText === null || typeof e2.identityFeelingText === 'string',
+      `${agentId}: existence2.identityFeelingText should be string or null`);
+    assert.ok(Array.isArray(e2.recalledSelfTraits),
+      `${agentId}: existence2.recalledSelfTraits should be array`);
+    assert.equal(typeof e2.selfRememberingStrength, 'number',
+      `${agentId}: existence2.selfRememberingStrength should be number`);
+    assert.ok(e2.selfRememberingStrength >= 0 && e2.selfRememberingStrength <= 1,
+      `${agentId}: existence2.selfRememberingStrength should be in [0,1]`);
+  }
+});
+
+test('runInternalOS debugInfo contains precondition layer summary fields', () => {
+  const result = runInternalOS('誰にも言っていない、小さな違和感', { agentId: 'soul' });
+  const di = result.debugInfo;
+
+  assert.equal(typeof di.existence1Present, 'boolean', 'existence1Present should be boolean');
+  assert.equal(di.existence1Present, true, 'existence1Present should be true');
+
+  assert.ok(di.existence2Key === null || typeof di.existence2Key === 'string',
+    'existence2Key should be string or null');
+
+  assert.equal(typeof di.beliefCoreCount, 'number', 'beliefCoreCount should be number');
+  assert.ok(di.beliefCoreCount >= 1, 'beliefCoreCount should be >= 1 for known agentId');
+
+  assert.equal(typeof di.beliefBranchCount, 'number', 'beliefBranchCount should be number');
+  assert.ok(di.beliefBranchCount >= 1, 'beliefBranchCount should be >= 1 for known agentId');
+
+  assert.equal(typeof di.beliefLeafCount, 'number', 'beliefLeafCount should be number');
+
+  assert.equal(typeof di.preconditionFilterPresent, 'boolean', 'preconditionFilterPresent should be boolean');
+  assert.equal(di.preconditionFilterPresent, true, 'preconditionFilterPresent should be true');
+});
+
+test('runInternalOS existence1 and existence2 survive afterglow blending', () => {
+  const previous = runInternalOS('やりたいのに動けない', { agentId: 'creative' });
+  const blended = runInternalOS('もう無理で諦めたい', {
+    agentId: 'creative',
+    previousLatentState: previous.latentState,
+  });
+
+  assert.ok(blended.latentState.existence1, 'existence1 should survive blending');
+  assert.ok(blended.latentState.existence2, 'existence2 should survive blending');
+  assert.equal(typeof blended.latentState.existence1.selfPresence, 'number');
+  assert.equal(typeof blended.latentState.existence2.selfRememberingStrength, 'number');
+  assert.equal(blended.debugInfo.usedAfterglow, true);
+});
+
+test('runInternalOS preconditionTrace is present even with no agentId', () => {
+  const result = runInternalOS('test', { agentId: null });
+  assert.ok(Array.isArray(result.debugInfo.preconditionTrace));
+  assert.ok(result.debugInfo.preconditionTrace.length >= 8, 'should have all 8 trace events');
+});
+

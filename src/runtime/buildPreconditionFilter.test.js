@@ -248,3 +248,58 @@ test('preconditionFilter is built from all precondition layers', () => {
   const bc = result.latentState.beliefCore;
   assert.equal(pf.belief.dominantCoreAxis, bc.dominantBeliefAxis);
 });
+
+// ── preconditionTrace: 前提層が Home → Existence → Belief → Filter の順に通る ─
+
+test('preconditionFilter ordering is confirmed by preconditionTrace in debugInfo', () => {
+  const result = runInternalOS('作品を出したいけど怖い', { agentId: 'creative' });
+  const trace = result.debugInfo.preconditionTrace;
+
+  assert.ok(Array.isArray(trace), 'preconditionTrace should be array');
+
+  // Home comes before Existence1
+  assert.ok(
+    trace.indexOf('precondition:after-home') < trace.indexOf('precondition:after-existence1'),
+    'Home should precede Existence1 in trace'
+  );
+
+  // Existence1 comes before Existence2
+  assert.ok(
+    trace.indexOf('precondition:after-existence1') < trace.indexOf('precondition:after-existence2'),
+    'Existence1 should precede Existence2 in trace'
+  );
+
+  // Existence2 comes before BeliefCore
+  assert.ok(
+    trace.indexOf('precondition:after-existence2') < trace.indexOf('precondition:after-belief-core'),
+    'Existence2 should precede BeliefCore in trace'
+  );
+
+  // BeliefCore → BeliefBranch → BeliefLeaf
+  assert.ok(
+    trace.indexOf('precondition:after-belief-core') < trace.indexOf('precondition:after-belief-branch'),
+    'BeliefCore should precede BeliefBranch in trace'
+  );
+  assert.ok(
+    trace.indexOf('precondition:after-belief-branch') < trace.indexOf('precondition:after-belief-leaf'),
+    'BeliefBranch should precede BeliefLeaf in trace'
+  );
+
+  // BeliefLeaf comes before buildFilter
+  assert.ok(
+    trace.indexOf('precondition:after-belief-leaf') < trace.indexOf('precondition:after-build-filter'),
+    'BeliefLeaf should precede buildFilter in trace'
+  );
+
+  // buildFilter is the last precondition event
+  assert.equal(
+    trace.lastIndexOf('precondition:after-build-filter'),
+    trace.indexOf('precondition:after-build-filter'),
+    'precondition:after-build-filter should appear exactly once'
+  );
+
+  // preconditionFilter must be present in latentState after the chain
+  assert.ok(result.latentState.preconditionFilter, 'preconditionFilter should be in latentState');
+  assert.equal(result.debugInfo.preconditionFilterPresent, true);
+});
+
