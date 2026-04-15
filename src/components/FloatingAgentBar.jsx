@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Sparkles, Compass, Flame, ChevronUp, ChevronDown, Users } from 'lucide-react';
+import { Sparkles, Compass, Flame, ChevronUp, ChevronDown, Users, Heart, ShieldAlert, X } from 'lucide-react';
 
 /**
- * FloatingAgentBar – Phase 3 実験版
+ * FloatingAgentBar – Phase 3 実験版（控えめ版）
  *
  * 会話が下に伸びたときに上部 agent bar まで戻らなくても
  * 同じ操作にアクセスできるようにする固定バー。
@@ -12,9 +12,13 @@ import { Sparkles, Compass, Flame, ChevronUp, ChevronDown, Users } from 'lucide-
  *   - activeSession がある かつ hasMessages が true
  *   - または compareModeEnabled / isDebugMode が true
  *   - または user が明示的に開いた (isOpen=true)
+ *
+ * 初期状態:
+ *   - デフォルトは折りたたみ (isOpen=false)
+ *   - 初回入力後に控えめに出現
+ *   - compare/debug 時でも最初から開かない
  */
 const FloatingAgentBar = ({
-  activeSessionId,
   hasMessages,
   canUseAgents,
   isGenerating,
@@ -28,16 +32,27 @@ const FloatingAgentBar = ({
   onScrollToOthers,
   agents = [],
 }) => {
-  // compare 中は最初から開いた状態にする
-  // debug panel 表示中は最小化して重なりを避ける
-  const [isOpen, setIsOpen] = useState(compareModeEnabled && !isDebugPanelVisible);
+  // 初期状態は常に折りたたみ（控えめに）
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasEverHadMessages, setHasEverHadMessages] = useState(false);
 
-  // 表示するかどうかの判定
+  // メッセージが来たことを記憶（初回入力後に表示開始）
+  // Note: Using ref to track state without triggering re-render
+  const hasMessagesRef = React.useRef(hasMessages);
+
+  // Update ref and state only when hasMessages changes from false to true
+  React.useEffect(() => {
+    if (hasMessages && !hasMessagesRef.current) {
+      hasMessagesRef.current = true;
+      setHasEverHadMessages(true);
+    }
+  }, [hasMessages]);
+
+  // 表示するかどうかの判定（初回入力後に出現）
   const shouldShow =
-    (!!activeSessionId && hasMessages) ||
+    hasEverHadMessages ||
     compareModeEnabled ||
-    isDebugMode ||
-    isOpen;
+    isDebugMode;
 
   if (!shouldShow) return null;
 
@@ -73,26 +88,26 @@ const FloatingAgentBar = ({
       >
         <button
           onClick={() => setIsOpen(true)}
-          aria-label="下部エージェント操作バーを開く"
-          title="エージェント操作を開く"
+          aria-label="視点を開く"
+          title="視点を開く"
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 4,
             padding: '4px 12px',
             borderRadius: 20,
-            background: 'rgba(30,41,59,0.75)',
-            color: '#e2e8f0',
+            background: 'rgba(30,41,59,0.65)',
+            color: '#cbd5e1',
             fontSize: 10,
             fontWeight: 700,
-            border: '1px solid rgba(255,255,255,0.12)',
+            border: '1px solid rgba(255,255,255,0.1)',
             cursor: 'pointer',
             backdropFilter: 'blur(10px)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
           }}
         >
           <ChevronUp size={12} />
-          エージェント
+          視点を開く
         </button>
       </div>
     );
@@ -120,11 +135,11 @@ const FloatingAgentBar = ({
           padding: '6px 10px',
           borderRadius: 20,
           background: compareModeEnabled || isDebugMode
-            ? 'rgba(30,41,59,0.88)'
-            : 'rgba(30,41,59,0.72)',
-          border: '1px solid rgba(255,255,255,0.12)',
+            ? 'rgba(30,41,59,0.78)'
+            : 'rgba(30,41,59,0.65)',
+          border: '1px solid rgba(255,255,255,0.08)',
           backdropFilter: 'blur(14px)',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
           overflowX: 'auto',
           whiteSpace: 'nowrap',
           msOverflowStyle: 'none',
@@ -167,23 +182,65 @@ const FloatingAgentBar = ({
           <span style={{ fontSize: 10, fontWeight: 800 }}>ジョー</span>
         </button>
 
-        {/* その他エージェント（first 2 from remaining agents） */}
-        {agents
-          .filter(a => a.id !== 'creative')
-          .slice(0, 2)
-          .map(a => (
-            <button
-              key={a.id}
-              onClick={() => onAgentClick(a.id)}
-              disabled={disabled}
-              aria-label={`${a.name}を呼び出す`}
-              title={a.name}
-              style={buttonStyle({ disabled, variant: 'light' })}
-            >
-              <span style={{ flexShrink: 0, display: 'flex' }}>{a.icon}</span>
-              <span style={{ fontSize: 10, fontWeight: 800 }}>{a.name}</span>
-            </button>
-          ))}
+        {/* レイ（soul） */}
+        {agents.find(a => a.id === 'soul') && (
+          <button
+            onClick={() => onAgentClick('soul')}
+            disabled={disabled}
+            aria-label="レイを呼び出す"
+            title="レイ"
+            style={buttonStyle({ disabled, variant: 'light' })}
+          >
+            <span style={{ flexShrink: 0, display: 'flex' }}>
+              {agents.find(a => a.id === 'soul').icon}
+            </span>
+            <span style={{ fontSize: 10, fontWeight: 800 }}>レイ</span>
+          </button>
+        )}
+
+        {/* ケン（strategist） */}
+        {agents.find(a => a.id === 'strategist') && (
+          <button
+            onClick={() => onAgentClick('strategist')}
+            disabled={disabled}
+            aria-label="ケンを呼び出す"
+            title="ケン"
+            style={buttonStyle({ disabled, variant: 'light' })}
+          >
+            <span style={{ flexShrink: 0, display: 'flex' }}>
+              {agents.find(a => a.id === 'strategist').icon}
+            </span>
+            <span style={{ fontSize: 10, fontWeight: 800 }}>ケン</span>
+          </button>
+        )}
+
+        {/* ミナ（empath） */}
+        {agents.find(a => a.id === 'empath') && (
+          <button
+            onClick={() => onAgentClick('empath')}
+            disabled={disabled}
+            aria-label="ミナを呼び出す"
+            title="ミナ"
+            style={buttonStyle({ disabled, variant: 'light' })}
+          >
+            <Heart size={12} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 10, fontWeight: 800 }}>ミナ</span>
+          </button>
+        )}
+
+        {/* サトウ（critic） */}
+        {agents.find(a => a.id === 'critic') && (
+          <button
+            onClick={() => onAgentClick('critic')}
+            disabled={disabled}
+            aria-label="サトウを呼び出す"
+            title="サトウ"
+            style={buttonStyle({ disabled, variant: 'light' })}
+          >
+            <ShieldAlert size={12} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 10, fontWeight: 800 }}>サトウ</span>
+          </button>
+        )}
 
         {/* OTHERS スクロール */}
         <button
@@ -201,11 +258,11 @@ const FloatingAgentBar = ({
         {/* たたむボタン */}
         <button
           onClick={() => setIsOpen(false)}
-          aria-label="下部エージェント操作バーをたたむ"
-          title="たたむ"
+          aria-label="閉じる"
+          title="閉じる"
           style={buttonStyle({ disabled: false, variant: 'ghost' })}
         >
-          <ChevronDown size={12} style={{ flexShrink: 0 }} />
+          <X size={12} style={{ flexShrink: 0 }} />
         </button>
       </div>
 

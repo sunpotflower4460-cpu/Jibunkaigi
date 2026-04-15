@@ -122,7 +122,7 @@ const JoePriorityChip = ({ priority }) => (
 const CompareModePanel = ({
   enabled,
   entries = [],
-  collapsed = false,
+  collapsed = true,
   onToggleCollapse,
   onCopy,
   onToggleLabel,
@@ -163,7 +163,10 @@ const CompareModePanel = ({
         <div className="flex items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex flex-col gap-0.5 min-w-0">
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-500">Compare Mode (dev)</p>
-            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-600">
+            <p className="text-[9px] text-slate-500 leading-relaxed mt-0.5">
+              Baseline と Current の差を見る開発用パネルです。Outer Guide は得失を短く比較します。ラベルは開発用メモです。
+            </p>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-600 mt-1">
               <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">{agentId || 'unknown'}</span>
               {summary?.mode && <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">mode: {summary.mode}</span>}
               {summary?.baselineLength !== undefined && summary?.currentLength !== undefined && (
@@ -192,8 +195,8 @@ const CompareModePanel = ({
             </button>
             <button
               type="button"
-              aria-label="Compare Mode パネルを折りたたむ"
-              title="折りたたむ"
+              aria-label="Compare Mode パネルを閉じる"
+              title={collapsed ? "比較を開く" : "閉じる"}
               onClick={onToggleCollapse}
               className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-white/70 transition-colors"
             >
