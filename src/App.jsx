@@ -700,6 +700,7 @@ const App = () => {
     sessionId,
     messageId,
     usedInternalOS,
+    internalOS,
   }) => {
     if (!isCompareModeEnabled) return;
     if (agentId !== 'creative') return; // Phase1: Joe 優先
@@ -734,6 +735,11 @@ const App = () => {
 
       if (activeSessionIdRef.current !== sessionId) return;
 
+      const makerSeedPreview = internalOS?.latentState?.makerSeed ?? null;
+      const homeLayerPreview = internalOS?.latentState?.home ?? null;
+      const existenceLayerPreview = internalOS?.latentState?.existence ?? null;
+      const beliefLayerPreview = internalOS?.latentState?.belief ?? null;
+
       const vm = buildCompareViewModel({
         agentId,
         userText,
@@ -743,6 +749,10 @@ const App = () => {
         currentUsesInternalOS: usedInternalOS,
         mode: selectedMode,
         revisionLabels,
+        makerSeedPreview,
+        homeLayerPreview,
+        existenceLayerPreview,
+        beliefLayerPreview,
       });
 
       if (!mountedRef.current) return;
@@ -1584,6 +1594,7 @@ const App = () => {
         sessionId,
         messageId: aiMsgId,
         usedInternalOS: !!continuityInternalOS,
+        internalOS: continuityInternalOS,
       });
 
       playSound('receive');

@@ -147,3 +147,30 @@ Compare bundle copy には最低限次を含めます。
 - Compare Panel のスマホ可読性
 - Joe の具体性回復
 - Joe のキャラ密度調整
+
+## 前提層のプレビュー
+
+Compare Mode では、以下の前提層の状態を開発用プレビューとして確認できる：
+
+### Maker Seed Preview
+- `makerSeedPreview.present` - Maker Seed が存在するか
+- `makerSeedPreview.text` - Maker Seed の文言
+- `makerSeedPreview.layer` - レイヤー名
+- `makerSeedPreview.position` - 位置（foundation）
+
+Maker Seed は Home Layer よりさらに下にある礎石層。作り手の心を置く最深部の基底層として機能する。
+
+### Home Layer Preview
+- `homePreview.kernel` - 固定核の値
+- `homePreview.softReasonKey` - 選ばれた理由のキー
+- `homePreview.softReasonDirection` - 理由の方向
+- `homePreview.outputLimits` - 出力制限の値
+
+### Existence Layer Preview
+- `existencePreview.layer1` - 存在層1の状態
+- `existencePreview.layer2` - 存在層2の状態（エージェント固有）
+
+### Belief Layer Preview
+- `beliefPreview.layer1` - 信念層1
+- `beliefPreview.layer2` - 信念層2
+- `beliefPreview.layer3` - 信念層3

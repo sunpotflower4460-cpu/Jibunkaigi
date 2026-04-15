@@ -29,6 +29,7 @@ const openingKey = (text = '') => {
  * @param {string} [params.outerGuide]
  * @param {boolean} [params.currentUsesInternalOS]
  * @param {string} [params.mode]
+ * @param {object} [params.makerSeedPreview] - Maker Seed の開発用プレビュー
  * @param {object} [params.homeLayerPreview] - Home Layer の開発用プレビュー
  * @param {object} [params.existenceLayerPreview] - Existence Layer の開発用プレビュー
  * @param {object} [params.beliefLayerPreview] - Belief Layer の開発用プレビュー
@@ -43,6 +44,7 @@ export const buildCompareViewModel = ({
   currentUsesInternalOS = false,
   mode = null,
   revisionLabels = [],
+  makerSeedPreview = null,
   homeLayerPreview = null,
   existenceLayerPreview = null,
   beliefLayerPreview = null,
@@ -80,6 +82,14 @@ export const buildCompareViewModel = ({
     joeObservationFlags,
   })
   const selectedRevisionLabels = normalizeRevisionLabels(revisionLabels)
+
+  // Maker Seed Preview (dev-only)
+  const makerSeedLayer = makerSeedPreview ? {
+    present: Boolean(makerSeedPreview.text),
+    text: makerSeedPreview.text ?? null,
+    layer: makerSeedPreview.layer ?? null,
+    position: makerSeedPreview.position ?? null,
+  } : null
 
   // Home Layer Preview (dev-only)
   const homePreview = homeLayerPreview ? {
@@ -150,6 +160,7 @@ export const buildCompareViewModel = ({
       selected: selectedRevisionLabels,
       suggested: suggestedRevisionLabels,
     },
+    makerSeedPreview: makerSeedLayer,
     homePreview,
     existencePreview,
     beliefPreview,
@@ -159,6 +170,7 @@ export const buildCompareViewModel = ({
       sameOpening,
       currentUsesInternalOS: Boolean(currentUsesInternalOS),
       mode,
+      hasMakerSeedPreview: Boolean(makerSeedLayer),
       hasHomePreview: Boolean(homePreview),
       hasExistencePreview: Boolean(existencePreview),
       hasBeliefPreview: Boolean(beliefPreview),
