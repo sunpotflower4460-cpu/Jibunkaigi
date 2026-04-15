@@ -106,6 +106,13 @@ const BELIEF_PATTERN_MAP = {
   mission: ['bright_focus', 'curious_probe', 'truth_gentle'],
 };
 
+/**
+ * recalledTraits から、相性のよい latent pattern id を薄く引く。
+ * regex は trait をざっくり cluster 化するための軽量マップで、固定ルールではない。
+ *
+ * @param {string[]} traits
+ * @returns {Set<string>}
+ */
 const resolveTraitPatternIds = (traits = []) => {
   const joined = traits.join(' ').toLowerCase();
   const ids = new Set();
@@ -132,6 +139,15 @@ const resolveTraitPatternIds = (traits = []) => {
   return ids;
 };
 
+/**
+ * preconditionBias に応じて latent pattern の倍率を返す。
+ * belief axis / recalled traits と相性のよい pattern を少し押し上げ、
+ * one-thread / anti-over-expansion が強い時は広がりすぎる pattern を少し抑える。
+ *
+ * @param {object} pattern
+ * @param {object} preconditionBias
+ * @returns {number}
+ */
 const preconditionPatternMultiplier = (pattern, preconditionBias = {}) => {
   const focus = preconditionBias?.focus ?? {};
   const meaning = preconditionBias?.meaning ?? {};

@@ -25,6 +25,13 @@ const mergeSignals = (base = {}, delta = {}) => {
   );
 };
 
+/**
+ * belief axis ごとの軽い reaction delta を返す。
+ * 数値は base reaction を置き換えず、重心だけ少し寄せるための微調整量。
+ *
+ * @param {string | null} axis
+ * @returns {Record<string, number>}
+ */
 const getAxisReactionDelta = (axis) => {
   switch (axis) {
     case 'illumination':
@@ -46,6 +53,13 @@ const getAxisReactionDelta = (axis) => {
   }
 };
 
+/**
+ * belief axis ごとの軽い stance delta を返す。
+ * 反応から立った stance を壊さず、見る方向だけを少し寄せる。
+ *
+ * @param {string | null} axis
+ * @returns {Record<string, number>}
+ */
 const getAxisStanceDelta = (axis) => {
   switch (axis) {
     case 'illumination':
@@ -67,6 +81,15 @@ const getAxisStanceDelta = (axis) => {
   }
 };
 
+/**
+ * preconditionBias を reaction に混ぜる。
+ * Home の急がなさ、Existence の存在感、Belief の軸を足し引きして
+ * 即応・即断・演技っぽさを少し弱める。
+ *
+ * @param {object} reaction
+ * @param {object} preconditionBias
+ * @returns {object}
+ */
 const applyReactionBias = (reaction = {}, preconditionBias = {}) => {
   const pacing = preconditionBias?.pacing ?? {};
   const focus = preconditionBias?.focus ?? {};
@@ -109,6 +132,14 @@ const applyReactionBias = (reaction = {}, preconditionBias = {}) => {
   });
 };
 
+/**
+ * reaction から立った stance に対して、preconditionBias 由来の軽い寄せを足す。
+ * 一点性・意味軸・存在感を重心として加えるだけで、既存 stance を全廃しない。
+ *
+ * @param {object} stance
+ * @param {object} preconditionBias
+ * @returns {object}
+ */
 const applyStanceBias = (stance = {}, preconditionBias = {}) => {
   const pacing = preconditionBias?.pacing ?? {};
   const focus = preconditionBias?.focus ?? {};

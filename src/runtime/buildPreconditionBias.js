@@ -5,6 +5,13 @@ const HOME_OUTPUT_ONE_THREAD_WEIGHT = 0.15;
 const NO_OVER_EXPANSION_WEIGHT = 0.6;
 const KEEP_ONE_THREAD_WEIGHT = 0.4;
 
+/**
+ * preconditionFilter.belief.* から downstream 向けの軽量 belief 配列を作る。
+ * raw text は落とし、id / axis / weight だけを残す。
+ *
+ * @param {Array<{id?: string, axis?: string, weight?: number}>} beliefs
+ * @returns {Array<{id: string, axis: string, weight: number}>}
+ */
 const normalizeBeliefs = (beliefs) => {
   if (!Array.isArray(beliefs)) return [];
 
@@ -18,6 +25,13 @@ const normalizeBeliefs = (beliefs) => {
     .filter((belief) => belief.id || belief.axis);
 };
 
+/**
+ * trait 配列を compare/debug と軽い focus bias に使える形へ正規化する。
+ * 空文字を落とし、重複を除く。
+ *
+ * @param {string[]} traits
+ * @returns {string[]}
+ */
 const normalizeTraits = (traits) => {
   if (!Array.isArray(traits)) return [];
 
@@ -35,6 +49,13 @@ const pickActiveAxes = (beliefs) => [...new Set(
     .map((belief) => belief.axis)
 )];
 
+/**
+ * 閉じた preconditionFilter から downstream が読みやすい bias object を作る。
+ * raw な identity / belief 文は持ち込まず、速度・一点性・意味軸・存在感に圧縮する。
+ *
+ * @param {object} preconditionFilter
+ * @returns {object}
+ */
 export function buildPreconditionBias(preconditionFilter = {}) {
   const home = preconditionFilter?.home ?? {};
   const kernel = home?.kernel ?? {};
@@ -93,6 +114,13 @@ export function buildPreconditionBias(preconditionFilter = {}) {
   };
 }
 
+/**
+ * compare/debug 用の軽量プレビューを返す。
+ * full bias object 全量ではなく、どこへ効くかが分かる最小限の shape に絞る。
+ *
+ * @param {object} preconditionBias
+ * @returns {object}
+ */
 export function buildPreconditionBiasPreview(preconditionBias = {}) {
   const pacing = preconditionBias?.pacing ?? {};
   const focus = preconditionBias?.focus ?? {};

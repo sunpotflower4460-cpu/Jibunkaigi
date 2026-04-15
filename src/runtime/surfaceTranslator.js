@@ -7,7 +7,7 @@ export const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 const STRONG_FOCUS_THRESHOLD = 0.72;
 const MODERATE_FOCUS_THRESHOLD = 0.45;
 
-const describeBeliefMeaningHint = (preconditionBias = {}) => {
+const describeMeaningHintFromBeliefAxis = (preconditionBias = {}) => {
   switch (preconditionBias?.meaning?.dominantBeliefAxis) {
     case 'illumination':
       return 'let one live angle come forward before explaining it';
@@ -210,7 +210,7 @@ const buildSurfaceHint = (latentState = {}, dominantPatterns = [], isMirror = fa
   const field = latentState.field ?? {};
   const permission = latentState.permission ?? {};
   const preconditionBias = latentState.preconditionBias ?? {};
-  const meaningHint = describeBeliefMeaningHint(preconditionBias);
+  const meaningHint = describeMeaningHintFromBeliefAxis(preconditionBias);
   const focusHint = describeFocusHint(preconditionBias);
 
   if (isMirror) {
@@ -272,7 +272,7 @@ export const buildSurfaceFrame = ({
   const fieldHint = summarizeField(normalizedLatent.field);
   const afterglowHint = summarizeAfterglow(normalizedAfterglow);
   const focusHint = describeFocusHint(normalizedLatent.preconditionBias);
-  const meaningHint = describeBeliefMeaningHint(normalizedLatent.preconditionBias);
+  const meaningHint = describeMeaningHintFromBeliefAxis(normalizedLatent.preconditionBias);
   const identityHint = describeIdentityHint(normalizedLatent.preconditionBias);
 
   // Mirror mode adjustments
