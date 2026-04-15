@@ -2,6 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  COMPARE_JOE_REVIEW_FIELDS,
+  COMPARE_QUALITY_DIMENSIONS,
   buildJoeObservationFlags,
   buildJoeReview,
   buildQualityDimensionList,
@@ -49,9 +51,17 @@ test('compare quality frame keeps fixed dimensions and joe review priorities', (
     joeObservationFlags,
   })
 
+  assert.deepEqual(
+    qualityDimensions.map((dimension) => dimension.key),
+    COMPARE_QUALITY_DIMENSIONS.map((dimension) => dimension.key),
+  )
   assert.equal(qualityDimensions.find((dimension) => dimension.key === 'naturalness')?.status, 'gained')
   assert.equal(qualityDimensions.find((dimension) => dimension.key === 'specificity')?.status, 'lost')
   assert.equal(qualityDimensions.find((dimension) => dimension.key === 'joeNess')?.status, 'lost')
+  assert.deepEqual(
+    joeReview.priorities.map((priority) => priority.key),
+    COMPARE_JOE_REVIEW_FIELDS.map((field) => field.key),
+  )
   assert.equal(joeReview.focus, 'strong')
   assert.equal(joeReview.grounding, 'grounded')
   assert.equal(joeReview.drift, 'okay')
@@ -74,6 +84,14 @@ test('compare revision labels are kept in local-only store shape', () => {
   })
 
   assert.deepEqual(restored['session-1:msg-1'], ['good-joe', 'too-thin'])
+})
+
+test('compare revision label store survives broken json', () => {
+  const restored = readCompareLabelStore({
+    storageGetter: () => '{broken json',
+  })
+
+  assert.deepEqual(restored, {})
 })
 
 test('compare copy bundle includes summary, quality frame, joe review, and labels', () => {

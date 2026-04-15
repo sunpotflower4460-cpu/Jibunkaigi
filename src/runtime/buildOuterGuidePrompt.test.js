@@ -13,7 +13,9 @@ test('outer guide prompt sharpens compare coaching output', () => {
   })
 
   assert.match(systemInstruction, /Outer Guide/)
+  assert.match(systemInstruction, /比較コーチ/)
   assert.match(systemInstruction, /採点や勝敗は決めない/)
+  assert.match(systemInstruction, /正解探しにしない/)
   assert.match(systemInstruction, /得たもの: \.\.\./)
   assert.match(systemInstruction, /失ったもの: \.\.\./)
   assert.match(systemInstruction, /改善提案: \.\.\./)
