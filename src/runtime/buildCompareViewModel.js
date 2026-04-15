@@ -36,6 +36,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.beliefCorePreview] - Belief Core Layer の開発用プレビュー (dev-only)
  * @param {object} [params.beliefBranchPreview] - Belief Branch Layer の開発用プレビュー (dev-only)
  * @param {object} [params.beliefLeafPreview] - Belief Leaf Layer の開発用プレビュー (dev-only)
+ * @param {object} [params.beliefTensionPreview] - Belief Tension Layer の開発用プレビュー (dev-only)
  * @param {object} [params.preconditionFilterPreview] - Precondition Filter の開発用プレビュー (dev-only)
  * @param {object} [params.preconditionBiasPreview] - Precondition Bias の開発用プレビュー (dev-only)
  * @returns {object}
@@ -56,6 +57,7 @@ export const buildCompareViewModel = ({
   beliefCorePreview = null,
   beliefBranchPreview = null,
   beliefLeafPreview = null,
+  beliefTensionPreview = null,
   preconditionFilterPreview = null,
   preconditionBiasPreview = null,
   focusBiasApplied = false,
@@ -195,6 +197,19 @@ export const buildCompareViewModel = ({
     oneLivingThreadBias: preconditionFilterPreview.oneLivingThreadBias ?? 0,
   } : null
 
+  // Belief Tension Preview (dev-only)
+  const beliefTensionLayer = beliefTensionPreview ? {
+    activeTensions: (beliefTensionPreview.activeTensions ?? []).map((t) => ({
+      beliefId: t.beliefId ?? null,
+      sourceLayer: t.sourceLayer ?? null,
+      tensionType: t.tensionType ?? null,
+      strength: t.strength ?? 0,
+      axis: t.axis ?? null,
+    })),
+    dominantTensionAxis: beliefTensionPreview.dominantTensionAxis ?? null,
+    totalTensionStrength: beliefTensionPreview.totalTensionStrength ?? 0,
+  } : null
+
   const preconditionBiasLayer = preconditionBiasPreview ? {
     summary: preconditionBiasPreview.summary ?? '',
     pacing: {
@@ -249,6 +264,7 @@ export const buildCompareViewModel = ({
     beliefCorePreview: beliefCoreLayer,
     beliefBranchPreview: beliefBranchLayer,
     beliefLeafPreview: beliefLeafLayer,
+    beliefTensionPreview: beliefTensionLayer,
     preconditionFilterPreview: preconditionPreview,
     preconditionBiasPreview: preconditionBiasLayer,
     focusBiasApplied: Boolean(focusBiasApplied),
@@ -267,6 +283,7 @@ export const buildCompareViewModel = ({
       hasBeliefCorePreview: Boolean(beliefCoreLayer),
       hasBeliefBranchPreview: Boolean(beliefBranchLayer),
       hasBeliefLeafPreview: Boolean(beliefLeafLayer),
+      hasBeliefTensionPreview: Boolean(beliefTensionLayer),
       hasPreconditionFilterPreview: Boolean(preconditionPreview),
       hasPreconditionBiasPreview: Boolean(preconditionBiasLayer),
     },

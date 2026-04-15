@@ -456,6 +456,7 @@ test('runInternalOS preconditionTrace contains all expected events in order', ()
     'precondition:after-belief-core',
     'precondition:after-belief-branch',
     'precondition:after-belief-leaf',
+    'precondition:after-belief-tension',
     'precondition:after-build-filter',
   ];
 
@@ -543,6 +544,57 @@ test('runInternalOS existence1 and existence2 survive afterglow blending', () =>
 test('runInternalOS preconditionTrace is present even with no agentId', () => {
   const result = runInternalOS('test', { agentId: null });
   assert.ok(Array.isArray(result.debugInfo.preconditionTrace));
-  assert.ok(result.debugInfo.preconditionTrace.length >= 8, 'should have all 8 trace events');
+  assert.ok(result.debugInfo.preconditionTrace.length >= 9, 'should have all 9 trace events');
+});
+
+test('runInternalOS latentState holds beliefTension with correct shape', () => {
+  const result = runInternalOS('なんとかしたい', { agentId: 'creative' });
+  const { beliefTension } = result.latentState;
+
+  assert.ok(beliefTension, 'beliefTension should exist');
+  assert.ok(Array.isArray(beliefTension.activeTensions), 'beliefTension.activeTensions should be array');
+  assert.ok(
+    beliefTension.dominantTensionAxis === null || typeof beliefTension.dominantTensionAxis === 'string',
+    'dominantTensionAxis should be string or null'
+  );
+  assert.ok(typeof beliefTension.totalTensionStrength === 'number', 'totalTensionStrength should be number');
+  assert.ok(beliefTension.totalTensionStrength >= 0, 'totalTensionStrength should be >= 0');
+});
+
+test('runInternalOS debugInfo exposes beliefTension preview fields', () => {
+  const result = runInternalOS('すぐに解決してほしい', { agentId: 'empath' });
+  const { debugInfo } = result;
+
+  assert.ok(Array.isArray(debugInfo.beliefTensionPreview), 'beliefTensionPreview should be array');
+  assert.ok(
+    debugInfo.dominantTensionAxis === null || typeof debugInfo.dominantTensionAxis === 'string',
+    'dominantTensionAxis should be string or null in debugInfo'
+  );
+  assert.ok(typeof debugInfo.totalTensionStrength === 'number', 'totalTensionStrength should be number in debugInfo');
+});
+
+test('runInternalOS debugInfo exposes activeBeliefCounts', () => {
+  const result = runInternalOS('もう限界です', { agentId: 'creative' });
+  const { debugInfo } = result;
+
+  assert.ok(debugInfo.activeBeliefCounts, 'activeBeliefCounts should exist');
+  assert.ok(typeof debugInfo.activeBeliefCounts.core === 'number', 'core count should be number');
+  assert.ok(typeof debugInfo.activeBeliefCounts.branch === 'number', 'branch count should be number');
+  assert.ok(typeof debugInfo.activeBeliefCounts.leaf === 'number', 'leaf count should be number');
+
+  // core <= 3, branch <= 5, leaf <= 10
+  assert.ok(debugInfo.activeBeliefCounts.core <= 3, 'core count should be <= 3');
+  assert.ok(debugInfo.activeBeliefCounts.branch <= 5, 'branch count should be <= 5');
+  assert.ok(debugInfo.activeBeliefCounts.leaf <= 10, 'leaf count should be <= 10');
+
+  // core < branch < leaf (in general for expanded profiles)
+  assert.ok(
+    debugInfo.activeBeliefCounts.core <= debugInfo.activeBeliefCounts.branch,
+    'core count should be <= branch count'
+  );
+  assert.ok(
+    debugInfo.activeBeliefCounts.branch <= debugInfo.activeBeliefCounts.leaf,
+    'branch count should be <= leaf count'
+  );
 });
 

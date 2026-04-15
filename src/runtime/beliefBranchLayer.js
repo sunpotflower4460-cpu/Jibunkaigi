@@ -12,6 +12,9 @@ const INDEX_DECAY_RATE = 0.02;
 const PARENT_WEIGHT_GAP = 0.04; // Core より少し軽くするための上限差
 const MIN_BRANCH_WEIGHT = 0.45;
 
+// 1ターンで前景化する Branch の最大本数
+const MAX_ACTIVE_BRANCH_COUNT = 5;
+
 /**
  * @param {{ id?: string, parentId?: string, textJa?: string, weight?: number, axis?: string }} belief
  * @param {{ parentWeight?: number | null, remembering?: number, index?: number }} options
@@ -37,9 +40,16 @@ const normalizeBranchBelief = (belief = {}, { parentWeight = null, remembering =
 /**
  * 信念層2（Branch Belief）を構築する。
  * Core から分岐し、前提フィルタとして後段に染み込ませる。
+ * 総数は多くてよいが、各ターンで前景化するのは上位 MAX_ACTIVE_BRANCH_COUNT 本のみ。
  *
  * @param {{ agentId?: string | null, beliefCore?: object, existenceLayer2?: object }} options
- * @returns {{ activeBranchBeliefs: Array<{id:string,parentId:string,textJa:string,weight:number,axis:string}>, dominantBranchAxis: string | null }}
+ * @returns {{
+ *   activeBranchBeliefs: Array<{id:string,parentId:string,textJa:string,weight:number,axis:string}>,
+ *   allBranchBeliefs: Array<{id:string,parentId:string,textJa:string,weight:number,axis:string}>,
+ *   dominantBranchAxis: string | null,
+ *   activeBranchCount: number,
+ *   totalBranchCount: number,
+ * }}
  */
 export function createBeliefBranchLayer({ agentId, beliefCore, existenceLayer2 } = {}) {
   const profile =
@@ -62,13 +72,18 @@ export function createBeliefBranchLayer({ agentId, beliefCore, existenceLayer2 }
     }
   }
 
-  const activeBranchBeliefs = profile.map((belief, index) =>
+  const allBranchBeliefs = profile.map((belief, index) =>
     normalizeBranchBelief(belief, {
       parentWeight: parentWeightMap.get(belief.parentId) ?? null,
       remembering,
       index,
     })
   );
+
+  // 前景化: weight 降順で上位 MAX_ACTIVE_BRANCH_COUNT 本のみを active に
+  const activeBranchBeliefs = [...allBranchBeliefs]
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, MAX_ACTIVE_BRANCH_COUNT);
 
   const dominant = activeBranchBeliefs.reduce(
     (best, b) => (b.weight > (best?.weight ?? -1) ? b : best),
@@ -78,6 +93,9 @@ export function createBeliefBranchLayer({ agentId, beliefCore, existenceLayer2 }
 
   return {
     activeBranchBeliefs,
+    allBranchBeliefs,
     dominantBranchAxis,
+    activeBranchCount: activeBranchBeliefs.length,
+    totalBranchCount: allBranchBeliefs.length,
   };
 }

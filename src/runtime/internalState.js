@@ -66,6 +66,12 @@ const createBeliefLeafState = () => ({
   dominantLeafAxis: null,
 });
 
+const createBeliefTensionState = () => ({
+  activeTensions: [],
+  dominantTensionAxis: null,
+  totalTensionStrength: 0,
+});
+
 const createPreconditionFilterState = () => ({
   makerSeedPresent: false,
   home: {
@@ -197,6 +203,7 @@ export function createInitialInternalState() {
     beliefCore: createBeliefCoreState(),
     beliefBranch: createBeliefBranchState(),
     beliefLeaf: createBeliefLeafState(),
+    beliefTension: createBeliefTensionState(),
     belief: createBeliefLayersState(),
     preconditionFilter: createPreconditionFilterState(),
     preconditionBias: createPreconditionBiasState(),

@@ -12,6 +12,9 @@ const INDEX_DECAY_RATE = 0.015;
 const PARENT_WEIGHT_GAP = 0.06; // Branch より更に軽くするための上限差
 const MIN_LEAF_WEIGHT = 0.20;
 
+// 1ターンで前景化する Leaf の最大本数
+const MAX_ACTIVE_LEAF_COUNT = 10;
+
 /**
  * @param {{ id?: string, parentId?: string, textJa?: string, weight?: number, axis?: string }} belief
  * @param {{ parentWeight?: number | null, remembering?: number, index?: number }} options
@@ -37,9 +40,16 @@ const normalizeLeafBelief = (belief = {}, { parentWeight = null, remembering = 0
 /**
  * 信念層3（Leaf Belief）を構築する。
  * Branch からさらに分岐し、最も軽く・最も数が多く・最も揺れやすい小さな傾きを前提フィルタとして作る。
+ * 総数は多くてよいが、各ターンで前景化するのは上位 MAX_ACTIVE_LEAF_COUNT 本のみ。
  *
  * @param {{ agentId?: string | null, beliefBranch?: object, existenceLayer2?: object }} options
- * @returns {{ activeLeafBeliefs: Array<{id:string,parentId:string,textJa:string,weight:number,axis:string}>, dominantLeafAxis: string | null }}
+ * @returns {{
+ *   activeLeafBeliefs: Array<{id:string,parentId:string,textJa:string,weight:number,axis:string}>,
+ *   allLeafBeliefs: Array<{id:string,parentId:string,textJa:string,weight:number,axis:string}>,
+ *   dominantLeafAxis: string | null,
+ *   activeLeafCount: number,
+ *   totalLeafCount: number,
+ * }}
  */
 export function createBeliefLeafLayer({ agentId, beliefBranch, existenceLayer2 } = {}) {
   const profile =
@@ -62,13 +72,18 @@ export function createBeliefLeafLayer({ agentId, beliefBranch, existenceLayer2 }
     }
   }
 
-  const activeLeafBeliefs = profile.map((belief, index) =>
+  const allLeafBeliefs = profile.map((belief, index) =>
     normalizeLeafBelief(belief, {
       parentWeight: parentWeightMap.get(belief.parentId) ?? null,
       remembering,
       index,
     })
   );
+
+  // 前景化: weight 降順で上位 MAX_ACTIVE_LEAF_COUNT 本のみを active に
+  const activeLeafBeliefs = [...allLeafBeliefs]
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, MAX_ACTIVE_LEAF_COUNT);
 
   const dominant = activeLeafBeliefs.reduce(
     (best, b) => (b.weight > (best?.weight ?? -1) ? b : best),
@@ -78,6 +93,9 @@ export function createBeliefLeafLayer({ agentId, beliefBranch, existenceLayer2 }
 
   return {
     activeLeafBeliefs,
+    allLeafBeliefs,
     dominantLeafAxis,
+    activeLeafCount: activeLeafBeliefs.length,
+    totalLeafCount: allLeafBeliefs.length,
   };
 }

@@ -15,6 +15,7 @@ import { createBeliefLeafLayer } from './beliefLeafLayer.js';
 import { createMakerSeed } from '../agents/shared/makerSeed.js';
 import { buildPreconditionFilter } from './buildPreconditionFilter.js';
 import { buildPreconditionBias, buildPreconditionBiasPreview } from './buildPreconditionBias.js';
+import { createBeliefTensionLayer } from './beliefTensionLayer.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 
@@ -242,7 +243,19 @@ export function runInternalOS(input, options = {}) {
   const beliefLeaf = createBeliefLeafLayer({ agentId, beliefBranch, existenceLayer2 });
   preconditionTrace.push('precondition:after-belief-leaf');
 
-  // Step 8: Build Precondition Filter (first pass — before bias)
+  // Step 8: Belief Tension Layer
+  // preconditionFilter / preconditionBias の前に tension を立てておく。
+  // active belief に対して入力文脈のズレ / 引っかかり / 守りたさを検出し、
+  // 後段の反応・焦点・意味づけを少し変えるための内的 state として保持する。
+  const beliefTension = createBeliefTensionLayer({
+    input: normalizedInput,
+    activeCoreBeliefs: beliefCore.activeCoreBeliefs ?? [],
+    activeBranchBeliefs: beliefBranch.activeBranchBeliefs ?? [],
+    activeLeafBeliefs: beliefLeaf.activeLeafBeliefs ?? [],
+  });
+  preconditionTrace.push('precondition:after-belief-tension');
+
+  // Step 9: Build Precondition Filter (first pass — before bias)
   const basePreconditionFilter = buildPreconditionFilter({
     makerSeed,
     home: baseHome,
@@ -321,6 +334,7 @@ export function runInternalOS(input, options = {}) {
     beliefCore,
     beliefBranch,
     beliefLeaf,
+    beliefTension,
     belief,
     preconditionFilter,
     preconditionBias,
@@ -406,6 +420,26 @@ export function runInternalOS(input, options = {}) {
       beliefCoreCount: latentState.beliefCore?.activeCoreBeliefs?.length ?? 0,
       beliefBranchCount: latentState.beliefBranch?.activeBranchBeliefs?.length ?? 0,
       beliefLeafCount: latentState.beliefLeaf?.activeLeafBeliefs?.length ?? 0,
+      beliefTotalBranchCount: latentState.beliefBranch?.totalBranchCount ?? 0,
+      beliefTotalLeafCount: latentState.beliefLeaf?.totalLeafCount ?? 0,
+      // belief active counts summary (dev-only)
+      activeBeliefCounts: {
+        core: latentState.beliefCore?.activeCoreBeliefs?.length ?? 0,
+        branch: latentState.beliefBranch?.activeBranchBeliefs?.length ?? 0,
+        leaf: latentState.beliefLeaf?.activeLeafBeliefs?.length ?? 0,
+      },
+      activeCorePreview: latentState.beliefCore?.activeCoreBeliefs?.map((b) => b.id) ?? [],
+      activeBranchPreview: latentState.beliefBranch?.activeBranchBeliefs?.map((b) => b.id) ?? [],
+      activeLeafPreview: latentState.beliefLeaf?.activeLeafBeliefs?.map((b) => b.id) ?? [],
+      // belief tension (dev-only)
+      beliefTensionPreview: (latentState.beliefTension?.activeTensions ?? []).map((t) => ({
+        beliefId: t.beliefId,
+        tensionType: t.tensionType,
+        strength: t.strength,
+        axis: t.axis,
+      })),
+      dominantTensionAxis: latentState.beliefTension?.dominantTensionAxis ?? null,
+      totalTensionStrength: latentState.beliefTension?.totalTensionStrength ?? 0,
       preconditionFilterPresent: Boolean(latentState.preconditionFilter),
     },
   };

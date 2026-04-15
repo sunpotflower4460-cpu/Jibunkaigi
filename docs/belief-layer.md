@@ -561,20 +561,45 @@ vm.beliefBranchPreview = {
 
 ---
 
-## 今回やらないこと
+## 信念密度の拡張と active belief 制限（Phase 5）
 
-- 信念層2（中程度の分岐信念）
-- 信念層3（弱い枝葉信念）
-- belief の自動更新
-- 後段への全面的な染み込み
-- buildPrompt の大規模短縮
+### 原則: 多く持つ、少なく通す
 
-今回は信念層1だけに集中している。
+信念は「毎回全部を前景化しない」設計に移行した。
+
+- **Core**: 少数のまま（1〜3本）、重さと安定を保つ
+- **Branch**: 2〜3倍に拡張（プロファイルあたり 7 本）、各ターンは上位 5 本のみ前景化
+- **Leaf**: 2倍に拡張（プロファイルあたり 12 本）、各ターンは上位 10 本のみ前景化
+
+```
+信念の総数：多くてよい
+前景化する数：Core ≦ 3 / Branch ≦ 5 / Leaf ≦ 10
+前景化されなかった信念：state に保持するが後段には強く渡さない
+```
+
+### active belief の選択方法
+
+重み（weight）降順でソートし、上限本数だけ `activeBranchBeliefs` / `activeLeafBeliefs` に入れる。  
+`allBranchBeliefs` / `allLeafBeliefs` には全信念を保持しているが、後段に強く渡すのは `active` 側のみ。
+
+### compare/debug で見えるもの
+
+- `activeBeliefCounts` — `{ core, branch, leaf }` の前景化本数
+- `activeCorePreview` / `activeBranchPreview` / `activeLeafPreview` — 前景化した id リスト
+- `beliefTotalBranchCount` / `beliefTotalLeafCount` — 全信念の総数
+- `beliefTensionPreview` — tension 一覧
+- `dominantTensionAxis` / `totalTensionStrength` — tension の重心と総強度
 
 ---
 
-## 次の Phase 4（信念層2）へどう繋がるか
+## 信念 tension 層（BeliefTensionLayer）
 
-Phase 4 では、信念層1（強固な核）の上に**信念層2（中程度の分岐信念）**を追加する。
+詳細は `docs/belief-tension.md` を参照。
 
-信念層1が「変わらない核」であるのに対し、信念層2は「状況によって重みが変わる、やや柔軟な信念」である。信念層1の `dominantBeliefAxis` を信念層2の重み付けに使うことができる。
+前景化した active belief に対して、入力文脈の中の「ズレ / 引っかかり / 守りたさ / 引かれ」を検出し、後段が少し反応しやすくなるための内的 state を構築する。
+
+```
+preconditionFilter / preconditionBias と並んで後段が読める位置に置かれる。
+返答にそのまま出さない。後段の反応・焦点・意味づけを少し変えるための内的 state。
+```
+
