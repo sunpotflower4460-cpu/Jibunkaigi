@@ -1,6 +1,6 @@
-# Compare Mode (開発用)
+# Compare Mode (開発用 / dev-only)
 
-Compare Mode は、Baseline と Current をただ並べるためではなく、品質改善の判断材料を短く揃えるための開発ビューです。特にジョーの調整で、自然さを保ちながら薄くしすぎていないかを見るために使います。
+Compare Mode は、Baseline と Current をただ並べるためではなく、品質改善の判断材料を短く揃えるための開発ビューです。実機の最終調整前に、ジョー品質や比較観察を揃えて見るための dev-only 機能として使います。
 
 ## 有効化
 - クエリ: `?compareMode=1`
@@ -10,6 +10,7 @@ Compare Mode は、Baseline と Current をただ並べるためではなく、�
 - Baseline / Current / Outer Guide の違いを一目で見る
 - Current が何を得て何を失ったかを短く固定フォーマットで残す
 - 次のジョー品質調整や issue 化へ、そのまま持ち込める比較メモを作る
+- OTHERS を比較対象群として並べ、返答の差分を観察しやすくする
 
 ## パネルの見方
 Compare Panel は次の順で見る想定です。
@@ -34,7 +35,9 @@ Compare Panel は次の順で見る想定です。
 - **Current**: 現行の本命パイプライン。今の品質改善対象。
 - **Outer Guide**: Baseline と Current の得失を短く言語化する比較コーチ。採点係ではない。
 
-## Outer Guide の前提
+Compare の役割は「勝ち負けを決めること」ではなく、Current の改善判断をしやすくすることです。
+
+## Outer Guide の固定観点
 Outer Guide は必ず次の 3 行へ寄せます。
 
 - `得たもの: ...`
@@ -47,6 +50,7 @@ Outer Guide は次をしません。
 - 点数化
 - 「Baseline の方が良い」などの断定
 - 長い講評
+- 正解探し
 
 役割は、Current が何を得て何を失ったかを短く言語化し、改善の入口を 1 つだけ渡すことです。
 
@@ -89,7 +93,7 @@ Compare Mode ではこれを短い `Joe watch` にまとめます。
 - `Joe drift`: okay / too-soft / too-explanatory / mixed
 
 ## Revision Labels
-Revision Labels は local only の開発用ラベルです。Firestore には保存しません。
+Revision Labels は local only の開発用ラベルです。`localStorage` にだけ保持し、Firestore には保存しません。
 
 利用するラベル:
 
@@ -131,3 +135,15 @@ Compare bundle copy には最低限次を含めます。
 - 本番 UX 用ではなく開発観察専用
 - Compare の見やすさを上げ、改善判断を速くするための道具
 - 特にジョーの「自然さを保つ / でも薄くしすぎない / 一点の強さを戻す / キャラ密度を保つ」を追うための足場
+
+## OTHERS との関係
+- OTHERS は「他 voice の比較対象群」です。勝敗表示ではありません。
+- Compare Mode 中は、差が見えること自体を優先して安定表示します。
+- OTHERS を見る目的は、Current の輪郭やドリフトを相対的に観察することです。
+
+## 手動確認後に詰める TODO
+- OTHERS の最終安定化
+- FloatingAgentBar の実機での邪魔さ確認
+- Compare Panel のスマホ可読性
+- Joe の具体性回復
+- Joe のキャラ密度調整
