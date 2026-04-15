@@ -66,6 +66,51 @@ const createBeliefLeafState = () => ({
   dominantLeafAxis: null,
 });
 
+const createPreconditionFilterState = () => ({
+  makerSeedPresent: false,
+  home: {
+    kernel: {
+      releaseHelpfulness: 0,
+      releaseAccuracyPressure: 0,
+      slowDown: 0,
+      returnBeforeOutput: 0,
+      allowOneLivingThread: 0,
+    },
+    reasonText: null,
+    outputLimits: {
+      noEarlySummary: 0,
+      noEarlySolution: 0,
+      noOverExpansion: 0,
+      keepOneThread: 0,
+    },
+  },
+  existence: {
+    selfPresence: 0,
+    hereNowStability: 0,
+    unfinishedAllowed: 0,
+    firstPersonSoftness: 0,
+    agentIdentityKey: null,
+    identityFeelingText: null,
+    recalledSelfTraits: [],
+    selfRememberingStrength: 0,
+  },
+  belief: {
+    activeCoreBeliefs: [],
+    activeBranchBeliefs: [],
+    activeLeafBeliefs: [],
+    dominantCoreAxis: null,
+    dominantBranchAxis: null,
+    dominantLeafAxis: null,
+  },
+  derived: {
+    identityAxis: null,
+    dominantBeliefAxis: null,
+    oneLivingThreadBias: 0,
+    slowingBias: 0,
+    returnBias: 0,
+  },
+});
+
 const createHomeState = () => ({
   kernel: {
     releaseHelpfulness: 0,
@@ -101,5 +146,6 @@ export function createInitialInternalState() {
     beliefBranch: createBeliefBranchState(),
     beliefLeaf: createBeliefLeafState(),
     belief: createBeliefLayersState(),
+    preconditionFilter: createPreconditionFilterState(),
   };
 }

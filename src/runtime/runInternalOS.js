@@ -13,6 +13,7 @@ import { createBeliefCoreLayer } from './beliefCoreLayer.js';
 import { createBeliefBranchLayer } from './beliefBranchLayer.js';
 import { createBeliefLeafLayer } from './beliefLeafLayer.js';
 import { createMakerSeed } from '../agents/shared/makerSeed.js';
+import { buildPreconditionFilter } from './buildPreconditionFilter.js';
 
 export function runInternalOS(input, options = {}) {
   const normalizedInput = typeof input === 'string' ? input : '';
@@ -48,6 +49,17 @@ export function runInternalOS(input, options = {}) {
   });
   const permission = extractPermissionShape(home);
 
+  // Phase 6: 前提層を閉じて preconditionFilter を構築する
+  const preconditionFilter = buildPreconditionFilter({
+    makerSeed,
+    home,
+    existenceLayer1,
+    existenceLayer2,
+    beliefCore,
+    beliefBranch,
+    beliefLeaf,
+  });
+
   const freshLatentState = {
     ...initialState,
     makerSeed,
@@ -64,6 +76,7 @@ export function runInternalOS(input, options = {}) {
     beliefBranch,
     beliefLeaf,
     belief,
+    preconditionFilter,
   };
 
   const previousLatentState = normalizeLatentState(safePreviousLatentState);
@@ -105,6 +118,16 @@ export function runInternalOS(input, options = {}) {
       dominantBranchAxis: latentState.beliefBranch?.dominantBranchAxis ?? null,
       beliefLeafPreview: latentState.beliefLeaf?.activeLeafBeliefs?.slice(0, 3).map((b) => b.id) ?? [],
       dominantLeafAxis: latentState.beliefLeaf?.dominantLeafAxis ?? null,
+      preconditionFilterPreview: latentState.preconditionFilter
+        ? {
+            present: latentState.preconditionFilter.makerSeedPresent,
+            identityAxis: latentState.preconditionFilter.derived?.identityAxis ?? null,
+            dominantBeliefAxis: latentState.preconditionFilter.derived?.dominantBeliefAxis ?? null,
+            slowingBias: latentState.preconditionFilter.derived?.slowingBias ?? 0,
+            returnBias: latentState.preconditionFilter.derived?.returnBias ?? 0,
+            oneLivingThreadBias: latentState.preconditionFilter.derived?.oneLivingThreadBias ?? 0,
+          }
+        : null,
     },
   };
 }
