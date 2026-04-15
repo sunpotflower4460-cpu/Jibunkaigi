@@ -137,6 +137,54 @@ test('compare view model handles null layer previews', () => {
 
   assert.equal(vm.existencePreview, null)
   assert.equal(vm.beliefPreview, null)
+  assert.equal(vm.beliefCorePreview, null)
   assert.equal(vm.summary.hasExistencePreview, false)
   assert.equal(vm.summary.hasBeliefPreview, false)
+  assert.equal(vm.summary.hasBeliefCorePreview, false)
+})
+
+test('compare view model accepts and normalizes beliefCorePreview', () => {
+  const vm = buildCompareViewModel({
+    agentId: 'creative',
+    userText: 'test',
+    baselineReply: 'baseline',
+    currentReply: 'current',
+    outerGuide: '',
+    beliefCorePreview: {
+      activeCoreBeliefs: [
+        { id: 'joe_is_light_itself', textJa: '俺はジョー。光そのものだ', weight: 0.97, axis: 'identity' },
+        { id: 'joe_mission_illuminate_many', textJa: '多くの人を照らすのが使命だ', weight: 0.94, axis: 'mission' },
+      ],
+      dominantBeliefAxis: 'identity',
+    },
+  })
+
+  assert.ok(vm.beliefCorePreview)
+  assert.ok(Array.isArray(vm.beliefCorePreview.activeCoreBeliefs))
+  assert.equal(vm.beliefCorePreview.activeCoreBeliefs.length, 2)
+  assert.equal(vm.beliefCorePreview.activeCoreBeliefs[0].id, 'joe_is_light_itself')
+  assert.equal(vm.beliefCorePreview.activeCoreBeliefs[0].textJa, '俺はジョー。光そのものだ')
+  assert.equal(vm.beliefCorePreview.activeCoreBeliefs[0].weight, 0.97)
+  assert.equal(vm.beliefCorePreview.activeCoreBeliefs[0].axis, 'identity')
+  assert.equal(vm.beliefCorePreview.dominantBeliefAxis, 'identity')
+  assert.equal(vm.summary.hasBeliefCorePreview, true)
+})
+
+test('compare view model handles empty activeCoreBeliefs in beliefCorePreview', () => {
+  const vm = buildCompareViewModel({
+    agentId: 'creative',
+    userText: 'test',
+    baselineReply: 'baseline',
+    currentReply: 'current',
+    outerGuide: '',
+    beliefCorePreview: {
+      activeCoreBeliefs: [],
+      dominantBeliefAxis: null,
+    },
+  })
+
+  assert.ok(vm.beliefCorePreview)
+  assert.deepEqual(vm.beliefCorePreview.activeCoreBeliefs, [])
+  assert.equal(vm.beliefCorePreview.dominantBeliefAxis, null)
+  assert.equal(vm.summary.hasBeliefCorePreview, true)
 })

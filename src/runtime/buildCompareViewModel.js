@@ -33,6 +33,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.homeLayerPreview] - Home Layer の開発用プレビュー
  * @param {object} [params.existenceLayerPreview] - Existence Layer の開発用プレビュー
  * @param {object} [params.beliefLayerPreview] - Belief Layer の開発用プレビュー
+ * @param {object} [params.beliefCorePreview] - Belief Core Layer の開発用プレビュー (dev-only)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -48,6 +49,7 @@ export const buildCompareViewModel = ({
   homeLayerPreview = null,
   existenceLayerPreview = null,
   beliefLayerPreview = null,
+  beliefCorePreview = null,
 } = {}) => {
   const baseline = normalize(baselineReply)
   const current = normalize(currentReply)
@@ -137,6 +139,17 @@ export const buildCompareViewModel = ({
     })),
   } : null
 
+  // Belief Core Layer Preview (dev-only)
+  const beliefCoreLayer = beliefCorePreview ? {
+    activeCoreBeliefs: (beliefCorePreview.activeCoreBeliefs ?? []).map(b => ({
+      id: b.id ?? null,
+      textJa: b.textJa ?? null,
+      weight: b.weight ?? null,
+      axis: b.axis ?? null,
+    })),
+    dominantBeliefAxis: beliefCorePreview.dominantBeliefAxis ?? null,
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -166,6 +179,7 @@ export const buildCompareViewModel = ({
     homePreview,
     existencePreview,
     beliefPreview,
+    beliefCorePreview: beliefCoreLayer,
     summary: {
       baselineLength: baseline.length,
       currentLength: current.length,
@@ -176,6 +190,7 @@ export const buildCompareViewModel = ({
       hasHomePreview: Boolean(homePreview),
       hasExistencePreview: Boolean(existencePreview),
       hasBeliefPreview: Boolean(beliefPreview),
+      hasBeliefCorePreview: Boolean(beliefCoreLayer),
     },
   }
 }
