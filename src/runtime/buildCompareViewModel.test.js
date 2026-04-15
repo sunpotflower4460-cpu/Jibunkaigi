@@ -75,3 +75,68 @@ test('joe compare view model emits joe review priorities and suggested labels', 
   assert.ok(vm.suggestedRevisionLabels.includes('too-thin'))
   assert.ok(vm.suggestedRevisionLabels.includes('too-explanatory'))
 })
+
+test('compare view model accepts and normalizes layer previews', () => {
+  const vm = buildCompareViewModel({
+    agentId: 'creative',
+    userText: 'test',
+    baselineReply: 'baseline',
+    currentReply: 'current',
+    outerGuide: '',
+    existenceLayerPreview: {
+      layer1: {
+        selfPresence: 0.5,
+        selfLocationStability: 0.6,
+        groundedHereNow: 0.55,
+        allowUnfinishedSelf: 0.7,
+        existenceHintKey: 'test-hint',
+      },
+      layer2: {
+        agentIdentityKey: 'creative-light-bearer',
+        agentIdentityText: 'test identity',
+        recalledSelfTraits: ['trait1', 'trait2'],
+        selfRememberingStrength: 0.8,
+      },
+    },
+    beliefLayerPreview: {
+      layer1: [
+        { id: 'core-1', text: 'Core belief 1', weight: 0.9 },
+        { id: 'core-2', text: 'Core belief 2', weight: 0.85 },
+      ],
+      layer2: [{ id: 'mid-1', text: 'Mid belief', weight: 0.5 }],
+      layer3: [{ id: 'soft-1', text: 'Soft belief', weight: 0.3 }],
+    },
+  })
+
+  assert.ok(vm.existencePreview)
+  assert.equal(vm.existencePreview.layer1.selfPresence, 0.5)
+  assert.equal(vm.existencePreview.layer1.existenceHintKey, 'test-hint')
+  assert.equal(vm.existencePreview.layer2.agentIdentityKey, 'creative-light-bearer')
+  assert.deepEqual(vm.existencePreview.layer2.recalledSelfTraits, ['trait1', 'trait2'])
+
+  assert.ok(vm.beliefPreview)
+  assert.equal(vm.beliefPreview.layer1.length, 2)
+  assert.equal(vm.beliefPreview.layer1[0].id, 'core-1')
+  assert.equal(vm.beliefPreview.layer1[0].text, 'Core belief 1')
+  assert.equal(vm.beliefPreview.layer1[0].weight, 0.9)
+  assert.equal(vm.beliefPreview.layer2.length, 1)
+  assert.equal(vm.beliefPreview.layer3.length, 1)
+
+  assert.equal(vm.summary.hasExistencePreview, true)
+  assert.equal(vm.summary.hasBeliefPreview, true)
+})
+
+test('compare view model handles null layer previews', () => {
+  const vm = buildCompareViewModel({
+    agentId: 'creative',
+    userText: 'test',
+    baselineReply: 'baseline',
+    currentReply: 'current',
+    outerGuide: '',
+  })
+
+  assert.equal(vm.existencePreview, null)
+  assert.equal(vm.beliefPreview, null)
+  assert.equal(vm.summary.hasExistencePreview, false)
+  assert.equal(vm.summary.hasBeliefPreview, false)
+})
