@@ -191,6 +191,8 @@ export function runInternalOS(input, options = {}) {
   const reaction = applyReactionBias(baseReaction, initialPreconditionBias);
   // 先に reaction へ bias を混ぜ、その反応から stance を立てた上で
   // stance 側の軽い寄せをもう一段だけ足す。
+  // こうすると「何に反応しやすいか」の変化が先に入り、
+  // その反応を受けた stance が後追いで少し傾く。
   const stance = applyStanceBias(selectStance(field, reaction), initialPreconditionBias);
   const home = createHomeLayer({ field, reaction, stance });
   const existenceLayer1 = createExistenceLayer1({ home, field, reaction, stance });

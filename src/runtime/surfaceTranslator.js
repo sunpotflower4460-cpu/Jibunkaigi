@@ -4,6 +4,8 @@
 // 各 agent に渡せる短い共通 surface frame に変換する
 
 export const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+const STRONG_FOCUS_THRESHOLD = 0.72;
+const MODERATE_FOCUS_THRESHOLD = 0.45;
 
 const describeBeliefMeaningHint = (preconditionBias = {}) => {
   switch (preconditionBias?.meaning?.dominantBeliefAxis) {
@@ -42,10 +44,10 @@ const describeIdentityHint = (preconditionBias = {}) => {
 const describeFocusHint = (preconditionBias = {}) => {
   const focus = preconditionBias?.focus ?? {};
 
-  if ((focus.oneThreadBias ?? 0) >= 0.72 || (focus.antiOverExpansion ?? 0) >= 0.72) {
+  if ((focus.oneThreadBias ?? 0) >= STRONG_FOCUS_THRESHOLD || (focus.antiOverExpansion ?? 0) >= STRONG_FOCUS_THRESHOLD) {
     return 'stay with one living thread';
   }
-  if ((focus.oneThreadBias ?? 0) >= 0.45) {
+  if ((focus.oneThreadBias ?? 0) >= MODERATE_FOCUS_THRESHOLD) {
     return 'do not fan out too early';
   }
 

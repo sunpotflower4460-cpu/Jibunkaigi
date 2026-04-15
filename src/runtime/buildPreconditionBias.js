@@ -1,4 +1,9 @@
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+const DERIVED_ONE_THREAD_WEIGHT = 0.65;
+const HOME_KERNEL_ONE_THREAD_WEIGHT = 0.2;
+const HOME_OUTPUT_ONE_THREAD_WEIGHT = 0.15;
+const NO_OVER_EXPANSION_WEIGHT = 0.6;
+const KEEP_ONE_THREAD_WEIGHT = 0.4;
 
 const normalizeBeliefs = (beliefs) => {
   if (!Array.isArray(beliefs)) return [];
@@ -44,9 +49,9 @@ export function buildPreconditionBias(preconditionFilter = {}) {
 
   const slowDown = clamp01(Math.max(kernel.slowDown ?? 0, derived.slowingBias ?? 0));
   const oneThreadBias = clamp01(
-    ((derived.oneLivingThreadBias ?? 0) * 0.65) +
-    ((kernel.allowOneLivingThread ?? 0) * 0.2) +
-    ((outputLimits.keepOneThread ?? 0) * 0.15)
+    ((derived.oneLivingThreadBias ?? 0) * DERIVED_ONE_THREAD_WEIGHT) +
+    ((kernel.allowOneLivingThread ?? 0) * HOME_KERNEL_ONE_THREAD_WEIGHT) +
+    ((outputLimits.keepOneThread ?? 0) * HOME_OUTPUT_ONE_THREAD_WEIGHT)
   );
 
   return {
@@ -57,8 +62,8 @@ export function buildPreconditionBias(preconditionFilter = {}) {
     focus: {
       oneThreadBias,
       antiOverExpansion: clamp01(
-        ((outputLimits.noOverExpansion ?? 0) * 0.6) +
-        ((outputLimits.keepOneThread ?? 0) * 0.4)
+        ((outputLimits.noOverExpansion ?? 0) * NO_OVER_EXPANSION_WEIGHT) +
+        ((outputLimits.keepOneThread ?? 0) * KEEP_ONE_THREAD_WEIGHT)
       ),
       keepOneThread: clamp01(outputLimits.keepOneThread),
     },

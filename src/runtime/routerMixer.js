@@ -1,6 +1,10 @@
 import { LATENT_PATTERNS } from './patternLibrary.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
+const AXIS_PREFERENCE_BOOST = 0.08;
+const TRAIT_PREFERENCE_BOOST = 0.06;
+const MIN_PATTERN_MULTIPLIER = 0.72;
+const FOCUS_TIGHTENING_THRESHOLD = 0.68;
 
 const normalizeVector = (vector = {}) => Object.fromEntries(
   Object.entries(vector)
@@ -137,8 +141,8 @@ const preconditionPatternMultiplier = (pattern, preconditionBias = {}) => {
 
   let multiplier = 1;
 
-  if (preferredFromAxis.has(pattern.id)) multiplier += 0.08;
-  if (preferredFromTraits.has(pattern.id)) multiplier += 0.06;
+  if (preferredFromAxis.has(pattern.id)) multiplier += AXIS_PREFERENCE_BOOST;
+  if (preferredFromTraits.has(pattern.id)) multiplier += TRAIT_PREFERENCE_BOOST;
 
   if ((focus.oneThreadBias ?? 0) >= 0.45 && pattern.id === 'curious_probe') {
     multiplier -= (focus.oneThreadBias ?? 0) * 0.12;
@@ -148,7 +152,7 @@ const preconditionPatternMultiplier = (pattern, preconditionBias = {}) => {
     multiplier -= (focus.antiOverExpansion ?? 0) * 0.08;
   }
 
-  return Math.max(0.72, multiplier);
+  return Math.max(MIN_PATTERN_MULTIPLIER, multiplier);
 };
 
 export function mixLatentPatterns(latentState = {}, options = {}) {
@@ -184,8 +188,8 @@ export function mixLatentPatterns(latentState = {}, options = {}) {
   const focus = preconditionBias?.focus ?? {};
   const requestedTopK = Math.min(Math.max(options.topK ?? 4, 3), 5);
   const shouldTightenFocus =
-    (focus.oneThreadBias ?? 0) >= 0.68 ||
-    (focus.antiOverExpansion ?? 0) >= 0.68;
+    (focus.oneThreadBias ?? 0) >= FOCUS_TIGHTENING_THRESHOLD ||
+    (focus.antiOverExpansion ?? 0) >= FOCUS_TIGHTENING_THRESHOLD;
   const targetCount = Math.min(Math.max(requestedTopK - (shouldTightenFocus ? 1 : 0), 3), 5);
 
   while (selected.length < targetCount && selected.length < scoredPatterns.length) {
