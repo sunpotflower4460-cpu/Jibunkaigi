@@ -124,7 +124,7 @@ test('dominantBeliefAxis corresponds to the highest-weight belief axis', () => {
 
 // ── existenceLayer2 selfRememberingStrength influences weight ─────────────
 
-test('higher selfRememberingStrength produces higher weights', () => {
+test('higher selfRememberingStrength produces higher total weights', () => {
   const low = createBeliefCoreLayer({
     agentId: 'creative',
     existenceLayer2: { selfRememberingStrength: 0.1 },
@@ -136,7 +136,7 @@ test('higher selfRememberingStrength produces higher weights', () => {
 
   const lowSum = low.activeCoreBeliefs.reduce((s, b) => s + b.weight, 0);
   const highSum = high.activeCoreBeliefs.reduce((s, b) => s + b.weight, 0);
-  assert.ok(highSum >= lowSum, 'higher remembering should produce higher or equal total weight');
+  assert.ok(highSum > lowSum, 'higher remembering should produce strictly higher total weight');
 });
 
 // ── default profile ───────────────────────────────────────────────────────
