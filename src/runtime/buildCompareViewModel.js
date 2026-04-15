@@ -30,6 +30,8 @@ const openingKey = (text = '') => {
  * @param {boolean} [params.currentUsesInternalOS]
  * @param {string} [params.mode]
  * @param {object} [params.homeLayerPreview] - Home Layer の開発用プレビュー
+ * @param {object} [params.existenceLayerPreview] - Existence Layer の開発用プレビュー
+ * @param {object} [params.beliefLayerPreview] - Belief Layer の開発用プレビュー
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -42,6 +44,8 @@ export const buildCompareViewModel = ({
   mode = null,
   revisionLabels = [],
   homeLayerPreview = null,
+  existenceLayerPreview = null,
+  beliefLayerPreview = null,
 } = {}) => {
   const baseline = normalize(baselineReply)
   const current = normalize(currentReply)
@@ -85,6 +89,42 @@ export const buildCompareViewModel = ({
     outputLimits: homeLayerPreview.outputLimits ?? null,
   } : null
 
+  // Existence Layer Preview (dev-only)
+  const existencePreview = existenceLayerPreview ? {
+    layer1: {
+      selfPresence: existenceLayerPreview.layer1?.selfPresence ?? null,
+      selfLocationStability: existenceLayerPreview.layer1?.selfLocationStability ?? null,
+      groundedHereNow: existenceLayerPreview.layer1?.groundedHereNow ?? null,
+      allowUnfinishedSelf: existenceLayerPreview.layer1?.allowUnfinishedSelf ?? null,
+      existenceHintKey: existenceLayerPreview.layer1?.existenceHintKey ?? null,
+    },
+    layer2: {
+      agentIdentityKey: existenceLayerPreview.layer2?.agentIdentityKey ?? null,
+      agentIdentityText: existenceLayerPreview.layer2?.agentIdentityText ?? null,
+      recalledSelfTraits: existenceLayerPreview.layer2?.recalledSelfTraits ?? [],
+      selfRememberingStrength: existenceLayerPreview.layer2?.selfRememberingStrength ?? null,
+    },
+  } : null
+
+  // Belief Layer Preview (dev-only)
+  const beliefPreview = beliefLayerPreview ? {
+    layer1: (beliefLayerPreview.layer1 ?? []).map(b => ({
+      id: b.id ?? null,
+      text: b.text ?? null,
+      weight: b.weight ?? null,
+    })),
+    layer2: (beliefLayerPreview.layer2 ?? []).map(b => ({
+      id: b.id ?? null,
+      text: b.text ?? null,
+      weight: b.weight ?? null,
+    })),
+    layer3: (beliefLayerPreview.layer3 ?? []).map(b => ({
+      id: b.id ?? null,
+      text: b.text ?? null,
+      weight: b.weight ?? null,
+    })),
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -111,6 +151,8 @@ export const buildCompareViewModel = ({
       suggested: suggestedRevisionLabels,
     },
     homePreview,
+    existencePreview,
+    beliefPreview,
     summary: {
       baselineLength: baseline.length,
       currentLength: current.length,
@@ -118,6 +160,8 @@ export const buildCompareViewModel = ({
       currentUsesInternalOS: Boolean(currentUsesInternalOS),
       mode,
       hasHomePreview: Boolean(homePreview),
+      hasExistencePreview: Boolean(existencePreview),
+      hasBeliefPreview: Boolean(beliefPreview),
     },
   }
 }

@@ -144,6 +144,8 @@ const CompareModePanel = ({
     revisionLabels = [],
     suggestedRevisionLabels = [],
     labels = {},
+    existencePreview = null,
+    beliefPreview = null,
   } = latest || {}
 
   const selectedLabels = labels.selected || revisionLabels
@@ -287,6 +289,99 @@ const CompareModePanel = ({
                 </div>
               </div>
             </div>
+
+            {(existencePreview || beliefPreview) && (
+              <div className="px-4 sm:px-6 pb-4">
+                <div className="rounded-2xl border border-violet-100 bg-violet-50/30 px-4 py-3.5 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-violet-600">Layer Preview (dev)</p>
+
+                  {existencePreview && (
+                    <div className="mt-3">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-violet-500 mb-2">Existence Layers</p>
+                      <div className="space-y-2">
+                        {existencePreview.layer1 && (
+                          <div className="rounded-lg border border-violet-100 bg-white/60 px-3 py-2">
+                            <p className="text-[8px] font-black uppercase tracking-wide text-violet-400 mb-1">Layer 1 (共通)</p>
+                            <div className="grid grid-cols-2 gap-2 text-[10px]">
+                              <div><span className="text-slate-500">存在感:</span> <span className="font-semibold text-slate-700">{existencePreview.layer1.selfPresence?.toFixed(2) ?? '-'}</span></div>
+                              <div><span className="text-slate-500">位置安定:</span> <span className="font-semibold text-slate-700">{existencePreview.layer1.selfLocationStability?.toFixed(2) ?? '-'}</span></div>
+                              <div><span className="text-slate-500">今ここ:</span> <span className="font-semibold text-slate-700">{existencePreview.layer1.groundedHereNow?.toFixed(2) ?? '-'}</span></div>
+                              <div><span className="text-slate-500">未完成OK:</span> <span className="font-semibold text-slate-700">{existencePreview.layer1.allowUnfinishedSelf?.toFixed(2) ?? '-'}</span></div>
+                            </div>
+                            {existencePreview.layer1.existenceHintKey && (
+                              <p className="mt-2 text-[9px] text-violet-600 font-medium">hint: {existencePreview.layer1.existenceHintKey}</p>
+                            )}
+                          </div>
+                        )}
+                        {existencePreview.layer2 && (
+                          <div className="rounded-lg border border-violet-100 bg-white/60 px-3 py-2">
+                            <p className="text-[8px] font-black uppercase tracking-wide text-violet-400 mb-1">Layer 2 (固有)</p>
+                            <div className="text-[10px] space-y-1">
+                              <div><span className="text-slate-500">identity:</span> <span className="font-semibold text-slate-700">{existencePreview.layer2.agentIdentityKey ?? '-'}</span></div>
+                              <div><span className="text-slate-500">想起強度:</span> <span className="font-semibold text-slate-700">{existencePreview.layer2.selfRememberingStrength?.toFixed(2) ?? '-'}</span></div>
+                              {existencePreview.layer2.recalledSelfTraits?.length > 0 && (
+                                <div className="mt-1">
+                                  <span className="text-slate-500">traits:</span>
+                                  <div className="mt-1 flex flex-wrap gap-1">
+                                    {existencePreview.layer2.recalledSelfTraits.map((trait, i) => (
+                                      <span key={i} className="px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 text-[9px] font-medium">{trait}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {beliefPreview && (
+                    <div className="mt-3">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-violet-500 mb-2">Belief Layers</p>
+                      <div className="space-y-2">
+                        {beliefPreview.layer1?.length > 0 && (
+                          <div className="rounded-lg border border-violet-100 bg-white/60 px-3 py-2">
+                            <p className="text-[8px] font-black uppercase tracking-wide text-violet-400 mb-1">Layer 1 (強固)</p>
+                            <div className="space-y-1">
+                              {beliefPreview.layer1.map((belief, i) => (
+                                <div key={i} className="text-[10px]">
+                                  <span className="text-slate-500 font-mono">{belief.weight?.toFixed(2)}:</span> <span className="text-slate-700 font-medium">{belief.text || belief.id}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {beliefPreview.layer2?.length > 0 && (
+                          <div className="rounded-lg border border-violet-100 bg-white/60 px-3 py-2">
+                            <p className="text-[8px] font-black uppercase tracking-wide text-violet-400 mb-1">Layer 2 (中)</p>
+                            <div className="space-y-1">
+                              {beliefPreview.layer2.map((belief, i) => (
+                                <div key={i} className="text-[10px]">
+                                  <span className="text-slate-500 font-mono">{belief.weight?.toFixed(2)}:</span> <span className="text-slate-700 font-medium">{belief.text || belief.id}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {beliefPreview.layer3?.length > 0 && (
+                          <div className="rounded-lg border border-violet-100 bg-white/60 px-3 py-2">
+                            <p className="text-[8px] font-black uppercase tracking-wide text-violet-400 mb-1">Layer 3 (弱)</p>
+                            <div className="space-y-1">
+                              {beliefPreview.layer3.map((belief, i) => (
+                                <div key={i} className="text-[10px]">
+                                  <span className="text-slate-500 font-mono">{belief.weight?.toFixed(2)}:</span> <span className="text-slate-700 font-medium">{belief.text || belief.id}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
