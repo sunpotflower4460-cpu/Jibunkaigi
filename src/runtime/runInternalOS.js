@@ -11,6 +11,7 @@ import { createExistenceLayer2 } from './existenceLayer2.js';
 import { createBeliefLayers } from './beliefLayers.js';
 import { createBeliefCoreLayer } from './beliefCoreLayer.js';
 import { createBeliefBranchLayer } from './beliefBranchLayer.js';
+import { createBeliefLeafLayer } from './beliefLeafLayer.js';
 import { createMakerSeed } from '../agents/shared/makerSeed.js';
 
 export function runInternalOS(input, options = {}) {
@@ -39,6 +40,7 @@ export function runInternalOS(input, options = {}) {
   const existenceLayer2 = createExistenceLayer2({ agentId });
   const beliefCore = createBeliefCoreLayer({ agentId, existenceLayer2 });
   const beliefBranch = createBeliefBranchLayer({ agentId, beliefCore, existenceLayer2 });
+  const beliefLeaf = createBeliefLeafLayer({ agentId, beliefBranch, existenceLayer2 });
   const belief = createBeliefLayers({
     agentId,
     existenceLayer1,
@@ -60,6 +62,7 @@ export function runInternalOS(input, options = {}) {
     },
     beliefCore,
     beliefBranch,
+    beliefLeaf,
     belief,
   };
 
@@ -100,6 +103,8 @@ export function runInternalOS(input, options = {}) {
       dominantBeliefAxis: latentState.beliefCore?.dominantBeliefAxis ?? null,
       beliefBranchPreview: latentState.beliefBranch?.activeBranchBeliefs?.slice(0, 2).map((b) => b.id) ?? [],
       dominantBranchAxis: latentState.beliefBranch?.dominantBranchAxis ?? null,
+      beliefLeafPreview: latentState.beliefLeaf?.activeLeafBeliefs?.slice(0, 3).map((b) => b.id) ?? [],
+      dominantLeafAxis: latentState.beliefLeaf?.dominantLeafAxis ?? null,
     },
   };
 }
