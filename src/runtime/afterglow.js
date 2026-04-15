@@ -74,6 +74,11 @@ const normalizeLatentState = (state) => {
     permission: normalizeVector(state.permission),
   };
 
+  // Preserve makerSeed if it exists
+  if (state.makerSeed && typeof state.makerSeed === 'object') {
+    normalized.makerSeed = state.makerSeed;
+  }
+
   // Preserve home layer if it exists
   if (state.home && typeof state.home === 'object') {
     normalized.home = state.home;
@@ -99,6 +104,7 @@ const normalizeLatentState = (state) => {
     (normalized.reaction && Object.keys(normalized.reaction).length > 0) ||
     (normalized.stance && Object.keys(normalized.stance).length > 0) ||
     (normalized.permission && Object.keys(normalized.permission).length > 0) ||
+    Boolean(normalized.makerSeed) ||
     Boolean(normalized.home) ||
     Boolean(normalized.existence) ||
     Boolean(normalized.belief);
@@ -174,6 +180,11 @@ const blendLatentState = (previousState, currentState) => {
     stance: blendVector(prev.stance, current.stance),
     permission: blendVector(prev.permission, current.permission),
   };
+
+  // Always use current makerSeed (makerSeed is a constant foundation)
+  if (current.makerSeed) {
+    blended.makerSeed = current.makerSeed;
+  }
 
   // Always use current home layer (home is regenerated fresh each time)
   if (current.home) {

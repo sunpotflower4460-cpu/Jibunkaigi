@@ -131,10 +131,17 @@ const assertNumericShape = (result) => {
 
   assert.ok(distinctGroups.size >= 2);
   assert.ok(Math.abs(weightTotal - 1) < 0.01);
-  assert.equal(result.debugInfo.version, 'existence-belief-v1');
+  assert.equal(result.debugInfo.version, 'maker-seed-v1');
+  assert.equal(result.debugInfo.makerSeedActive, true);
   assert.equal(result.debugInfo.homeLayerActive, true);
   assert.ok(Array.isArray(result.debugInfo.beliefLensKeys));
   assert.ok(result.debugInfo.beliefLensKeys.length >= 1);
+
+  // Maker Seed presence
+  assert.ok(latent.makerSeed);
+  assert.equal(typeof latent.makerSeed.text, 'string');
+  assert.equal(latent.makerSeed.layer, 'maker-seed');
+  assert.equal(latent.makerSeed.position, 'foundation');
 };
 
 for (const input of [
