@@ -10,7 +10,7 @@ const BASE_WEIGHT_MULTIPLIER = 0.52;
 const REMEMBERING_INFLUENCE = 0.12;
 const INDEX_DECAY_RATE = 0.015;
 const PARENT_WEIGHT_GAP = 0.06; // Branch より更に軽くするための上限差
-const MIN_LEAF_WEIGHT = 0.28;
+const MIN_LEAF_WEIGHT = 0.20;
 
 /**
  * @param {{ id?: string, parentId?: string, textJa?: string, weight?: number, axis?: string }} belief
