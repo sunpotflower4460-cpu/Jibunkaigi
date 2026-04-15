@@ -34,9 +34,15 @@ export const buildMirrorSurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('説明しすぎず、映すだけでいい');
   }
+  if (surfaceFrame.focusHint) {
+    hints.push(surfaceFrame.focusHint);
+  }
+  if (surfaceFrame.meaningHint) {
+    hints.push(surfaceFrame.meaningHint);
+  }
 
   if (hints.length > 0) {
-    return `\n【表層傾向】${hints.slice(0, 3).join('。')}。`;
+    return `\n【表層傾向】${hints.slice(0, 4).join('。')}。`;
   }
   return '';
 };

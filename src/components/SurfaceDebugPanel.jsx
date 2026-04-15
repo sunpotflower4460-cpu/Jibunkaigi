@@ -46,7 +46,14 @@ const EntryCard = ({ entry, index }) => {
           <Row label="directness" value={entry.directness} />
           <Row label="emotionalTemperature" value={entry.emotionalTemperature} />
           <Row label="fieldHint" value={entry.fieldHint} />
+          <Row label="focusHint" value={entry.focusHint} />
+          <Row label="meaningHint" value={entry.meaningHint} />
+          <Row label="identityHint" value={entry.identityHint} />
           <Row label="surfaceHint" value={entry.surfaceHint} />
+          <Row label="preconditionBias" value={entry.preconditionBiasPreview?.summary} />
+          <Row label="focusBiasApplied" value={entry.focusBiasApplied} />
+          <Row label="meaningBiasApplied" value={entry.meaningBiasApplied} />
+          <Row label="identityBiasApplied" value={entry.identityBiasApplied} />
           <Row label="guidancePreview" value={entry.guidancePreview} />
           <Row label="userPreview" value={entry.latestUserPreview} />
         </div>

@@ -91,9 +91,70 @@ const normalizeSelected = (selected) => {
   }));
 };
 
+const BELIEF_PATTERN_MAP = {
+  illumination: ['bright_focus', 'truth_gentle', 'quiet_reframe'],
+  structure: ['structural_map', 'steady_guard', 'truth_gentle'],
+  holding: ['comfort_soft', 'protective_hold', 'steady_guard'],
+  grounding: ['steady_guard', 'comfort_soft', 'structural_map'],
+  reflection: ['quiet_reframe', 'truth_gentle', 'comfort_soft'],
+  preverbal: ['quiet_reframe', 'comfort_soft', 'curious_probe'],
+  presence: ['comfort_soft', 'steady_guard', 'truth_gentle'],
+  mission: ['bright_focus', 'curious_probe', 'truth_gentle'],
+};
+
+const resolveTraitPatternIds = (traits = []) => {
+  const joined = traits.join(' ').toLowerCase();
+  const ids = new Set();
+
+  if (/(direct|bold|alive|bright|clear)/.test(joined)) {
+    ids.add('bright_focus');
+    ids.add('truth_gentle');
+  }
+  if (/(soft|gentle|quiet|calm|warm)/.test(joined)) {
+    ids.add('comfort_soft');
+    ids.add('quiet_reframe');
+  }
+  if (/(steady|ground|stable|hold|care)/.test(joined)) {
+    ids.add('steady_guard');
+    ids.add('protective_hold');
+  }
+  if (/(curious|playful|open)/.test(joined)) {
+    ids.add('curious_probe');
+  }
+  if (/(structure|clear|precise|sharp|strategic)/.test(joined)) {
+    ids.add('structural_map');
+  }
+
+  return ids;
+};
+
+const preconditionPatternMultiplier = (pattern, preconditionBias = {}) => {
+  const focus = preconditionBias?.focus ?? {};
+  const meaning = preconditionBias?.meaning ?? {};
+  const identity = preconditionBias?.identity ?? {};
+  const preferredFromAxis = new Set(BELIEF_PATTERN_MAP[meaning.dominantBeliefAxis] ?? []);
+  const preferredFromTraits = resolveTraitPatternIds(identity.recalledTraits);
+
+  let multiplier = 1;
+
+  if (preferredFromAxis.has(pattern.id)) multiplier += 0.08;
+  if (preferredFromTraits.has(pattern.id)) multiplier += 0.06;
+
+  if ((focus.oneThreadBias ?? 0) >= 0.45 && pattern.id === 'curious_probe') {
+    multiplier -= (focus.oneThreadBias ?? 0) * 0.12;
+  }
+
+  if ((focus.antiOverExpansion ?? 0) >= 0.45 && ['curious_probe', 'structural_map'].includes(pattern.id)) {
+    multiplier -= (focus.antiOverExpansion ?? 0) * 0.08;
+  }
+
+  return Math.max(0.72, multiplier);
+};
+
 export function mixLatentPatterns(latentState = {}, options = {}) {
   const previousMixWeights = previousMixMap(options.previousMix);
   const homeInfluence = clamp01(options.homeInfluence ?? 0);
+  const preconditionBias = options.preconditionBias ?? latentState.preconditionBias ?? {};
 
   const normalizedLatentState = {
     field: normalizeVector(latentState.field),
@@ -110,6 +171,8 @@ export function mixLatentPatterns(latentState = {}, options = {}) {
       rawScore *= (1 - homeInfluence * 0.12);
     }
 
+    rawScore *= preconditionPatternMultiplier(pattern, preconditionBias);
+
     return {
       ...pattern,
       rawScore,
@@ -118,7 +181,12 @@ export function mixLatentPatterns(latentState = {}, options = {}) {
 
   const groupCounts = new Map();
   const selected = [];
-  const targetCount = Math.min(Math.max(options.topK ?? 4, 3), 5);
+  const focus = preconditionBias?.focus ?? {};
+  const requestedTopK = Math.min(Math.max(options.topK ?? 4, 3), 5);
+  const shouldTightenFocus =
+    (focus.oneThreadBias ?? 0) >= 0.68 ||
+    (focus.antiOverExpansion ?? 0) >= 0.68;
+  const targetCount = Math.min(Math.max(requestedTopK - (shouldTightenFocus ? 1 : 0), 3), 5);
 
   while (selected.length < targetCount && selected.length < scoredPatterns.length) {
     const remaining = scoredPatterns
@@ -144,5 +212,9 @@ export function mixLatentPatterns(latentState = {}, options = {}) {
   return {
     selected: normalizedSelected,
     dominant: normalizedSelected[0]?.id ?? '',
+    meta: {
+      focusBiasApplied: shouldTightenFocus || Boolean(preconditionBias?.meaning?.dominantBeliefAxis),
+      targetCount,
+    },
   };
 }

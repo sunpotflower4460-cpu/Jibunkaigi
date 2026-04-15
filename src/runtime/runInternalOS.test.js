@@ -155,6 +155,17 @@ const assertNumericShape = (result) => {
   assert.ok(result.patternMix.selected.length <= 5);
   assert.equal(typeof result.patternMix.dominant, 'string');
   assert.equal(result.patternMix.dominant, result.patternMix.selected[0].id);
+  assert.ok(latent.preconditionBias);
+  assert.equal(typeof latent.preconditionBias.pacing.slowDown, 'number');
+  assert.equal(typeof latent.preconditionBias.focus.oneThreadBias, 'number');
+  assert.ok(
+    latent.preconditionBias.meaning.dominantBeliefAxis === null ||
+    typeof latent.preconditionBias.meaning.dominantBeliefAxis === 'string'
+  );
+  assert.ok(
+    latent.preconditionBias.identity.identityKey === null ||
+    typeof latent.preconditionBias.identity.identityKey === 'string'
+  );
 
   const distinctGroups = new Set();
   let weightTotal = 0;
@@ -188,6 +199,14 @@ const assertNumericShape = (result) => {
     result.debugInfo.dominantBranchAxis === null ||
     typeof result.debugInfo.dominantBranchAxis === 'string',
     'debugInfo.dominantBranchAxis should be string or null'
+  );
+  assert.ok(result.debugInfo.preconditionBiasPreview, 'debugInfo.preconditionBiasPreview should exist');
+  assert.equal(typeof result.debugInfo.preconditionBiasPreview.summary, 'string');
+  assert.equal(typeof result.debugInfo.focusBiasApplied, 'boolean');
+  assert.equal(typeof result.debugInfo.meaningBiasApplied, 'boolean');
+  assert.ok(
+    result.debugInfo.identityBiasApplied === null ||
+    typeof result.debugInfo.identityBiasApplied === 'string'
   );
 
   // Maker Seed presence
@@ -277,6 +296,16 @@ test('runInternalOS keeps legacy behavior when no continuity options are provide
 
   assert.deepEqual(withoutOptions.latentState, withEmptyOptions.latentState);
   assert.deepEqual(withoutOptions.patternMix, withEmptyOptions.patternMix);
+});
+
+test('runInternalOS keeps precondition bias fallback shape when precondition layers are thin', () => {
+  const result = runInternalOS('', { agentId: null });
+
+  assert.ok(result.latentState.preconditionBias);
+  assert.equal(typeof result.latentState.preconditionBias.pacing.slowDown, 'number');
+  assert.equal(typeof result.latentState.preconditionBias.focus.oneThreadBias, 'number');
+  assert.ok(Array.isArray(result.latentState.preconditionBias.identity.recalledTraits));
+  assert.equal(typeof result.debugInfo.preconditionBiasPreview.summary, 'string');
 });
 
 test('runInternalOS handles null previousMix without crashing', () => {

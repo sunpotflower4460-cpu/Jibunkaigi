@@ -33,6 +33,12 @@ export const buildAgentSurfaceGuidance = ({ agentId, surfaceFrame }) => {
   }
 };
 
+const pushPreconditionHints = (hints, surfaceFrame) => {
+  if (surfaceFrame.focusHint) hints.push(surfaceFrame.focusHint);
+  if (surfaceFrame.meaningHint) hints.push(surfaceFrame.meaningHint);
+  if (surfaceFrame.identityHint) hints.push(surfaceFrame.identityHint);
+};
+
 const buildRaySurfaceGuidance = (surfaceFrame) => {
   const hints = [];
 
@@ -58,9 +64,10 @@ const buildRaySurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('説明しすぎず、角度だけ示す');
   }
+  pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
-    return `\n【表層傾向】${hints.slice(0, 3).join('。')}。`;
+    return `\n【表層傾向】${hints.slice(0, 4).join('。')}。`;
   }
   return '';
 };
@@ -92,9 +99,10 @@ const buildJoeSurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('説明しすぎない');
   }
+  pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
-    return `\n【表層傾向】${hints.slice(0, 3).join(' ')}`;
+    return `\n【表層傾向】${hints.slice(0, 4).join(' ')}`;
   }
   return '';
 };
@@ -124,9 +132,10 @@ const buildKenSurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('箇条書き過多にしない');
   }
+  pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
-    return `\n【表層傾向】${hints.slice(0, 3).join('。')}。`;
+    return `\n【表層傾向】${hints.slice(0, 4).join('。')}。`;
   }
   return '';
 };
@@ -158,9 +167,10 @@ const buildMinaSurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('説明しすぎず、受け止めるだけでいい');
   }
+  pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
-    return `\n【表層傾向】${hints.slice(0, 3).join('。')}。`;
+    return `\n【表層傾向】${hints.slice(0, 4).join('。')}。`;
   }
   return '';
 };
@@ -190,9 +200,10 @@ const buildSatouSurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('説明しすぎず、核心だけ');
   }
+  pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
-    return `\n【表層傾向】${hints.slice(0, 3).join('。')}。`;
+    return `\n【表層傾向】${hints.slice(0, 4).join('。')}。`;
   }
   return '';
 };

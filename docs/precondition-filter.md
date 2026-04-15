@@ -3,6 +3,8 @@
 ## 概要
 
 `preconditionFilter` は、Phase 6 で導入された **前提層の統合フィルタ** です。
+Phase 7 では、この閉じた前提層から `preconditionBias` を作り、
+後段へ「読むための参照」ではなく「染み込む圧」として渡します。
 
 ここまで段階的に追加された前提層を「ここまでが前提層」として一度閉じ、
 その後の反応・意味づけ・焦点・「何を言いたいか」を色濃く染める単一の前提状態としてまとめます。
@@ -113,6 +115,63 @@ type PreconditionFilter = {
 
 ---
 
+## Phase 7: preconditionBias
+
+Phase 7 では `preconditionFilter` をそのまま後段へばらまかず、
+`src/runtime/buildPreconditionBias.js` で後段向けの軽量 bias object に圧縮します。
+
+```ts
+type PreconditionBias = {
+  pacing: {
+    slowDown: number
+    returnBias: number
+  }
+  focus: {
+    oneThreadBias: number
+    antiOverExpansion: number
+    keepOneThread: number
+  }
+  meaning: {
+    antiEarlySummary: number
+    antiEarlySolution: number
+    dominantBeliefAxis: string | null
+    activeCoreBeliefs: { id: string; axis: string; weight: number }[]
+    activeBranchBeliefs: { id: string; axis: string; weight: number }[]
+    activeLeafBeliefs: { id: string; axis: string; weight: number }[]
+  }
+  identity: {
+    identityKey: string | null
+    selfRememberingStrength: number
+    recalledTraits: string[]
+    selfPresence: number
+    hereNowStability: number
+    unfinishedAllowed: number
+    firstPersonSoftness: number
+  }
+}
+```
+
+この bias は以下へ最小接続されています。
+
+- `runInternalOS(...)`
+  - reaction / stance に軽い bias を足す
+  - `latentState.preconditionBias` を保持する
+- `routerMixer.js`
+  - 一点性 / belief axis / recalled traits に応じて pattern 選択を少し寄せる
+- `surfaceTranslator.js`
+  - pacing / focus / meaning / identity の軽い hint を surface frame に残す
+- `buildAgentSurfaceGuidance.js`
+  - 表層ガイダンスに急がなさ・一点性・存在感の傾きを少し残す
+
+重要なのは、
+identity / belief の文言そのものを返答へ出すことではなく、
+その軸で **何に目が行きやすいか / どこで止まりやすいか / どの意味が立ちやすいか**
+を変えることです。
+
+まだ全面置換ではありません。Phase 7 は「前提層が後段へ本当に届く最小接続」です。
+
+---
+
 ## compare / debug での表示
 
 通常UXには出ません。`compare/debug` でのみ以下が確認できます。
@@ -122,6 +181,10 @@ precondition: present
 identityAxis: illumination
 dominantBeliefAxis: presence
 bias: slow=0.85 / return=0.95 / one-thread=0.80
+preconditionBias: oneThread=0.80 / slow=0.85 / axis=illumination
+focusBiasApplied: true
+meaningBiasApplied: dominant axis -> illumination
+identityBiasApplied: creative-light-bearer
 ```
 
 `debugInfo.preconditionFilterPreview` に以下が入ります:
@@ -139,23 +202,37 @@ bias: slow=0.85 / return=0.95 / one-thread=0.80
 
 ---
 
+`debugInfo.preconditionBiasPreview` には Phase 7 の bias 要約が入り、
+`focusBiasApplied / meaningBiasApplied / identityBiasApplied` で
+どこへ効かせたかを最小限追えます。
+
+---
+
 ## 実装ファイル
 
 | ファイル | 役割 |
 |---------|------|
 | `src/runtime/buildPreconditionFilter.js` | 前提フィルタ構築関数 |
+| `src/runtime/buildPreconditionBias.js` | 後段向け bias object の構築 |
+| `src/runtime/buildPreconditionBias.test.js` | bias 構築の null-safe / shape テスト |
 | `src/runtime/buildPreconditionFilter.test.js` | テスト |
 | `src/runtime/internalState.js` | `preconditionFilter` の初期状態を追加 |
-| `src/runtime/runInternalOS.js` | 前提層の最後で `buildPreconditionFilter` を呼び出す |
-| `src/runtime/buildCompareViewModel.js` | `preconditionFilterPreview` をサポート |
+| `src/runtime/runInternalOS.js` | 前提層の最後で `buildPreconditionFilter` / `buildPreconditionBias` を呼び出す |
+| `src/runtime/routerMixer.js` | 焦点選択へ oneThread / belief axis / trait bias を薄く反映 |
+| `src/runtime/surfaceTranslator.js` | meaning / identity / pacing bias を surface frame へ反映 |
+| `src/runtime/buildCompareViewModel.js` | `preconditionFilterPreview` / `preconditionBiasPreview` をサポート |
 
 ---
 
 ## 次フェーズへの接続
 
-次の「前提層を後段へ染み込ませるフェーズ」では、
-`latentState.preconditionFilter.derived` の値を使って
-後段（field / reaction / stance / pattern / surface）の出力に傾きを与えます。
+次の段階では、この bias を
 
-現時点では `preconditionFilter` は構築・保持されますが、
-後段ロジックへの全面接続は次フェーズで行います。
+- 素材選択
+- stateGuide / internalFrame の意味づけ
+- 「何を言いたいか」の意思決定
+
+へさらに深く接続していきます。
+
+現時点では全面置換ではなく、
+前提層が焦点 / 反応 / 意味づけ / 表層へ **軽く、でも確実に届く** 状態までを担います。

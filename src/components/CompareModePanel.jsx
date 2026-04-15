@@ -146,6 +146,10 @@ const CompareModePanel = ({
     labels = {},
     existencePreview = null,
     beliefPreview = null,
+    preconditionBiasPreview = null,
+    focusBiasApplied = false,
+    meaningBiasApplied = false,
+    identityBiasApplied = null,
   } = latest || {}
 
   const selectedLabels = labels.selected || revisionLabels
@@ -290,10 +294,32 @@ const CompareModePanel = ({
               </div>
             </div>
 
-            {(existencePreview || beliefPreview) && (
+            {(existencePreview || beliefPreview || preconditionBiasPreview) && (
               <div className="px-4 sm:px-6 pb-4">
                 <div className="rounded-2xl border border-violet-100 bg-violet-50/30 px-4 py-3.5 shadow-sm">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-violet-600">Layer Preview (dev)</p>
+
+                  {preconditionBiasPreview && (
+                    <div className="mt-3">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-violet-500 mb-2">Precondition Bias</p>
+                      <div className="rounded-lg border border-violet-100 bg-white/60 px-3 py-2">
+                        <p className="text-[10px] text-slate-700 font-medium">{preconditionBiasPreview.summary || '—'}</p>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
+                          <div><span className="text-slate-500">slow:</span> <span className="font-semibold text-slate-700">{preconditionBiasPreview.pacing?.slowDown?.toFixed(2) ?? '-'}</span></div>
+                          <div><span className="text-slate-500">return:</span> <span className="font-semibold text-slate-700">{preconditionBiasPreview.pacing?.returnBias?.toFixed(2) ?? '-'}</span></div>
+                          <div><span className="text-slate-500">oneThread:</span> <span className="font-semibold text-slate-700">{preconditionBiasPreview.focus?.oneThreadBias?.toFixed(2) ?? '-'}</span></div>
+                          <div><span className="text-slate-500">antiExpand:</span> <span className="font-semibold text-slate-700">{preconditionBiasPreview.focus?.antiOverExpansion?.toFixed(2) ?? '-'}</span></div>
+                          <div><span className="text-slate-500">axis:</span> <span className="font-semibold text-slate-700">{preconditionBiasPreview.meaning?.dominantBeliefAxis ?? '-'}</span></div>
+                          <div><span className="text-slate-500">identity:</span> <span className="font-semibold text-slate-700">{preconditionBiasPreview.identity?.identityKey ?? '-'}</span></div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${focusBiasApplied ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>focusBiasApplied: {String(focusBiasApplied)}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${meaningBiasApplied ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>meaningBiasApplied: {meaningBiasApplied ? `dominant axis -> ${preconditionBiasPreview.meaning?.dominantBeliefAxis ?? 'none'}` : 'false'}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${identityBiasApplied ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>identityBiasApplied: {identityBiasApplied || 'false'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {existencePreview && (
                     <div className="mt-3">
