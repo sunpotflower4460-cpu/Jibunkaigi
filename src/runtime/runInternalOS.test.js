@@ -3,11 +3,15 @@ import assert from 'node:assert/strict';
 
 import { runInternalOS } from './runInternalOS.js';
 
-const EXPECTED_KEYS = {
+const EXPECTED_NUMERIC_SECTIONS = {
   field: ['softness', 'depth', 'urgency', 'fragility', 'playfulness'],
   reaction: ['touched', 'protect', 'clarify', 'curiosity', 'holdBackJudgment'],
   stance: ['receive', 'illuminate', 'structure', 'guard', 'nudge'],
   permission: ['noHurry', 'noOverExplain', 'noPerformativeHelpfulness', 'allowPartialUncertainty'],
+  existenceLayer1: ['selfPresence', 'selfLocationStability', 'groundedHereNow', 'allowUnfinishedSelf'],
+};
+
+const HOME_KEYS = {
   home: {
     kernel: ['releaseHelpfulness', 'releaseAccuracyPressure', 'slowDown', 'returnBeforeOutput', 'allowOneLivingThread'],
     softReason: ['key', 'text', 'direction'],
@@ -19,46 +23,81 @@ const assertNumericShape = (result) => {
   assert.ok(result);
   assert.ok(result.latentState);
 
-  for (const [section, keys] of Object.entries(EXPECTED_KEYS)) {
-    if (section === 'home') {
-      // Special handling for home layer
-      assert.ok(result.latentState.home);
-      assert.ok(result.latentState.home.kernel);
-      assert.ok(result.latentState.home.softReason);
-      assert.ok(result.latentState.home.outputLimits);
+  const latent = result.latentState;
 
-      // Check kernel
-      for (const key of keys.kernel) {
-        assert.equal(typeof result.latentState.home.kernel[key], 'number');
-        assert.ok(Number.isFinite(result.latentState.home.kernel[key]));
-        assert.ok(result.latentState.home.kernel[key] >= 0);
-        assert.ok(result.latentState.home.kernel[key] <= 1);
+  // numeric sections
+  for (const [section, keys] of Object.entries(EXPECTED_NUMERIC_SECTIONS)) {
+    if (section === 'existenceLayer1') {
+      assert.ok(latent.existence);
+      assert.ok(latent.existence.layer1);
+      const layer1 = latent.existence.layer1;
+      for (const key of keys) {
+        assert.equal(typeof layer1[key], 'number');
+        assert.ok(Number.isFinite(layer1[key]));
+        assert.ok(layer1[key] >= 0);
+        assert.ok(layer1[key] <= 1);
       }
-
-      // Check softReason
-      for (const key of keys.softReason) {
-        assert.ok(result.latentState.home.softReason[key]);
-        assert.equal(typeof result.latentState.home.softReason[key], 'string');
-      }
-
-      // Check outputLimits
-      for (const key of keys.outputLimits) {
-        assert.equal(typeof result.latentState.home.outputLimits[key], 'number');
-        assert.ok(Number.isFinite(result.latentState.home.outputLimits[key]));
-        assert.ok(result.latentState.home.outputLimits[key] >= 0);
-        assert.ok(result.latentState.home.outputLimits[key] <= 1);
-      }
+      assert.ok('existenceHintKey' in layer1);
+      assert.ok('existenceHintText' in layer1);
     } else {
-      assert.ok(result.latentState[section]);
+      assert.ok(latent[section]);
 
       for (const key of keys) {
-        assert.equal(typeof result.latentState[section][key], 'number');
-        assert.ok(Number.isFinite(result.latentState[section][key]));
-        assert.ok(result.latentState[section][key] >= 0);
-        assert.ok(result.latentState[section][key] <= 1);
+        assert.equal(typeof latent[section][key], 'number');
+        assert.ok(Number.isFinite(latent[section][key]));
+        assert.ok(latent[section][key] >= 0);
+        assert.ok(latent[section][key] <= 1);
       }
     }
   }
+
+  // home layer
+  assert.ok(latent.home);
+  assert.ok(latent.home.kernel);
+  assert.ok(latent.home.softReason);
+  assert.ok(latent.home.outputLimits);
+  for (const key of HOME_KEYS.home.kernel) {
+    assert.equal(typeof latent.home.kernel[key], 'number');
+    assert.ok(Number.isFinite(latent.home.kernel[key]));
+    assert.ok(latent.home.kernel[key] >= 0);
+    assert.ok(latent.home.kernel[key] <= 1);
+  }
+  for (const key of HOME_KEYS.home.softReason) {
+    assert.ok(latent.home.softReason[key]);
+    assert.equal(typeof latent.home.softReason[key], 'string');
+  }
+  for (const key of HOME_KEYS.home.outputLimits) {
+    assert.equal(typeof latent.home.outputLimits[key], 'number');
+    assert.ok(Number.isFinite(latent.home.outputLimits[key]));
+    assert.ok(latent.home.outputLimits[key] >= 0);
+    assert.ok(latent.home.outputLimits[key] <= 1);
+  }
+
+  // existence layer2
+  assert.ok(latent.existence?.layer2);
+  assert.equal(typeof latent.existence.layer2.agentIdentityKey, 'string');
+  assert.equal(typeof latent.existence.layer2.agentIdentityText, 'string');
+  assert.ok(Array.isArray(latent.existence.layer2.recalledSelfTraits));
+  assert.ok(latent.existence.layer2.recalledSelfTraits.length >= 1);
+  assert.equal(typeof latent.existence.layer2.selfRememberingStrength, 'number');
+  assert.ok(latent.existence.layer2.selfRememberingStrength >= 0);
+  assert.ok(latent.existence.layer2.selfRememberingStrength <= 1);
+
+  // belief layers
+  assert.ok(latent.belief);
+  ['layer1', 'layer2', 'layer3'].forEach((layerKey) => {
+    const layer = latent.belief[layerKey];
+    assert.ok(Array.isArray(layer));
+    assert.ok(layer.length >= 1);
+    for (const item of layer) {
+      assert.equal(typeof item.id, 'string');
+      assert.equal(typeof item.text, 'string');
+      assert.equal(typeof item.weight, 'number');
+      assert.ok(Number.isFinite(item.weight));
+      assert.ok(item.weight >= 0);
+      assert.ok(item.weight <= 1);
+    }
+  });
 
   assert.ok(Array.isArray(result.surfaceWindow));
   assert.ok(result.surfaceWindow.length >= 2);
@@ -92,8 +131,10 @@ const assertNumericShape = (result) => {
 
   assert.ok(distinctGroups.size >= 2);
   assert.ok(Math.abs(weightTotal - 1) < 0.01);
-  assert.equal(result.debugInfo.version, 'home-layer-v0');
+  assert.equal(result.debugInfo.version, 'existence-belief-v1');
   assert.equal(result.debugInfo.homeLayerActive, true);
+  assert.ok(Array.isArray(result.debugInfo.beliefLensKeys));
+  assert.ok(result.debugInfo.beliefLensKeys.length >= 1);
 };
 
 for (const input of [
@@ -124,12 +165,22 @@ test('runInternalOS lightly blends previous latent state without overtaking curr
 
   let influencedKeys = 0;
 
-  for (const section of Object.keys(EXPECTED_KEYS)) {
-    if (section === 'home') {
-      // Skip home for now in blend test - focus on core values
+  for (const [section, keys] of Object.entries(EXPECTED_NUMERIC_SECTIONS)) {
+    if (section === 'existenceLayer1') {
+      for (const key of keys) {
+        const prevVal = previous.latentState.existence.layer1[key];
+        const freshVal = fresh.latentState.existence.layer1[key];
+        const blendedVal = blended.latentState.existence.layer1[key];
+
+        if (prevVal !== freshVal) {
+          influencedKeys += 1;
+          assert.ok(Math.abs(blendedVal - freshVal) < Math.abs(prevVal - freshVal));
+        }
+      }
       continue;
     }
-    for (const key of EXPECTED_KEYS[section]) {
+
+    for (const key of keys) {
       const prevVal = previous.latentState[section][key];
       const freshVal = fresh.latentState[section][key];
       const blendedVal = blended.latentState[section][key];

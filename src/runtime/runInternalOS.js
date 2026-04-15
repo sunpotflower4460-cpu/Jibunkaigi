@@ -6,10 +6,14 @@ import { mixLatentPatterns } from './routerMixer.js';
 import { selectStance } from './stanceSelector.js';
 import { buildSurfaceWindow } from './surfaceWindow.js';
 import { blendLatentState, normalizeLatentState } from './afterglow.js';
+import { createExistenceLayer1 } from './existenceLayer1.js';
+import { createExistenceLayer2 } from './existenceLayer2.js';
+import { createBeliefLayers } from './beliefLayers.js';
 
 export function runInternalOS(input, options = {}) {
   const normalizedInput = typeof input === 'string' ? input : '';
   const normalizedOptions = options && typeof options === 'object' ? options : {};
+  const agentId = typeof normalizedOptions.agentId === 'string' ? normalizedOptions.agentId : null;
 
   // Double defense: normalize previousMix and previousLatentState
   const safePreviousMix =
@@ -27,6 +31,13 @@ export function runInternalOS(input, options = {}) {
   const reaction = generateReaction(normalizedInput, field);
   const stance = selectStance(field, reaction);
   const home = createHomeLayer({ field, reaction, stance });
+  const existenceLayer1 = createExistenceLayer1({ home, field, reaction, stance });
+  const existenceLayer2 = createExistenceLayer2({ agentId });
+  const belief = createBeliefLayers({
+    agentId,
+    existenceLayer1,
+    existenceLayer2,
+  });
   const permission = extractPermissionShape(home);
 
   const freshLatentState = {
@@ -36,6 +47,11 @@ export function runInternalOS(input, options = {}) {
     stance,
     home,
     permission,
+    existence: {
+      layer1: existenceLayer1,
+      layer2: existenceLayer2,
+    },
+    belief,
   };
 
   const previousLatentState = normalizeLatentState(safePreviousLatentState);
@@ -57,12 +73,19 @@ export function runInternalOS(input, options = {}) {
     surfaceWindow,
     patternMix,
     debugInfo: {
-      version: 'home-layer-v0',
+      version: 'existence-belief-v1',
       inputLength: normalizedInput.length,
       optionKeys: Object.keys(normalizedOptions),
       dominantPattern: patternMix.dominant,
       usedAfterglow: Boolean(previousLatentState),
       homeLayerActive: Boolean(latentState.home),
+      existenceHintKey: latentState.existence?.layer1?.existenceHintKey ?? null,
+      agentIdentityKey: latentState.existence?.layer2?.agentIdentityKey ?? null,
+      beliefLensKeys: [
+        latentState.belief?.layer1?.[0]?.id,
+        latentState.belief?.layer2?.[0]?.id,
+        latentState.belief?.layer3?.[0]?.id,
+      ].filter(Boolean),
     },
   };
 }
