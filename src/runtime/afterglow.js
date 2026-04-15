@@ -6,6 +6,64 @@ const normalizeVector = (vector = {}) => Object.fromEntries(
     .map(([key, value]) => [key, clamp01(value)]),
 );
 
+const normalizeExistenceLayer1 = (layer1 = {}) => {
+  const normalized = normalizeVector(layer1);
+  const hintKey = typeof layer1.existenceHintKey === 'string' ? layer1.existenceHintKey : null;
+  const hintText = typeof layer1.existenceHintText === 'string' ? layer1.existenceHintText : null;
+
+  if (hintKey !== null || hintText !== null) {
+    return { ...normalized, existenceHintKey: hintKey, existenceHintText: hintText };
+  }
+
+  return Object.keys(normalized).length ? normalized : null;
+};
+
+const normalizeExistenceLayer2 = (layer2 = {}) => {
+  if (!layer2 || typeof layer2 !== 'object') return null;
+
+  const agentIdentityKey = typeof layer2.agentIdentityKey === 'string' ? layer2.agentIdentityKey : '';
+  const agentIdentityText = typeof layer2.agentIdentityText === 'string' ? layer2.agentIdentityText : '';
+  const selfRememberingStrength = clamp01(layer2.selfRememberingStrength ?? 0);
+  const recalledSelfTraits = Array.isArray(layer2.recalledSelfTraits)
+    ? layer2.recalledSelfTraits.filter((trait) => typeof trait === 'string' && trait.trim()).slice(0, 4)
+    : [];
+
+  const hasIdentity = agentIdentityKey || agentIdentityText || recalledSelfTraits.length > 0 || selfRememberingStrength > 0;
+  return hasIdentity
+    ? { agentIdentityKey, agentIdentityText, recalledSelfTraits, selfRememberingStrength }
+    : null;
+};
+
+const normalizeBeliefEntry = (entry = {}) => {
+  if (!entry || typeof entry !== 'object') return null;
+  const id = typeof entry.id === 'string' ? entry.id : null;
+  const text = typeof entry.text === 'string' ? entry.text : null;
+  if (!id || !text) return null;
+
+  const normalized = {
+    id,
+    text,
+    weight: clamp01(entry.weight ?? 0),
+  };
+
+  if (entry.vector && typeof entry.vector === 'object') {
+    normalized.vector = entry.vector;
+  }
+
+  return normalized;
+};
+
+const normalizeBeliefLayers = (belief = {}) => {
+  if (!belief || typeof belief !== 'object') return null;
+
+  const layer1 = Array.isArray(belief.layer1) ? belief.layer1.map(normalizeBeliefEntry).filter(Boolean) : [];
+  const layer2 = Array.isArray(belief.layer2) ? belief.layer2.map(normalizeBeliefEntry).filter(Boolean) : [];
+  const layer3 = Array.isArray(belief.layer3) ? belief.layer3.map(normalizeBeliefEntry).filter(Boolean) : [];
+
+  const hasLayer = layer1.length || layer2.length || layer3.length;
+  return hasLayer ? { layer1, layer2, layer3 } : null;
+};
+
 const normalizeLatentState = (state) => {
   if (!state || typeof state !== 'object') return null;
 
@@ -21,12 +79,29 @@ const normalizeLatentState = (state) => {
     normalized.home = state.home;
   }
 
-  const hasValues = Object.values(normalized).some((section) => {
-    if (section && typeof section === 'object' && !Array.isArray(section)) {
-      return Object.keys(section).length > 0;
-    }
-    return false;
-  });
+  // Preserve existence layers when present
+  const existenceLayer1 = normalizeExistenceLayer1(state.existence?.layer1);
+  const existenceLayer2 = normalizeExistenceLayer2(state.existence?.layer2);
+  if (existenceLayer1 || existenceLayer2) {
+    normalized.existence = {};
+    if (existenceLayer1) normalized.existence.layer1 = existenceLayer1;
+    if (existenceLayer2) normalized.existence.layer2 = existenceLayer2;
+  }
+
+  // Preserve belief layers when present
+  const belief = normalizeBeliefLayers(state.belief);
+  if (belief) {
+    normalized.belief = belief;
+  }
+
+  const hasValues =
+    (normalized.field && Object.keys(normalized.field).length > 0) ||
+    (normalized.reaction && Object.keys(normalized.reaction).length > 0) ||
+    (normalized.stance && Object.keys(normalized.stance).length > 0) ||
+    (normalized.permission && Object.keys(normalized.permission).length > 0) ||
+    Boolean(normalized.home) ||
+    Boolean(normalized.existence) ||
+    Boolean(normalized.belief);
 
   return hasValues ? normalized : null;
 };
@@ -103,6 +178,24 @@ const blendLatentState = (previousState, currentState) => {
   // Always use current home layer (home is regenerated fresh each time)
   if (current.home) {
     blended.home = current.home;
+  }
+
+  // Blend existence layer1; prefer current layer2 and belief layers
+  if (prev.existence || current.existence) {
+    blended.existence = {};
+    const blendedLayer1 = blendVector(prev.existence?.layer1, current.existence?.layer1);
+    if (current.existence?.layer1?.existenceHintKey) {
+      blendedLayer1.existenceHintKey = current.existence.layer1.existenceHintKey;
+    }
+    if (current.existence?.layer1?.existenceHintText) {
+      blendedLayer1.existenceHintText = current.existence.layer1.existenceHintText;
+    }
+    blended.existence.layer1 = blendedLayer1;
+    blended.existence.layer2 = current.existence?.layer2 || prev.existence?.layer2 || null;
+  }
+
+  if (current.belief || prev.belief) {
+    blended.belief = current.belief || prev.belief || null;
   }
 
   return blended;

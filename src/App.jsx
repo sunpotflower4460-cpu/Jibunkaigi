@@ -1239,8 +1239,29 @@ const App = () => {
       return;
     }
 
-    console.info("[ai-response:after-internal-os]", { ..._debugBase, hasInternalOS: !!continuityInternalOS });
-    pushAgentDebugEvent({ tag: 'ai-response:after-internal-os', ..._debugBase, hasInternalOS: !!continuityInternalOS });
+    const existencePreview = continuityInternalOS?.latentState?.existence ?? {};
+    const beliefPreview = continuityInternalOS?.latentState?.belief ?? {};
+    const beliefLensKeys = [
+      beliefPreview.layer1?.[0]?.id,
+      beliefPreview.layer2?.[0]?.id,
+      beliefPreview.layer3?.[0]?.id,
+    ].filter(Boolean);
+
+    console.info("[ai-response:after-internal-os]", {
+      ..._debugBase,
+      hasInternalOS: !!continuityInternalOS,
+      existenceHintKey: existencePreview.layer1?.existenceHintKey ?? null,
+      agentIdentityKey: existencePreview.layer2?.agentIdentityKey ?? null,
+      beliefLensKeys,
+    });
+    pushAgentDebugEvent({
+      tag: 'ai-response:after-internal-os',
+      ..._debugBase,
+      hasInternalOS: !!continuityInternalOS,
+      existenceHintKey: existencePreview.layer1?.existenceHintKey ?? null,
+      agentIdentityKey: existencePreview.layer2?.agentIdentityKey ?? null,
+      beliefLensKeys,
+    });
 
     const surfaceFrame = continuityInternalOS
       ? buildSurfaceFrame({

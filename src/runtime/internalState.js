@@ -29,11 +29,38 @@ const createPermissionState = () => ({
   allowPartialUncertainty: 0,
 });
 
+const createExistenceLayer1State = () => ({
+  selfPresence: 0,
+  selfLocationStability: 0,
+  groundedHereNow: 0,
+  allowUnfinishedSelf: 0,
+  existenceHintKey: null,
+  existenceHintText: null,
+});
+
+const createExistenceLayer2State = () => ({
+  agentIdentityKey: '',
+  agentIdentityText: '',
+  recalledSelfTraits: [],
+  selfRememberingStrength: 0,
+});
+
+const createBeliefLayersState = () => ({
+  layer1: [],
+  layer2: [],
+  layer3: [],
+});
+
 export function createInitialInternalState() {
   return {
     field: createFieldState(),
     reaction: createReactionState(),
     stance: createStanceState(),
     permission: createPermissionState(),
+    existence: {
+      layer1: createExistenceLayer1State(),
+      layer2: createExistenceLayer2State(),
+    },
+    belief: createBeliefLayersState(),
   };
 }
