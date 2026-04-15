@@ -92,13 +92,14 @@ export function runCrystallizationRuntime(input, options = {}) {
   const blendedLatentState = previousLatentState
     ? blendLatentState(previousLatentState, freshLatentState)
     : null;
+  const safeBlendedLatentState = blendedLatentState ?? freshLatentState;
   const latentState = previousLatentState
     ? {
       ...freshLatentState,
-      field: blendedLatentState.field,
-      reaction: blendedLatentState.reaction,
-      stance: blendedLatentState.stance,
-      permission: blendedLatentState.permission,
+      field: safeBlendedLatentState.field,
+      reaction: safeBlendedLatentState.reaction,
+      stance: safeBlendedLatentState.stance,
+      permission: safeBlendedLatentState.permission,
     }
     : freshLatentState;
 

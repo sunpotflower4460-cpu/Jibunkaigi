@@ -15,9 +15,27 @@ export function buildSurfaceWindow(latentState = {}) {
   const relationalField = latentState.relationalField ?? {};
   const stance = latentState.stance ?? {};
   const permission = latentState.permission ?? {};
+  const gravityLabel = describeLevel(relationalField.gravity ?? 0, {
+    high: 'dense',
+    mid: 'present',
+    low: 'light',
+    min: 'plain',
+  });
+  const closenessLabel = describeLevel(relationalField.closeness ?? 0, {
+    high: 'near',
+    mid: 'approaching',
+    low: 'cautious',
+    min: 'distant',
+  });
+  const urgencyLabel = describeLevel(relationalField.urgency ?? 0, {
+    high: 'pressing',
+    mid: 'time-aware',
+    low: 'unhurried',
+    min: 'open',
+  });
 
   const fieldLine = Object.keys(relationalField).length
-    ? `Field: gravity ${describeLevel(relationalField.gravity ?? 0, { high: 'dense', mid: 'present', low: 'light', min: 'plain' })}, closeness ${describeLevel(relationalField.closeness ?? 0, { high: 'near', mid: 'approaching', low: 'cautious', min: 'distant' })}, urgency ${describeLevel(relationalField.urgency ?? 0, { high: 'pressing', mid: 'time-aware', low: 'unhurried', min: 'open' })}.`
+    ? `Field: gravity ${gravityLabel}, closeness ${closenessLabel}, urgency ${urgencyLabel}.`
     : `Field: ${[
       describeLevel(field.softness ?? 0, { high: 'soft', mid: 'steady-soft', low: 'slightly soft', min: 'plain' }),
       describeLevel(field.depth ?? 0, { high: 'deep', mid: 'medium-deep', low: 'light-depth', min: 'surface-level' }),
