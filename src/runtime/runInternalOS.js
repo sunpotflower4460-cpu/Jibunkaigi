@@ -189,6 +189,8 @@ export function runInternalOS(input, options = {}) {
 
   const initialPreconditionBias = buildPreconditionBias(basePreconditionFilter);
   const reaction = applyReactionBias(baseReaction, initialPreconditionBias);
+  // 先に reaction へ bias を混ぜ、その反応から stance を立てた上で
+  // stance 側の軽い寄せをもう一段だけ足す。
   const stance = applyStanceBias(selectStance(field, reaction), initialPreconditionBias);
   const home = createHomeLayer({ field, reaction, stance });
   const existenceLayer1 = createExistenceLayer1({ home, field, reaction, stance });
@@ -199,7 +201,8 @@ export function runInternalOS(input, options = {}) {
   });
   const permission = extractPermissionShape(home);
 
-  // Phase 6 + 7: 前提層を閉じて precondition bias を後段へ染み込ませる
+  // Phase 6 + 7: 初回 filter で bias を起こし、その bias を混ぜた home / existence で
+  // 最終 filter を組み直して downstream に渡す。
   const preconditionFilter = buildPreconditionFilter({
     makerSeed,
     home,

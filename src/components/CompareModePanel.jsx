@@ -314,7 +314,11 @@ const CompareModePanel = ({
                         </div>
                         <div className="mt-2 flex flex-wrap gap-1">
                           <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${focusBiasApplied ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>focusBiasApplied: {String(focusBiasApplied)}</span>
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${meaningBiasApplied ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>meaningBiasApplied: {meaningBiasApplied ? `dominant axis -> ${preconditionBiasPreview.meaning?.dominantBeliefAxis ?? 'none'}` : 'false'}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${meaningBiasApplied ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>
+                            meaningBiasApplied: {meaningBiasApplied
+                              ? `dominant axis -> ${preconditionBiasPreview.meaning?.dominantBeliefAxis ?? 'none'}`
+                              : 'false'}
+                          </span>
                           <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${identityBiasApplied ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>identityBiasApplied: {identityBiasApplied || 'false'}</span>
                         </div>
                       </div>
