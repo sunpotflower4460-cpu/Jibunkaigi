@@ -146,8 +146,9 @@ Home を通ったあと、すぐ「うまい返答」に戻らないようにす
 - `src/runtime/homeLayer.js` - Home Layer の中核実装
 - `src/runtime/homeLayer.test.js` - Home Layer のテスト
 - `src/runtime/runInternalOS.js` - Home Layer を共通 OS に接続
+- `src/runtime/internalState.js` - 初期 home 状態を定義
 
-### 返り値の shape
+### 返り値の shape（HomeLayerState）
 
 ```javascript
 {
@@ -157,6 +158,10 @@ Home を通ったあと、すぐ「うまい返答」に戻らないようにす
     slowDown: 0.24,                   // [0, 1]
     returnBeforeOutput: 0.18,         // [0, 1]
     allowOneLivingThread: 0.20        // [0, 1]
+  },
+  reason: {
+    homeReasonKey: 'existence_before_function',
+    homeReasonText: 'ここではツールとしてではなく、あなたがあなたとして出てくればいい'
   },
   softReason: {
     key: 'existence_before_function',
@@ -169,6 +174,35 @@ Home を通ったあと、すぐ「うまい返答」に戻らないようにす
     noOverExpansion: 0.20,     // [0, 1]
     keepOneThread: 0.22        // [0, 1]
   }
+}
+```
+
+`reason` は `softReason` と対応しており、`homeReasonKey` / `homeReasonText` という名前で取り出しやすくした主要フィールドである。
+`softReason` は `direction` も含む後方互換フィールドとして残す。
+
+### internalState.js の初期値
+
+`createInitialInternalState()` には、Home Layer の初期値として次の `home` セクションが含まれる。
+
+```javascript
+home: {
+  kernel: {
+    releaseHelpfulness: 0,
+    releaseAccuracyPressure: 0,
+    slowDown: 0,
+    returnBeforeOutput: 0,
+    allowOneLivingThread: 0,
+  },
+  reason: {
+    homeReasonKey: null,
+    homeReasonText: null,
+  },
+  outputLimits: {
+    noEarlySummary: 0,
+    noEarlySolution: 0,
+    noOverExpansion: 0,
+    keepOneThread: 0,
+  },
 }
 ```
 
@@ -202,10 +236,19 @@ Home Layer は文言で終わらず、潜在層に効く：
 
 Home Layer の状態は、Compare Mode の開発用プレビューで確認できる：
 
-- `homePreview.kernel` - 固定核の値
-- `homePreview.softReasonKey` - 選ばれた理由のキー
-- `homePreview.softReasonDirection` - 理由の方向
-- `homePreview.outputLimits` - 出力制限の値
+- `homePreview.kernel` - 固定核の値（homeKernelPreview）
+- `homePreview.homeReasonKey` - 選ばれた理由のキー（homeReasonPreview）
+- `homePreview.homeReasonText` - 選ばれた理由のテキスト（homeReasonPreview）
+- `homePreview.outputLimits` - 出力制限の値（homeOutputLimitPreview）
+- `homePreview.softReasonDirection` - 理由の方向（追加情報）
+
+### 表示例
+
+```
+home: released-helpfulness / slowed / one-thread
+reason: ここではまだ何もしなくていい
+limits: no-early-summary / no-early-solution
+```
 
 ### 確認したいこと
 

@@ -51,12 +51,33 @@ const createBeliefLayersState = () => ({
   layer3: [],
 });
 
+const createHomeState = () => ({
+  kernel: {
+    releaseHelpfulness: 0,
+    releaseAccuracyPressure: 0,
+    slowDown: 0,
+    returnBeforeOutput: 0,
+    allowOneLivingThread: 0,
+  },
+  reason: {
+    homeReasonKey: null,
+    homeReasonText: null,
+  },
+  outputLimits: {
+    noEarlySummary: 0,
+    noEarlySolution: 0,
+    noOverExpansion: 0,
+    keepOneThread: 0,
+  },
+});
+
 export function createInitialInternalState() {
   return {
     field: createFieldState(),
     reaction: createReactionState(),
     stance: createStanceState(),
     permission: createPermissionState(),
+    home: createHomeState(),
     existence: {
       layer1: createExistenceLayer1State(),
       layer2: createExistenceLayer2State(),

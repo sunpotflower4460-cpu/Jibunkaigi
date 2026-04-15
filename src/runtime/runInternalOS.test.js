@@ -54,6 +54,7 @@ const assertNumericShape = (result) => {
   // home layer
   assert.ok(latent.home);
   assert.ok(latent.home.kernel);
+  assert.ok(latent.home.reason);
   assert.ok(latent.home.softReason);
   assert.ok(latent.home.outputLimits);
   for (const key of HOME_KEYS.home.kernel) {
@@ -62,6 +63,9 @@ const assertNumericShape = (result) => {
     assert.ok(latent.home.kernel[key] >= 0);
     assert.ok(latent.home.kernel[key] <= 1);
   }
+  // reason field (HomeReasonState shape)
+  assert.equal(typeof latent.home.reason.homeReasonKey, 'string');
+  assert.equal(typeof latent.home.reason.homeReasonText, 'string');
   for (const key of HOME_KEYS.home.softReason) {
     assert.ok(latent.home.softReason[key]);
     assert.equal(typeof latent.home.softReason[key], 'string');
