@@ -234,7 +234,7 @@ export const getOthersEmptyMessage = (reason, compareModeEnabled = false) => {
       if (compareModeEnabled) {
         return 'まだ比較対象がありません';
       }
-      return 'まだ比較対象がありません';
+      return '他の声はまだありません';
     case 'ok':
       return '';
     default:

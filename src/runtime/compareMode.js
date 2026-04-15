@@ -2,6 +2,12 @@
 // Compare Mode 用のフラグ判定と UI 表示条件をまとめる。
 
 /**
+ * Compare Mode のエントリ表示上限数。
+ * ComparePanel 等で entries.slice(0, COMPARE_MAX_ENTRIES) に使用する。
+ */
+export const COMPARE_MAX_ENTRIES = 5;
+
+/**
  * Compare Mode が有効かを判定する。
  * デフォルトではブラウザ環境の location / localStorage を参照する。
  *
