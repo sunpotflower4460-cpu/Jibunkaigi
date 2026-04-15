@@ -28,8 +28,9 @@ const FloatingAgentBar = ({
   onScrollToOthers,
   agents = [],
 }) => {
-  // compare / debug 中は最初から開いた状態にする
-  const [isOpen, setIsOpen] = useState(compareModeEnabled || isDebugMode);
+  // compare 中は最初から開いた状態にする
+  // debug panel 表示中は最小化して重なりを避ける
+  const [isOpen, setIsOpen] = useState(compareModeEnabled && !isDebugPanelVisible);
 
   // 表示するかどうかの判定
   const shouldShow =
@@ -41,8 +42,11 @@ const FloatingAgentBar = ({
   if (!shouldShow) return null;
 
   // AgentGateDebugPanel (bottom:8, right:8) との重なりを避けるため
-  // debug panel が表示されているときは bottom を少し上げる
-  const bottomOffset = isDebugPanelVisible ? 120 : 16;
+  // debug panel が表示されているときは bottom を上げる
+  // safe-area-inset-bottom を calc() に含めて iPhone ノッチ対応
+  const bottomOffset = isDebugPanelVisible
+    ? 'calc(env(safe-area-inset-bottom, 0px) + 140px)'
+    : 'calc(env(safe-area-inset-bottom, 0px) + 12px)';
 
   const disabled = !canUseAgents || isGenerating || isSending;
 
@@ -65,7 +69,6 @@ const FloatingAgentBar = ({
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 100,
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         <button
@@ -106,7 +109,6 @@ const FloatingAgentBar = ({
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 100,
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         width: 'min(calc(100vw - 32px), 600px)',
       }}
     >

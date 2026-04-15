@@ -21,12 +21,14 @@ function shouldShowFloatingBar({
   );
 }
 
-function getInitialIsOpen({ compareModeEnabled, isDebugMode }) {
-  return compareModeEnabled || isDebugMode;
+function getInitialIsOpen({ compareModeEnabled, isDebugPanelVisible }) {
+  return compareModeEnabled && !isDebugPanelVisible;
 }
 
 function getBottomOffset({ isDebugPanelVisible }) {
-  return isDebugPanelVisible ? 120 : 16;
+  return isDebugPanelVisible
+    ? 'calc(env(safe-area-inset-bottom, 0px) + 140px)'
+    : 'calc(env(safe-area-inset-bottom, 0px) + 12px)';
 }
 
 function getAgentDisabledReason({
@@ -131,22 +133,29 @@ describe('FloatingAgentBar - shouldShow', () => {
 describe('FloatingAgentBar - getInitialIsOpen', () => {
   it('is closed by default in normal mode', () => {
     assert.equal(
-      getInitialIsOpen({ compareModeEnabled: false, isDebugMode: false }),
+      getInitialIsOpen({ compareModeEnabled: false, isDebugPanelVisible: false }),
       false,
     );
   });
 
-  it('is open when compare mode is enabled', () => {
+  it('is open when compare mode is enabled and debug panel is not visible', () => {
     assert.equal(
-      getInitialIsOpen({ compareModeEnabled: true, isDebugMode: false }),
+      getInitialIsOpen({ compareModeEnabled: true, isDebugPanelVisible: false }),
       true,
     );
   });
 
-  it('is open when debug mode is enabled', () => {
+  it('is closed (folded) when compare mode is enabled but debug panel is also visible', () => {
     assert.equal(
-      getInitialIsOpen({ compareModeEnabled: false, isDebugMode: true }),
-      true,
+      getInitialIsOpen({ compareModeEnabled: true, isDebugPanelVisible: true }),
+      false,
+    );
+  });
+
+  it('is closed when debug panel is visible (starts folded to avoid overlap)', () => {
+    assert.equal(
+      getInitialIsOpen({ compareModeEnabled: false, isDebugPanelVisible: true }),
+      false,
     );
   });
 });
@@ -154,12 +163,18 @@ describe('FloatingAgentBar - getInitialIsOpen', () => {
 // ---- bottom offset tests ----
 
 describe('FloatingAgentBar - getBottomOffset', () => {
-  it('returns 16 when debug panel is not visible', () => {
-    assert.equal(getBottomOffset({ isDebugPanelVisible: false }), 16);
+  it('returns normal offset string when debug panel is not visible', () => {
+    assert.equal(
+      getBottomOffset({ isDebugPanelVisible: false }),
+      'calc(env(safe-area-inset-bottom, 0px) + 12px)',
+    );
   });
 
-  it('returns 120 when debug panel is visible to avoid overlap', () => {
-    assert.equal(getBottomOffset({ isDebugPanelVisible: true }), 120);
+  it('returns elevated offset string when debug panel is visible to avoid overlap', () => {
+    assert.equal(
+      getBottomOffset({ isDebugPanelVisible: true }),
+      'calc(env(safe-area-inset-bottom, 0px) + 140px)',
+    );
   });
 });
 
@@ -298,10 +313,13 @@ describe('FloatingAgentBar - collapse/expand', () => {
 // ---- debug panel offset logic ----
 
 describe('FloatingAgentBar - debug panel coexistence', () => {
-  it('bottom offset increases when debug panel is visible', () => {
+  it('bottom offset string is larger when debug panel is visible', () => {
     const withoutDebug = getBottomOffset({ isDebugPanelVisible: false });
     const withDebug = getBottomOffset({ isDebugPanelVisible: true });
-    assert.ok(withDebug > withoutDebug, 'offset with debug panel should be larger');
+    // Both are CSS calc() strings; check they include the expected px values
+    assert.ok(withoutDebug.includes('12px'), `expected 12px in normal offset: ${withoutDebug}`);
+    assert.ok(withDebug.includes('140px'), `expected 140px in debug offset: ${withDebug}`);
+    assert.notEqual(withDebug, withoutDebug, 'offsets should differ');
   });
 
   it('bar and debug panel use different horizontal positions (no overlap)', () => {
