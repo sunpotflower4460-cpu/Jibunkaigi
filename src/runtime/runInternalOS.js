@@ -1,6 +1,6 @@
 import { estimateField } from './fieldEstimator.js';
 import { createInitialInternalState } from './internalState.js';
-import { createPermissionLayer } from './permissionLayer.js';
+import { createHomeLayer, extractPermissionShape } from './homeLayer.js';
 import { generateReaction } from './reactionGenerator.js';
 import { mixLatentPatterns } from './routerMixer.js';
 import { selectStance } from './stanceSelector.js';
@@ -26,13 +26,15 @@ export function runInternalOS(input, options = {}) {
   const field = estimateField(normalizedInput);
   const reaction = generateReaction(normalizedInput, field);
   const stance = selectStance(field, reaction);
-  const permission = createPermissionLayer({ field, reaction, stance });
+  const home = createHomeLayer({ field, reaction, stance });
+  const permission = extractPermissionShape(home);
 
   const freshLatentState = {
     ...initialState,
     field,
     reaction,
     stance,
+    home,
     permission,
   };
 
@@ -41,8 +43,11 @@ export function runInternalOS(input, options = {}) {
     ? blendLatentState(previousLatentState, freshLatentState)
     : freshLatentState;
 
+  // Home Layer の軽い反映: slowDown が高い時は構造寄りを少し抑える
+  const homeInfluence = latentState.home?.kernel?.slowDown ?? 0;
   const patternMix = mixLatentPatterns(latentState, {
     previousMix: safePreviousMix,
+    homeInfluence,
   });
 
   const surfaceWindow = buildSurfaceWindow(latentState);
@@ -52,11 +57,12 @@ export function runInternalOS(input, options = {}) {
     surfaceWindow,
     patternMix,
     debugInfo: {
-      version: 'pr4-router-mixer-minimum',
+      version: 'home-layer-v0',
       inputLength: normalizedInput.length,
       optionKeys: Object.keys(normalizedOptions),
       dominantPattern: patternMix.dominant,
       usedAfterglow: Boolean(previousLatentState),
+      homeLayerActive: Boolean(latentState.home),
     },
   };
 }

@@ -93,6 +93,8 @@ const normalizeSelected = (selected) => {
 
 export function mixLatentPatterns(latentState = {}, options = {}) {
   const previousMixWeights = previousMixMap(options.previousMix);
+  const homeInfluence = clamp01(options.homeInfluence ?? 0);
+
   const normalizedLatentState = {
     field: normalizeVector(latentState.field),
     reaction: normalizeVector(latentState.reaction),
@@ -100,10 +102,19 @@ export function mixLatentPatterns(latentState = {}, options = {}) {
     permission: normalizeVector(latentState.permission),
   };
 
-  const scoredPatterns = LATENT_PATTERNS.map((pattern) => ({
-    ...pattern,
-    rawScore: basePatternScore(pattern, normalizedLatentState, previousMixWeights),
-  }));
+  const scoredPatterns = LATENT_PATTERNS.map((pattern) => {
+    let rawScore = basePatternScore(pattern, normalizedLatentState, previousMixWeights);
+
+    // Home Layer の軽い反映: structure 系パターンを少し抑える
+    if (homeInfluence > 0.3 && pattern.group === 'structure') {
+      rawScore *= (1 - homeInfluence * 0.12);
+    }
+
+    return {
+      ...pattern,
+      rawScore,
+    };
+  });
 
   const groupCounts = new Map();
   const selected = [];

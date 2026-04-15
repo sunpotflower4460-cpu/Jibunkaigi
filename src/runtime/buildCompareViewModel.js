@@ -29,6 +29,7 @@ const openingKey = (text = '') => {
  * @param {string} [params.outerGuide]
  * @param {boolean} [params.currentUsesInternalOS]
  * @param {string} [params.mode]
+ * @param {object} [params.homeLayerPreview] - Home Layer の開発用プレビュー
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -40,6 +41,7 @@ export const buildCompareViewModel = ({
   currentUsesInternalOS = false,
   mode = null,
   revisionLabels = [],
+  homeLayerPreview = null,
 } = {}) => {
   const baseline = normalize(baselineReply)
   const current = normalize(currentReply)
@@ -75,6 +77,14 @@ export const buildCompareViewModel = ({
   })
   const selectedRevisionLabels = normalizeRevisionLabels(revisionLabels)
 
+  // Home Layer Preview (dev-only)
+  const homePreview = homeLayerPreview ? {
+    kernel: homeLayerPreview.kernel ?? null,
+    softReasonKey: homeLayerPreview.softReason?.key ?? null,
+    softReasonDirection: homeLayerPreview.softReason?.direction ?? null,
+    outputLimits: homeLayerPreview.outputLimits ?? null,
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -100,12 +110,14 @@ export const buildCompareViewModel = ({
       selected: selectedRevisionLabels,
       suggested: suggestedRevisionLabels,
     },
+    homePreview,
     summary: {
       baselineLength: baseline.length,
       currentLength: current.length,
       sameOpening,
       currentUsesInternalOS: Boolean(currentUsesInternalOS),
       mode,
+      hasHomePreview: Boolean(homePreview),
     },
   }
 }
