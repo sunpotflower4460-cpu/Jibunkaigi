@@ -36,6 +36,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.beliefCorePreview] - Belief Core Layer の開発用プレビュー (dev-only)
  * @param {object} [params.beliefBranchPreview] - Belief Branch Layer の開発用プレビュー (dev-only)
  * @param {object} [params.beliefLeafPreview] - Belief Leaf Layer の開発用プレビュー (dev-only)
+ * @param {object} [params.preconditionFilterPreview] - Precondition Filter の開発用プレビュー (dev-only)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -54,6 +55,7 @@ export const buildCompareViewModel = ({
   beliefCorePreview = null,
   beliefBranchPreview = null,
   beliefLeafPreview = null,
+  preconditionFilterPreview = null,
 } = {}) => {
   const baseline = normalize(baselineReply)
   const current = normalize(currentReply)
@@ -178,6 +180,16 @@ export const buildCompareViewModel = ({
     dominantLeafAxis: beliefLeafPreview.dominantLeafAxis ?? null,
   } : null
 
+  // Precondition Filter Preview (dev-only)
+  const preconditionPreview = preconditionFilterPreview ? {
+    present: Boolean(preconditionFilterPreview.present ?? preconditionFilterPreview.makerSeedPresent),
+    identityAxis: preconditionFilterPreview.identityAxis ?? null,
+    dominantBeliefAxis: preconditionFilterPreview.dominantBeliefAxis ?? null,
+    slowingBias: preconditionFilterPreview.slowingBias ?? 0,
+    returnBias: preconditionFilterPreview.returnBias ?? 0,
+    oneLivingThreadBias: preconditionFilterPreview.oneLivingThreadBias ?? 0,
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -210,6 +222,7 @@ export const buildCompareViewModel = ({
     beliefCorePreview: beliefCoreLayer,
     beliefBranchPreview: beliefBranchLayer,
     beliefLeafPreview: beliefLeafLayer,
+    preconditionFilterPreview: preconditionPreview,
     summary: {
       baselineLength: baseline.length,
       currentLength: current.length,
@@ -223,6 +236,7 @@ export const buildCompareViewModel = ({
       hasBeliefCorePreview: Boolean(beliefCoreLayer),
       hasBeliefBranchPreview: Boolean(beliefBranchLayer),
       hasBeliefLeafPreview: Boolean(beliefLeafLayer),
+      hasPreconditionFilterPreview: Boolean(preconditionPreview),
     },
   }
 }

@@ -70,11 +70,15 @@
 
 ### Belief 前提層の順番
 
-Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Core Layer（信念層1）** → **Belief Branch Layer（信念層2）** → 既存後段
+Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Core Layer（信念層1）** → **Belief Branch Layer（信念層2）** → **Belief Leaf Layer（信念層3）** → **preconditionFilter（前提層の閉じ）** → 既存後段
 
 - Belief Core: 核として定着した自己感覚 / 世界観 / 使命
 - Belief Branch: Core から parentId で分岐する中程度の見方（Core より軽く、Leaf より重い）
+- Belief Leaf: Branch からさらに分岐する最も細かい傾き
+- **preconditionFilter**: 上記すべての前提層を1つの構造へ束ねたフィルタ。返答ではなく、その後を染める前提状態
 - いずれも返答文に直接混ぜず、前提フィルタとして扱う
+
+詳細は [precondition-filter.md](./precondition-filter.md) を参照。
 
 ---
 
