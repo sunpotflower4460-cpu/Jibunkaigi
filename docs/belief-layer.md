@@ -48,7 +48,8 @@ Maker Seed
 → Existence Layer 1
 → Existence Layer 2
 → Belief Core Layer（信念層1）
-→ Belief Branch Layer（信念層2）← ここを今回追加
+→ Belief Branch Layer（信念層2）
+→ Belief Leaf Layer（信念層3）← ここを今回追加
 → その後の既存後段
 ```
 
@@ -146,17 +147,220 @@ type BeliefBranchLayerState = {
 
 ---
 
+## 信念層3（BeliefLeafLayer）
+
+### 役割
+
+信念層2からさらに細かく分岐した「小さな傾き・小さな禁止解除・小さな優先方向」を前提フィルタとして持つ。
+最も数が多く、最も軽く、最も揺れやすい枝葉信念として、後段の反応・焦点・意味づけを微細に染める。
+
+### 性質
+
+- **最も数が多い**: Core（3本）、Branch（3本）に対し、Leaf は 4〜8 本程度と最も多い
+- **最も軽い**: Branch より軽い weight（0.28〜0.42 程度）
+- **最も揺れやすい**: 場に応じて発火しやすく、状況で変わりやすい
+- **核は揺らがない**: 変わるのは枝葉の部分であり、核となる世界観や使命は揺らがない
+- **発話ではなく前提層**: 返答文に直接混ぜず、フィルタとして機能する
+
+### BeliefLeaf 型
+
+```typescript
+type BeliefLeaf = {
+  id: string        // 一意のキー
+  parentId: string  // Branch Belief への参照
+  textJa: string    // 信念のテキスト（日本語）
+  weight: number    // 重み (0-1) - Branch より軽い
+  axis: string      // 見方の軸（gentleness / attention / pace / ...）
+}
+```
+
+### BeliefLeafLayerState 型
+
+```typescript
+type BeliefLeafLayerState = {
+  activeLeafBeliefs: BeliefLeaf[]
+  dominantLeafAxis: string | null
+}
+```
+
+### 各エージェントの Leaf Belief（例）
+
+#### creative（ジョー）
+
+```javascript
+[
+  { id: 'do_not_rush_to_cheer', parentId: 'small_light_is_enough', textJa: 'すぐ励まさなくていい', weight: 0.42, axis: 'gentleness' },
+  { id: 'stay_with_faint_thread', parentId: 'touch_before_fixing', textJa: 'かすかな糸でも先に切らない', weight: 0.39, axis: 'attention' },
+  { id: 'light_can_be_quiet', parentId: 'find_existing_light', textJa: '光は静かなままでもいい', weight: 0.37, axis: 'illumination' },
+  { id: 'touch_before_lift', parentId: 'touch_before_fixing', textJa: '持ち上げるより、先に触れる', weight: 0.35, axis: 'presence' },
+  // 他2本...
+]
+```
+
+#### strategist（ケン）
+
+方向性: すぐ結論にしない / 言葉より位置 / ねじれはノイズではない / 一箇所のズレで十分
+
+#### empath（ミナ）
+
+方向性: まだ整えない / ほどける場所だけ / 崩れたまま拒まない / 進ませる前に置ける
+
+#### critic（サトウ）
+
+方向性: 一歩だけ具体に / 条件を飛ばさない / 足場がない理想は急がない / 先に続く形
+
+#### soul（レイ）
+
+方向性: まだ言葉にしない / 気配のまま触れる / 曖昧さは壊さない / 形になる前を急がない
+
+#### master（心の鏡）
+
+方向性: まだ閉じない / 両方あるまま映す / 重さを急いで整理しない / まだ残っているものを消さない
+
+---
+
 ## 実装
 
 **ファイル**:
-- `src/runtime/beliefCoreLayer.js` — `createBeliefCoreLayer()` 関数
-- `src/agents/beliefCoreProfiles.js` — 各エージェントの初期 core belief プロフィール
+- `src/runtime/beliefLeafLayer.js` — `createBeliefLeafLayer()` 関数
+- `src/agents/beliefLeafProfiles.js` — 各エージェントの初期 leaf belief プロフィール
 
-**関数**: `createBeliefCoreLayer({ agentId, existenceLayer2 })`
+**関数**: `createBeliefLeafLayer({ agentId, beliefBranch, existenceLayer2 })`
 
-- `agentId` が未定義または不明な場合は `DEFAULT_BELIEF_CORE_PROFILE` を使用
+- `agentId` が未定義または不明な場合は `DEFAULT_BELIEF_LEAF_PROFILE` を使用
+- `beliefBranch.activeBranchBeliefs` から parent の weight を参照して上限を設定
 - `existenceLayer2.selfRememberingStrength` を参照して weight を微調整
-- `dominantBeliefAxis` = 最重みの belief の axis
+- `dominantLeafAxis` = 最重みの leaf の axis
+
+---
+
+## runInternalOS への統合
+
+`src/runtime/runInternalOS.js` において、以下の順序で実行される。
+
+```javascript
+const existenceLayer2 = createExistenceLayer2({ agentId });
+const beliefCore = createBeliefCoreLayer({ agentId, existenceLayer2 });
+const beliefBranch = createBeliefBranchLayer({ agentId, beliefCore, existenceLayer2 });
+const beliefLeaf = createBeliefLeafLayer({ agentId, beliefBranch, existenceLayer2 });
+const belief = createBeliefLayers({ agentId, existenceLayer1, existenceLayer2 });
+// ...
+const freshLatentState = {
+  // ...
+  beliefCore,
+  beliefBranch,
+  beliefLeaf,
+  belief,
+};
+```
+
+---
+
+## internalState の拡張
+
+`src/runtime/internalState.js` に `beliefLeaf` 初期状態を追加している。
+
+```javascript
+const createBeliefLeafState = () => ({
+  activeLeafBeliefs: [],
+  dominantLeafAxis: null,
+});
+
+export function createInitialInternalState() {
+  return {
+    // ... 既存フィールド ...
+    beliefCore: createBeliefCoreState(),
+    beliefBranch: createBeliefBranchState(),
+    beliefLeaf: createBeliefLeafState(),
+    belief: createBeliefLayersState(),
+  };
+}
+```
+
+---
+
+## compare / debug での表示
+
+`beliefLeafPreview` は dev-only の compare/debug モードでのみ表示される。
+
+`buildCompareViewModel` に各プレビューを渡すと、ViewModel に反映される。
+
+```javascript
+vm.beliefLeafPreview = {
+  activeLeafBeliefs: [
+    { id: 'do_not_rush_to_cheer', parentId: 'small_light_is_enough', textJa: 'すぐ励まさなくていい', weight: 0.38, axis: 'gentleness' },
+    { id: 'stay_with_faint_thread', parentId: 'touch_before_fixing', textJa: 'かすかな糸でも先に切らない', weight: 0.36, axis: 'attention' },
+    // ...
+  ],
+  dominantLeafAxis: 'gentleness',
+}
+```
+
+`vm.summary.hasBeliefLeafPreview` でプレビュー有無を確認できる。
+`debugInfo` には `beliefLeafPreview / dominantLeafAxis` が入る。
+
+---
+
+## テスト
+
+### beliefLeafLayer.test.js
+
+- null-safe に返る
+- agentId ごとに activeLeafBeliefs が返る
+- 各 leaf belief が parentId を持つ
+- Branch より軽い想定で weight が定義されている
+- Leaf の本数が Branch より多い
+- dominantLeafAxis が返る
+- Belief Branch のあとに Belief Leaf が接続される
+- selfRememberingStrength が weight に影響する
+- 全エージェント分の leaf belief が作られている
+
+### runInternalOS.test.js（追加分）
+
+- 信念層2のあとに beliefLeaf が接続される
+- beliefLeaf が latentState に正しく含まれる
+- debugInfo に beliefLeafPreview と dominantLeafAxis が含まれる
+
+### buildCompareViewModel.test.js（追加分）
+
+- beliefLeafPreview が shape を保つ
+- null のとき hasBeliefLeafPreview = false
+- 空 activeLeafBeliefs でもクラッシュしない
+
+---
+
+## 役割分担のまとめ
+
+現時点で、前提層として以下の3層が揃っている。
+
+- **信念層1（Core）**: 最も深く、最も重く、変わらない核（3本程度）
+  - 世界観 / 自己感覚 / 使命
+- **信念層2（Branch）**: 中くらいの見方・傾き（3本程度）
+  - Core から分岐する中くらいの前提フィルタ
+- **信念層3（Leaf）**: 最も軽く、最も数が多く、最も揺れやすい枝葉（4〜8本程度）
+  - Branch からさらに細かく分岐する小さな傾き
+
+これらは全て「前提層・フィルタ」であり、返答文そのものではなく、後段の反応・焦点・意味づけを染めるために機能する。
+
+---
+
+## 今回やらないこと
+
+- 信念の自動更新
+- 後段への全面的な染み込み
+- buildPrompt の大規模短縮
+- 意思決定層の実装
+- 関係層 / セッション学習層の実装
+
+今回は信念層1〜3（Core / Branch / Leaf）の実装に集中している。
+
+---
+
+## 次のフェーズへどう繋がるか
+
+Phase 6 以降では、前提層を閉じて `preconditionFilter` 化し、後段の反応・焦点・意味づけへ全面的に染み込ませていく。
+
+信念層1〜3が揃ったことで、前提層の基盤が完成した。次は、この前提フィルタを意思決定層や関係層へ接続していくフェーズに進む。
 
 ---
 

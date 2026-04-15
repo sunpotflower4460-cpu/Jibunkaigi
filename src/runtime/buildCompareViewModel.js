@@ -35,6 +35,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.beliefLayerPreview] - Belief Layer の開発用プレビュー
  * @param {object} [params.beliefCorePreview] - Belief Core Layer の開発用プレビュー (dev-only)
  * @param {object} [params.beliefBranchPreview] - Belief Branch Layer の開発用プレビュー (dev-only)
+ * @param {object} [params.beliefLeafPreview] - Belief Leaf Layer の開発用プレビュー (dev-only)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -52,6 +53,7 @@ export const buildCompareViewModel = ({
   beliefLayerPreview = null,
   beliefCorePreview = null,
   beliefBranchPreview = null,
+  beliefLeafPreview = null,
 } = {}) => {
   const baseline = normalize(baselineReply)
   const current = normalize(currentReply)
@@ -164,6 +166,18 @@ export const buildCompareViewModel = ({
     dominantBranchAxis: beliefBranchPreview.dominantBranchAxis ?? null,
   } : null
 
+  // Belief Leaf Layer Preview (dev-only)
+  const beliefLeafLayer = beliefLeafPreview ? {
+    activeLeafBeliefs: (beliefLeafPreview.activeLeafBeliefs ?? []).map(b => ({
+      id: b.id ?? null,
+      parentId: b.parentId ?? null,
+      textJa: b.textJa ?? null,
+      weight: b.weight ?? null,
+      axis: b.axis ?? null,
+    })),
+    dominantLeafAxis: beliefLeafPreview.dominantLeafAxis ?? null,
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -195,6 +209,7 @@ export const buildCompareViewModel = ({
     beliefPreview,
     beliefCorePreview: beliefCoreLayer,
     beliefBranchPreview: beliefBranchLayer,
+    beliefLeafPreview: beliefLeafLayer,
     summary: {
       baselineLength: baseline.length,
       currentLength: current.length,
@@ -207,6 +222,7 @@ export const buildCompareViewModel = ({
       hasBeliefPreview: Boolean(beliefPreview),
       hasBeliefCorePreview: Boolean(beliefCoreLayer),
       hasBeliefBranchPreview: Boolean(beliefBranchLayer),
+      hasBeliefLeafPreview: Boolean(beliefLeafLayer),
     },
   }
 }
