@@ -127,3 +127,63 @@ test('runInternalOS keeps legacy behavior when no continuity options are provide
   assert.deepEqual(withoutOptions.latentState, withEmptyOptions.latentState);
   assert.deepEqual(withoutOptions.patternMix, withEmptyOptions.patternMix);
 });
+
+test('runInternalOS handles null previousMix without crashing', () => {
+  const result = runInternalOS('最近ちょっと自信ない', {
+    previousMix: null,
+  });
+
+  assertNumericShape(result);
+  assert.ok(Array.isArray(result.patternMix.selected));
+  assert.ok(result.patternMix.selected.length >= 3);
+});
+
+test('runInternalOS handles previousMix with null selected', () => {
+  const result = runInternalOS('最近ちょっと自信ない', {
+    previousMix: { selected: null },
+  });
+
+  assertNumericShape(result);
+  assert.ok(Array.isArray(result.patternMix.selected));
+  assert.ok(result.patternMix.selected.length >= 3);
+});
+
+test('runInternalOS handles previousMix with undefined selected', () => {
+  const result = runInternalOS('最近ちょっと自信ない', {
+    previousMix: { selected: undefined },
+  });
+
+  assertNumericShape(result);
+  assert.ok(Array.isArray(result.patternMix.selected));
+  assert.ok(result.patternMix.selected.length >= 3);
+});
+
+test('runInternalOS handles previousMix with unexpected selected type', () => {
+  const result = runInternalOS('最近ちょっと自信ない', {
+    previousMix: { selected: 'unexpected' },
+  });
+
+  assertNumericShape(result);
+  assert.ok(Array.isArray(result.patternMix.selected));
+  assert.ok(result.patternMix.selected.length >= 3);
+});
+
+test('runInternalOS handles undefined previousMix', () => {
+  const result = runInternalOS('最近ちょっと自信ない', {
+    previousMix: undefined,
+  });
+
+  assertNumericShape(result);
+  assert.ok(Array.isArray(result.patternMix.selected));
+  assert.ok(result.patternMix.selected.length >= 3);
+});
+
+test('runInternalOS handles invalid previousMix type', () => {
+  const result = runInternalOS('最近ちょっと自信ない', {
+    previousMix: 'not-an-object',
+  });
+
+  assertNumericShape(result);
+  assert.ok(Array.isArray(result.patternMix.selected));
+  assert.ok(result.patternMix.selected.length >= 3);
+});

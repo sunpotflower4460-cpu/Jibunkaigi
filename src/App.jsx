@@ -38,6 +38,11 @@ import { buildMirrorStateGuide } from './runtime/buildMirrorStateGuide';
 import { buildMirrorInternalFrame } from './runtime/buildMirrorInternalFrame';
 import { buildMirrorSurfaceGuidance } from './runtime/buildMirrorSurfaceGuidance';
 import { runInternalOS } from './runtime/runInternalOS';
+import { buildBaselineSystemPrompt, buildBaselineUserPrompt } from './runtime/buildBaselinePrompt';
+import { buildOuterGuidePrompt } from './runtime/buildOuterGuidePrompt';
+import { buildCompareViewModel } from './runtime/buildCompareViewModel';
+import { readCompareModeFlag, shouldShowComparePanel } from './runtime/compareMode';
+import { readCompareLabelStore, toggleCompareRevisionLabel, writeCompareLabelStore } from './runtime/compareInsights';
 import { buildNextAfterglow, getAfterglowSeed } from './runtime/afterglow';
 import { checkResponse, cleanResponse } from './runtime/postCheck';
 import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
@@ -45,9 +50,11 @@ import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionDat
 import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 import { buildSurfaceFrame } from './runtime/surfaceTranslator';
 import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
+import { getOthersVisibilityState, getOthersEmptyMessage, getOthersDebugLabel } from './runtime/getOthersVisibilityState';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
-import { isCompareModeEnabled, buildCompareEntry, COMPARE_MAX_ENTRIES } from './runtime/compareMode';
-import ComparePanel from './components/ComparePanel';
+import AgentGateDebugPanel, { isAgentDebugEnabled } from './components/AgentGateDebugPanel';
+import CompareModePanel from './components/CompareModePanel';
+import FloatingAgentBar from './components/FloatingAgentBar';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -248,8 +255,12 @@ const App = () => {
   const [openToolbarMsgId, setOpenToolbarMsgId] = useState(null);
   const [autoExpandReactions, setAutoExpandReactions] = useState(null);
   const [surfaceDebugEntries, setSurfaceDebugEntries] = useState([]);
-  const [compareEntries, setCompareEntries] = useState([]);
   const [optimisticSessionTitles, setOptimisticSessionTitles] = useState({});
+  const [agentDebugEvents, setAgentDebugEvents] = useState([]);
+  const [isCompareModeEnabled, setIsCompareModeEnabled] = useState(() => readCompareModeFlag());
+  const [compareEntries, setCompareEntries] = useState([]);
+  const [isCompareCollapsed, setIsCompareCollapsed] = useState(false);
+  const [compareLabelStore, setCompareLabelStore] = useState(() => readCompareLabelStore());
   const errorTimeoutRef = useRef(null);
 
   const currentSessionIdRef = useRef(currentSessionId);
@@ -263,6 +274,7 @@ const App = () => {
   const mountedRef = useRef(true);
   const timeoutIdsRef = useRef(new Set());
   const responseTimingRef = useRef(null);
+  const compareLabelStoreRef = useRef(compareLabelStore);
 
   // エラーメッセージを設定して自動で消す
   const setErrorWithAutoDismiss = (message, duration = 5000) => {
@@ -274,6 +286,15 @@ const App = () => {
       setErrorMessage(null);
       errorTimeoutRef.current = null;
     }, duration);
+  };
+
+  // dev-only debug trace helper
+  const pushAgentDebugEvent = (event) => {
+    if (!isAgentDebugEnabled()) return;
+    setAgentDebugEvents((prev) => {
+      const next = [...prev, { ...event, at: new Date().toISOString() }];
+      return next.slice(-12);
+    });
   };
 
   const [showIntro, setShowIntro] = useState(() => {
@@ -337,12 +358,6 @@ const App = () => {
   };
   const clearSurfaceDebugEntries = () => setSurfaceDebugEntries([]);
 
-  const pushCompareEntry = (entry) => {
-    if (!isCompareModeEnabled()) return;
-    setCompareEntries((prev) => [entry, ...prev].slice(0, COMPARE_MAX_ENTRIES));
-  };
-  const clearCompareEntries = () => setCompareEntries([]);
-
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -350,6 +365,50 @@ const App = () => {
       clearAllScheduledTimeouts();
     };
   }, []);
+
+  useEffect(() => {
+    const updateFlag = () => setIsCompareModeEnabled(readCompareModeFlag());
+    updateFlag();
+
+    if (typeof window === 'undefined') return undefined;
+    const handleStorage = (event) => {
+      if (!event || event.key === null || event.key === 'jibunkaigi:compareMode') {
+        updateFlag();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  useEffect(() => {
+    try {
+      compareLabelStoreRef.current = compareLabelStore;
+      writeCompareLabelStore(compareLabelStore);
+    } catch (error) {
+      console.warn('[compare-mode] label persistence failed', error);
+    }
+  }, [compareLabelStore]);
+
+  const getCompareRevisionLabels = (compareKey) => compareLabelStoreRef.current[compareKey] || [];
+
+  const handleToggleCompareLabel = (compareKey, label) => {
+    if (!compareKey || !label) return;
+    const nextStore = toggleCompareRevisionLabel(compareLabelStore, compareKey, label);
+    const nextLabels = nextStore[compareKey] || [];
+    setCompareLabelStore(nextStore);
+    setCompareEntries((entries) => entries.map((entry) => (
+      entry.compareKey === compareKey
+        ? {
+            ...entry,
+            revisionLabels: nextLabels,
+            labels: {
+              ...(entry.labels || {}),
+              selected: nextLabels,
+            },
+          }
+        : entry
+    )));
+  };
 
   useEffect(() => {
     if (!hasFirebaseConfig) { setErrorWithAutoDismiss("Firebase設定が未完了です。", 10000); return; }
@@ -633,6 +692,80 @@ const App = () => {
     } catch (e) { console.warn("Preload fail", e); }
   };
 
+  const runCompareModeCapture = async ({
+    agentId,
+    userText,
+    currentReply,
+    context,
+    sessionId,
+    messageId,
+    usedInternalOS,
+  }) => {
+    if (!isCompareModeEnabled) return;
+    if (agentId !== 'creative') return; // Phase1: Joe 優先
+    if (!currentReply) return;
+    const compareKey = `${sessionId}:${messageId || 'compare'}`;
+
+    const baselineSystem = buildBaselineSystemPrompt(agentId, { userText, mode: selectedMode, context });
+    const baselineUser = buildBaselineUserPrompt(agentId, { userName, userText });
+    if (!baselineSystem || !baselineUser) return;
+
+    try {
+      const revisionLabels = getCompareRevisionLabels(compareKey)
+      const baselineReply = await callGemini({
+        prompt: baselineUser,
+        systemInstruction: baselineSystem,
+        model: GEMINI_CHAT_MODEL,
+      });
+
+      const outerPrompts = buildOuterGuidePrompt({
+        agentId,
+        userText,
+        baselineReply,
+        currentReply,
+        mode: selectedMode,
+      });
+
+      const outerGuide = await callGemini({
+        prompt: outerPrompts.userPrompt,
+        systemInstruction: outerPrompts.systemInstruction,
+        model: GEMINI_CHAT_MODEL,
+      });
+
+      if (activeSessionIdRef.current !== sessionId) return;
+
+      const vm = buildCompareViewModel({
+        agentId,
+        userText,
+        baselineReply,
+        currentReply,
+        outerGuide,
+        currentUsesInternalOS: usedInternalOS,
+        mode: selectedMode,
+        revisionLabels,
+      });
+
+      if (!mountedRef.current) return;
+      setCompareEntries(prev => [...prev.slice(-2), { ...vm, sessionId, messageId, compareKey, revisionLabels }]);
+    } catch (error) {
+      console.warn("[compare-mode] generation failed", error);
+      if (activeSessionIdRef.current !== sessionId) return;
+      if (!mountedRef.current) return;
+      const revisionLabels = getCompareRevisionLabels(compareKey)
+      const fallback = buildCompareViewModel({
+        agentId,
+        userText,
+        baselineReply: '',
+        currentReply,
+        outerGuide: '比較の生成に失敗しました。',
+        currentUsesInternalOS: usedInternalOS,
+        mode: selectedMode,
+        revisionLabels,
+      });
+      setCompareEntries(prev => [...prev.slice(-2), { ...fallback, sessionId, messageId, compareKey, revisionLabels }]);
+    }
+  };
+
   const safeUpdateSession = async (sessionId, data) => {
     if (!db || !user || !sessionId) return false;
     try {
@@ -676,21 +809,45 @@ const App = () => {
 
   const handleRandomResponse = () => {
     const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
-    if (AGENTS.length === 0 || !effectiveSessionId) return;
+    if (AGENTS.length === 0 || !effectiveSessionId) {
+      console.warn("[handleRandomResponse] Blocked: no agents or no session", { AGENTS: AGENTS.length, effectiveSessionId });
+      pushAgentDebugEvent({ tag: 'handleRandomResponse:blocked', reason: 'no-agents-or-session', agentCount: AGENTS.length, sessionId: effectiveSessionId });
+      return;
+    }
 
-    const lastAgentId = getLastRespondingAgentId(messages);
-    const afterglowSeed = getAfterglowSeedForSession(effectiveSessionId);
-    const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
-      mode: selectedMode,
-      previousMix: afterglowSeed.previousMix,
-      previousLatentState: afterglowSeed.previousLatentState,
-    });
-    const agentId = pickContextualAgent(AGENTS, {
-      patternMix: internalOS.patternMix,
-      lastAgentId,
-    });
+    try {
+      const lastAgentId = getLastRespondingAgentId(messages);
+      const afterglowSeed = getAfterglowSeedForSession(effectiveSessionId);
 
-    handleAgentClick(agentId);
+      // Normalize afterglowSeed before passing to runInternalOS
+      const safePreviousMix =
+        afterglowSeed?.previousMix && typeof afterglowSeed.previousMix === 'object'
+          ? afterglowSeed.previousMix
+          : null;
+
+      const safePreviousLatentState =
+        afterglowSeed?.previousLatentState && typeof afterglowSeed.previousLatentState === 'object'
+          ? afterglowSeed.previousLatentState
+          : null;
+
+      const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
+        mode: selectedMode,
+        previousMix: safePreviousMix,
+        previousLatentState: safePreviousLatentState,
+      });
+      const agentId = pickContextualAgent(AGENTS, {
+        patternMix: internalOS.patternMix,
+        lastAgentId,
+      });
+
+      handleAgentClick(agentId);
+    } catch (error) {
+      console.error("[handleRandomResponse:error]", error);
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      setErrorWithAutoDismiss("「委ねる」の処理中にエラーが発生しました。");
+    }
   };
 
   const handleDeleteMessage = async (msgId) => {
@@ -721,6 +878,8 @@ const App = () => {
     const wasCreatingNewSession = !sid;
     const userMsgId = makeId();
     const clientTimestamp = Date.now();
+    console.info("[send:start]", { text: text.slice(0, 30), wasCreatingNewSession });
+    pushAgentDebugEvent({ tag: 'send:start', wasCreatingNewSession, textLength: text.length });
 
     try {
       if (wasCreatingNewSession) {
@@ -728,6 +887,7 @@ const App = () => {
         const fallbackTitle = text.slice(0, 15);
         // optimistic title を設定
         setOptimisticSessionTitles(prev => ({ ...prev, [sid]: fallbackTitle }));
+        console.info("[send:optimistic-title-set]", { sid, fallbackTitle });
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sid), {
           title: fallbackTitle,
           createdAt: serverTimestamp(),
@@ -736,6 +896,8 @@ const App = () => {
         });
         // セッションIDを先に state にセット（refは useEffect で自動同期）
         setCurrentSessionId(sid);
+        console.info("[send:new-session-created]", { sid });
+        pushAgentDebugEvent({ tag: 'send:new-session-created', sessionId: sid });
         // ref も即座に更新して同期を保証
         currentSessionIdRef.current = sid;
         activeSessionIdRef.current = sid;
@@ -786,15 +948,16 @@ const App = () => {
         if (prev.some(m => m.id === userMsgId)) return prev;
         return [...prev, optimisticMsg];
       });
-
-      setIsSending(false);
+      console.info("[send:optimistic-message-set]", { sid, userMsgId });
       setShowInput(false);
     } catch (e) {
-      console.error("[handleSend] Error:", e);
+      console.error("[send:error]", e);
+      pushAgentDebugEvent({ tag: 'send:error', error: e instanceof Error ? e.message : String(e) });
       setErrorWithAutoDismiss("送信に失敗しました。もう一度お試しください。");
       setUserInput(text);
       setShowInput(true);
     } finally {
+      console.info("[send:finally]", { sid });
       // 確実に送信中状態を解除（無条件）
       setIsSending(false);
     }
@@ -802,49 +965,126 @@ const App = () => {
 
   const handleAgentClick = (agentId, isMaster = false) => {
     const effectiveSessionId = currentSessionId || currentSessionIdRef.current;
-    if (!db || !user || !effectiveSessionId || isGenerating) return;
+    const debugState = {
+      agentId,
+      currentSessionId: effectiveSessionId,
+      isAppReady,
+      isGenerating,
+      isSending,
+      showInput,
+      hasPromptForActiveSession,
+      canUseAgents,
+      showDelegateBar,
+    };
+
+    console.info("[agent-click:start]", debugState);
+    pushAgentDebugEvent({ tag: 'agent-click:start', agentId, sessionId: effectiveSessionId });
+
+    if (!isAppReady) {
+      console.warn("[agent-click:blocked]", { reason: 'app-not-ready', ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'app-not-ready', agentId, sessionId: effectiveSessionId });
+      return;
+    }
+    if (isGenerating) {
+      console.warn("[agent-click:blocked]", { reason: 'busy:isGenerating', ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'busy:isGenerating', agentId, sessionId: effectiveSessionId });
+      return;
+    }
+    if (isSending) {
+      console.warn("[agent-click:blocked]", { reason: 'busy:isSending', ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'busy:isSending', agentId, sessionId: effectiveSessionId });
+      return;
+    }
+    if (!effectiveSessionId) {
+      console.warn("[agent-click:blocked]", { reason: 'no-session', ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'no-session', agentId });
+      return;
+    }
 
     const hasUserMessageInThisSession =
       messages.some(m => m.role === 'user') ||
       lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId;
 
     if (!hasUserMessageInThisSession) {
+      console.warn("[agent-click:blocked]", { reason: 'no-prompt', ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'no-prompt', agentId, sessionId: effectiveSessionId, messagesCount: messages.length, visibleMessagesCount: messages.filter(m => m.role === 'user' || m.role === 'assistant').length });
       setErrorWithAutoDismiss("先にメッセージを送ってからエージェントを選んでください。");
       return;
     }
 
-    playSound('click');
-    const agentInfo = isMaster ? { name: '心の鏡', id: 'master' } : AGENTS.find(a => a.id === agentId);
-    const mid = lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId
-      ? lastSubmittedUserMessageRef.current?.messageId : null;
-    const messagesAtClick = [...messages];
-    const traceId = `${effectiveSessionId}:${mid || makeId()}:${isMaster ? 'master' : agentId}`;
+    try {
+      playSound('click');
+      const agentInfo = isMaster ? { name: '心の鏡', id: 'master' } : AGENTS.find(a => a.id === agentId);
+      const mid = lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId
+        ? lastSubmittedUserMessageRef.current?.messageId : null;
+      const messagesAtClick = [...messages];
+      const traceId = `${effectiveSessionId}:${mid || makeId()}:${isMaster ? 'master' : agentId}`;
 
-    console.info(`[timing][${traceId}] agent button click`);
-    responseTimingRef.current = {
-      traceId,
-      clickStartedAt: performance.now(),
-      awaitingThinkingRender: true,
-      awaitingResponseRender: false,
-      aiMessageId: null,
-    };
+      console.info(`[timing][${traceId}] agent button click`);
+      console.info("[agent-click:dispatch]", { traceId, ...debugState });
+      pushAgentDebugEvent({ tag: 'agent-click:dispatch', agentId, sessionId: effectiveSessionId, traceId });
+      responseTimingRef.current = {
+        traceId,
+        clickStartedAt: performance.now(),
+        awaitingThinkingRender: true,
+        awaitingResponseRender: false,
+        aiMessageId: null,
+      };
 
-    setIsGenerating(true);
-    setGeneratingAgent(agentInfo);
-    setShowInput(false);
+      setIsGenerating(true);
+      setGeneratingAgent(agentInfo);
+      setShowInput(false);
 
-    window.requestAnimationFrame(() => {
-      handleAiResponse(agentId, isMaster, effectiveSessionId, mid, messagesAtClick, traceId);
-    });
-  };
-
-  const handleAiResponse = async (agentId, isMaster, sessionId, sourceMessageId, messagesAtClick, traceId) => {
-    if (!db || !user || !sessionId) {
-      console.warn("[handleAiResponse] Aborted before start: missing db, user, or sessionId");
+      window.requestAnimationFrame(() => {
+        Promise.resolve(handleAiResponse(agentId, isMaster, effectiveSessionId, mid, messagesAtClick, traceId)).catch((rafError) => {
+          console.error("[raf:handleAiResponse:error]", rafError);
+          pushAgentDebugEvent({ tag: 'raf:handleAiResponse:error', reason: rafError?.message || 'unknown', agentId, sessionId: effectiveSessionId });
+          setIsGenerating(false);
+          setGeneratingAgent(null);
+          setShowInput(true);
+          setErrorWithAutoDismiss("応答の開始に失敗しました。");
+        });
+      });
+    } catch (error) {
+      console.error("[agent-click:error]", error);
+      pushAgentDebugEvent({ tag: 'agent-click:error', error: error instanceof Error ? error.message : String(error), agentId, sessionId: effectiveSessionId });
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
-      setErrorWithAutoDismiss("応答を開始できませんでした。時間を置いて再度お試しください。");
+      setErrorWithAutoDismiss("エージェントの起動に失敗しました。");
+    } finally {
+      console.info("[agent-click:finally]", { agentId, effectiveSessionId });
+    }
+  };
+
+  const handleAiResponse = async (agentId, isMaster, sessionId, sourceMessageId, messagesAtClick, traceId) => {
+    const aiDebugState = {
+      agentId,
+      sessionId,
+      hasDb: !!db,
+      hasUser: !!user,
+      hasSessionId: !!sessionId,
+      activeSessionMatches: activeSessionIdRef.current === sessionId,
+      isMaster,
+    };
+    console.info("[ai-response:start]", aiDebugState);
+    pushAgentDebugEvent({ tag: 'ai-response:start', agentId, sessionId, hasDb: !!db, hasUser: !!user, hasSessionId: !!sessionId });
+
+    if (!db || !user || !sessionId) {
+      const missing = {
+        db: !db,
+        user: !user,
+        sessionId: !sessionId,
+      };
+      const missingKeys = Object.keys(missing).filter(k => missing[k]);
+      const reason = `missing:${missingKeys.join(',')}`;
+      console.warn("[ai-response:early-return]", { reason, ...aiDebugState });
+      pushAgentDebugEvent({ tag: 'ai-response:early-return', reason, agentId, sessionId, missing });
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      const detailMsg = isAgentDebugEnabled() ? ` (${reason})` : '';
+      setErrorWithAutoDismiss(`応答を開始できませんでした。時間を置いて再度お試しください。${detailMsg}`);
       return;
     }
     const agent = isMaster
@@ -865,26 +1105,143 @@ const App = () => {
     }
 
     const finishPromptBuild = beginTimedPhase(traceId, 'prompt build');
-    const context = buildPromptContext({
-      messages: baseMessages,
-      userName,
-      agents: AGENTS,
-      maxMessages: 6,
-      maxCharsPerMessage: 180,
-    });
+
+    // ── phase helper: エラー時に共通処理 ──────────────────────────────────
+    const handlePhaseError = (phase, err) => {
+      const reason = err instanceof Error ? err.message : String(err);
+      console.error(`[ai-response:error] phase=${phase}`, err);
+      pushAgentDebugEvent({ tag: 'ai-response:error', phase, reason, agentId, sessionId, currentSessionId: activeSessionIdRef.current, activeSessionMatches: activeSessionIdRef.current === sessionId });
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      const phaseSuffix = isAgentDebugEnabled() ? `（phase=${phase}）` : '';
+      if (phase === 'system-prompt' || phase === 'user-prompt') {
+        setErrorWithAutoDismiss(`AIプロンプトの構築に失敗しました。${phaseSuffix}`);
+      } else if (phase === 'activate-agent') {
+        setErrorWithAutoDismiss(`「委ねる」の処理中にエラーが発生しました。${phaseSuffix}`);
+      } else {
+        setErrorWithAutoDismiss(`応答の準備中にエラーが発生しました。${phaseSuffix}`);
+      }
+    };
+
+    // A. context 構築
+    let context;
+    try {
+      context = buildPromptContext({
+        messages: baseMessages,
+        userName,
+        agents: AGENTS,
+        maxMessages: 6,
+        maxCharsPerMessage: 180,
+      });
+    } catch (err) {
+      handlePhaseError('context-build', err);
+      return;
+    }
 
     let systemInstruction = '';
     let promptText = `${userName}に言葉を。`;
     const latestUserText = getLatestUserText(sessionId, baseMessages);
     const afterglowSeed = getAfterglowSeedForSession(sessionId);
-    const continuityInternalOS = !isMaster
-      ? runInternalOS(latestUserText, {
+
+    const currentSessionId = activeSessionIdRef.current;
+    const activeSessionMatches = currentSessionId === sessionId;
+
+    const _debugBase = { agentId, sessionId, currentSessionId, activeSessionMatches };
+
+    console.info("[ai-response:after-context]", _debugBase);
+    pushAgentDebugEvent({ tag: 'ai-response:after-context', ..._debugBase, messagesAtClickCount: messagesAtClick.length, mode: selectedMode });
+
+    // Normalize afterglowSeed before passing to runInternalOS
+    const safePreviousMix =
+      afterglowSeed?.previousMix && typeof afterglowSeed.previousMix === 'object'
+        ? afterglowSeed.previousMix
+        : null;
+
+    const safePreviousLatentState =
+      afterglowSeed?.previousLatentState && typeof afterglowSeed.previousLatentState === 'object'
+        ? afterglowSeed.previousLatentState
+        : null;
+
+    // Add before-internal-os debug event
+    console.info("[ai-response:before-internal-os]", {
+      ..._debugBase,
+      hasPreviousMix: !!safePreviousMix,
+      previousMixType: safePreviousMix === null ? 'null' : typeof safePreviousMix,
+      previousMixHasSelected:
+        !!safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix,
+      previousMixSelectedType:
+        safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix
+          ? typeof safePreviousMix.selected
+          : 'none',
+      hasPreviousLatentState: !!safePreviousLatentState,
+    });
+    pushAgentDebugEvent({
+      tag: 'ai-response:before-internal-os',
+      ..._debugBase,
+      hasPreviousMix: !!safePreviousMix,
+      previousMixType: safePreviousMix === null ? 'null' : typeof safePreviousMix,
+      previousMixHasSelected:
+        !!safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix,
+      previousMixSelectedType:
+        safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix
+          ? typeof safePreviousMix.selected
+          : 'none',
+      hasPreviousLatentState: !!safePreviousLatentState,
+    });
+
+    // B. runInternalOS
+    let continuityInternalOS;
+    try {
+      continuityInternalOS = !isMaster
+        ? runInternalOS(latestUserText, {
+          agentId,
+          mode: selectedMode,
+          previousMix: safePreviousMix,
+          previousLatentState: safePreviousLatentState,
+        })
+        : null;
+    } catch (err) {
+      // Enhanced error reporting for internal-os phase
+      const previousMixSelectedType =
+        safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix
+          ? typeof safePreviousMix.selected
+          : 'none';
+
+      const reason = err instanceof Error ? err.message : String(err);
+      console.error('[ai-response:error] phase=internal-os', err);
+      pushAgentDebugEvent({
+        tag: 'ai-response:error',
+        phase: 'internal-os',
+        reason,
+        previousMixSelectedType,
+        hasPreviousMix: !!safePreviousMix,
         agentId,
-        mode: selectedMode,
-        previousMix: afterglowSeed.previousMix,
-        previousLatentState: afterglowSeed.previousLatentState,
-      })
-      : null;
+        sessionId,
+        currentSessionId: activeSessionIdRef.current,
+        activeSessionMatches: activeSessionIdRef.current === sessionId,
+      });
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      const phaseSuffix = isAgentDebugEnabled() ? '（phase=internal-os）' : '';
+      setErrorWithAutoDismiss(`内部処理でエラーが発生しました。${phaseSuffix}`);
+      return;
+    }
+
+    console.info("[ai-response:after-internal-os]", { ..._debugBase, hasInternalOS: !!continuityInternalOS });
+    pushAgentDebugEvent({ tag: 'ai-response:after-internal-os', ..._debugBase, hasInternalOS: !!continuityInternalOS });
+
     const surfaceFrame = continuityInternalOS
       ? buildSurfaceFrame({
           latentState: continuityInternalOS.latentState,
@@ -899,10 +1256,6 @@ const App = () => {
     let aiPersistenceState = 'not-created';
 
     let activated = null;
-    // Compare Mode: dev-only state. Compute once per call.
-    const compareEnabled = isCompareModeEnabled();
-    let compareOuterGuide = { stateGuide: '', internalFrame: '', surfaceGuidance: '' };
-    let compareBaselineSystemInstruction = '';
     if (isMaster) {
       const mirrorContext = buildPromptContext({
         messages: baseMessages,
@@ -943,23 +1296,6 @@ const App = () => {
         surfaceGuidance: mirrorSurfaceGuidance,
       });
       promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
-      // Compare Mode: capture outer guide + build baseline (Outer Guide 空) systemInstruction
-      compareOuterGuide = {
-        stateGuide: mirrorStateGuide || '',
-        internalFrame: mirrorInternalFrame || '',
-        surfaceGuidance: mirrorSurfaceGuidance || '',
-      };
-      if (compareEnabled) {
-        compareBaselineSystemInstruction = buildMirrorSystemPrompt({
-          context: mirrorContext,
-          mode: selectedMode,
-          signals,
-          surfaceFrame: mirrorSurfaceFrame,
-          stateGuide: '',
-          internalFrame: '',
-          surfaceGuidance: '',
-        });
-      }
       const mirrorUsedAfterglow = !!(
         afterglowSeed && (afterglowSeed.previousMix || afterglowSeed.previousLatentState)
       );
@@ -982,60 +1318,122 @@ const App = () => {
           usedAfterglow: mirrorUsedAfterglow,
         },
       }));
+
+      // Mirror path: emit milestones after key steps
+      console.info("[ai-response:after-estimate-state]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-estimate-state', ..._debugBase });
+      console.info("[ai-response:after-activate-agent]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-activate-agent', ..._debugBase });
+      console.info("[ai-response:after-state-guide]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-state-guide', ..._debugBase });
+      console.info("[ai-response:after-internal-frame]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-internal-frame', ..._debugBase });
+      console.info("[ai-response:after-surface-guidance]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-surface-guidance', ..._debugBase });
+      console.info("[ai-response:after-system-prompt]", { ..._debugBase, systemInstructionLength: systemInstruction.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-system-prompt', ..._debugBase, systemInstructionLength: systemInstruction.length });
+      console.info("[ai-response:after-user-prompt]", { ..._debugBase, promptLength: promptText.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-user-prompt', ..._debugBase, promptLength: promptText.length });
     } else {
       // 全エージェント統一パイプライン
-      const estimatedState = estimateState(latestUserText);
-      activated = activateAgent(agentId, estimatedState);
 
-      // エージェント専用の深いパイプライン
-      const agentStateGuide = buildAgentStateGuide(agentId, estimatedState);
-      const agentInternalFrame = continuityInternalOS ? buildAgentInternalFrame({
-        agentId,
-        internalOS: continuityInternalOS,
-        estimatedState,
-      }) : '';
-      const agentSurfaceGuidance = surfaceFrame ? buildAgentSurfaceGuidance({
-        agentId,
-        surfaceFrame,
-      }) : '';
+      // C. estimateState
+      let estimatedState;
+      try {
+        estimatedState = estimateState(latestUserText);
+      } catch (err) {
+        handlePhaseError('estimate-state', err);
+        return;
+      }
+      console.info("[ai-response:after-estimate-state]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-estimate-state', ..._debugBase });
 
-      systemInstruction = buildAgentSystemPrompt(agentId, {
-        activated,
-        context,
-        mode: selectedMode,
-        userText: latestUserText,
-        internalOS: continuityInternalOS,
-        surfaceFrame,
-        stateGuide: agentStateGuide,
-        internalFrame: agentInternalFrame,
-        surfaceGuidance: agentSurfaceGuidance,
-      });
-      promptText = buildAgentUserPrompt(agentId, { userName, userText: latestUserText });
-      const hasSelectedAfterglowMix = (mix) => {
-        if (!mix || !mix.selected) return false;
-        if (Array.isArray(mix.selected)) return mix.selected.length > 0;
-        if (typeof mix.selected === 'object') return Object.keys(mix.selected).length > 0;
-        return Boolean(mix.selected);
-      };
-      // Compare Mode: capture outer guide + build baseline (Outer Guide 空) systemInstruction
-      compareOuterGuide = {
-        stateGuide: agentStateGuide || '',
-        internalFrame: agentInternalFrame || '',
-        surfaceGuidance: agentSurfaceGuidance || '',
-      };
-      if (compareEnabled) {
-        compareBaselineSystemInstruction = buildAgentSystemPrompt(agentId, {
+      // D. activateAgent
+      try {
+        activated = activateAgent(agentId, estimatedState);
+      } catch (err) {
+        handlePhaseError('activate-agent', err);
+        return;
+      }
+      console.info("[ai-response:after-activate-agent]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-activate-agent', ..._debugBase });
+
+      // E. buildAgentStateGuide
+      let agentStateGuide;
+      try {
+        agentStateGuide = buildAgentStateGuide(agentId, estimatedState);
+      } catch (err) {
+        handlePhaseError('state-guide', err);
+        return;
+      }
+      console.info("[ai-response:after-state-guide]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-state-guide', ..._debugBase });
+
+      // F. buildAgentInternalFrame
+      let agentInternalFrame;
+      try {
+        agentInternalFrame = continuityInternalOS ? buildAgentInternalFrame({
+          agentId,
+          internalOS: continuityInternalOS,
+          estimatedState,
+        }) : '';
+      } catch (err) {
+        handlePhaseError('internal-frame', err);
+        return;
+      }
+      console.info("[ai-response:after-internal-frame]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-internal-frame', ..._debugBase });
+
+      // G. buildAgentSurfaceGuidance
+      let agentSurfaceGuidance;
+      try {
+        agentSurfaceGuidance = surfaceFrame ? buildAgentSurfaceGuidance({
+          agentId,
+          surfaceFrame,
+        }) : '';
+      } catch (err) {
+        handlePhaseError('surface-guidance', err);
+        return;
+      }
+      console.info("[ai-response:after-surface-guidance]", { ..._debugBase, hasSurfaceFrame: !!surfaceFrame });
+      pushAgentDebugEvent({ tag: 'ai-response:after-surface-guidance', ..._debugBase, hasSurfaceFrame: !!surfaceFrame });
+
+      // H. buildAgentSystemPrompt
+      try {
+        systemInstruction = buildAgentSystemPrompt(agentId, {
           activated,
           context,
           mode: selectedMode,
           userText: latestUserText,
           internalOS: continuityInternalOS,
           surfaceFrame,
-          stateGuide: '',
-          internalFrame: '',
-          surfaceGuidance: '',
+          stateGuide: agentStateGuide,
+          internalFrame: agentInternalFrame,
+          surfaceGuidance: agentSurfaceGuidance,
         });
+      } catch (err) {
+        handlePhaseError('system-prompt', err);
+        return;
       }
+      console.info("[ai-response:after-system-prompt]", { ..._debugBase, systemInstructionLength: systemInstruction.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-system-prompt', ..._debugBase, systemInstructionLength: systemInstruction.length });
+
+      // I. buildAgentUserPrompt
+      try {
+        promptText = buildAgentUserPrompt(agentId, { userName, userText: latestUserText });
+      } catch (err) {
+        handlePhaseError('user-prompt', err);
+        return;
+      }
+      console.info("[ai-response:after-user-prompt]", { ..._debugBase, promptLength: promptText.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-user-prompt', ..._debugBase, promptLength: promptText.length });
+
+      const hasSelectedAfterglowMix = (mix) => {
+        if (!mix || !mix.selected) return false;
+        if (Array.isArray(mix.selected)) return mix.selected.length > 0;
+        if (typeof mix.selected === 'object') return Object.keys(mix.selected).length > 0;
+        return Boolean(mix.selected);
+      };
       const agentUsedAfterglow = !!(
         afterglowSeed && (
           hasSelectedAfterglowMix(afterglowSeed.previousMix) ||
@@ -1072,26 +1470,13 @@ const App = () => {
       systemInstruction = applyRefresh(systemInstruction, refreshText);
     }
 
-    // Compare Mode: fire baseline call in parallel with current. Fire-and-forget.
-    // baseline は Current と並走し、どちらかが失敗しても他方に影響しない。
-    let baselinePromise = null;
-    if (compareEnabled && compareBaselineSystemInstruction) {
-      baselinePromise = callGemini({
-        prompt: promptText,
-        systemInstruction: compareBaselineSystemInstruction,
-        model: GEMINI_CHAT_MODEL,
-      })
-        .then((reply) => ({ ok: true, reply: cleanResponse(reply) }))
-        .catch((err) => ({ ok: false, error: err }));
-    }
-    let currentReplyForCompare = '';
-    let currentErrorForCompare = null;
-
     try {
       const clickStartedAt = responseTimingRef.current?.clickStartedAt ?? performance.now();
       console.info(
         `[timing][${traceId}] fetch start: ${(performance.now() - clickStartedAt).toFixed(1)}ms from click`,
       );
+      console.info("[ai-response:before-gemini]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:before-gemini', agentId, sessionId });
       const finishFetch = beginTimedPhase(traceId, 'fetch');
       let response = '';
       try {
@@ -1109,7 +1494,8 @@ const App = () => {
         throw new Error(`response_check:${responseCheck.reason}`);
       }
       const cleanedResponse = cleanResponse(response);
-      currentReplyForCompare = cleanedResponse;
+      console.info("[ai-response:after-gemini]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:after-gemini', agentId, sessionId, responseLength: cleanedResponse.length });
 
       // セッション切り替えチェック（早期中断）
       if (activeSessionIdRef.current !== sessionId) {
@@ -1140,6 +1526,8 @@ const App = () => {
         return [...prev, optimisticAiMessage];
       });
 
+      console.info("[ai-response:before-save]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:before-save', agentId, sessionId });
       await measureFirestoreWrite(traceId, 'AI response save', () =>
         setDoc(
           doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
@@ -1147,6 +1535,8 @@ const App = () => {
         )
       );
       aiPersistenceState = 'persisted';
+      console.info("[ai-response:after-save]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:after-save', agentId, sessionId });
 
       // セッション切り替えチェック（afterglow更新前）
       if (activeSessionIdRef.current !== sessionId) {
@@ -1164,6 +1554,16 @@ const App = () => {
 
       writeSessionAfterglowLocal(sessionId, nextAfterglow);
       await safeUpdateSession(sessionId, { afterglow: nextAfterglow, updatedAt: serverTimestamp() });
+
+      void runCompareModeCapture({
+        agentId: isMaster ? 'master' : agentId,
+        userText: latestUserText,
+        currentReply: cleanedResponse,
+        context,
+        sessionId,
+        messageId: aiMsgId,
+        usedInternalOS: !!continuityInternalOS,
+      });
 
       playSound('receive');
       setIsGenerating(false);
@@ -1206,9 +1606,10 @@ const App = () => {
         });
       }
     } catch (e) {
-      currentErrorForCompare = e;
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[handleAiResponse] Error:", msg);
+      const errPhase = aiPersistenceState === 'persisted' ? 'save' : aiPersistenceState === 'optimistic' ? 'save' : 'gemini';
+      console.error("[ai-response:error]", { msg, phase: errPhase, ...aiDebugState });
+      pushAgentDebugEvent({ tag: 'ai-response:error', phase: errPhase, reason: msg, agentId, sessionId, persistenceState: aiPersistenceState });
       // セッションが一致する場合のみ UI を復帰
       const currentlyActiveSession = currentSessionIdRef.current === sessionId;
 
@@ -1219,50 +1620,28 @@ const App = () => {
 
       // 現在アクティブなセッションでのエラーのみユーザーに表示
       if (currentlyActiveSession) {
+        const phaseSuffix = isAgentDebugEnabled() ? `（phase=${errPhase}）` : '';
+        const debugSuffix = isAgentDebugEnabled() ? ` (${msg.slice(0, 30)})` : '';
         if (msg.includes("API key is missing")) {
           setErrorWithAutoDismiss("Gemini APIキーが未設定です。", 10000);
         } else if (msg.includes("timeout")) {
-          setErrorWithAutoDismiss("AIの応答がタイムアウトしました。もう一度お試しください。");
+          setErrorWithAutoDismiss(`AIの応答がタイムアウトしました。もう一度お試しください。${debugSuffix}`);
         } else if (msg.includes("response_check:empty") || msg.includes("Empty response")) {
-          setErrorWithAutoDismiss("AIの応答が空でした。もう一度お試しください。");
+          setErrorWithAutoDismiss(`AIの応答が空でした。もう一度お試しください。${debugSuffix}`);
         } else if (msg.includes("response_check:json_leak")) {
-          setErrorWithAutoDismiss("AIの応答が不正な形式でした（JSONが返されました）。もう一度お試しください。");
+          setErrorWithAutoDismiss(`AIの応答が不正な形式でした（JSONが返されました）。もう一度お試しください。${debugSuffix}`);
+        } else if (errPhase === 'save') {
+          setErrorWithAutoDismiss(`応答の保存に失敗しました。${phaseSuffix}`);
         } else {
-          setErrorWithAutoDismiss("AIとの通信に失敗しました。");
+          setErrorWithAutoDismiss(`AIとの通信に失敗しました。${phaseSuffix}${debugSuffix}`);
         }
       }
     } finally {
-      // セッションが一致する場合のみ UI を復帰
-      if (activeSessionIdRef.current === sessionId) {
-        setIsGenerating(false);
-        setGeneratingAgent(null);
-        setShowInput(true);
-      }
-
-      // Compare Mode: baseline の結果を待って entry を push（fire-and-forget）
-      if (baselinePromise) {
-        baselinePromise
-          .then((baselineResult) => {
-            // セッション切り替え中は捨てる
-            if (activeSessionIdRef.current !== sessionId) return;
-            pushCompareEntry(buildCompareEntry({
-              agentId: isMaster ? 'master' : agentId,
-              isMirror: isMaster,
-              mode: selectedMode,
-              userText: latestUserText,
-              baselineReply: baselineResult.ok ? baselineResult.reply : '',
-              currentReply: currentReplyForCompare,
-              stateGuide: compareOuterGuide.stateGuide,
-              internalFrame: compareOuterGuide.internalFrame,
-              surfaceGuidance: compareOuterGuide.surfaceGuidance,
-              baselineError: baselineResult.ok ? null : baselineResult.error,
-              currentError: currentErrorForCompare,
-            }));
-          })
-          .catch(() => {
-            /* swallow — compare is dev-only, never disturb main flow */
-          });
-      }
+      console.info("[ai-response:finally]", aiDebugState);
+      // 無条件で state を復帰（stale closure や条件分岐で state が残るのを防ぐ）
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
     }
   };
 
@@ -1365,6 +1744,17 @@ const App = () => {
           : !hasPromptForActiveSession
             ? '最初の一文を送ると、会議メンバーが応答できます。'
             : '気になる視点を選ぶか、「委ねる」で流れに任せられます。';
+
+  const getAgentDisabledReason = () => {
+    if (!isAppReady) return 'app-not-ready';
+    if (isGenerating) return 'busy:isGenerating';
+    if (isSending) return 'busy:isSending';
+    if (!activeSessionId) return 'no-session';
+    if (!hasPromptForActiveSession) return 'no-prompt';
+    return null;
+  };
+  const agentDisabledReason = getAgentDisabledReason();
+  const comparePanelVisible = shouldShowComparePanel({ enabled: isCompareModeEnabled, entries: compareEntries });
 
   return (
     <div className="lake-bg relative min-h-screen overflow-hidden flex font-sans text-[#2d3748]">
@@ -1509,6 +1899,11 @@ const App = () => {
                     </div>
                   </div>
                   <p className="px-2 text-[11px] font-bold text-slate-400">{agentHelperText}</p>
+                  {isAgentDebugEnabled() && agentDisabledReason && (
+                    <p className="px-2 text-[10px] font-black text-orange-500 font-mono">
+                      disabled: {agentDisabledReason}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -1552,21 +1947,63 @@ const App = () => {
                                 <button aria-label="メッセージを削除" title="メッセージを削除" onClick={() => { handleDeleteMessage(msg.id); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-rose-500"><Trash2 size={12}/></button>
                               </div>
                             )}
-                            {!isUser && msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                              <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-white/20">
-                                <button onClick={e => { e.stopPropagation(); if (autoExpandReactions?.msgId === msg.id && !activeReaction) setAutoExpandReactions(null); else { setActiveReaction(null); setAutoExpandReactions({msgId: msg.id, isLoading: false}); } }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${(autoExpandReactions?.msgId === msg.id && !activeReaction) ? 'bg-slate-800 text-white border-slate-900 shadow-md' : 'bg-white/40 text-slate-500 border-white/60 hover:bg-white/60'}`}>
-                                  <Users size={10} /> OTHERS
-                                </button>
-                                {Object.entries(msg.reactions).map(([rId]) => {
-                                  const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
-                                  return (
-                                    <button key={rId} onClick={e => { e.stopPropagation(); setActiveReaction(activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? null : {msgId: msg.id, agentId: rId}); setAutoExpandReactions(null); }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? 'bg-slate-800 text-white border-slate-900' : 'bg-white/40 text-slate-400 border-white/60 hover:bg-white/60'}`}>
-                                      {rAgent.icon} {rAgent.name}
+                            {(() => {
+                              // OTHERS 表示状態を集約判定
+                              const othersState = getOthersVisibilityState({
+                                activeSessionId: currentSessionId,
+                                hasPromptForActiveSession,
+                                isMessagesLoading,
+                                visibleMessagesCount: messages.filter(m => m.role === 'user' || m.role === 'ai').length,
+                                compareModeEnabled: isCompareModeEnabled,
+                                reactions: msg.reactions,
+                                isGenerating,
+                              });
+
+                              // 通常は reactions がある AI メッセージのみ
+                              if (!isUser && othersState.shouldRenderOthers && othersState.hasReactionData) {
+                                return (
+                                  <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-white/20">
+                                    <button onClick={e => { e.stopPropagation(); if (autoExpandReactions?.msgId === msg.id && !activeReaction) setAutoExpandReactions(null); else { setActiveReaction(null); setAutoExpandReactions({msgId: msg.id, isLoading: false}); } }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${(autoExpandReactions?.msgId === msg.id && !activeReaction) ? 'bg-slate-800 text-white border-slate-900 shadow-md' : 'bg-white/40 text-slate-500 border-white/60 hover:bg-white/60'}`}>
+                                      <Users size={10} /> OTHERS
+                                      {(isCompareModeEnabled || isAgentDebugEnabled()) && (
+                                        <span className="text-[8px] opacity-60 ml-0.5">({othersState.othersCount})</span>
+                                      )}
                                     </button>
-                                  );
-                                })}
-                              </div>
-                            )}
+                                    {Object.entries(msg.reactions).map(([rId]) => {
+                                      const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
+                                      return (
+                                        <button key={rId} onClick={e => { e.stopPropagation(); setActiveReaction(activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? null : {msgId: msg.id, agentId: rId}); setAutoExpandReactions(null); }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? 'bg-slate-800 text-white border-slate-900' : 'bg-white/40 text-slate-400 border-white/60 hover:bg-white/60'}`}>
+                                          {rAgent.icon} {rAgent.name}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              }
+
+                              // Compare Mode 中は、reactions がなくても状態表示
+                              if (!isUser && isCompareModeEnabled && othersState.shouldRenderOthers && !othersState.hasReactionData) {
+                                const emptyMsg = getOthersEmptyMessage(othersState.reason, isCompareModeEnabled);
+                                const debugLabel = getOthersDebugLabel(othersState);
+                                return (
+                                  <div className="mt-4 pt-3 border-t border-white/20">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                                        <Users size={10} /> OTHERS
+                                      </span>
+                                      {isAgentDebugEnabled() && (
+                                        <span className="text-[8px] text-slate-400 opacity-70 font-mono">{debugLabel}</span>
+                                      )}
+                                    </div>
+                                    {emptyMsg && (
+                                      <p className="text-[11px] text-slate-400 italic">{emptyMsg}</p>
+                                    )}
+                                  </div>
+                                );
+                              }
+
+                              return null;
+                            })()}
                           </div>
 
                           {!isUser && activeReaction?.msgId === msg.id && msg.reactions?.[activeReaction.agentId] && (
@@ -1587,7 +2024,14 @@ const App = () => {
                           {!isUser && autoExpandReactions?.msgId === msg.id && !activeReaction && (
                             <div className="mt-4 p-4 rounded-2xl glass-card flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 shadow-lg border border-indigo-100/50 w-full min-h-[80px] relative">
                               <div className="flex items-center justify-between px-1 mb-1">
-                                <span className="text-[9px] font-black text-indigo-400/80 uppercase tracking-widest">Others</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] font-black text-indigo-400/80 uppercase tracking-widest">Others</span>
+                                  {(isCompareModeEnabled || isAgentDebugEnabled()) && msg.reactions && (
+                                    <span className="text-[8px] text-slate-400 opacity-70 font-mono">
+                                      ({Object.keys(msg.reactions).length} voices)
+                                    </span>
+                                  )}
+                                </div>
                                 <button aria-label="Othersを閉じる" title="閉じる" onClick={e => { e.stopPropagation(); setAutoExpandReactions(null); }} className="text-slate-400 hover:bg-white/50 rounded-full p-1"><X size={12}/></button>
                               </div>
                               {autoExpandReactions.isLoading ? (
@@ -1599,8 +2043,8 @@ const App = () => {
                                   </div>
                                   <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Fetching thoughts...</p>
                                 </div>
-                              ) : (
-                                msg.reactions && Object.entries(msg.reactions).map(([rId, data]) => {
+                              ) : msg.reactions && Object.keys(msg.reactions).length > 0 ? (
+                                Object.entries(msg.reactions).map(([rId, data]) => {
                                   const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
                                   return (
                                     <div key={rId} className="flex gap-3 items-start bg-white/60 p-3 rounded-xl border border-white/80 animate-in fade-in">
@@ -1620,6 +2064,12 @@ const App = () => {
                                     </div>
                                   );
                                 })
+                              ) : (
+                                <div className="py-4 flex flex-col items-center justify-center opacity-70">
+                                  <p className="text-[11px] text-slate-400 italic">
+                                    {isCompareModeEnabled ? 'まだ比較対象がありません' : '他の声はまだありません'}
+                                  </p>
+                                </div>
                               )}
                             </div>
                           )}
@@ -1719,6 +2169,16 @@ const App = () => {
         </div>
       )}
 
+      {comparePanelVisible && (
+        <CompareModePanel
+          enabled={isCompareModeEnabled}
+          entries={compareEntries}
+          collapsed={isCompareCollapsed}
+          onToggleCollapse={() => setIsCompareCollapsed(prev => !prev)}
+          onToggleLabel={handleToggleCompareLabel}
+        />
+      )}
+
       <style dangerouslySetInnerHTML={{ __html: `
         .animate-in { animation: fadeIn 300ms ease-out both; }
         .fade-in { animation-name: fadeIn; }
@@ -1747,6 +2207,26 @@ const App = () => {
         .anim-card-rise { animation: introCardRise 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both; }
       ` }} />
 
+      <FloatingAgentBar
+        activeSessionId={activeSessionId}
+        hasMessages={messages.length > 0}
+        canUseAgents={canUseAgents}
+        isGenerating={isGenerating}
+        isSending={isSending}
+        agentDisabledReason={agentDisabledReason}
+        compareModeEnabled={isCompareModeEnabled}
+        isDebugMode={isAgentDebugEnabled()}
+        isDebugPanelVisible={isAgentDebugEnabled()}
+        onRandomResponse={handleRandomResponse}
+        onAgentClick={handleAgentClick}
+        onScrollToOthers={() => {
+          if (scrollRef.current) {
+            scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+          }
+        }}
+        agents={AGENTS}
+      />
+
       {isSurfaceDebugEnabled() && (
         <SurfaceDebugPanel
           entries={surfaceDebugEntries}
@@ -1754,10 +2234,23 @@ const App = () => {
         />
       )}
 
-      {isCompareModeEnabled() && (
-        <ComparePanel
-          entries={compareEntries}
-          onClear={clearCompareEntries}
+      {isAgentDebugEnabled() && (
+        <AgentGateDebugPanel
+          isAppReady={isAppReady}
+          isGenerating={isGenerating}
+          isSending={isSending}
+          showInput={showInput}
+          activeSessionId={activeSessionId}
+          hasPromptForActiveSession={hasPromptForActiveSession}
+          showDelegateBar={showDelegateBar}
+          canUseAgents={canUseAgents}
+          messagesCount={messages.length}
+          visibleMessagesCount={messages.filter(m => m.role !== 'system').length}
+          currentSessionId={currentSessionId}
+          generatingAgent={generatingAgent}
+          agentDebugEvents={agentDebugEvents}
+          isMessagesLoading={isMessagesLoading}
+          compareModeEnabled={isCompareModeEnabled}
         />
       )}
     </div>

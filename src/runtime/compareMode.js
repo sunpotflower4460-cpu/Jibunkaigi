@@ -1,88 +1,53 @@
 // src/runtime/compareMode.js
-// Compare Mode helper — dev-only.
-//
-// Compare Mode とは:
-//   同じ user input に対して、
-//     - Baseline Reply: Outer Guide (stateGuide / internalFrame / surfaceGuidance) を
-//       空にして生成した返答
-//     - Current Reply: 現行の活性化パイプライン全部入りで生成した返答
-//     - Outer Guide: 実際に systemInstruction に差し込まれたガイドテキスト
-//   を並べて観察するための開発用モード。
-//
-//   本番ユーザーには出さない。Firestore にも保存しない。メモリ保持のみ。
-//   有効化:
-//     - URL パラメータ: ?compareMode=1
-//     - localStorage: jibunkaigi:compareMode = '1'
-//   本番ビルド (import.meta.env.DEV === false) では絶対に有効にならない。
+// Compare Mode 用のフラグ判定と UI 表示条件をまとめる。
 
-export const COMPARE_MAX_ENTRIES = 8;
+/**
+ * Compare Mode が有効かを判定する。
+ * デフォルトではブラウザ環境の location / localStorage を参照する。
+ *
+ * @param {object} [options]
+ * @param {string} [options.search] - URLSearchParams 互換の search 文字列。
+ * @param {() => string|null} [options.storageGetter] - localStorage 互換の getter。
+ * @returns {boolean}
+ */
+export const readCompareModeFlag = (options = {}) => {
+  const search = options.search ?? (typeof window !== 'undefined' ? window.location?.search : '');
+  const storageGetter = options.storageGetter ?? (() => {
+    if (typeof localStorage === 'undefined') return null;
+    try {
+      return localStorage.getItem('jibunkaigi:compareMode');
+    } catch {
+      return null;
+    }
+  });
 
-export const COMPARE_PREVIEW_MAX = 200;
-
-export const isCompareModeEnabled = () => {
   try {
-    if (typeof import.meta !== 'undefined' && !import.meta.env?.DEV) return false;
-    if (typeof window === 'undefined') return false;
-    const qp = new URLSearchParams(window.location.search).get('compareMode');
-    if (qp === '1') return true;
-    return localStorage.getItem('jibunkaigi:compareMode') === '1';
+    if (search) {
+      const params = new URLSearchParams(search);
+      if (params.get('compareMode') === '1') return true;
+    }
   } catch {
-    return false;
+    // search が不正でも Compare Mode の可否には影響させない
   }
-};
 
-const truncate = (text, max = COMPARE_PREVIEW_MAX) => {
-  if (!text || typeof text !== 'string') return '';
-  const trimmed = text.trim();
-  return trimmed.length > max ? trimmed.slice(0, max) + '…' : trimmed;
-};
-
-const normalizeReply = (reply) => {
-  if (reply === null || reply === undefined) return '';
-  if (typeof reply !== 'string') return String(reply);
-  return reply;
-};
-
-const normalizeError = (err) => {
-  if (!err) return null;
-  if (typeof err === 'string') return err;
-  if (err instanceof Error) return err.message || String(err);
   try {
-    return String(err);
+    const stored = storageGetter();
+    if (stored === '1' || stored === 'true') return true;
   } catch {
-    return 'unknown error';
+    // localStorage 取得失敗時は無効扱い
   }
+
+  return false;
 };
 
-export const buildCompareEntry = ({
-  agentId = '',
-  isMirror = false,
-  mode = '',
-  userText = '',
-  baselineReply = '',
-  currentReply = '',
-  stateGuide = '',
-  internalFrame = '',
-  surfaceGuidance = '',
-  baselineError = null,
-  currentError = null,
-  timestamp = Date.now(),
-} = {}) => {
-  return {
-    id: `${agentId || 'unknown'}:${timestamp}`,
-    timestamp,
-    agentId,
-    isMirror: !!isMirror,
-    mode,
-    userText: truncate(userText),
-    baselineReply: normalizeReply(baselineReply),
-    currentReply: normalizeReply(currentReply),
-    outerGuide: {
-      stateGuide: stateGuide || '',
-      internalFrame: internalFrame || '',
-      surfaceGuidance: surfaceGuidance || '',
-    },
-    baselineError: normalizeError(baselineError),
-    currentError: normalizeError(currentError),
-  };
+/**
+ * Compare Mode の UI を表示するかどうかを判定する。
+ *
+ * @param {object} params
+ * @param {boolean} params.enabled - Compare Mode フラグ
+ * @param {Array} [params.entries] - 比較用データ
+ * @returns {boolean}
+ */
+export const shouldShowComparePanel = ({ enabled, entries = [] } = {}) => {
+  return Boolean(enabled && Array.isArray(entries) && entries.length > 0);
 };

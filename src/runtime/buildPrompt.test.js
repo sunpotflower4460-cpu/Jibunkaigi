@@ -380,3 +380,67 @@ test('buildJoeDebugPreview returns Joe-specific debug fields in expected shape',
   assert.ok(typeof withFrame.joeInternalFramePreview === 'string');
   assert.ok(typeof withFrame.joeSurfaceGuidancePreview === 'string');
 });
+
+test('buildJoeDebugPreview includes quality focus preview fields', () => {
+  const text = 'もう無理で諦めたい';
+  const activated = activateJoe(estimateState(text));
+  const preview = buildJoeDebugPreview({ activated, userText: text });
+
+  // joeResponseFocusPreview: 今回ジョーが拾おうとしている一点の短い説明
+  assert.ok(typeof preview.joeResponseFocusPreview === 'string');
+  assert.ok(preview.joeResponseFocusPreview.length > 0);
+  // resignation 入力 → 閉じきっていない感触にフォーカス
+  assert.match(preview.joeResponseFocusPreview, /閉じきっていない/);
+
+  // joeRiskFlags: 品質リスクのフラグ配列
+  assert.ok(Array.isArray(preview.joeRiskFlags));
+  // resignation 入力 → too-hopeful は立たない（希望過多にはならない）
+  assert.equal(preview.joeRiskFlags.includes('too-hopeful'), false);
+
+  // joeAssemblyPreview: touch->ground->ember->next-step の比重プレビュー
+  assert.ok(typeof preview.joeAssemblyPreview === 'string');
+  assert.ok(preview.joeAssemblyPreview.includes('touch='));
+  assert.ok(preview.joeAssemblyPreview.includes('next-step='));
+  // resignation → touch=primary
+  assert.match(preview.joeAssemblyPreview, /touch=primary/);
+});
+
+test('buildJoeDebugPreview quality preview varies by state', () => {
+  // desire + freeze → ember=primary (向きが止まりに噛み合っている)
+  const freezeText = 'やりたいのに動けない';
+  const freezePreview = buildJoeDebugPreview({
+    activated: activateJoe(estimateState(freezeText)),
+    userText: freezeText,
+  });
+  assert.match(freezePreview.joeResponseFocusPreview, /向き/);
+  assert.match(freezePreview.joeAssemblyPreview, /ember=primary/);
+  assert.ok(Array.isArray(freezePreview.joeRiskFlags));
+
+  // too-broad: 3素材が選ばれる高複雑度入力ではフラグが立つ
+  const complexText = '才能ないしもう無理かも';
+  const complexActivated = activateJoe(estimateState(complexText));
+  const complexPreview = buildJoeDebugPreview({ activated: complexActivated, userText: complexText });
+  // 3素材なら too-broad フラグが立つ
+  if (complexPreview.joeActivatedBiasCount >= 3) {
+    assert.ok(complexPreview.joeRiskFlags.includes('too-broad'));
+  }
+});
+
+test('buildJoeSystemPrompt single-point focus is sharpened with find-not-add principle', () => {
+  const text = 'もう無理で諦めたい';
+  const prompt = buildJoeSystemPrompt({
+    activated: activateJoe(estimateState(text)),
+    context: '',
+    mode: 'medium',
+    userText: text,
+  });
+
+  // 一点性: 一点を見つけたらそこを掘る、横に広げない
+  assert.match(prompt, /一点を見つけたらそこを掘れ/);
+  // 焦点の方向: 外から希望を足すのではなく、もともとあるものを見つける
+  assert.match(prompt, /もともとそこにあるものを見つけて照らす/);
+  // 着地: ステップ4は省略可能
+  assert.match(prompt, /なければ省く/);
+  // 着地: 止まれる場面で急がない
+  assert.match(prompt, /止まれる場面でステップ4を急がない/);
+});

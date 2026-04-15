@@ -31,11 +31,20 @@ const hashToUnit = (text) => {
   return hash / 9973;
 };
 
-const previousMixMap = (previousMix = {}) => new Map(
-  (Array.isArray(previousMix.selected) ? previousMix.selected : [])
-    .filter((item) => item && typeof item.id === 'string' && typeof item.weight === 'number')
-    .map((item) => [item.id, clamp01(item.weight)]),
-);
+const previousMixMap = (previousMix) => {
+  // Null-safe: ensure previousMix is a valid object before accessing .selected
+  if (!previousMix || typeof previousMix !== 'object') {
+    return new Map();
+  }
+
+  const selected = Array.isArray(previousMix.selected) ? previousMix.selected : [];
+
+  return new Map(
+    selected
+      .filter((item) => item && typeof item.id === 'string' && typeof item.weight === 'number')
+      .map((item) => [item.id, clamp01(item.weight)])
+  );
+};
 
 const basePatternScore = (pattern, latentState, previousMixWeights) => {
   const fieldScore = scoreVector(latentState.field, pattern.fieldAffinity);
