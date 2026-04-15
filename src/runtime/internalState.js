@@ -56,6 +56,11 @@ const createBeliefCoreState = () => ({
   dominantBeliefAxis: null,
 });
 
+const createBeliefBranchState = () => ({
+  activeBranchBeliefs: [],
+  dominantBranchAxis: null,
+});
+
 const createHomeState = () => ({
   kernel: {
     releaseHelpfulness: 0,
@@ -87,7 +92,8 @@ export function createInitialInternalState() {
       layer1: createExistenceLayer1State(),
       layer2: createExistenceLayer2State(),
     },
-    belief: createBeliefLayersState(),
     beliefCore: createBeliefCoreState(),
+    beliefBranch: createBeliefBranchState(),
+    belief: createBeliefLayersState(),
   };
 }

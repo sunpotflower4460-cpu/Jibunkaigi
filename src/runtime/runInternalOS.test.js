@@ -103,6 +103,25 @@ const assertNumericShape = (result) => {
     }
   });
 
+  // belief branch layer (信念層2)
+  assert.ok(latent.beliefBranch, 'beliefBranch should exist');
+  assert.ok(Array.isArray(latent.beliefBranch.activeBranchBeliefs), 'activeBranchBeliefs should be array');
+  assert.ok(latent.beliefBranch.activeBranchBeliefs.length >= 1, 'activeBranchBeliefs should have entries');
+  for (const branch of latent.beliefBranch.activeBranchBeliefs) {
+    assert.equal(typeof branch.id, 'string');
+    assert.equal(typeof branch.parentId, 'string');
+    assert.equal(typeof branch.textJa, 'string');
+    assert.equal(typeof branch.weight, 'number');
+    assert.ok(Number.isFinite(branch.weight));
+    assert.ok(branch.weight >= 0 && branch.weight <= 1);
+    assert.equal(typeof branch.axis, 'string');
+  }
+  assert.ok(
+    latent.beliefBranch.dominantBranchAxis === null ||
+    typeof latent.beliefBranch.dominantBranchAxis === 'string',
+    'dominantBranchAxis should be string or null'
+  );
+
   // belief core layer (信念層1)
   assert.ok(latent.beliefCore, 'beliefCore should exist');
   assert.ok(Array.isArray(latent.beliefCore.activeCoreBeliefs), 'activeCoreBeliefs should be array');
@@ -163,6 +182,12 @@ const assertNumericShape = (result) => {
     result.debugInfo.dominantBeliefAxis === null ||
     typeof result.debugInfo.dominantBeliefAxis === 'string',
     'debugInfo.dominantBeliefAxis should be string or null'
+  );
+  assert.ok(Array.isArray(result.debugInfo.beliefBranchPreview), 'debugInfo.beliefBranchPreview should be array');
+  assert.ok(
+    result.debugInfo.dominantBranchAxis === null ||
+    typeof result.debugInfo.dominantBranchAxis === 'string',
+    'debugInfo.dominantBranchAxis should be string or null'
   );
 
   // Maker Seed presence
@@ -345,4 +370,43 @@ test('runInternalOS beliefCorePreview in debugInfo is an array of ids', () => {
     assert.equal(typeof id, 'string');
   }
   assert.equal(typeof result.debugInfo.dominantBeliefAxis, 'string');
+});
+
+test('runInternalOS beliefBranch is connected after beliefCore for known agentId', () => {
+  for (const agentId of ['creative', 'strategist', 'empath', 'critic', 'soul', 'master']) {
+    const result = runInternalOS('test', { agentId });
+    const { beliefBranch, beliefCore } = result.latentState;
+
+    assert.ok(beliefBranch, `${agentId}: beliefBranch should exist`);
+    assert.ok(Array.isArray(beliefBranch.activeBranchBeliefs), `${agentId}: activeBranchBeliefs should be array`);
+    assert.ok(beliefBranch.activeBranchBeliefs.length >= 1, `${agentId}: activeBranchBeliefs should be non-empty`);
+
+    const coreWeightMap = new Map(
+      (beliefCore?.activeCoreBeliefs ?? []).map((b) => [b.id, b.weight])
+    );
+
+    for (const branch of beliefBranch.activeBranchBeliefs) {
+      assert.ok(coreWeightMap.has(branch.parentId), `${agentId}: branch parentId should map to core belief`);
+      const parentWeight = coreWeightMap.get(branch.parentId);
+      if (typeof parentWeight === 'number') {
+        assert.ok(branch.weight <= parentWeight, `${agentId}: branch weight should be <= parent core weight`);
+      }
+    }
+
+    assert.ok(
+      beliefBranch.dominantBranchAxis === null || typeof beliefBranch.dominantBranchAxis === 'string',
+      `${agentId}: dominantBranchAxis should be string or null`
+    );
+  }
+});
+
+test('runInternalOS beliefBranchPreview in debugInfo is an array of ids', () => {
+  const result = runInternalOS('作品を出したいけど怖い', { agentId: 'creative' });
+  assert.ok(Array.isArray(result.debugInfo.beliefBranchPreview));
+  for (const id of result.debugInfo.beliefBranchPreview) {
+    assert.equal(typeof id, 'string');
+  }
+  assert.ok(
+    result.debugInfo.dominantBranchAxis === null || typeof result.debugInfo.dominantBranchAxis === 'string'
+  );
 });

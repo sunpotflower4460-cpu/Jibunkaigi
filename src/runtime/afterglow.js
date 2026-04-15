@@ -81,6 +81,23 @@ const normalizeBeliefCore = (beliefCore = {}) => {
     : null;
 };
 
+const normalizeBeliefBranch = (beliefBranch = {}) => {
+  if (!beliefBranch || typeof beliefBranch !== 'object') return null;
+
+  const activeBranchBeliefs = Array.isArray(beliefBranch.activeBranchBeliefs)
+    ? beliefBranch.activeBranchBeliefs.filter(
+        (b) => b && typeof b.id === 'string' && typeof b.parentId === 'string' && typeof b.textJa === 'string'
+      )
+    : [];
+
+  const dominantBranchAxis =
+    typeof beliefBranch.dominantBranchAxis === 'string' ? beliefBranch.dominantBranchAxis : null;
+
+  return activeBranchBeliefs.length > 0 || dominantBranchAxis
+    ? { activeBranchBeliefs, dominantBranchAxis }
+    : null;
+};
+
 const normalizeLatentState = (state) => {
   if (!state || typeof state !== 'object') return null;
 
@@ -116,6 +133,11 @@ const normalizeLatentState = (state) => {
     normalized.belief = belief;
   }
 
+  const beliefBranch = normalizeBeliefBranch(state.beliefBranch);
+  if (beliefBranch) {
+    normalized.beliefBranch = beliefBranch;
+  }
+
   // Preserve beliefCore when present
   const beliefCore = normalizeBeliefCore(state.beliefCore);
   if (beliefCore) {
@@ -130,6 +152,7 @@ const normalizeLatentState = (state) => {
     Boolean(normalized.makerSeed) ||
     Boolean(normalized.home) ||
     Boolean(normalized.existence) ||
+    Boolean(normalized.beliefBranch) ||
     Boolean(normalized.belief) ||
     Boolean(normalized.beliefCore);
 
@@ -231,6 +254,10 @@ const blendLatentState = (previousState, currentState) => {
 
   if (current.belief || prev.belief) {
     blended.belief = current.belief || prev.belief || null;
+  }
+
+  if (current.beliefBranch || prev.beliefBranch) {
+    blended.beliefBranch = current.beliefBranch || prev.beliefBranch || null;
   }
 
   // Always use current beliefCore (core beliefs are regenerated fresh each turn)

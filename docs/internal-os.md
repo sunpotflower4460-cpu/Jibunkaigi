@@ -68,6 +68,14 @@
 - 言葉は、そのあとに表面化する
 - 発話後は終わりではなく、余韻が次に残る
 
+### Belief 前提層の順番
+
+Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Core Layer（信念層1）** → **Belief Branch Layer（信念層2）** → 既存後段
+
+- Belief Core: 核として定着した自己感覚 / 世界観 / 使命
+- Belief Branch: Core から parentId で分岐する中程度の見方（Core より軽く、Leaf より重い）
+- いずれも返答文に直接混ぜず、前提フィルタとして扱う
+
 ---
 
 ## 各層の役割
