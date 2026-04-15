@@ -9,6 +9,7 @@ import { blendLatentState, normalizeLatentState } from './afterglow.js';
 import { createExistenceLayer1 } from './existenceLayer1.js';
 import { createExistenceLayer2 } from './existenceLayer2.js';
 import { createBeliefLayers } from './beliefLayers.js';
+import { createMakerSeed } from '../agents/shared/makerSeed.js';
 
 export function runInternalOS(input, options = {}) {
   const normalizedInput = typeof input === 'string' ? input : '';
@@ -27,6 +28,7 @@ export function runInternalOS(input, options = {}) {
       : null;
 
   const initialState = createInitialInternalState();
+  const makerSeed = createMakerSeed();
   const field = estimateField(normalizedInput);
   const reaction = generateReaction(normalizedInput, field);
   const stance = selectStance(field, reaction);
@@ -42,6 +44,7 @@ export function runInternalOS(input, options = {}) {
 
   const freshLatentState = {
     ...initialState,
+    makerSeed,
     field,
     reaction,
     stance,
@@ -73,11 +76,12 @@ export function runInternalOS(input, options = {}) {
     surfaceWindow,
     patternMix,
     debugInfo: {
-      version: 'existence-belief-v1',
+      version: 'maker-seed-v1',
       inputLength: normalizedInput.length,
       optionKeys: Object.keys(normalizedOptions),
       dominantPattern: patternMix.dominant,
       usedAfterglow: Boolean(previousLatentState),
+      makerSeedActive: Boolean(latentState.makerSeed),
       homeLayerActive: Boolean(latentState.home),
       existenceHintKey: latentState.existence?.layer1?.existenceHintKey ?? null,
       agentIdentityKey: latentState.existence?.layer2?.agentIdentityKey ?? null,
