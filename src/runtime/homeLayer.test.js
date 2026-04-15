@@ -12,6 +12,7 @@ test('createHomeLayer returns valid structure with all required keys', () => {
 
   assert.ok(home);
   assert.ok(home.kernel);
+  assert.ok(home.reason);
   assert.ok(home.softReason);
   assert.ok(home.outputLimits);
 
@@ -230,4 +231,29 @@ test('createHomeLayer maintains minimum baseline values', () => {
   assert.ok(minimal.kernel.slowDown >= 0.15);
   assert.ok(minimal.kernel.returnBeforeOutput >= 0.15);
   assert.ok(minimal.kernel.allowOneLivingThread >= 0.15);
+});
+
+test('createHomeLayer reason field has homeReasonKey and homeReasonText', () => {
+  const home = createHomeLayer({
+    field: { softness: 0.5, depth: 0.4 },
+    reaction: { protect: 0.6, holdBackJudgment: 0.5 },
+    stance: { receive: 0.4 },
+  });
+
+  assert.ok(home.reason);
+  assert.equal(typeof home.reason.homeReasonKey, 'string');
+  assert.equal(typeof home.reason.homeReasonText, 'string');
+  assert.ok(home.reason.homeReasonKey.length > 0);
+  assert.ok(home.reason.homeReasonText.length > 0);
+  // reason and softReason should be consistent
+  assert.equal(home.reason.homeReasonKey, home.softReason.key);
+  assert.equal(home.reason.homeReasonText, home.softReason.text);
+});
+
+test('createHomeLayer reason field is null-safe when called with no args', () => {
+  const home = createHomeLayer();
+
+  assert.ok(home.reason);
+  assert.equal(typeof home.reason.homeReasonKey, 'string');
+  assert.equal(typeof home.reason.homeReasonText, 'string');
 });

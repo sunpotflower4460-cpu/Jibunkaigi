@@ -226,6 +226,10 @@ export function createHomeLayer({ field = {}, reaction = {}, stance = {} } = {})
 
   return {
     kernel,
+    reason: {
+      homeReasonKey: softReason.key,
+      homeReasonText: softReason.text,
+    },
     softReason: {
       key: softReason.key,
       text: softReason.text,

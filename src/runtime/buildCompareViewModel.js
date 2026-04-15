@@ -94,6 +94,8 @@ export const buildCompareViewModel = ({
   // Home Layer Preview (dev-only)
   const homePreview = homeLayerPreview ? {
     kernel: homeLayerPreview.kernel ?? null,
+    homeReasonKey: homeLayerPreview.reason?.homeReasonKey ?? homeLayerPreview.softReason?.key ?? null,
+    homeReasonText: homeLayerPreview.reason?.homeReasonText ?? homeLayerPreview.softReason?.text ?? null,
     softReasonKey: homeLayerPreview.softReason?.key ?? null,
     softReasonDirection: homeLayerPreview.softReason?.direction ?? null,
     outputLimits: homeLayerPreview.outputLimits ?? null,
