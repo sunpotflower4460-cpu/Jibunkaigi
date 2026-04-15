@@ -155,7 +155,7 @@ OTHERS の詳細な状態情報が表示されます。
 npm test
 ```
 
-全 128 テスト中、OTHERS visibility に関するテストが 23 件含まれています。
+全 158 テスト中、OTHERS visibility に関するテストが 23 件含まれています。
 
 ## 今後の拡張（Phase 3 以降）
 

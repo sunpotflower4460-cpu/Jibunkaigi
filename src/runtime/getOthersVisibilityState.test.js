@@ -186,8 +186,10 @@ describe('getOthersEmptyMessage', () => {
   });
 
   it('returns appropriate message for no-candidates', () => {
-    const msg = getOthersEmptyMessage('no-candidates', false);
-    assert.ok(msg.includes('比較対象がありません'));
+    const msgNormal = getOthersEmptyMessage('no-candidates', false);
+    assert.ok(msgNormal.includes('他の声'), 'normal mode should say 他の声');
+    const msgCompare = getOthersEmptyMessage('no-candidates', true);
+    assert.ok(msgCompare.includes('比較対象'), 'compare mode should say 比較対象');
   });
 
   it('returns appropriate message for generating', () => {
