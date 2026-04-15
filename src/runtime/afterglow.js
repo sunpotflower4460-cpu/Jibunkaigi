@@ -64,6 +64,23 @@ const normalizeBeliefLayers = (belief = {}) => {
   return hasLayer ? { layer1, layer2, layer3 } : null;
 };
 
+const normalizeBeliefCore = (beliefCore = {}) => {
+  if (!beliefCore || typeof beliefCore !== 'object') return null;
+
+  const activeCoreBeliefs = Array.isArray(beliefCore.activeCoreBeliefs)
+    ? beliefCore.activeCoreBeliefs.filter(
+        (b) => b && typeof b.id === 'string' && b.id && typeof b.textJa === 'string'
+      )
+    : [];
+
+  const dominantBeliefAxis =
+    typeof beliefCore.dominantBeliefAxis === 'string' ? beliefCore.dominantBeliefAxis : null;
+
+  return activeCoreBeliefs.length > 0 || dominantBeliefAxis
+    ? { activeCoreBeliefs, dominantBeliefAxis }
+    : null;
+};
+
 const normalizeLatentState = (state) => {
   if (!state || typeof state !== 'object') return null;
 
@@ -99,6 +116,12 @@ const normalizeLatentState = (state) => {
     normalized.belief = belief;
   }
 
+  // Preserve beliefCore when present
+  const beliefCore = normalizeBeliefCore(state.beliefCore);
+  if (beliefCore) {
+    normalized.beliefCore = beliefCore;
+  }
+
   const hasValues =
     (normalized.field && Object.keys(normalized.field).length > 0) ||
     (normalized.reaction && Object.keys(normalized.reaction).length > 0) ||
@@ -107,7 +130,8 @@ const normalizeLatentState = (state) => {
     Boolean(normalized.makerSeed) ||
     Boolean(normalized.home) ||
     Boolean(normalized.existence) ||
-    Boolean(normalized.belief);
+    Boolean(normalized.belief) ||
+    Boolean(normalized.beliefCore);
 
   return hasValues ? normalized : null;
 };
@@ -207,6 +231,11 @@ const blendLatentState = (previousState, currentState) => {
 
   if (current.belief || prev.belief) {
     blended.belief = current.belief || prev.belief || null;
+  }
+
+  // Always use current beliefCore (core beliefs are regenerated fresh each turn)
+  if (current.beliefCore || prev.beliefCore) {
+    blended.beliefCore = current.beliefCore || prev.beliefCore || null;
   }
 
   return blended;

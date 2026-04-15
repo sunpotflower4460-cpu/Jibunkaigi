@@ -9,6 +9,7 @@ import { blendLatentState, normalizeLatentState } from './afterglow.js';
 import { createExistenceLayer1 } from './existenceLayer1.js';
 import { createExistenceLayer2 } from './existenceLayer2.js';
 import { createBeliefLayers } from './beliefLayers.js';
+import { createBeliefCoreLayer } from './beliefCoreLayer.js';
 import { createMakerSeed } from '../agents/shared/makerSeed.js';
 
 export function runInternalOS(input, options = {}) {
@@ -35,6 +36,7 @@ export function runInternalOS(input, options = {}) {
   const home = createHomeLayer({ field, reaction, stance });
   const existenceLayer1 = createExistenceLayer1({ home, field, reaction, stance });
   const existenceLayer2 = createExistenceLayer2({ agentId });
+  const beliefCore = createBeliefCoreLayer({ agentId, existenceLayer2 });
   const belief = createBeliefLayers({
     agentId,
     existenceLayer1,
@@ -55,6 +57,7 @@ export function runInternalOS(input, options = {}) {
       layer2: existenceLayer2,
     },
     belief,
+    beliefCore,
   };
 
   const previousLatentState = normalizeLatentState(safePreviousLatentState);
@@ -90,6 +93,8 @@ export function runInternalOS(input, options = {}) {
         latentState.belief?.layer2?.[0]?.id,
         latentState.belief?.layer3?.[0]?.id,
       ].filter(Boolean),
+      beliefCorePreview: latentState.beliefCore?.activeCoreBeliefs?.slice(0, 2).map((b) => b.id) ?? [],
+      dominantBeliefAxis: latentState.beliefCore?.dominantBeliefAxis ?? null,
     },
   };
 }

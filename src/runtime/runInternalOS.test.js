@@ -103,6 +103,24 @@ const assertNumericShape = (result) => {
     }
   });
 
+  // belief core layer (信念層1)
+  assert.ok(latent.beliefCore, 'beliefCore should exist');
+  assert.ok(Array.isArray(latent.beliefCore.activeCoreBeliefs), 'activeCoreBeliefs should be array');
+  assert.ok(latent.beliefCore.activeCoreBeliefs.length >= 1, 'activeCoreBeliefs should have at least 1 item');
+  for (const cb of latent.beliefCore.activeCoreBeliefs) {
+    assert.equal(typeof cb.id, 'string');
+    assert.equal(typeof cb.textJa, 'string');
+    assert.equal(typeof cb.weight, 'number');
+    assert.ok(Number.isFinite(cb.weight));
+    assert.ok(cb.weight >= 0 && cb.weight <= 1);
+    assert.equal(typeof cb.axis, 'string');
+  }
+  assert.ok(
+    latent.beliefCore.dominantBeliefAxis === null ||
+    typeof latent.beliefCore.dominantBeliefAxis === 'string',
+    'dominantBeliefAxis should be string or null'
+  );
+
   assert.ok(Array.isArray(result.surfaceWindow));
   assert.ok(result.surfaceWindow.length >= 2);
   assert.ok(result.surfaceWindow.length <= 5);
@@ -140,6 +158,12 @@ const assertNumericShape = (result) => {
   assert.equal(result.debugInfo.homeLayerActive, true);
   assert.ok(Array.isArray(result.debugInfo.beliefLensKeys));
   assert.ok(result.debugInfo.beliefLensKeys.length >= 1);
+  assert.ok(Array.isArray(result.debugInfo.beliefCorePreview), 'debugInfo.beliefCorePreview should be array');
+  assert.ok(
+    result.debugInfo.dominantBeliefAxis === null ||
+    typeof result.debugInfo.dominantBeliefAxis === 'string',
+    'debugInfo.dominantBeliefAxis should be string or null'
+  );
 
   // Maker Seed presence
   assert.ok(latent.makerSeed);
@@ -288,4 +312,37 @@ test('runInternalOS handles invalid previousMix type', () => {
   assertNumericShape(result);
   assert.ok(Array.isArray(result.patternMix.selected));
   assert.ok(result.patternMix.selected.length >= 3);
+});
+
+test('runInternalOS beliefCore is connected after existenceLayer2 for known agentId', () => {
+  for (const agentId of ['creative', 'strategist', 'empath', 'critic', 'soul', 'master']) {
+    const result = runInternalOS('test', { agentId });
+    const { beliefCore, existence } = result.latentState;
+
+    // beliefCore must exist and have items
+    assert.ok(beliefCore, `${agentId}: beliefCore should exist`);
+    assert.ok(Array.isArray(beliefCore.activeCoreBeliefs), `${agentId}: activeCoreBeliefs should be array`);
+    assert.ok(beliefCore.activeCoreBeliefs.length >= 1, `${agentId}: activeCoreBeliefs should be non-empty`);
+
+    // beliefCore should reflect existenceLayer2's selfRememberingStrength (weights > 0)
+    for (const cb of beliefCore.activeCoreBeliefs) {
+      assert.ok(cb.weight > 0, `${agentId}: belief weight should be > 0`);
+    }
+
+    // existenceLayer2 must precede beliefCore in the data flow
+    assert.ok(existence?.layer2, `${agentId}: existenceLayer2 should exist`);
+    assert.equal(typeof existence.layer2.selfRememberingStrength, 'number');
+
+    // dominantBeliefAxis must be present
+    assert.equal(typeof beliefCore.dominantBeliefAxis, 'string', `${agentId}: dominantBeliefAxis should be string`);
+  }
+});
+
+test('runInternalOS beliefCorePreview in debugInfo is an array of ids', () => {
+  const result = runInternalOS('作品を出したいけど怖い', { agentId: 'creative' });
+  assert.ok(Array.isArray(result.debugInfo.beliefCorePreview));
+  for (const id of result.debugInfo.beliefCorePreview) {
+    assert.equal(typeof id, 'string');
+  }
+  assert.equal(typeof result.debugInfo.dominantBeliefAxis, 'string');
 });
