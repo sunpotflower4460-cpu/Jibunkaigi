@@ -297,7 +297,7 @@ export function runInternalOS(input, options = {}) {
       preconditionBiasPreview,
       focusBiasApplied,
       meaningBiasApplied,
-      identityBiasApplied: preconditionBias?.identity?.identityKey ?? null,
+      identityBiasApplied,
     },
   };
 }
