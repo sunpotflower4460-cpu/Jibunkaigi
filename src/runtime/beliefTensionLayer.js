@@ -40,7 +40,7 @@ const MAX_TOTAL_TENSIONS = 6;
  */
 const signalsUrgency = (input) => {
   if (!input) return false;
-  return /早|急|すぐ|すぐに|すぐに|解決|答え|やってみて|頑張|ポジティブ|前向|励まし|元気づけ/.test(input);
+  return /早|急|すぐ|解決|答え|やってみて|頑張|ポジティブ|前向|励まし|元気づけ/.test(input);
 };
 
 /**
