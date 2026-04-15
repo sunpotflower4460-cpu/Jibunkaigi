@@ -57,18 +57,19 @@
 
 じぶん会議の最小フローは、次の順で定義する。
 
-**入力 → 前提層チェーン → biased 後段 → 潜在層更新 → 顕在層生成 → 発話 → Afterglow Update**
+**入力 → 前提層チェーン → Decision Layer → biased 後段 → 潜在層更新 → 顕在層生成 → 発話 → Afterglow Update**
 
 この順番には意味がある。
 
 - 最初にあるのは、答えではなく前提（Home / Existence / Belief）
-- 前提層が立ったあと、bias が後段の反応・姿勢へ染み込む
+- 前提層が立ったあと、Decision Layer が「今なにを感じ、何を言いたいか」を決める
+- そのうえで bias と decision が後段の反応・表層へ染み込む
 - 言葉は、そのあとに表面化する
 - 発話後は終わりではなく、余韻が次に残る
 
 ### Belief 前提層の順番（主役順）
 
-Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Core Layer（信念層1）** → **Belief Branch Layer（信念層2）** → **Belief Leaf Layer（信念層3）** → **buildPreconditionFilter（前提層の閉じ）** → biased 既存後段
+Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Core Layer（信念層1）** → **Belief Branch Layer（信念層2）** → **Belief Leaf Layer（信念層3）** → **buildPreconditionFilter（前提層の閉じ）** → **preconditionBias** → **beliefTension** → **Decision Layer** → biased 既存後段
 
 - Maker Seed: 最深部の礎。通常UXに出ない
 - Home: 全エージェント共通の帰還層。「まだ何もしなくていい」を成立させる
@@ -78,6 +79,7 @@ Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Cor
 - Belief Branch: Core から parentId で分岐する中程度の見方（Core より軽く、Leaf より重い）
 - Belief Leaf: Branch からさらに分岐する最も細かい傾き
 - **buildPreconditionFilter**: 上記すべての前提層を1つの構造へ束ねたフィルタ。返答ではなく、その後を染める前提状態
+- **Decision Layer**: 前提層を通ったそのエージェントが、今なにを感じ、何を言いたいかを state として決める層
 - いずれも返答文に直接混ぜず、前提フィルタとして扱う
 
 ### runInternalOS での実装状態
@@ -89,7 +91,7 @@ compare/debug で「前提層が本当に先に通った」ことを確認でき
 `latentState` には `existence1` / `existence2` が正規のトップレベルフィールドとして
 保持されます（`existence.layer1` / `existence.layer2` との後方互換も維持）。
 
-詳細は [precondition-filter.md](./precondition-filter.md) を参照。
+詳細は [precondition-filter.md](./precondition-filter.md) と [decision-layer.md](./decision-layer.md) を参照。
 
 
 ---

@@ -265,3 +265,54 @@ test('compare view model accepts preconditionBiasPreview and applied flags', () 
   assert.equal(vm.identityBiasApplied, 'creative-light-bearer')
   assert.equal(vm.summary.hasPreconditionBiasPreview, true)
 })
+
+test('compare view model accepts decision previews', () => {
+  const vm = buildCompareViewModel({
+    agentId: 'creative',
+    userText: 'test',
+    baselineReply: 'baseline',
+    currentReply: 'current',
+    outerGuide: '',
+    feltSensePreview: {
+      summary: 'quiet-recognition / tension=0.52',
+      primaryFeeling: 'quiet-recognition',
+      secondaryFeeling: 'soft-holding',
+      tensionType: 'pull',
+      tensionStrength: 0.52,
+    },
+    speakIntentPreview: {
+      summary: 'touch_living_thread',
+      speakIntentKey: 'touch_living_thread',
+      speakIntentText: 'まだ切れていない一点に触れたい',
+      touchDepth: 0.68,
+      focusTarget: 'faint-thread',
+    },
+    restraintPreview: {
+      summary: 'no-solution / no-summary',
+      holdBackSummary: 0.82,
+      holdBackSolution: 0.88,
+      holdBackExpansion: 0.76,
+      keepSilenceMargin: 0.64,
+    },
+    decisionMetaPreview: {
+      summary: 'self / axis=illumination',
+      identityAxis: 'illumination',
+      dominantBeliefAxis: 'presence',
+      delegatedBy: 'self',
+    },
+  })
+
+  assert.ok(vm.feltSensePreview)
+  assert.equal(vm.feltSensePreview.primaryFeeling, 'quiet-recognition')
+  assert.ok(vm.speakIntentPreview)
+  assert.equal(vm.speakIntentPreview.speakIntentKey, 'touch_living_thread')
+  assert.equal(vm.speakIntentPreview.focusTarget, 'faint-thread')
+  assert.ok(vm.restraintPreview)
+  assert.match(vm.restraintPreview.summary, /no-solution/)
+  assert.ok(vm.decisionMetaPreview)
+  assert.equal(vm.decisionMetaPreview.delegatedBy, 'self')
+  assert.equal(vm.summary.hasFeltSensePreview, true)
+  assert.equal(vm.summary.hasSpeakIntentPreview, true)
+  assert.equal(vm.summary.hasRestraintPreview, true)
+  assert.equal(vm.summary.hasDecisionMetaPreview, true)
+})

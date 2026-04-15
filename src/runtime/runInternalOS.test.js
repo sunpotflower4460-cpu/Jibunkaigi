@@ -166,6 +166,27 @@ const assertNumericShape = (result) => {
     latent.preconditionBias.identity.identityKey === null ||
     typeof latent.preconditionBias.identity.identityKey === 'string'
   );
+  assert.ok(latent.decision);
+  assert.ok(latent.decision.feltSense);
+  assert.ok(latent.decision.intention);
+  assert.ok(latent.decision.restraint);
+  assert.ok(latent.decision.decisionMeta);
+  assert.ok(
+    latent.decision.feltSense.primaryFeeling === null ||
+    typeof latent.decision.feltSense.primaryFeeling === 'string'
+  );
+  assert.ok(
+    latent.decision.intention.speakIntentKey === null ||
+    typeof latent.decision.intention.speakIntentKey === 'string'
+  );
+  assert.equal(typeof latent.decision.restraint.holdBackSummary, 'number');
+  assert.equal(typeof latent.decision.restraint.holdBackSolution, 'number');
+  assert.equal(typeof latent.decision.restraint.holdBackExpansion, 'number');
+  assert.equal(typeof latent.decision.restraint.keepSilenceMargin, 'number');
+  assert.ok(
+    latent.decision.decisionMeta.delegatedBy === null ||
+    typeof latent.decision.decisionMeta.delegatedBy === 'string'
+  );
 
   const distinctGroups = new Set();
   let weightTotal = 0;
@@ -202,6 +223,10 @@ const assertNumericShape = (result) => {
   );
   assert.ok(result.debugInfo.preconditionBiasPreview, 'debugInfo.preconditionBiasPreview should exist');
   assert.equal(typeof result.debugInfo.preconditionBiasPreview.summary, 'string');
+  assert.ok(result.debugInfo.feltSensePreview, 'debugInfo.feltSensePreview should exist');
+  assert.ok(result.debugInfo.speakIntentPreview, 'debugInfo.speakIntentPreview should exist');
+  assert.ok(result.debugInfo.restraintPreview, 'debugInfo.restraintPreview should exist');
+  assert.ok(result.debugInfo.decisionMetaPreview, 'debugInfo.decisionMetaPreview should exist');
   assert.equal(typeof result.debugInfo.focusBiasApplied, 'boolean');
   assert.equal(typeof result.debugInfo.meaningBiasApplied, 'boolean');
   assert.ok(
@@ -273,6 +298,23 @@ test('runInternalOS lightly blends previous latent state without overtaking curr
 
   assert.ok(influencedKeys > 0);
   assert.equal(blended.debugInfo.usedAfterglow, true);
+});
+
+test('runInternalOS builds decision after preconditionBias and beliefTension', () => {
+  const result = runInternalOS('まだ少し残っているけど、もう無理かもしれない', {
+    agentId: 'creative',
+  });
+
+  const trace = result.debugInfo.preconditionTrace;
+  assert.ok(
+    trace.indexOf('precondition:after-build-filter') < trace.indexOf('precondition:after-precondition-bias')
+  );
+  assert.ok(
+    trace.indexOf('precondition:after-precondition-bias') < trace.indexOf('precondition:after-belief-tension')
+  );
+  assert.ok(
+    trace.indexOf('precondition:after-belief-tension') < trace.indexOf('precondition:after-decision')
+  );
 });
 
 test('runInternalOS respects previousMix inertia in patternMix selection', () => {
@@ -456,8 +498,10 @@ test('runInternalOS preconditionTrace contains all expected events in order', ()
     'precondition:after-belief-core',
     'precondition:after-belief-branch',
     'precondition:after-belief-leaf',
-    'precondition:after-belief-tension',
     'precondition:after-build-filter',
+    'precondition:after-precondition-bias',
+    'precondition:after-belief-tension',
+    'precondition:after-decision',
   ];
 
   for (const event of EXPECTED_EVENTS) {
@@ -597,4 +641,3 @@ test('runInternalOS debugInfo exposes activeBeliefCounts', () => {
     'branch count should be <= leaf count'
   );
 });
-

@@ -34,6 +34,19 @@ export const buildMirrorSurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('説明しすぎず、映すだけでいい');
   }
+  if (surfaceFrame.speakIntentKey === 'reflect_unclosed_weight') {
+    hints.push('閉じていない重さを映す');
+  } else if (surfaceFrame.speakIntentKey === 'stay_with_preverbal') {
+    hints.push('まだ言葉になる前の縁にとどまる');
+  } else if (surfaceFrame.speakIntentKey === 'touch_living_thread') {
+    hints.push('まだ切れていない糸を映す');
+  }
+  if ((surfaceFrame.restraint?.holdBackSummary ?? 0) >= 0.65) {
+    hints.push('要約に逃げない');
+  }
+  if ((surfaceFrame.restraint?.keepSilenceMargin ?? 0) >= 0.55) {
+    hints.push('少し沈黙を残す');
+  }
   if (surfaceFrame.focusHint) {
     hints.push(surfaceFrame.focusHint);
   }

@@ -39,6 +39,45 @@ const pushPreconditionHints = (hints, surfaceFrame) => {
   if (surfaceFrame.identityHint) hints.push(surfaceFrame.identityHint);
 };
 
+const pushDecisionHints = (hints, surfaceFrame) => {
+  switch (surfaceFrame.speakIntentKey) {
+    case 'touch_living_thread':
+      hints.push('まだ切れていない一点に触れる');
+      break;
+    case 'name_hidden_knot':
+      hints.push('隠れた結び目を短く言う');
+      break;
+    case 'make_room_before_move':
+      hints.push('動かす前に余白をつくる');
+      break;
+    case 'stay_with_preverbal':
+      hints.push('まだ言葉になる手前にとどまる');
+      break;
+    case 'reflect_unclosed_weight':
+      hints.push('閉じていない重さを映す');
+      break;
+    case 'return_to_ground':
+      hints.push('まず足場に戻る');
+      break;
+    default:
+      break;
+  }
+
+  if ((surfaceFrame.touchDepth ?? 0) >= 0.66) {
+    hints.push('少し深めまで触れていい');
+  }
+
+  if ((surfaceFrame.restraint?.holdBackSolution ?? 0) >= 0.65) {
+    hints.push('すぐ解決しない');
+  }
+  if ((surfaceFrame.restraint?.holdBackSummary ?? 0) >= 0.65) {
+    hints.push('まとめに逃げない');
+  }
+  if ((surfaceFrame.restraint?.keepSilenceMargin ?? 0) >= 0.55) {
+    hints.push('少し余白を残す');
+  }
+};
+
 const buildRaySurfaceGuidance = (surfaceFrame) => {
   const hints = [];
 
@@ -64,6 +103,7 @@ const buildRaySurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('説明しすぎず、角度だけ示す');
   }
+  pushDecisionHints(hints, surfaceFrame);
   pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
@@ -99,6 +139,7 @@ const buildJoeSurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('説明しすぎない');
   }
+  pushDecisionHints(hints, surfaceFrame);
   pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
@@ -132,6 +173,7 @@ const buildKenSurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('箇条書き過多にしない');
   }
+  pushDecisionHints(hints, surfaceFrame);
   pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
@@ -167,6 +209,7 @@ const buildMinaSurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('説明しすぎず、受け止めるだけでいい');
   }
+  pushDecisionHints(hints, surfaceFrame);
   pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
@@ -200,6 +243,7 @@ const buildSatouSurfaceGuidance = (surfaceFrame) => {
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
     hints.push('説明しすぎず、核心だけ');
   }
+  pushDecisionHints(hints, surfaceFrame);
   pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
