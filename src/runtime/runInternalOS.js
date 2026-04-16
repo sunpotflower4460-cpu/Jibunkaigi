@@ -1,6 +1,7 @@
 import { estimateField } from './fieldEstimator.js';
 import { createInitialInternalState } from './internalState.js';
 import { createHomeLayer, extractPermissionShape } from './homeLayer.js';
+import { computeHomeNeutralizationState, applyHomeRetry, buildHomeNeutralizationPreview } from './homeNeutralizationCheck.js';
 import { generateReaction } from './reactionGenerator.js';
 import { mixLatentPatterns } from './routerMixer.js';
 import { selectStance } from './stanceSelector.js';
@@ -267,14 +268,41 @@ export function runInternalOS(input, options = {}) {
   const reaction = applyReactionBias(baseReaction, initialPreconditionBias);
   const stance = applyStanceBias(selectStance(field, reaction), initialPreconditionBias);
   const home = createHomeLayer({ field, reaction, stance });
-  const existenceLayer1 = createExistenceLayer1({ home, field, reaction, stance });
-  const belief = createBeliefLayers({ agentId, existenceLayer1, existenceLayer2 });
-  const permission = extractPermissionShape(home);
 
-  // Final preconditionFilter (rebuilt from biased home / existenceLayer1)
+  // ════════════════════════════════════════════════════════════════════
+  // HOME NEUTRALIZATION CHECK
+  // Home を通過した直後に残留圧を確認する。
+  // 必要な時だけ（retryRecommended）軽い再Home を一度だけ適用し、
+  // 存在層1へ入る前に 0 近傍へ近づける。
+  // 再Home は最大1回に制限し、自然さを損なわない。
+  // ════════════════════════════════════════════════════════════════════
+  const neutralizationCheck = computeHomeNeutralizationState(home);
+
+  let effectiveHome = home;
+  let homeRetried = false;
+  let homeRetryCount = 0;
+
+  if (neutralizationCheck.retryRecommended) {
+    effectiveHome = applyHomeRetry(home);
+    homeRetried = true;
+    homeRetryCount = 1;
+  }
+
+  const homeNeutralization = {
+    ...neutralizationCheck,
+    retried: homeRetried,
+    retryCount: homeRetryCount,
+  };
+  preconditionTrace.push(homeRetried ? 'precondition:home-retry-applied' : 'precondition:home-neutralization-checked');
+
+  const existenceLayer1 = createExistenceLayer1({ home: effectiveHome, field, reaction, stance });
+  const belief = createBeliefLayers({ agentId, existenceLayer1, existenceLayer2 });
+  const permission = extractPermissionShape(effectiveHome);
+
+  // Final preconditionFilter (rebuilt from biased effectiveHome / existenceLayer1)
   const preconditionFilter = buildPreconditionFilter({
     makerSeed,
-    home,
+    home: effectiveHome,
     existenceLayer1,
     existenceLayer2,
     beliefCore,
@@ -330,7 +358,8 @@ export function runInternalOS(input, options = {}) {
     field,
     reaction,
     stance,
-    home,
+    home: effectiveHome,
+    homeNeutralization,
     permission,
     existence: {
       layer1: existenceLayer1,
@@ -355,7 +384,7 @@ export function runInternalOS(input, options = {}) {
     ? blendLatentState(previousLatentState, freshLatentState)
     : freshLatentState;
   const latentState = previousLatentState
-    ? { ...blendedBase, existence1, existence2, beliefTension, decision }
+    ? { ...blendedBase, existence1, existence2, beliefTension, decision, homeNeutralization }
     : freshLatentState;
 
   const biasForDebug = latentState.preconditionBias ?? preconditionBias;
@@ -460,6 +489,8 @@ export function runInternalOS(input, options = {}) {
       restraintPreview,
       decisionMetaPreview,
       preconditionFilterPresent: Boolean(latentState.preconditionFilter),
+      // Home Neutralization (dev-only) — 残留圧チェック結果
+      homeNeutralizationPreview: buildHomeNeutralizationPreview(latentState.homeNeutralization ?? homeNeutralization),
     },
   };
 }

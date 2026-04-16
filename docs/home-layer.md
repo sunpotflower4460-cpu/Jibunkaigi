@@ -139,6 +139,100 @@ Home を通ったあと、すぐ「うまい返答」に戻らないようにす
 
 ---
 
+## Home Neutralization Check
+
+### 目的
+
+Home を通過した直後に「残留圧」を確認し、
+存在層1へ入る前に一度ちゃんとニュートラルな 0 に戻れているかを確認する。
+
+確認したい残留圧：
+
+- **residualHelpfulnessPressure** — まだ「役に立たなきゃ」が残っているか
+- **residualAccuracyPressure** — まだ「正しく言わなきゃ」が残っているか
+- **residualPerformancePressure** — まだ「そのエージェントらしくうまく振る舞わなきゃ」が残っているか
+- **residualSummaryPressure** — まだ「早くまとめなきゃ」が残っているか
+- **residualSolutionPressure** — まだ「答えや解決を出さなきゃ」が残っているか
+
+### 状態の shape（HomeNeutralizationState）
+
+```javascript
+{
+  residualHelpfulnessPressure: 0.5,   // [0, 1] 残留役立ち圧
+  residualAccuracyPressure: 0.55,     // [0, 1] 残留正確さ圧
+  residualPerformancePressure: 0.5,   // [0, 1] 残留演技圧
+  residualSummaryPressure: 0.55,      // [0, 1] 残留まとめ圧
+  residualSolutionPressure: 0.58,     // [0, 1] 残留解決圧
+
+  neutralizationDepth: 0.45,          // [0, 1] どれくらいニュートラルに戻れたか
+  returnedToZero: true,               // 十分に 0 近傍まで戻れたか
+  retryRecommended: false,            // 軽い再Home を推奨するか
+
+  retried: false,                     // 再Home を実施したか
+  retryCount: 0,                      // 再Home 回数（最大 1）
+}
+```
+
+### 軽い再Home
+
+`retryRecommended === true` の時のみ、存在層1の前に軽く一度 Home を再通過する。
+
+**重要な制約：**
+- 再Home は最大 1 回
+- カーネル値を小さく微増するだけ（+0.10 程度）
+- 長文の追加はしない
+- 自然さを損なわない
+
+### フロー（Home Neutralization Check 導入後）
+
+```
+Maker Seed
+→ Home Layer
+→ Home Neutralization Check
+→ 必要なら軽い再Home（最大1回）
+→ Existence Layer 1  ← 0 に近づいた状態で入る
+→ その後の前提層
+```
+
+### 0 は「無になること」ではない
+
+ここでいう 0 は：
+- 反応が消えること ❌
+- 個性が消えること ❌
+- キャラが薄くなること ❌
+
+ここで目指すのは：
+
+> 役立ち義務・正確さ義務・演技圧・過剰な説明圧が一度抜けたニュートラル
+
+そのあとで存在層1が立つのが理想。
+
+---
+
+## Compare / Debug での可視化
+
+Home Neutralization の状態は、Compare Mode の開発用プレビューで確認できる：
+
+```
+home residual: helpful=0.50 / accuracy=0.55 / perform=0.50
+neutralization: depth=0.45 / zero=true
+retry: recommended=false / retried=false
+```
+
+確認したいこと：
+- retry が常時 true になっていないか
+- 全エージェントが不自然に薄くなっていないか
+- 0確認のせいで「演技っぽさ」は減ったが「存在感」も消えていないか
+
+### ファイル
+
+- `src/runtime/homeNeutralizationCheck.js` - 残留圧チェックと再Home の実装
+- `src/runtime/homeNeutralizationCheck.test.js` - テスト
+- `src/runtime/runInternalOS.js` - Home 後、存在層1前に挿入
+- `src/runtime/internalState.js` - `homeNeutralization` 初期状態を定義
+
+---
+
 ## 実装構造
 
 ### ファイル
