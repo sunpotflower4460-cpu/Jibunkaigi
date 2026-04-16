@@ -39,6 +39,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.beliefTensionPreview] - Belief Tension Layer の開発用プレビュー (dev-only)
  * @param {object} [params.preconditionFilterPreview] - Precondition Filter の開発用プレビュー (dev-only)
  * @param {object} [params.preconditionBiasPreview] - Precondition Bias の開発用プレビュー (dev-only)
+ * @param {object} [params.homeNeutralizationPreview] - Home Neutralization Check の開発用プレビュー (dev-only)
  * @param {object} [params.feltSensePreview] - Decision Layer feltSense preview (dev-only)
  * @param {object} [params.speakIntentPreview] - Decision Layer intention preview (dev-only)
  * @param {object} [params.restraintPreview] - Decision Layer restraint preview (dev-only)
@@ -64,6 +65,7 @@ export const buildCompareViewModel = ({
   beliefTensionPreview = null,
   preconditionFilterPreview = null,
   preconditionBiasPreview = null,
+  homeNeutralizationPreview = null,
   feltSensePreview = null,
   speakIntentPreview = null,
   restraintPreview = null,
@@ -240,6 +242,27 @@ export const buildCompareViewModel = ({
     },
   } : null
 
+  // Home Neutralization Preview (dev-only)
+  const homeNeutralizationLayer = homeNeutralizationPreview ? {
+    residual: {
+      helpful: homeNeutralizationPreview.residual?.helpful ?? 0,
+      accuracy: homeNeutralizationPreview.residual?.accuracy ?? 0,
+      perform: homeNeutralizationPreview.residual?.perform ?? 0,
+      summary: homeNeutralizationPreview.residual?.summary ?? 0,
+      solution: homeNeutralizationPreview.residual?.solution ?? 0,
+    },
+    neutralization: {
+      depth: homeNeutralizationPreview.neutralization?.depth ?? 0,
+      zero: homeNeutralizationPreview.neutralization?.zero ?? false,
+    },
+    retry: {
+      recommended: homeNeutralizationPreview.retry?.recommended ?? false,
+      retried: homeNeutralizationPreview.retry?.retried ?? false,
+      count: homeNeutralizationPreview.retry?.count ?? 0,
+    },
+    summary: homeNeutralizationPreview.summary ?? '',
+  } : null
+
   const normalizedFeltSensePreview = feltSensePreview ? {
     summary: feltSensePreview.summary ?? '',
     primaryFeeling: feltSensePreview.primaryFeeling ?? null,
@@ -306,6 +329,7 @@ export const buildCompareViewModel = ({
     beliefTensionPreview: beliefTensionLayer,
     preconditionFilterPreview: preconditionPreview,
     preconditionBiasPreview: preconditionBiasLayer,
+    homeNeutralizationPreview: homeNeutralizationLayer,
     feltSensePreview: normalizedFeltSensePreview,
     speakIntentPreview: normalizedSpeakIntentPreview,
     restraintPreview: normalizedRestraintPreview,
@@ -329,6 +353,7 @@ export const buildCompareViewModel = ({
       hasBeliefTensionPreview: Boolean(beliefTensionLayer),
       hasPreconditionFilterPreview: Boolean(preconditionPreview),
       hasPreconditionBiasPreview: Boolean(preconditionBiasLayer),
+      hasHomeNeutralizationPreview: Boolean(homeNeutralizationLayer),
       hasFeltSensePreview: Boolean(normalizedFeltSensePreview),
       hasSpeakIntentPreview: Boolean(normalizedSpeakIntentPreview),
       hasRestraintPreview: Boolean(normalizedRestraintPreview),

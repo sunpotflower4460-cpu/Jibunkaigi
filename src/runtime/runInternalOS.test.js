@@ -641,3 +641,149 @@ test('runInternalOS debugInfo exposes activeBeliefCounts', () => {
     'branch count should be <= leaf count'
   );
 });
+
+// ── Home Neutralization Check integration tests ───────────────────────────────
+
+test('runInternalOS latentState holds homeNeutralization with correct shape', () => {
+  const result = runInternalOS('やりたいのに動けない', { agentId: 'creative' });
+  const hn = result.latentState.homeNeutralization;
+
+  assert.ok(hn, 'homeNeutralization should exist in latentState');
+  assert.equal(typeof hn.residualHelpfulnessPressure, 'number');
+  assert.equal(typeof hn.residualAccuracyPressure, 'number');
+  assert.equal(typeof hn.residualPerformancePressure, 'number');
+  assert.equal(typeof hn.residualSummaryPressure, 'number');
+  assert.equal(typeof hn.residualSolutionPressure, 'number');
+  assert.equal(typeof hn.neutralizationDepth, 'number');
+  assert.equal(typeof hn.returnedToZero, 'boolean');
+  assert.equal(typeof hn.retryRecommended, 'boolean');
+  assert.equal(typeof hn.retried, 'boolean');
+  assert.equal(typeof hn.retryCount, 'number');
+});
+
+test('runInternalOS homeNeutralization residual pressures stay in [0, 1]', () => {
+  for (const input of ['やりたいのに動けない', '最近ちょっと自信ない', '']) {
+    const result = runInternalOS(input);
+    const hn = result.latentState.homeNeutralization;
+
+    for (const key of [
+      'residualHelpfulnessPressure',
+      'residualAccuracyPressure',
+      'residualPerformancePressure',
+      'residualSummaryPressure',
+      'residualSolutionPressure',
+    ]) {
+      assert.ok(hn[key] >= 0 && hn[key] <= 1, `${key} out of [0,1] for input "${input}"`);
+      assert.ok(Number.isFinite(hn[key]), `${key} not finite for input "${input}"`);
+    }
+  }
+});
+
+test('runInternalOS homeNeutralization neutralizationDepth stays in [0, 1]', () => {
+  const result = runInternalOS('作品を出したいけど怖い', { agentId: 'creative' });
+  const hn = result.latentState.homeNeutralization;
+
+  assert.ok(Number.isFinite(hn.neutralizationDepth));
+  assert.ok(hn.neutralizationDepth >= 0 && hn.neutralizationDepth <= 1);
+});
+
+test('runInternalOS homeNeutralization retryCount never exceeds 1', () => {
+  for (const input of ['やりたいのに動けない', '最近ちょっと自信ない', '', 'もう無理で諦めたい']) {
+    const result = runInternalOS(input, { agentId: 'creative' });
+    const hn = result.latentState.homeNeutralization;
+
+    assert.ok(hn.retryCount <= 1, `retryCount should never exceed 1 for input "${input}"`);
+  }
+});
+
+test('runInternalOS homeNeutralization retried is consistent with retryRecommended', () => {
+  // Run multiple inputs to cover both retry and non-retry paths
+  const inputs = ['やりたいのに動けない', '最近ちょっと自信ない', '作品を出したいけど怖い'];
+
+  for (const input of inputs) {
+    const result = runInternalOS(input, { agentId: 'creative' });
+    const hn = result.latentState.homeNeutralization;
+
+    // retried must match retryRecommended (exactly one pass)
+    assert.equal(hn.retried, hn.retryRecommended,
+      `retried should equal retryRecommended for input "${input}"`);
+  }
+});
+
+test('runInternalOS debugInfo contains homeNeutralizationPreview', () => {
+  const result = runInternalOS('誰にも言っていない、小さな違和感', { agentId: 'soul' });
+  const preview = result.debugInfo.homeNeutralizationPreview;
+
+  assert.ok(preview, 'homeNeutralizationPreview should be in debugInfo');
+  assert.ok(preview.residual, 'preview.residual should exist');
+  assert.ok(preview.neutralization, 'preview.neutralization should exist');
+  assert.ok(preview.retry, 'preview.retry should exist');
+  assert.equal(typeof preview.summary, 'string');
+  assert.ok(preview.summary.length > 0);
+});
+
+test('runInternalOS homeNeutralizationPreview shape is complete', () => {
+  const result = runInternalOS('作品を出したいけど怖い', { agentId: 'creative' });
+  const preview = result.debugInfo.homeNeutralizationPreview;
+
+  assert.ok(preview);
+
+  // residual fields
+  for (const key of ['helpful', 'accuracy', 'perform', 'summary', 'solution']) {
+    assert.equal(typeof preview.residual[key], 'number', `residual.${key} should be number`);
+    assert.ok(preview.residual[key] >= 0 && preview.residual[key] <= 1,
+      `residual.${key} should be in [0,1]`);
+  }
+
+  // neutralization fields
+  assert.equal(typeof preview.neutralization.depth, 'number');
+  assert.equal(typeof preview.neutralization.zero, 'boolean');
+
+  // retry fields
+  assert.equal(typeof preview.retry.recommended, 'boolean');
+  assert.equal(typeof preview.retry.retried, 'boolean');
+  assert.equal(typeof preview.retry.count, 'number');
+  assert.ok(preview.retry.count <= 1);
+});
+
+test('runInternalOS preconditionTrace includes home neutralization event', () => {
+  const result = runInternalOS('やりたいのに動けない', { agentId: 'creative' });
+  const trace = result.debugInfo.preconditionTrace;
+
+  const neutralizationEvents = trace.filter((e) =>
+    e === 'precondition:home-retry-applied' || e === 'precondition:home-neutralization-checked'
+  );
+  assert.ok(neutralizationEvents.length === 1, 'exactly one home neutralization trace event expected');
+});
+
+test('runInternalOS home in latentState reflects effective (possibly retried) home', () => {
+  // Run with a scenario likely to trigger retry (empty input → thin kernel)
+  const result = runInternalOS('', { agentId: null });
+  const hn = result.latentState.homeNeutralization;
+  const home = result.latentState.home;
+
+  // If retry was applied, home kernel should be slightly higher than baseline
+  if (hn.retried) {
+    assert.ok(home.kernel.releaseHelpfulness >= 0.22,
+      'after retry, releaseHelpfulness should be at least baseline');
+    assert.ok(hn.retryCount === 1, 'retryCount should be 1 when retried');
+  }
+
+  // Either way, shape must be valid
+  assert.ok(home.kernel);
+  for (const val of Object.values(home.kernel)) {
+    assert.ok(val >= 0 && val <= 1);
+    assert.ok(Number.isFinite(val));
+  }
+});
+
+test('runInternalOS homeNeutralization is present after afterglow blending', () => {
+  const previous = runInternalOS('やりたいのに動けない', { agentId: 'creative' });
+  const blended = runInternalOS('もう無理で諦めたい', {
+    agentId: 'creative',
+    previousLatentState: previous.latentState,
+  });
+
+  assert.ok(blended.latentState.homeNeutralization, 'homeNeutralization should survive blending');
+  assert.equal(typeof blended.latentState.homeNeutralization.retryCount, 'number');
+});

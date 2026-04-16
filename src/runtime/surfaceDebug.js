@@ -93,6 +93,7 @@ export const buildSurfaceDebugEntry = ({
     // internal OS summary (no raw prompts)
     hasInternalOS: !!continuityInternalOS,
     preconditionBiasPreview: continuityInternalOS?.debugInfo?.preconditionBiasPreview ?? null,
+    homeNeutralizationPreview: continuityInternalOS?.debugInfo?.homeNeutralizationPreview ?? null,
     feltSensePreview: continuityInternalOS?.debugInfo?.feltSensePreview ?? null,
     speakIntentPreview: continuityInternalOS?.debugInfo?.speakIntentPreview ?? null,
     restraintPreview: continuityInternalOS?.debugInfo?.restraintPreview ?? null,

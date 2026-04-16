@@ -195,6 +195,20 @@ const createHomeState = () => ({
   },
 });
 
+// Home 通過後の残留圧チェック・ニュートラル到達状態
+const createHomeNeutralizationState = () => ({
+  residualHelpfulnessPressure: 0,
+  residualAccuracyPressure: 0,
+  residualPerformancePressure: 0,
+  residualSummaryPressure: 0,
+  residualSolutionPressure: 0,
+  neutralizationDepth: 0,
+  returnedToZero: false,
+  retryRecommended: false,
+  retried: false,
+  retryCount: 0,
+});
+
 // Normalized top-level existence1: flattened shape derived from existenceLayer1 data
 const createExistence1State = () => ({
   selfPresence: 0,
@@ -220,6 +234,7 @@ export function createInitialInternalState() {
     stance: createStanceState(),
     permission: createPermissionState(),
     home: createHomeState(),
+    homeNeutralization: createHomeNeutralizationState(),
     existence: {
       layer1: createExistenceLayer1State(),
       layer2: createExistenceLayer2State(),
