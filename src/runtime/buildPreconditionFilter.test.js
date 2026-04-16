@@ -259,49 +259,54 @@ test('preconditionFilter ordering is confirmed by preconditionTrace in debugInfo
 
   // Home comes before Existence1
   assert.ok(
-    trace.indexOf('precondition:after-home') < trace.indexOf('precondition:after-existence1'),
+    trace.indexOf('latent:after-home') < trace.indexOf('latent:after-existence1'),
     'Home should precede Existence1 in trace'
   );
 
   // Existence1 comes before Existence2
   assert.ok(
-    trace.indexOf('precondition:after-existence1') < trace.indexOf('precondition:after-existence2'),
+    trace.indexOf('latent:after-existence1') < trace.indexOf('latent:after-existence2'),
     'Existence1 should precede Existence2 in trace'
   );
 
   // Existence2 comes before BeliefCore
   assert.ok(
-    trace.indexOf('precondition:after-existence2') < trace.indexOf('precondition:after-belief-core'),
+    trace.indexOf('latent:after-existence2') < trace.indexOf('latent:after-belief-core'),
     'Existence2 should precede BeliefCore in trace'
   );
 
   // BeliefCore → BeliefBranch → BeliefLeaf
   assert.ok(
-    trace.indexOf('precondition:after-belief-core') < trace.indexOf('precondition:after-belief-branch'),
+    trace.indexOf('latent:after-belief-core') < trace.indexOf('latent:after-belief-branch'),
     'BeliefCore should precede BeliefBranch in trace'
   );
   assert.ok(
-    trace.indexOf('precondition:after-belief-branch') < trace.indexOf('precondition:after-belief-leaf'),
+    trace.indexOf('latent:after-belief-branch') < trace.indexOf('latent:after-belief-leaf'),
     'BeliefBranch should precede BeliefLeaf in trace'
   );
 
-  // BeliefLeaf comes before buildFilter
+  // BeliefLeaf comes before BeliefTension
   assert.ok(
-    trace.indexOf('precondition:after-belief-leaf') < trace.indexOf('precondition:after-build-filter'),
-    'BeliefLeaf should precede buildFilter in trace'
+    trace.indexOf('latent:after-belief-leaf') < trace.indexOf('latent:after-belief-tension'),
+    'BeliefLeaf should precede BeliefTension in trace'
   );
 
+  // BeliefTension comes before buildFilter
   assert.ok(
-    trace.indexOf('precondition:after-build-filter') < trace.indexOf('precondition:after-precondition-bias'),
+    trace.indexOf('latent:after-belief-tension') < trace.indexOf('latent:after-build-filter'),
+    'BeliefTension should precede buildFilter in trace'
+  );
+
+  // buildFilter comes before preconditionBias
+  assert.ok(
+    trace.indexOf('latent:after-build-filter') < trace.indexOf('dynamic:after-precondition-bias'),
     'buildFilter should precede preconditionBias in trace'
   );
+
+  // preconditionBias comes before decision
   assert.ok(
-    trace.indexOf('precondition:after-precondition-bias') < trace.indexOf('precondition:after-belief-tension'),
-    'preconditionBias should precede beliefTension in trace'
-  );
-  assert.ok(
-    trace.indexOf('precondition:after-belief-tension') < trace.indexOf('precondition:after-decision'),
-    'beliefTension should precede decision in trace'
+    trace.indexOf('dynamic:after-precondition-bias') < trace.indexOf('dynamic:after-decision'),
+    'preconditionBias should precede decision in trace'
   );
 
   // preconditionFilter must be present in latentState after the chain

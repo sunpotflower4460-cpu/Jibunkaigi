@@ -2,27 +2,35 @@
 
 ## 概要
 
-`preconditionFilter` は、Phase 6 で導入された **前提層の統合フィルタ** です。
-Phase 7 では、この閉じた前提層から `preconditionBias` を作り、
+`preconditionFilter` は、Phase 6 で導入された **前提層からの派生ヘルパービュー** です。
+Phase 7 では、この派生ビューから `preconditionBias` を作り、
 後段へ「読むための参照」ではなく「染み込む圧」として渡します。
 
-ここまで段階的に追加された前提層を「ここまでが前提層」として一度閉じ、
-その後の反応・意味づけ・焦点・「何を言いたいか」を色濃く染める単一の前提状態としてまとめます。
+**重要な位置づけ変更（最新版）:**
+- preconditionFilter は前提層の**本体ではなく、補助ビュー**である
+- **raw latent layers が本体**であり、常に保持される
+- preconditionFilter は raw layers を後段が読みやすくするための derived view
+- 前提層は「要約して畳む」ものではなく、「生きた潜在層として保持する」ものである
 
 ---
 
-## 前提層の順序
+## 前提層の順序（最新版）
 
 ```
-Maker Seed
-→ Home Layer
-→ Existence Layer 1
-→ Existence Layer 2
-→ Belief Core Layer
-→ Belief Branch Layer
-→ Belief Leaf Layer
-→ buildPreconditionFilter(...)   ← ここで前提層が閉じる
-→ 既存後段（biased reaction / stance / home / existence / pattern / surface など）
+Maker Seed (raw latent)
+→ Home Layer (raw latent)
+→ Existence Layer 1 (raw latent)
+→ Existence Layer 2 (raw latent)
+→ Belief Core Layer (raw latent)
+→ Belief Branch Layer (raw latent)
+→ Belief Leaf Layer (raw latent)
+→ Belief Tension Layer (raw latent)
+→ buildPreconditionFilter(...)   ← raw layers からの補助ビュー生成
+→ field (post-precondition dynamic layer)
+→ reaction (post-precondition dynamic layer)
+→ stance (post-precondition dynamic layer)
+→ decision
+→ surface / builder
 ```
 
 この順番は `runInternalOS(...)` の内部でそのまま実行されます。
@@ -30,30 +38,40 @@ Maker Seed
 実際に前提層が上記の順に通ったことを confirm/debug で確認できます。
 
 ```
-precondition:before-home
-precondition:after-home
-precondition:after-existence1
-precondition:after-existence2
-precondition:after-belief-core
-precondition:after-belief-branch
-precondition:after-belief-leaf
-precondition:after-build-filter
+latent:maker-seed
+latent:before-home
+latent:after-home
+latent:after-existence1
+latent:after-existence2
+latent:after-belief-core
+latent:after-belief-branch
+latent:after-belief-leaf
+latent:after-belief-tension
+latent:after-build-filter
+dynamic:after-precondition-bias
+dynamic:after-field
+dynamic:after-reaction
+dynamic:after-stance
+dynamic:after-home-rebuild
+dynamic:after-rebuild-filter
+dynamic:after-rebuild-bias
+dynamic:after-decision
 ```
 
 ---
 
-## preconditionFilter とは何か
+## preconditionFilter とは何か（改訂版）
 
-### 重要: これは「返答」ではない
+### 重要: これは「本体」ではなく「補助ビュー」である
 
-`preconditionFilter` は返答文ではありません。
+`preconditionFilter` は前提層の本体ではありません。
 ここで作るのは、
 
-- 今どういう存在として立っているか
-- どんな信念のメガネをかけているか
-- どんな静けさや速度で世界を見始めるか
+- raw latent layers を後段が読みやすくする derived helper view
+- raw layers はそのまま internalState に保持される
+- 後段は raw layers と derived view の両方を読む
 
-という、その後を染める **前提状態** です。
+という、**補助的な統合ビュー** です。
 
 `preconditionFilter` の中にある文言や identity / belief は、
 ユーザー向け返答へそのまま出力しません。
@@ -276,19 +294,37 @@ beliefLeafCount / preconditionFilterPresent` で各前提層の到達確認が�
 
 ---
 
-## 現フェーズの位置づけ
+## 現フェーズの位置づけ（最新版）
 
-現在のフェーズでは **「前提層を本当に最初に通る主役層にすること」** が目的です。
+現在のフェーズでは **「前提層を生きた潜在層として保持し、その上で field / reaction / stance を後段動的層として再配置すること」** が目的です。
 
-- Home が最初に通る
-- そのあと Existence Layer 1 / 2 が通る
-- そのあと Belief Core / Branch / Leaf が通る
-- buildPreconditionFilter で前提層が閉じる
-- その後に biased reaction / stance / home が通る（既存後段）
+- Maker Seed が最初に通る（raw latent layer）
+- Home Layer が通る（raw latent layer）
+- Existence Layer 1 / 2 が通る（raw latent layers）
+- Belief Core / Branch / Leaf / Tension が通る（raw latent layers）
+- buildPreconditionFilter で補助ビューを生成（derived helper view）
+- その後に field / reaction / stance が post-precondition dynamic layers として通る
+- Decision Layer が通る
+- Surface / Builder が通る
 
-まだ後段へ bias を深く染み込ませる「preconditionBias 本格実装フェーズ」には入っていません。
-次フェーズでは、この preconditionFilter / preconditionBias を素材選択・stateGuide・
-意思決定層へさらに深く接続します。
+**重要な変更点:**
+1. **前提層は潜在層として保持される** — 要約や圧縮をせず、raw layers として internalState に残る
+2. **preconditionFilter は補助ビュー** — raw layers の代替ではなく、読みやすくするための追加ビュー
+3. **field / reaction / stance は後段動的層** — 前提層の前ではなく、前提層の影響下で発生する動的層
+4. **前提層は読み上げない** — 前提層の internal text は影響するだけで、そのまま表層へ出さない
+
+### 表層への漏れ防止ガード
+
+`src/runtime/surfaceGuard.js` に簡易チェック機能を実装。
+以下の内部文言が表層発話にそのまま混ざるのを検出する:
+
+- Maker Seed の内的文言（「この場所を作った人間から、あなたへ」など）
+- Home Layer の内的文言
+- Existence Layer の内的文言（「私は今ここにいる」「あぁ、自分は光だった」など）
+- Belief の internal text 全般
+- System layer markers（「preconditionFilter」「latent layer」など）
+
+これは hard blocker ではなく、compare/debug での可視化用の軽量チェック。
 
 ---
 

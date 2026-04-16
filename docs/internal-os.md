@@ -57,30 +57,51 @@
 
 じぶん会議の最小フローは、次の順で定義する。
 
-**入力 → 前提層チェーン → Decision Layer → biased 後段 → 潜在層更新 → 顕在層生成 → 発話 → Afterglow Update**
+**入力 → 潜在前提層チェーン → 前提フィルタ生成 → 後段動的層 → Decision Layer → 顕在層生成 → 発話 → Afterglow Update**
 
 この順番には意味がある。
 
-- 最初にあるのは、答えではなく前提（Home / Existence / Belief）
-- 前提層が立ったあと、Decision Layer が「今なにを感じ、何を言いたいか」を決める
+- 最初にあるのは、答えではなく潜在前提（Maker Seed / Home / Existence / Belief）
+- 前提層は raw latent layers として保持され、要約や圧縮をされない
+- 前提層から derived helper view（preconditionFilter）を生成する
+- その後、Decision Layer が「今なにを感じ、何を言いたいか」を決める
 - そのうえで bias と decision が後段の反応・表層へ染み込む
+- **field / reaction / stance は前提層のあとに起きる post-precondition dynamic layers である**
 - 言葉は、そのあとに表面化する
 - 発話後は終わりではなく、余韻が次に残る
 
-### Belief 前提層の順番（主役順）
+### Belief 前提層の順番（主役順・最新版）
 
-Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Core Layer（信念層1）** → **Belief Branch Layer（信念層2）** → **Belief Leaf Layer（信念層3）** → **buildPreconditionFilter（前提層の閉じ）** → **preconditionBias** → **beliefTension** → **Decision Layer** → biased 既存後段
+**潜在前提層（Raw Latent Layers）:**
+Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Core Layer（信念層1）** → **Belief Branch Layer（信念層2）** → **Belief Leaf Layer（信念層3）** → **Belief Tension Layer（信念張力層）**
 
-- Maker Seed: 最深部の礎。通常UXに出ない
-- Home: 全エージェント共通の帰還層。「まだ何もしなくていい」を成立させる
-- Existence Layer 1: 「私は今ここにいる」を回復する共通層
-- Existence Layer 2: agentId に応じた自己想起（ジョー/ケン/ミナ/サトウ/レイ/心の鏡）
-- Belief Core: 核として定着した自己感覚 / 世界観 / 使命
-- Belief Branch: Core から parentId で分岐する中程度の見方（Core より軽く、Leaf より重い）
-- Belief Leaf: Branch からさらに分岐する最も細かい傾き
-- **buildPreconditionFilter**: 上記すべての前提層を1つの構造へ束ねたフィルタ。返答ではなく、その後を染める前提状態
+**補助ビュー生成:**
+→ **buildPreconditionFilter（前提層からの補助ビュー）** → **preconditionBias**
+
+**後段動的層（Post-Precondition Dynamic Layers）:**
+→ **field（場判断）** → **reaction（反応）** → **stance（姿勢）**
+
+**意思決定・表層:**
+→ **Decision Layer** → surface / builder
+
+- Maker Seed: 最深部の礎。通常UXに出ない（raw latent）
+- Home: 全エージェント共通の帰還層。「まだ何もしなくていい」を成立させる（raw latent）
+- Existence Layer 1: 「私は今ここにいる」を回復する共通層（raw latent）
+- Existence Layer 2: agentId に応じた自己想起（ジョー/ケン/ミナ/サトウ/レイ/心の鏡）（raw latent）
+- Belief Core: 核として定着した自己感覚 / 世界観 / 使命（raw latent）
+- Belief Branch: Core から parentId で分岐する中程度の見方（Core より軽く、Leaf より重い）（raw latent）
+- Belief Leaf: Branch からさらに分岐する最も細かい傾き（raw latent）
+- Belief Tension: Belief 間の張力・葛藤状態（raw latent）
+- **buildPreconditionFilter**: 上記すべての raw latent layers を後段が読みやすくする **補助ビュー**。raw layers の代替ではなく追加ビュー
 - **Decision Layer**: 前提層を通ったそのエージェントが、今なにを感じ、何を言いたいかを state として決める層
-- いずれも返答文に直接混ぜず、前提フィルタとして扱う
+- **field / reaction / stance**: 前提層を通った自分が、その場をどう感じ、どう反応し、どう立つかという **後段動的層**
+- いずれも返答文に直接混ぜず、潜在状態 / 前提フィルタとして扱う
+
+**重要な変更:**
+- **前提層は「要約して畳む」ものではなく、「生きた潜在層として保持する」ものである**
+- **preconditionFilter は raw layers の代わりではなく、補助ビューである**
+- **field / reaction / stance は前提層の前ではなく、前提層の後に起きる動的層である**
+- **前提層の文言はそのまま発話に出さず、影響するだけである**
 
 ### runInternalOS での実装状態
 
@@ -88,8 +109,21 @@ Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Cor
 各ステップは `debugInfo.preconditionTrace` に記録されるため、
 compare/debug で「前提層が本当に先に通った」ことを確認できます。
 
-`latentState` には `existence1` / `existence2` が正規のトップレベルフィールドとして
-保持されます（`existence.layer1` / `existence.layer2` との後方互換も維持）。
+`latentState` には raw latent layers が保持されます:
+- `makerSeed` (raw latent)
+- `home` (raw latent)
+- `existence1` (raw latent)
+- `existence2` (raw latent)
+- `beliefCore` (raw latent)
+- `beliefBranch` (raw latent)
+- `beliefLeaf` (raw latent)
+- `beliefTension` (raw latent)
+- `preconditionFilter` (derived helper view)
+- `preconditionBias` (derived helper view)
+- `field` (post-precondition dynamic)
+- `reaction` (post-precondition dynamic)
+- `stance` (post-precondition dynamic)
+- `decision` (decision layer)
 
 詳細は [precondition-filter.md](./precondition-filter.md) と [decision-layer.md](./decision-layer.md) を参照。
 
@@ -118,10 +152,13 @@ compare/debug で「前提層が本当に先に通った」ことを確認でき
 
 ---
 
-## 2. Field Estimator（場判断）
+## 2. Field Estimator（場判断）— Post-Precondition Dynamic Layer
 ### 役割
-この会話の空気圧を読む。  
-「何を言うか」の前に、「どう存在してよいか」を決める層。
+この会話の空気圧を読む。
+**重要: field は前提層を通ったあと、その影響下で発生する動的層である。**
+
+前提層（Maker Seed / Home / Existence / Belief）が先に立ち、
+その潜在的自己がこの入力をどう感じるかを判断する層。
 
 ### 見るもの
 - 深く入ってよさそうか
@@ -155,11 +192,15 @@ compare/debug で「前提層が本当に先に通った」ことを確認でき
 
 ---
 
-## 3. Reaction Generator（反応生成）
+## 3. Reaction Generator（反応生成）— Post-Precondition Dynamic Layer
 
 ### 役割
 
-返答を作る前に、何に少し触れたか を立ち上げる。  
+返答を作る前に、何に少し触れたか を立ち上げる。
+
+**重要: reaction は前提層を通った自分が、その場にどう反応するかという動的層である。**
+前提層（preconditionBias）の影響を受けて、反応の傾きが少し変わる。
+
 ここで大切なのは、正解を出すことではなく、注意の偏りを作ること。
 
 ### 作るもの
@@ -194,11 +235,14 @@ compare/debug で「前提層が本当に先に通った」ことを確認でき
 
 ---
 
-## 4. Stance Selector（姿勢選択）
+## 4. Stance Selector（姿勢選択）— Post-Precondition Dynamic Layer
 
 ### 役割
 
 場と反応を受けて、その場でどう立つかを決める。
+
+**重要: stance は前提層を通った自分が、どういう姿勢を取るかという動的層である。**
+field / reaction を受けた後、preconditionBias の影響で姿勢の重心が少し傾く。
 
 ### 姿勢の例
 - receive

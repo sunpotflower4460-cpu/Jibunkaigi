@@ -198,54 +198,69 @@ export function runInternalOS(input, options = {}) {
   const initialState = createInitialInternalState();
 
   // ════════════════════════════════════════════════════════════════════
-  // PRECONDITION CHAIN (主役層)
+  // LATENT PREMISE CHAIN (潜在前提層)
+  // Raw latent layers remain alive and are not compressed.
   // Maker Seed → Home → Existence Layer 1 → Existence Layer 2
-  // → Belief Core → Belief Branch → Belief Leaf → buildPreconditionFilter
+  // → Belief Core → Belief Branch → Belief Leaf → Belief Tension
+  // → buildPreconditionFilter (helper view derived from raw layers)
+  // → field / reaction / stance (post-precondition dynamic layers)
+  // → decision → surface / builder
   // ════════════════════════════════════════════════════════════════════
 
   const preconditionTrace = [];
 
   // Step 1: Maker Seed
   const makerSeed = createMakerSeed();
-
-  // field / reaction / stance are computed here as internal inputs required by
-  // Home Layer. They are not standalone precondition layers; Home is the first
-  // named layer in the precondition chain.
-  const field = estimateField(normalizedInput);
-  const baseReaction = generateReaction(normalizedInput, field);
-  const baseStance = selectStance(field, baseReaction);
+  preconditionTrace.push('latent:maker-seed');
 
   // Step 2: Home Layer
-  preconditionTrace.push('precondition:before-home');
-  const baseHome = createHomeLayer({ field, reaction: baseReaction, stance: baseStance });
-  preconditionTrace.push('precondition:after-home');
+  // Initial field/reaction/stance are computed as minimal inputs for Home,
+  // but they will be recomputed as post-precondition dynamic layers later.
+  preconditionTrace.push('latent:before-home');
+  const initialField = estimateField(normalizedInput);
+  const initialReaction = generateReaction(normalizedInput, initialField);
+  const initialStance = selectStance(initialField, initialReaction);
+  const baseHome = createHomeLayer({ field: initialField, reaction: initialReaction, stance: initialStance });
+  preconditionTrace.push('latent:after-home');
 
   // Step 3: Existence Layer 1
   const baseExistenceLayer1 = createExistenceLayer1({
     home: baseHome,
-    field,
-    reaction: baseReaction,
-    stance: baseStance,
+    field: initialField,
+    reaction: initialReaction,
+    stance: initialStance,
   });
-  preconditionTrace.push('precondition:after-existence1');
+  preconditionTrace.push('latent:after-existence1');
 
   // Step 4: Existence Layer 2
   const existenceLayer2 = createExistenceLayer2({ agentId });
-  preconditionTrace.push('precondition:after-existence2');
+  preconditionTrace.push('latent:after-existence2');
 
   // Step 5: Belief Core Layer
   const beliefCore = createBeliefCoreLayer({ agentId, existenceLayer2 });
-  preconditionTrace.push('precondition:after-belief-core');
+  preconditionTrace.push('latent:after-belief-core');
 
   // Step 6: Belief Branch Layer
   const beliefBranch = createBeliefBranchLayer({ agentId, beliefCore, existenceLayer2 });
-  preconditionTrace.push('precondition:after-belief-branch');
+  preconditionTrace.push('latent:after-belief-branch');
 
   // Step 7: Belief Leaf Layer
   const beliefLeaf = createBeliefLeafLayer({ agentId, beliefBranch, existenceLayer2 });
-  preconditionTrace.push('precondition:after-belief-leaf');
+  preconditionTrace.push('latent:after-belief-leaf');
 
-  // Step 8: Build Precondition Filter (first pass — before bias)
+  // Step 8: Belief Tension Layer
+  const beliefTension = createBeliefTensionLayer({
+    input: normalizedInput,
+    activeCoreBeliefs: beliefCore.activeCoreBeliefs ?? [],
+    activeBranchBeliefs: beliefBranch.activeBranchBeliefs ?? [],
+    activeLeafBeliefs: beliefLeaf.activeLeafBeliefs ?? [],
+  });
+  preconditionTrace.push('latent:after-belief-tension');
+
+  // Step 9: Build Precondition Filter (helper view derived from raw layers)
+  // This is NOT a summary or compression of the latent layers.
+  // It is a helper view to make raw layers easier to read by downstream layers.
+  // Raw latent layers remain alive and preserved in internalState.
   const basePreconditionFilter = buildPreconditionFilter({
     makerSeed,
     home: baseHome,
@@ -255,19 +270,33 @@ export function runInternalOS(input, options = {}) {
     beliefBranch,
     beliefLeaf,
   });
+  preconditionTrace.push('latent:after-build-filter');
 
   // ════════════════════════════════════════════════════════════════════
-  // DOWNSTREAM: bias application → rebuilt reaction / stance / home / existence
-  // 先に reaction へ bias を混ぜ、その反応から stance を立てた上で
-  // stance 側の軽い寄せをもう一段だけ足す。
-  // こうすると「何に反応しやすいか」の変化が先に入り、
-  // その反応を受けた stance が後追いで少し傾く。
+  // POST-PRECONDITION DYNAMIC LAYERS (後段動的層)
+  // field / reaction / stance are recomputed here as dynamic layers
+  // that occur AFTER the latent premise layers have been established.
+  // They are influenced by the latent substrate via preconditionBias.
   // ════════════════════════════════════════════════════════════════════
 
   const initialPreconditionBias = buildPreconditionBias(basePreconditionFilter);
+  preconditionTrace.push('dynamic:after-precondition-bias');
+
+  // Dynamic field: how the latent self perceives the current input
+  const field = estimateField(normalizedInput);
+  preconditionTrace.push('dynamic:after-field');
+
+  // Dynamic reaction: how the latent self reacts to this field, biased by precondition
+  const baseReaction = generateReaction(normalizedInput, field);
   const reaction = applyReactionBias(baseReaction, initialPreconditionBias);
-  const stance = applyStanceBias(selectStance(field, reaction), initialPreconditionBias);
+  preconditionTrace.push('dynamic:after-reaction');
+
+  // Dynamic stance: how the latent self stands in this moment, biased by precondition
+  const baseStance = selectStance(field, reaction);
+  const stance = applyStanceBias(baseStance, initialPreconditionBias);
+  preconditionTrace.push('dynamic:after-stance');
   const home = createHomeLayer({ field, reaction, stance });
+  preconditionTrace.push('dynamic:after-home-rebuild');
 
   // ════════════════════════════════════════════════════════════════════
   // HOME NEUTRALIZATION CHECK
@@ -293,7 +322,7 @@ export function runInternalOS(input, options = {}) {
     retried: homeRetried,
     retryCount: homeRetryCount,
   };
-  preconditionTrace.push(homeRetried ? 'precondition:home-retry-applied' : 'precondition:home-neutralization-checked');
+  preconditionTrace.push(homeRetried ? 'dynamic:home-retry-applied' : 'dynamic:home-neutralization-checked');
 
   const existenceLayer1 = createExistenceLayer1({ home: effectiveHome, field, reaction, stance });
   const belief = createBeliefLayers({ agentId, existenceLayer1, existenceLayer2 });
@@ -309,17 +338,9 @@ export function runInternalOS(input, options = {}) {
     beliefBranch,
     beliefLeaf,
   });
-  preconditionTrace.push('precondition:after-build-filter');
+  preconditionTrace.push('dynamic:after-rebuild-filter');
   const preconditionBias = buildPreconditionBias(preconditionFilter);
-  preconditionTrace.push('precondition:after-precondition-bias');
-
-  const beliefTension = createBeliefTensionLayer({
-    input: normalizedInput,
-    activeCoreBeliefs: beliefCore.activeCoreBeliefs ?? [],
-    activeBranchBeliefs: beliefBranch.activeBranchBeliefs ?? [],
-    activeLeafBeliefs: beliefLeaf.activeLeafBeliefs ?? [],
-  });
-  preconditionTrace.push('precondition:after-belief-tension');
+  preconditionTrace.push('dynamic:after-rebuild-bias');
 
   const decision = createDecisionLayer({
     preconditionFilter,
@@ -328,7 +349,7 @@ export function runInternalOS(input, options = {}) {
     reaction,
     stance,
   });
-  preconditionTrace.push('precondition:after-decision');
+  preconditionTrace.push('dynamic:after-decision');
 
   // Normalized top-level existence1 / existence2 derived from the final (biased) layers.
   // These provide a flat, canonical shape that downstream and debug can read directly.
@@ -354,27 +375,32 @@ export function runInternalOS(input, options = {}) {
 
   const freshLatentState = {
     ...initialState,
+    // Raw latent layers (live latent substrate) — preserved as-is, not compressed
     makerSeed,
-    field,
-    reaction,
-    stance,
     home: effectiveHome,
     homeNeutralization,
-    permission,
-    existence: {
-      layer1: existenceLayer1,
-      layer2: existenceLayer2,
-    },
     existence1,
     existence2,
     beliefCore,
     beliefBranch,
     beliefLeaf,
     beliefTension,
-    belief,
+    // Derived helper views from raw latent layers
     preconditionFilter,
     preconditionBias,
+    // Post-precondition dynamic layers
+    field,
+    reaction,
+    stance,
+    permission,
+    // Decision layer
     decision,
+    // Legacy/backward compatibility
+    existence: {
+      layer1: existenceLayer1,
+      layer2: existenceLayer2,
+    },
+    belief,
   };
 
   const previousLatentState = normalizeLatentState(safePreviousLatentState);
@@ -428,6 +454,31 @@ export function runInternalOS(input, options = {}) {
       optionKeys: Object.keys(normalizedOptions),
       dominantPattern: patternMix.dominant,
       usedAfterglow: Boolean(previousLatentState),
+      // Latent premise layer presence indicators
+      latentLayersPresent: {
+        makerSeed: Boolean(latentState.makerSeed),
+        home: Boolean(latentState.home),
+        existence1: Boolean(latentState.existence1),
+        existence2: Boolean(latentState.existence2),
+        beliefCore: Boolean(latentState.beliefCore),
+        beliefBranch: Boolean(latentState.beliefBranch),
+        beliefLeaf: Boolean(latentState.beliefLeaf),
+        beliefTension: Boolean(latentState.beliefTension),
+      },
+      // Derived helper views presence
+      derivedPreconditionPresent: {
+        preconditionFilter: Boolean(latentState.preconditionFilter),
+        preconditionBias: Boolean(latentState.preconditionBias),
+      },
+      // Post-precondition dynamic layers presence
+      dynamicLayersPresent: {
+        field: Boolean(latentState.field),
+        reaction: Boolean(latentState.reaction),
+        stance: Boolean(latentState.stance),
+        decision: Boolean(latentState.decision),
+      },
+      // Layer boundary summary
+      layerBoundarySummary: 'latent: maker/home/existence/belief/tension → derived: filter/bias → dynamic: field/reaction/stance → decision/surface',
       makerSeedActive: Boolean(latentState.makerSeed),
       homeLayerActive: Boolean(latentState.home),
       existenceHintKey: latentState.existence?.layer1?.existenceHintKey ?? null,
