@@ -1,8 +1,14 @@
 // src/runtime/buildPreconditionFilter.js
-// Phase 6: 前提層を閉じて preconditionFilter を構築する。
+// Phase 6: Build a helper view (preconditionFilter) from raw latent layers.
 // Maker Seed → Home → Existence1 → Existence2 → BeliefCore → BeliefBranch → BeliefLeaf
-// を1つの前提フィルタとして束ねる。
-// 重要: ここで作るのは返答ではなく、後段を染める前提状態である。
+// are bundled into a single precondition filter.
+//
+// IMPORTANT: This is a DERIVED HELPER VIEW, not the main body.
+// - Raw latent layers remain alive and preserved in internalState
+// - preconditionFilter is a supplementary view to make raw layers easier to read
+// - This does NOT compress or summarize the latent layers
+// - This does NOT replace the raw layers
+// - Downstream layers read BOTH raw layers AND this helper view
 
 const clamp01 = (v) => Math.max(0, Math.min(1, typeof v === 'number' && Number.isFinite(v) ? v : 0));
 
@@ -95,9 +101,14 @@ function buildDerived({ home, existence1, existence2, beliefCore, beliefBranch, 
 }
 
 /**
- * preconditionFilter を構築する。
+ * Build preconditionFilter as a derived helper view from raw latent layers.
  * Maker Seed / Home / Existence1 / Existence2 / BeliefCore / BeliefBranch / BeliefLeaf
- * を1つの前提フィルタへ束ねる。
+ * are bundled into a single helper filter.
+ *
+ * IMPORTANT: This is a DERIVED VIEW, not a summary or compression.
+ * - Raw latent layers remain alive in internalState
+ * - This filter is a convenience for downstream to read raw layers more easily
+ * - Downstream layers read BOTH raw layers AND this derived view
  *
  * @param {object} params
  * @param {object | null} params.makerSeed
