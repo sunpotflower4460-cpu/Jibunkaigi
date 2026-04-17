@@ -293,20 +293,20 @@ test('preconditionFilter ordering is confirmed by preconditionTrace in debugInfo
 
   // BeliefTension comes before buildFilter
   assert.ok(
-    trace.indexOf('latent:after-belief-tension') < trace.indexOf('latent:after-build-filter'),
+    trace.indexOf('latent:after-belief-tension') < trace.indexOf('latent:after-precondition-filter'),
     'BeliefTension should precede buildFilter in trace'
   );
 
-  // buildFilter comes before preconditionBias
+  // buildFilter comes before dynamic field
   assert.ok(
-    trace.indexOf('latent:after-build-filter') < trace.indexOf('dynamic:after-precondition-bias'),
-    'buildFilter should precede preconditionBias in trace'
+    trace.indexOf('latent:after-precondition-filter') < trace.indexOf('dynamic:after-field'),
+    'buildFilter should precede dynamic field in trace'
   );
 
-  // preconditionBias comes before decision
+  // dynamic layer comes before decision
   assert.ok(
-    trace.indexOf('dynamic:after-precondition-bias') < trace.indexOf('dynamic:after-decision'),
-    'preconditionBias should precede decision in trace'
+    trace.indexOf('dynamic:after-stance') < trace.indexOf('dynamic:after-decision'),
+    'dynamic stance should precede decision in trace'
   );
 
   // preconditionFilter must be present in latentState after the chain

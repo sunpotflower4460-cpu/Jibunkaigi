@@ -308,15 +308,15 @@ test('runInternalOS builds decision after preconditionBias and beliefTension', (
   const trace = result.debugInfo.preconditionTrace;
   // beliefTension comes before buildFilter
   assert.ok(
-    trace.indexOf('latent:after-belief-tension') < trace.indexOf('latent:after-build-filter')
+    trace.indexOf('latent:after-belief-tension') < trace.indexOf('latent:after-precondition-filter')
   );
-  // buildFilter comes before preconditionBias
+  // buildFilter comes before dynamic field/reaction/stance
   assert.ok(
-    trace.indexOf('latent:after-build-filter') < trace.indexOf('dynamic:after-precondition-bias')
+    trace.indexOf('latent:after-precondition-filter') < trace.indexOf('dynamic:after-field')
   );
-  // preconditionBias comes before decision
+  // dynamic layer comes before decision
   assert.ok(
-    trace.indexOf('dynamic:after-precondition-bias') < trace.indexOf('dynamic:after-decision')
+    trace.indexOf('dynamic:after-stance') < trace.indexOf('dynamic:after-decision')
   );
 });
 
@@ -494,23 +494,19 @@ test('runInternalOS preconditionTrace contains all expected events in order (upd
   assert.ok(Array.isArray(trace), 'preconditionTrace should be an array');
 
   const EXPECTED_EVENTS = [
-    'latent:maker-seed',
-    'latent:before-home',
+    'latent:after-maker-seed',
     'latent:after-home',
+    'latent:after-home-check',
     'latent:after-existence1',
     'latent:after-existence2',
     'latent:after-belief-core',
     'latent:after-belief-branch',
     'latent:after-belief-leaf',
     'latent:after-belief-tension',
-    'latent:after-build-filter',
-    'dynamic:after-precondition-bias',
+    'latent:after-precondition-filter',
     'dynamic:after-field',
     'dynamic:after-reaction',
     'dynamic:after-stance',
-    'dynamic:after-home-rebuild',
-    'dynamic:after-rebuild-filter',
-    'dynamic:after-rebuild-bias',
     'dynamic:after-decision',
   ];
 
@@ -597,7 +593,7 @@ test('runInternalOS existence1 and existence2 survive afterglow blending', () =>
 test('runInternalOS preconditionTrace is present even with no agentId (updated)', () => {
   const result = runInternalOS('test', { agentId: null });
   assert.ok(Array.isArray(result.debugInfo.preconditionTrace));
-  assert.ok(result.debugInfo.preconditionTrace.length >= 15, 'should have all expected latent and dynamic trace events');
+  assert.ok(result.debugInfo.preconditionTrace.length >= 12, 'should have all expected latent and dynamic trace events');
 });
 
 test('runInternalOS latentState holds beliefTension with correct shape', () => {
@@ -759,10 +755,11 @@ test('runInternalOS preconditionTrace includes home neutralization event (update
   const result = runInternalOS('やりたいのに動けない', { agentId: 'creative' });
   const trace = result.debugInfo.preconditionTrace;
 
-  const neutralizationEvents = trace.filter((e) =>
-    e === 'dynamic:home-retry-applied' || e === 'dynamic:home-neutralization-checked'
+  assert.ok(trace.includes('latent:after-home-check'));
+  assert.ok(
+    trace.indexOf('latent:after-home') < trace.indexOf('latent:after-home-check'),
+    'home neutralization should happen immediately after home'
   );
-  assert.ok(neutralizationEvents.length === 1, 'exactly one home neutralization trace event expected');
 });
 
 test('runInternalOS home in latentState reflects effective (possibly retried) home', () => {
@@ -795,6 +792,17 @@ test('runInternalOS homeNeutralization is present after afterglow blending', () 
 
   assert.ok(blended.latentState.homeNeutralization, 'homeNeutralization should survive blending');
   assert.equal(typeof blended.latentState.homeNeutralization.retryCount, 'number');
+});
+
+test('runInternalOS preserves raw latent belief leaf after afterglow blending', () => {
+  const previous = runInternalOS('やりたいのに動けない', { agentId: 'creative' });
+  const blended = runInternalOS('もう無理で諦めたい', {
+    agentId: 'creative',
+    previousLatentState: previous.latentState,
+  });
+
+  assert.ok(blended.latentState.beliefLeaf, 'beliefLeaf should survive blending');
+  assert.ok(Array.isArray(blended.latentState.beliefLeaf.activeLeafBeliefs));
 });
 
 // ── New layer structure tests ─────────────────────────────────────────────────
@@ -845,6 +853,15 @@ test('runInternalOS debugInfo exposes layer boundary summary', () => {
   assert.ok(di.latentLayersPresent, 'latentLayersPresent should exist');
   assert.ok(di.derivedPreconditionPresent, 'derivedPreconditionPresent should exist');
   assert.ok(di.dynamicLayersPresent, 'dynamicLayersPresent should exist');
+  assert.equal(di.latentSubstrateBuilt, true);
+  assert.equal(di.preconditionFilterBuilt, true);
+  assert.equal(di.preconditionBiasBuilt, true);
+  assert.equal(di.dynamicFieldBuiltAfterLatent, true);
+  assert.equal(di.dynamicReactionBuiltAfterLatent, true);
+  assert.equal(di.dynamicStanceBuiltAfterLatent, true);
+  assert.equal(di.layerBoundaryStatus.latent, 'complete');
+  assert.equal(di.layerBoundaryStatus.derived, 'filter/bias ready');
+  assert.ok(di.layerBoundaryStatus.dynamic.includes('after latent = true'));
   assert.equal(typeof di.layerBoundarySummary, 'string');
   assert.ok(di.layerBoundarySummary.includes('latent:'));
   assert.ok(di.layerBoundarySummary.includes('dynamic:'));

@@ -745,6 +745,17 @@ const App = () => {
       const speakIntentPreview = internalOS?.debugInfo?.speakIntentPreview ?? null;
       const restraintPreview = internalOS?.debugInfo?.restraintPreview ?? null;
       const decisionMetaPreview = internalOS?.debugInfo?.decisionMetaPreview ?? null;
+      const layerBoundaryPreview = internalOS?.debugInfo
+        ? {
+            latentSubstrateBuilt: internalOS.debugInfo.latentSubstrateBuilt,
+            preconditionFilterBuilt: internalOS.debugInfo.preconditionFilterBuilt,
+            preconditionBiasBuilt: internalOS.debugInfo.preconditionBiasBuilt,
+            dynamicFieldBuiltAfterLatent: internalOS.debugInfo.dynamicFieldBuiltAfterLatent,
+            dynamicReactionBuiltAfterLatent: internalOS.debugInfo.dynamicReactionBuiltAfterLatent,
+            dynamicStanceBuiltAfterLatent: internalOS.debugInfo.dynamicStanceBuiltAfterLatent,
+            status: internalOS.debugInfo.layerBoundaryStatus ?? null,
+          }
+        : null;
 
       const vm = buildCompareViewModel({
         agentId,
@@ -765,6 +776,7 @@ const App = () => {
         speakIntentPreview,
         restraintPreview,
         decisionMetaPreview,
+        layerBoundaryPreview,
         focusBiasApplied: internalOS?.debugInfo?.focusBiasApplied ?? false,
         meaningBiasApplied: internalOS?.debugInfo?.meaningBiasApplied ?? false,
         identityBiasApplied: internalOS?.debugInfo?.identityBiasApplied ?? null,

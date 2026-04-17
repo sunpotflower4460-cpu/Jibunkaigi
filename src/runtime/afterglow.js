@@ -81,13 +81,14 @@ const normalizeBeliefCore = (beliefCore = {}) => {
     : null;
 };
 
+const isBranchLikeBelief = (belief = {}) =>
+  belief && typeof belief.id === 'string' && typeof belief.parentId === 'string' && typeof belief.textJa === 'string';
+
 const normalizeBeliefBranch = (beliefBranch = {}) => {
   if (!beliefBranch || typeof beliefBranch !== 'object') return null;
 
   const activeBranchBeliefs = Array.isArray(beliefBranch.activeBranchBeliefs)
-    ? beliefBranch.activeBranchBeliefs.filter(
-        (b) => b && typeof b.id === 'string' && typeof b.parentId === 'string' && typeof b.textJa === 'string'
-      )
+    ? beliefBranch.activeBranchBeliefs.filter((b) => isBranchLikeBelief(b))
     : [];
 
   const dominantBranchAxis =
@@ -95,6 +96,39 @@ const normalizeBeliefBranch = (beliefBranch = {}) => {
 
   return activeBranchBeliefs.length > 0 || dominantBranchAxis
     ? { activeBranchBeliefs, dominantBranchAxis }
+    : null;
+};
+
+const normalizeBeliefLeaf = (beliefLeaf = {}) => {
+  if (!beliefLeaf || typeof beliefLeaf !== 'object') return null;
+
+  const activeLeafBeliefs = Array.isArray(beliefLeaf.activeLeafBeliefs)
+    ? beliefLeaf.activeLeafBeliefs.filter((b) => isBranchLikeBelief(b))
+    : [];
+
+  const dominantLeafAxis =
+    typeof beliefLeaf.dominantLeafAxis === 'string' ? beliefLeaf.dominantLeafAxis : null;
+
+  return activeLeafBeliefs.length > 0 || dominantLeafAxis
+    ? { activeLeafBeliefs, dominantLeafAxis }
+    : null;
+};
+
+const normalizeBeliefTension = (beliefTension = {}) => {
+  if (!beliefTension || typeof beliefTension !== 'object') return null;
+
+  const activeTensions = Array.isArray(beliefTension.activeTensions)
+    ? beliefTension.activeTensions.filter(
+        (t) => t && typeof t.beliefId === 'string' && typeof t.tensionType === 'string'
+      )
+    : [];
+
+  const dominantTensionAxis =
+    typeof beliefTension.dominantTensionAxis === 'string' ? beliefTension.dominantTensionAxis : null;
+  const totalTensionStrength = clamp01(beliefTension.totalTensionStrength ?? 0);
+
+  return activeTensions.length > 0 || dominantTensionAxis || totalTensionStrength > 0
+    ? { activeTensions, dominantTensionAxis, totalTensionStrength }
     : null;
 };
 
@@ -138,10 +172,32 @@ const normalizeLatentState = (state) => {
     normalized.beliefBranch = beliefBranch;
   }
 
+  const beliefLeaf = normalizeBeliefLeaf(state.beliefLeaf);
+  if (beliefLeaf) {
+    normalized.beliefLeaf = beliefLeaf;
+  }
+
   // Preserve beliefCore when present
   const beliefCore = normalizeBeliefCore(state.beliefCore);
   if (beliefCore) {
     normalized.beliefCore = beliefCore;
+  }
+
+  const beliefTension = normalizeBeliefTension(state.beliefTension);
+  if (beliefTension) {
+    normalized.beliefTension = beliefTension;
+  }
+
+  if (state.homeNeutralization && typeof state.homeNeutralization === 'object') {
+    normalized.homeNeutralization = state.homeNeutralization;
+  }
+
+  if (state.existence1 && typeof state.existence1 === 'object') {
+    normalized.existence1 = state.existence1;
+  }
+
+  if (state.existence2 && typeof state.existence2 === 'object') {
+    normalized.existence2 = state.existence2;
   }
 
   if (state.preconditionFilter && typeof state.preconditionFilter === 'object') {
@@ -150,6 +206,10 @@ const normalizeLatentState = (state) => {
 
   if (state.preconditionBias && typeof state.preconditionBias === 'object') {
     normalized.preconditionBias = state.preconditionBias;
+  }
+
+  if (state.decision && typeof state.decision === 'object') {
+    normalized.decision = state.decision;
   }
 
   const hasValues =
@@ -161,10 +221,16 @@ const normalizeLatentState = (state) => {
     Boolean(normalized.home) ||
     Boolean(normalized.existence) ||
     Boolean(normalized.beliefBranch) ||
+    Boolean(normalized.beliefLeaf) ||
     Boolean(normalized.belief) ||
     Boolean(normalized.beliefCore) ||
+    Boolean(normalized.beliefTension) ||
+    Boolean(normalized.homeNeutralization) ||
+    Boolean(normalized.existence1) ||
+    Boolean(normalized.existence2) ||
     Boolean(normalized.preconditionFilter) ||
-    Boolean(normalized.preconditionBias);
+    Boolean(normalized.preconditionBias) ||
+    Boolean(normalized.decision);
 
   return hasValues ? normalized : null;
 };
@@ -270,9 +336,29 @@ const blendLatentState = (previousState, currentState) => {
     blended.beliefBranch = current.beliefBranch || prev.beliefBranch || null;
   }
 
+  if (current.beliefLeaf || prev.beliefLeaf) {
+    blended.beliefLeaf = current.beliefLeaf || prev.beliefLeaf || null;
+  }
+
   // Always use current beliefCore (core beliefs are regenerated fresh each turn)
   if (current.beliefCore || prev.beliefCore) {
     blended.beliefCore = current.beliefCore || prev.beliefCore || null;
+  }
+
+  if (current.beliefTension || prev.beliefTension) {
+    blended.beliefTension = current.beliefTension || prev.beliefTension || null;
+  }
+
+  if (current.homeNeutralization || prev.homeNeutralization) {
+    blended.homeNeutralization = current.homeNeutralization || prev.homeNeutralization || null;
+  }
+
+  if (current.existence1 || prev.existence1) {
+    blended.existence1 = current.existence1 || prev.existence1 || null;
+  }
+
+  if (current.existence2 || prev.existence2) {
+    blended.existence2 = current.existence2 || prev.existence2 || null;
   }
 
   if (current.preconditionFilter || prev.preconditionFilter) {
@@ -281,6 +367,10 @@ const blendLatentState = (previousState, currentState) => {
 
   if (current.preconditionBias || prev.preconditionBias) {
     blended.preconditionBias = current.preconditionBias || prev.preconditionBias || null;
+  }
+
+  if (current.decision || prev.decision) {
+    blended.decision = current.decision || prev.decision || null;
   }
 
   return blended;

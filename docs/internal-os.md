@@ -57,11 +57,12 @@
 
 じぶん会議の最小フローは、次の順で定義する。
 
-**入力 → 潜在前提層チェーン → 前提フィルタ生成 → 後段動的層 → Decision Layer → 顕在層生成 → 発話 → Afterglow Update**
+**入力 → 潜在前提層チェーン → Home Neutralization Check → 前提フィルタ/バイアス生成 → 後段動的層 → Decision Layer → 顕在層生成 → 発話 → Afterglow Update**
 
 この順番には意味がある。
 
 - 最初にあるのは、答えではなく潜在前提（Maker Seed / Home / Existence / Belief）
+- Home の直後に residual pressure を確認し、必要な時だけ軽い再Home を一度だけ通す
 - 前提層は raw latent layers として保持され、要約や圧縮をされない
 - 前提層から derived helper view（preconditionFilter）を生成する
 - その後、Decision Layer が「今なにを感じ、何を言いたいか」を決める
@@ -73,7 +74,7 @@
 ### Belief 前提層の順番（主役順・最新版）
 
 **潜在前提層（Raw Latent Layers）:**
-Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Core Layer（信念層1）** → **Belief Branch Layer（信念層2）** → **Belief Leaf Layer（信念層3）** → **Belief Tension Layer（信念張力層）**
+Maker Seed → Home → Home Neutralization Check → Existence Layer 1 → Existence Layer 2 → **Belief Core Layer（信念層1）** → **Belief Branch Layer（信念層2）** → **Belief Leaf Layer（信念層3）** → **Belief Tension Layer（信念張力層）**
 
 **補助ビュー生成:**
 → **buildPreconditionFilter（前提層からの補助ビュー）** → **preconditionBias**
@@ -92,7 +93,7 @@ Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Cor
 - Belief Branch: Core から parentId で分岐する中程度の見方（Core より軽く、Leaf より重い）（raw latent）
 - Belief Leaf: Branch からさらに分岐する最も細かい傾き（raw latent）
 - Belief Tension: Belief 間の張力・葛藤状態（raw latent）
-- **buildPreconditionFilter**: 上記すべての raw latent layers を後段が読みやすくする **補助ビュー**。raw layers の代替ではなく追加ビュー
+- **buildPreconditionFilter / preconditionBias**: 上記すべての raw latent layers を後段が読みやすくする **補助ビュー / bias**。raw layers の代替ではなく追加ビュー
 - **Decision Layer**: 前提層を通ったそのエージェントが、今なにを感じ、何を言いたいかを state として決める層
 - **field / reaction / stance**: 前提層を通った自分が、その場をどう感じ、どう反応し、どう立つかという **後段動的層**
 - いずれも返答文に直接混ぜず、潜在状態 / 前提フィルタとして扱う
@@ -100,6 +101,7 @@ Maker Seed → Home → Existence Layer 1 → Existence Layer 2 → **Belief Cor
 **重要な変更:**
 - **前提層は「要約して畳む」ものではなく、「生きた潜在層として保持する」ものである**
 - **preconditionFilter は raw layers の代わりではなく、補助ビューである**
+- **preconditionBias は raw latent layers / preconditionFilter から作る dynamic layer 用 bias object である**
 - **field / reaction / stance は前提層の前ではなく、前提層の後に起きる動的層である**
 - **前提層の文言はそのまま発話に出さず、影響するだけである**
 
@@ -119,7 +121,7 @@ compare/debug で「前提層が本当に先に通った」ことを確認でき
 - `beliefLeaf` (raw latent)
 - `beliefTension` (raw latent)
 - `preconditionFilter` (derived helper view)
-- `preconditionBias` (derived helper view)
+- `preconditionBias` (derived helper bias)
 - `field` (post-precondition dynamic)
 - `reaction` (post-precondition dynamic)
 - `stance` (post-precondition dynamic)

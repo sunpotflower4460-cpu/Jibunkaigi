@@ -11,10 +11,12 @@ const INTERNAL_PHRASE_MARKERS = [
   // Maker Seed internal phrases
   'この場所を作った人間から',
   'あなたへ',
+  'この場所を作った人間から、あなたへ',
   'Maker Seed',
 
   // Home Layer internal phrases
   'Home Layer',
+  'ここではまだ何もしなくていい',
 
   // Existence Layer internal phrases
   '私は今ここにいる',
@@ -37,7 +39,7 @@ const INTERNAL_PHRASE_MARKERS = [
   'preconditionBias',
   'latent layer',
   'raw latent',
-];
+].filter((phrase) => typeof phrase === 'string' && phrase.trim());
 
 /**
  * Check if the given text contains internal phrases that should not leak.
@@ -88,6 +90,23 @@ export function validateSurfaceOutput(text) {
   return { valid: false, warnings };
 }
 
+export function sanitizeSurfaceOutput(text) {
+  if (typeof text !== 'string' || !text) return '';
+
+  let sanitized = text;
+
+  for (const phrase of INTERNAL_PHRASE_MARKERS) {
+    sanitized = sanitized.replaceAll(phrase, '');
+  }
+
+  const normalized = sanitized
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return /^[。、,\s]+$/.test(normalized) ? '' : normalized;
+}
+
 /**
  * Build a guard report for debug/compare mode.
  * This does NOT block output, but provides visibility into potential leaks.
@@ -96,6 +115,7 @@ export function validateSurfaceOutput(text) {
  * @returns {object} - { checked: boolean, hasLeaks: boolean, detectedPhrases: string[], summary: string }
  */
 export function buildSurfaceGuardReport(text) {
+  const sanitizedText = sanitizeSurfaceOutput(text);
   const { hasLeaks, detectedPhrases } = detectInternalPhraseLeaks(text);
 
   const summary = hasLeaks
@@ -106,6 +126,7 @@ export function buildSurfaceGuardReport(text) {
     checked: true,
     hasLeaks,
     detectedPhrases,
+    sanitizedText,
     summary,
   };
 }

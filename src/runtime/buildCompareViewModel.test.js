@@ -161,6 +161,7 @@ test('compare view model handles null layer previews', () => {
   assert.equal(vm.summary.hasBeliefCorePreview, false)
   assert.equal(vm.summary.hasBeliefBranchPreview, false)
   assert.equal(vm.summary.hasPreconditionBiasPreview, false)
+  assert.equal(vm.summary.hasLayerBoundaryPreview, false)
 })
 
 test('compare view model accepts and normalizes beliefCorePreview', () => {
@@ -315,4 +316,33 @@ test('compare view model accepts decision previews', () => {
   assert.equal(vm.summary.hasSpeakIntentPreview, true)
   assert.equal(vm.summary.hasRestraintPreview, true)
   assert.equal(vm.summary.hasDecisionMetaPreview, true)
+})
+
+test('compare view model accepts layer boundary preview', () => {
+  const vm = buildCompareViewModel({
+    agentId: 'creative',
+    userText: 'test',
+    baselineReply: 'baseline',
+    currentReply: 'current',
+    outerGuide: '',
+    layerBoundaryPreview: {
+      latentSubstrateBuilt: true,
+      preconditionFilterBuilt: true,
+      preconditionBiasBuilt: true,
+      dynamicFieldBuiltAfterLatent: true,
+      dynamicReactionBuiltAfterLatent: true,
+      dynamicStanceBuiltAfterLatent: true,
+      status: {
+        latent: 'complete',
+        derived: 'filter/bias ready',
+        dynamic: 'field/reaction/stance after latent = true',
+      },
+    },
+  })
+
+  assert.ok(vm.layerBoundaryPreview)
+  assert.equal(vm.layerBoundaryPreview.latentSubstrateBuilt, true)
+  assert.equal(vm.layerBoundaryPreview.preconditionBiasBuilt, true)
+  assert.equal(vm.layerBoundaryPreview.status.latent, 'complete')
+  assert.equal(vm.summary.hasLayerBoundaryPreview, true)
 })

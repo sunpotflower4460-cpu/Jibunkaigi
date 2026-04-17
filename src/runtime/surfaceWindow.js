@@ -1,3 +1,5 @@
+import { sanitizeSurfaceOutput } from './surfaceGuard.js';
+
 const describeLevel = (value, labels) => {
   if (value >= 0.75) return labels.high;
   if (value >= 0.45) return labels.mid;
@@ -38,5 +40,5 @@ export function buildSurfaceWindow(latentState = {}) {
     windowLines.push('Note: handle the fragile edge gently.');
   }
 
-  return windowLines;
+  return windowLines.map((line) => sanitizeSurfaceOutput(line)).filter(Boolean);
 }
