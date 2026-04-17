@@ -101,7 +101,7 @@ describe('surfaceGuard', () => {
 
     it('keeps normal surface text intact', () => {
       const sanitized = sanitizeSurfaceOutput('今は少しだけ、そのまま置いてみてもいい。');
-      assert.equal(sanitized, '今は少しだけ、そのまま置いてみてもいい');
+      assert.equal(sanitized, '今は少しだけ、そのまま置いてみてもいい。');
     });
   });
 });

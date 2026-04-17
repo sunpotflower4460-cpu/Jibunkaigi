@@ -32,8 +32,6 @@ const INTERNAL_PHRASE_MARKERS = [
   'Belief Core',
   'Belief Branch',
   'Belief Leaf',
-  'branch',
-  'leaf',
   'belief tension',
 
   // System layer markers
@@ -41,7 +39,7 @@ const INTERNAL_PHRASE_MARKERS = [
   'preconditionBias',
   'latent layer',
   'raw latent',
-];
+].filter((phrase) => typeof phrase === 'string' && phrase.trim());
 
 /**
  * Check if the given text contains internal phrases that should not leak.
@@ -98,15 +96,15 @@ export function sanitizeSurfaceOutput(text) {
   let sanitized = text;
 
   for (const phrase of INTERNAL_PHRASE_MARKERS) {
-    if (!phrase.trim()) continue;
-    sanitized = sanitized.replaceAll(phrase, '').replaceAll(phrase.toLowerCase(), '');
+    sanitized = sanitized.replaceAll(phrase, '');
   }
 
-  return sanitized
+  const normalized = sanitized
     .replace(/[ \t]{2,}/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
-    .replace(/^[\s。、,]+|[\s。、,]+$/g, '')
     .trim();
+
+  return /^[。、,\s]+$/.test(normalized) ? '' : normalized;
 }
 
 /**

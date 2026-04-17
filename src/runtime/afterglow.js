@@ -81,13 +81,14 @@ const normalizeBeliefCore = (beliefCore = {}) => {
     : null;
 };
 
+const isBranchLikeBelief = (belief = {}) =>
+  belief && typeof belief.id === 'string' && typeof belief.parentId === 'string' && typeof belief.textJa === 'string';
+
 const normalizeBeliefBranch = (beliefBranch = {}) => {
   if (!beliefBranch || typeof beliefBranch !== 'object') return null;
 
   const activeBranchBeliefs = Array.isArray(beliefBranch.activeBranchBeliefs)
-    ? beliefBranch.activeBranchBeliefs.filter(
-        (b) => b && typeof b.id === 'string' && typeof b.parentId === 'string' && typeof b.textJa === 'string'
-      )
+    ? beliefBranch.activeBranchBeliefs.filter((b) => isBranchLikeBelief(b))
     : [];
 
   const dominantBranchAxis =
@@ -102,9 +103,7 @@ const normalizeBeliefLeaf = (beliefLeaf = {}) => {
   if (!beliefLeaf || typeof beliefLeaf !== 'object') return null;
 
   const activeLeafBeliefs = Array.isArray(beliefLeaf.activeLeafBeliefs)
-    ? beliefLeaf.activeLeafBeliefs.filter(
-        (b) => b && typeof b.id === 'string' && typeof b.parentId === 'string' && typeof b.textJa === 'string'
-      )
+    ? beliefLeaf.activeLeafBeliefs.filter((b) => isBranchLikeBelief(b))
     : [];
 
   const dominantLeafAxis =

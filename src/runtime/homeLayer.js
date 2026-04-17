@@ -3,8 +3,13 @@
 // 「まだ何もしなくていい」を成立させる基底層
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
-const countMatches = (text, keywords) =>
-  keywords.reduce((count, keyword) => count + (text.includes(keyword) ? 1 : 0), 0);
+const countMatches = (text, keywords) => {
+  const normalizedText = String(text).toLowerCase();
+  return keywords.reduce(
+    (count, keyword) => count + (normalizedText.includes(String(keyword).toLowerCase()) ? 1 : 0),
+    0
+  );
+};
 
 // Layer 1: 固定核 - 重い荷を外す
 const HOME_KERNEL_KEYS = {

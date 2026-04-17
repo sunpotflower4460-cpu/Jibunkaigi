@@ -216,14 +216,14 @@ const applyFieldBias = (field = {}, {
   const biasFocus = preconditionBias?.focus ?? {};
   const biasPacing = preconditionBias?.pacing ?? {};
   const tensionStrength = clamp01(beliefTension.totalTensionStrength ?? 0);
-  const creativeIdentityBoost = typeof existence2.agentIdentityKey === 'string' && existence2.agentIdentityKey.includes('creative') ? 0.02 : 0;
+  const identityPlayfulnessBoost = getIdentityPlayfulnessBoost(existence2.agentIdentityKey);
 
   return {
     softness: clamp01(
       (field.softness ?? 0) +
       (home.kernel?.slowDown ?? 0) * 0.06 +
       (biasIdentity.firstPersonSoftness ?? 0) * 0.04 +
-      creativeIdentityBoost
+      identityPlayfulnessBoost
     ),
     depth: clamp01(
       (field.depth ?? 0) +
@@ -245,10 +245,40 @@ const applyFieldBias = (field = {}, {
     playfulness: clamp01(
       (field.playfulness ?? 0) -
       (biasFocus.oneThreadBias ?? 0) * 0.05 +
-      creativeIdentityBoost
+      identityPlayfulnessBoost
     ),
   };
 };
+
+function getIdentityPlayfulnessBoost(identityKey = '') {
+  if (typeof identityKey !== 'string') return 0;
+
+  const normalizedIdentityKey = identityKey.toLowerCase();
+
+  if (normalizedIdentityKey.includes('creative')) return 0.02;
+
+  return 0;
+}
+
+const buildNormalizedExistence1 = (existenceLayer1 = {}) => ({
+  selfPresence: clamp01(existenceLayer1.selfPresence ?? 0),
+  hereNowStability: clamp01(
+    ((existenceLayer1.groundedHereNow ?? 0) + (existenceLayer1.selfLocationStability ?? 0)) / 2
+  ),
+  unfinishedAllowed: clamp01(existenceLayer1.allowUnfinishedSelf ?? 0),
+  firstPersonSoftness: clamp01(existenceLayer1.selfPresence ?? 0),
+  existenceHintKey: existenceLayer1.existenceHintKey ?? null,
+  existenceHintText: existenceLayer1.existenceHintText ?? null,
+});
+
+const buildNormalizedExistence2 = (existenceLayer2 = {}) => ({
+  agentIdentityKey: existenceLayer2.agentIdentityKey ?? null,
+  identityFeelingText: existenceLayer2.agentIdentityText ?? null,
+  recalledSelfTraits: Array.isArray(existenceLayer2.recalledSelfTraits)
+    ? existenceLayer2.recalledSelfTraits
+    : [],
+  selfRememberingStrength: clamp01(existenceLayer2.selfRememberingStrength ?? 0),
+});
 
 const buildLayerBoundaryFlags = (preconditionTrace = [], latentState = {}) => {
   const lastLatentIndex = preconditionTrace
@@ -394,29 +424,15 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const preconditionBias = buildPreconditionBias(preconditionFilter);
+  const existence1 = buildNormalizedExistence1(existenceLayer1);
+  const existence2 = buildNormalizedExistence2(existenceLayer2);
   const dynamicBiasContext = {
     rawLatent: {
       makerSeed,
       home: effectiveHome,
       homeNeutralization,
-      existence1: {
-        selfPresence: clamp01(existenceLayer1.selfPresence ?? 0),
-        hereNowStability: clamp01(
-          ((existenceLayer1.groundedHereNow ?? 0) + (existenceLayer1.selfLocationStability ?? 0)) / 2
-        ),
-        unfinishedAllowed: clamp01(existenceLayer1.allowUnfinishedSelf ?? 0),
-        firstPersonSoftness: clamp01(existenceLayer1.selfPresence ?? 0),
-        existenceHintKey: existenceLayer1.existenceHintKey ?? null,
-        existenceHintText: existenceLayer1.existenceHintText ?? null,
-      },
-      existence2: {
-        agentIdentityKey: existenceLayer2.agentIdentityKey ?? null,
-        identityFeelingText: existenceLayer2.agentIdentityText ?? null,
-        recalledSelfTraits: Array.isArray(existenceLayer2.recalledSelfTraits)
-          ? existenceLayer2.recalledSelfTraits
-          : [],
-        selfRememberingStrength: clamp01(existenceLayer2.selfRememberingStrength ?? 0),
-      },
+      existence1,
+      existence2,
       beliefCore,
       beliefBranch,
       beliefLeaf,
@@ -450,28 +466,6 @@ export function runInternalOS(input, options = {}) {
     stance,
   });
   preconditionTrace.push('dynamic:after-decision');
-
-  // Normalized top-level existence1 / existence2 derived from the latent substrate.
-  // These provide a flat, canonical shape that downstream and debug can read directly.
-  const existence1 = {
-    selfPresence: clamp01(existenceLayer1.selfPresence ?? 0),
-    hereNowStability: clamp01(
-      ((existenceLayer1.groundedHereNow ?? 0) + (existenceLayer1.selfLocationStability ?? 0)) / 2
-    ),
-    unfinishedAllowed: clamp01(existenceLayer1.allowUnfinishedSelf ?? 0),
-    firstPersonSoftness: clamp01(existenceLayer1.selfPresence ?? 0),
-    existenceHintKey: existenceLayer1.existenceHintKey ?? null,
-    existenceHintText: existenceLayer1.existenceHintText ?? null,
-  };
-
-  const existence2 = {
-    agentIdentityKey: existenceLayer2.agentIdentityKey ?? null,
-    identityFeelingText: existenceLayer2.agentIdentityText ?? null,
-    recalledSelfTraits: Array.isArray(existenceLayer2.recalledSelfTraits)
-      ? existenceLayer2.recalledSelfTraits
-      : [],
-    selfRememberingStrength: clamp01(existenceLayer2.selfRememberingStrength ?? 0),
-  };
 
   const freshLatentState = {
     ...initialState,
