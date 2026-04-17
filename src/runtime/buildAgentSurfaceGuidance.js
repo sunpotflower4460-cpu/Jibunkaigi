@@ -2,6 +2,8 @@
 // エージェント別の表層ガイダンス生成
 // 共通 surfaceFrame を、各エージェントの表の出方に変換する
 
+import { sanitizeSurfaceOutput } from './surfaceGuard.js';
+
 /**
  * エージェント専用の表層ガイダンスを生成する
  * @param {object} params
@@ -12,21 +14,23 @@
 export const buildAgentSurfaceGuidance = ({ agentId, surfaceFrame }) => {
   if (!surfaceFrame) return '';
 
+  const sanitize = (text) => sanitizeSurfaceOutput(text);
+
   switch (agentId) {
     case 'soul': // レイ
-      return buildRaySurfaceGuidance(surfaceFrame);
+      return sanitize(buildRaySurfaceGuidance(surfaceFrame));
 
     case 'creative': // ジョー
-      return buildJoeSurfaceGuidance(surfaceFrame);
+      return sanitize(buildJoeSurfaceGuidance(surfaceFrame));
 
     case 'strategist': // ケン
-      return buildKenSurfaceGuidance(surfaceFrame);
+      return sanitize(buildKenSurfaceGuidance(surfaceFrame));
 
     case 'empath': // ミナ
-      return buildMinaSurfaceGuidance(surfaceFrame);
+      return sanitize(buildMinaSurfaceGuidance(surfaceFrame));
 
     case 'critic': // サトウ
-      return buildSatouSurfaceGuidance(surfaceFrame);
+      return sanitize(buildSatouSurfaceGuidance(surfaceFrame));
 
     default:
       return '';

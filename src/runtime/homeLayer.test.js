@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createHomeLayer, extractPermissionShape } from './homeLayer.js';
+import { buildPreHomeInput, createHomeLayer, extractPermissionShape } from './homeLayer.js';
 
 test('createHomeLayer returns valid structure with all required keys', () => {
   const home = createHomeLayer({
@@ -256,4 +256,26 @@ test('createHomeLayer reason field is null-safe when called with no args', () =>
   assert.ok(home.reason);
   assert.equal(typeof home.reason.homeReasonKey, 'string');
   assert.equal(typeof home.reason.homeReasonText, 'string');
+});
+
+test('buildPreHomeInput extracts lightweight signals from raw input', () => {
+  const preHomeInput = buildPreHomeInput('やりたいけど、ちょっと怖い');
+
+  assert.ok(preHomeInput.softness > 0);
+  assert.ok(preHomeInput.depth > 0);
+  assert.ok(preHomeInput.fragility > 0);
+  assert.ok(preHomeInput.hesitation > 0);
+  assert.ok(preHomeInput.vulnerability > 0);
+});
+
+test('createHomeLayer can stand up from preHomeInput without dynamic layers', () => {
+  const home = createHomeLayer({
+    makerSeed: { text: 'seed' },
+    preHomeInput: buildPreHomeInput('最近ちょっと自信ない'),
+  });
+
+  assert.ok(home.kernel.slowDown > 0);
+  assert.ok(home.kernel.returnBeforeOutput > 0);
+  assert.ok(home.outputLimits.keepOneThread > 0);
+  assert.equal(typeof home.reason.homeReasonKey, 'string');
 });

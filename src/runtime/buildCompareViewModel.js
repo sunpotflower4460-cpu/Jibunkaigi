@@ -44,6 +44,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.speakIntentPreview] - Decision Layer intention preview (dev-only)
  * @param {object} [params.restraintPreview] - Decision Layer restraint preview (dev-only)
  * @param {object} [params.decisionMetaPreview] - Decision Layer meta preview (dev-only)
+ * @param {object} [params.layerBoundaryPreview] - latent / derived / dynamic boundary preview (dev-only)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -70,6 +71,7 @@ export const buildCompareViewModel = ({
   speakIntentPreview = null,
   restraintPreview = null,
   decisionMetaPreview = null,
+  layerBoundaryPreview = null,
   focusBiasApplied = false,
   meaningBiasApplied = false,
   identityBiasApplied = null,
@@ -294,6 +296,20 @@ export const buildCompareViewModel = ({
     delegatedBy: decisionMetaPreview.delegatedBy ?? null,
   } : null
 
+  const normalizedLayerBoundaryPreview = layerBoundaryPreview ? {
+    latentSubstrateBuilt: Boolean(layerBoundaryPreview.latentSubstrateBuilt),
+    preconditionFilterBuilt: Boolean(layerBoundaryPreview.preconditionFilterBuilt),
+    preconditionBiasBuilt: Boolean(layerBoundaryPreview.preconditionBiasBuilt),
+    dynamicFieldBuiltAfterLatent: Boolean(layerBoundaryPreview.dynamicFieldBuiltAfterLatent),
+    dynamicReactionBuiltAfterLatent: Boolean(layerBoundaryPreview.dynamicReactionBuiltAfterLatent),
+    dynamicStanceBuiltAfterLatent: Boolean(layerBoundaryPreview.dynamicStanceBuiltAfterLatent),
+    status: {
+      latent: layerBoundaryPreview.status?.latent ?? null,
+      derived: layerBoundaryPreview.status?.derived ?? null,
+      dynamic: layerBoundaryPreview.status?.dynamic ?? null,
+    },
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -334,6 +350,7 @@ export const buildCompareViewModel = ({
     speakIntentPreview: normalizedSpeakIntentPreview,
     restraintPreview: normalizedRestraintPreview,
     decisionMetaPreview: normalizedDecisionMetaPreview,
+    layerBoundaryPreview: normalizedLayerBoundaryPreview,
     focusBiasApplied: Boolean(focusBiasApplied),
     meaningBiasApplied: Boolean(meaningBiasApplied),
     identityBiasApplied: identityBiasApplied ?? null,
@@ -358,6 +375,7 @@ export const buildCompareViewModel = ({
       hasSpeakIntentPreview: Boolean(normalizedSpeakIntentPreview),
       hasRestraintPreview: Boolean(normalizedRestraintPreview),
       hasDecisionMetaPreview: Boolean(normalizedDecisionMetaPreview),
+      hasLayerBoundaryPreview: Boolean(normalizedLayerBoundaryPreview),
     },
   }
 }

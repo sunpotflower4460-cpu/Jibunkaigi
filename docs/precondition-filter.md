@@ -19,6 +19,7 @@ Phase 7 では、この派生ビューから `preconditionBias` を作り、
 ```
 Maker Seed (raw latent)
 → Home Layer (raw latent)
+→ Home Neutralization Check (raw latent helper step)
 → Existence Layer 1 (raw latent)
 → Existence Layer 2 (raw latent)
 → Belief Core Layer (raw latent)
@@ -26,6 +27,7 @@ Maker Seed (raw latent)
 → Belief Leaf Layer (raw latent)
 → Belief Tension Layer (raw latent)
 → buildPreconditionFilter(...)   ← raw layers からの補助ビュー生成
+→ buildPreconditionBias(...)     ← raw layers / filter からの dynamic bias 生成
 → field (post-precondition dynamic layer)
 → reaction (post-precondition dynamic layer)
 → stance (post-precondition dynamic layer)
@@ -38,23 +40,19 @@ Maker Seed (raw latent)
 実際に前提層が上記の順に通ったことを confirm/debug で確認できます。
 
 ```
-latent:maker-seed
-latent:before-home
+latent:after-maker-seed
 latent:after-home
+latent:after-home-check
 latent:after-existence1
 latent:after-existence2
 latent:after-belief-core
 latent:after-belief-branch
 latent:after-belief-leaf
 latent:after-belief-tension
-latent:after-build-filter
-dynamic:after-precondition-bias
+latent:after-precondition-filter
 dynamic:after-field
 dynamic:after-reaction
 dynamic:after-stance
-dynamic:after-home-rebuild
-dynamic:after-rebuild-filter
-dynamic:after-rebuild-bias
 dynamic:after-decision
 ```
 
@@ -186,7 +184,7 @@ type PreconditionFilter = {
 ## Phase 7: preconditionBias
 
 Phase 7 では `preconditionFilter` をそのまま後段へばらまかず、
-`src/runtime/buildPreconditionBias.js` で後段向けの軽量 bias object に圧縮します。
+`src/runtime/buildPreconditionBias.js` で raw latent layers / filter から後段向けの軽量 bias object を作ります。
 
 ```ts
 type PreconditionBias = {
@@ -222,7 +220,7 @@ type PreconditionBias = {
 この bias は以下へ最小接続されています。
 
 - `runInternalOS(...)`
-  - reaction / stance に軽い bias を足す
+  - field / reaction / stance に軽い bias を足す
   - `latentState.preconditionBias` を保持する
 - `routerMixer.js`
   - 一点性 / belief axis / recalled traits に応じて pattern 選択を少し寄せる
@@ -235,6 +233,9 @@ type PreconditionBias = {
 identity / belief の文言そのものを返答へ出すことではなく、
 その軸で **何に目が行きやすいか / どこで止まりやすいか / どの意味が立ちやすいか**
 を変えることです。
+
+前提層の文言は surface / builder でそのまま読み上げません。
+前提層は live latent substrate として保持され、後段へ影響するだけです。
 
 まだ全面置換ではありません。Phase 7 は「前提層が後段へ本当に届く最小接続」です。
 
@@ -356,4 +357,3 @@ beliefLeafCount / preconditionFilterPresent` で各前提層の到達確認が�
 
 現時点では全面置換ではなく、
 前提層が焦点 / 反応 / 意味づけ / 表層へ **軽く、でも確実に届く** 状態までを担います。
-

@@ -149,6 +149,12 @@ const createPreconditionBiasState = () => ({
   },
 });
 
+const createMakerSeedState = () => ({
+  text: '',
+  layer: 'maker-seed',
+  position: 'foundation',
+});
+
 const createDecisionState = () => ({
   feltSense: {
     primaryFeeling: null,
@@ -229,6 +235,7 @@ const createExistence2State = () => ({
 
 export function createInitialInternalState() {
   return {
+    makerSeed: createMakerSeedState(),
     field: createFieldState(),
     reaction: createReactionState(),
     stance: createStanceState(),

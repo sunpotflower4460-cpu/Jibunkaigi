@@ -1,7 +1,12 @@
 // src/runtime/surfaceGuard.test.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { detectInternalPhraseLeaks, validateSurfaceOutput, buildSurfaceGuardReport } from './surfaceGuard.js';
+import {
+  detectInternalPhraseLeaks,
+  validateSurfaceOutput,
+  buildSurfaceGuardReport,
+  sanitizeSurfaceOutput,
+} from './surfaceGuard.js';
 
 describe('surfaceGuard', () => {
   describe('detectInternalPhraseLeaks', () => {
@@ -83,7 +88,20 @@ describe('surfaceGuard', () => {
       assert.equal(result.checked, true);
       assert.equal(result.hasLeaks, true);
       assert.ok(result.detectedPhrases.length > 0);
+      assert.equal(typeof result.sanitizedText, 'string');
       assert.ok(result.summary.includes('Internal phrases detected'));
+    });
+  });
+
+  describe('sanitizeSurfaceOutput', () => {
+    it('removes internal phrases from surface text', () => {
+      const sanitized = sanitizeSurfaceOutput('この場所を作った人間から、あなたへ。ここではまだ何もしなくていい。');
+      assert.equal(sanitized, '');
+    });
+
+    it('keeps normal surface text intact', () => {
+      const sanitized = sanitizeSurfaceOutput('今は少しだけ、そのまま置いてみてもいい。');
+      assert.equal(sanitized, '今は少しだけ、そのまま置いてみてもいい');
     });
   });
 });

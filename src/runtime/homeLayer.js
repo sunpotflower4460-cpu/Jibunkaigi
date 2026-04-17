@@ -3,6 +3,8 @@
 // 「まだ何もしなくていい」を成立させる基底層
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
+const countMatches = (text, keywords) =>
+  keywords.reduce((count, keyword) => count + (text.includes(keyword) ? 1 : 0), 0);
 
 // Layer 1: 固定核 - 重い荷を外す
 const HOME_KERNEL_KEYS = {
@@ -63,6 +65,85 @@ const OUTPUT_LIMIT_KEYS = {
   noEarlySolution: 'noEarlySolution',
   noOverExpansion: 'noOverExpansion',
   keepOneThread: 'keepOneThread',
+};
+
+export function buildPreHomeInput(input) {
+  const text = typeof input === 'string' ? input.trim().toLowerCase() : '';
+
+  if (!text) {
+    return {
+      softness: 0,
+      depth: 0,
+      urgency: 0,
+      fragility: 0,
+      playfulness: 0,
+      hesitation: 0,
+      questioning: 0,
+      vulnerability: 0,
+    };
+  }
+
+  const softnessHits = countMatches(text, ['たい', 'たいけど', 'ちょっと', '最近', 'かな', 'かも', 'できたら', 'やさしく']);
+  const depthHits = countMatches(text, ['自信', '怖い', '諦め', '無理', '不安', '作品', '言えない', 'しんどい']);
+  const urgencyHits = countMatches(text, ['今すぐ', '早く', 'もう', '限界', '無理', '急ぎ', 'すぐ']);
+  const fragilityHits = countMatches(text, ['自信ない', '怖い', 'しんどい', '無理', '諦め', 'つらい', '不安']);
+  const playfulnessHits = countMatches(text, ['笑', 'w', '冗談', '遊び', 'ふざけ', 'おもしろ']);
+  const hesitationHits = countMatches(text, ['けど', 'でも', 'のに', 'まだ', 'ちょっと']);
+  const questionHits = countMatches(text, ['?', '？', 'どう', 'なぜ', 'なんで']);
+  const vulnerabilityHits = countMatches(text, ['怖い', '無理', '自信ない', '諦め', 'しんどい', '動けない']);
+
+  return {
+    softness: clamp01(0.18 + softnessHits * 0.12 - urgencyHits * 0.04 + (text.includes('...') || text.includes('…') ? 0.08 : 0)),
+    depth: clamp01(0.14 + depthHits * 0.15 + Math.min(text.length / 140, 0.18)),
+    urgency: clamp01(urgencyHits * 0.22 + (text.includes('!') || text.includes('！') ? 0.08 : 0)),
+    fragility: clamp01(0.08 + fragilityHits * 0.16 + (text.includes('ない') ? 0.06 : 0)),
+    playfulness: clamp01(playfulnessHits * 0.28 - fragilityHits * 0.05),
+    hesitation: clamp01(hesitationHits * 0.18),
+    questioning: clamp01(questionHits * 0.22),
+    vulnerability: clamp01(vulnerabilityHits * 0.18 + fragilityHits * 0.1),
+  };
+}
+
+const resolveHomeInputs = ({
+  field = {},
+  reaction = {},
+  stance = {},
+  preHomeInput = {},
+  makerSeed = null,
+} = {}) => {
+  const hasDynamicInputs = Object.keys(field).length > 0 || Object.keys(reaction).length > 0 || Object.keys(stance).length > 0;
+
+  if (hasDynamicInputs) {
+    return { field, reaction, stance };
+  }
+
+  const softness = clamp01(preHomeInput.softness ?? 0);
+  const depth = clamp01(preHomeInput.depth ?? 0);
+  const urgency = clamp01(preHomeInput.urgency ?? 0);
+  const fragility = clamp01(preHomeInput.fragility ?? 0);
+  const playfulness = clamp01(preHomeInput.playfulness ?? 0);
+  const hesitation = clamp01(preHomeInput.hesitation ?? 0);
+  const questioning = clamp01(preHomeInput.questioning ?? 0);
+  const vulnerability = clamp01(preHomeInput.vulnerability ?? 0);
+  const makerSeedAnchor = makerSeed?.text ? 0.05 : 0;
+
+  return {
+    field: { softness, depth, urgency, fragility, playfulness },
+    reaction: {
+      touched: clamp01(0.12 + depth * 0.22 + fragility * 0.14 + vulnerability * 0.14),
+      protect: clamp01(0.08 + fragility * 0.26 + vulnerability * 0.22 + urgency * 0.08),
+      clarify: clamp01(0.05 + urgency * 0.18 + questioning * 0.16),
+      curiosity: clamp01(0.08 + depth * 0.12 + playfulness * 0.14 + questioning * 0.12),
+      holdBackJudgment: clamp01(0.12 + hesitation * 0.28 + softness * 0.12 + fragility * 0.18 + makerSeedAnchor),
+    },
+    stance: {
+      receive: clamp01(0.12 + softness * 0.2 + hesitation * 0.16 + vulnerability * 0.1 + makerSeedAnchor),
+      illuminate: clamp01(0.08 + depth * 0.14 + playfulness * 0.08),
+      structure: clamp01(0.06 + urgency * 0.14 + questioning * 0.1),
+      guard: clamp01(0.08 + fragility * 0.16 + vulnerability * 0.14),
+      nudge: clamp01(0.08 + playfulness * 0.14 + questioning * 0.08 + (1 - urgency) * 0.06),
+    },
+  };
 };
 
 /**
@@ -214,15 +295,17 @@ function computeOutputLimits({ field = {}, reaction = {}, stance = {}, kernel = 
  * @param {object} params.stance - 姿勢
  * @returns {object} HomeLayerState
  */
-export function createHomeLayer({ field = {}, reaction = {}, stance = {} } = {}) {
+export function createHomeLayer({ field = {}, reaction = {}, stance = {}, preHomeInput = {}, makerSeed = null } = {}) {
+  const resolved = resolveHomeInputs({ field, reaction, stance, preHomeInput, makerSeed });
+
   // Layer 1: 固定核
-  const kernel = computeKernel({ field, reaction, stance });
+  const kernel = computeKernel(resolved);
 
   // Layer 2: 可変の薄い理由（一つだけ）
-  const softReason = selectSoftReason({ field, reaction, stance });
+  const softReason = selectSoftReason(resolved);
 
   // Layer 3: 出力制限
-  const outputLimits = computeOutputLimits({ field, reaction, stance, kernel });
+  const outputLimits = computeOutputLimits({ ...resolved, kernel });
 
   return {
     kernel,

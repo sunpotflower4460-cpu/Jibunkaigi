@@ -21,12 +21,14 @@ Decision Layer は、前提層を通ったあとに初めて
 
 Maker Seed  
 → Home Layer  
+→ Home Neutralization Check  
 → Existence Layer 1  
 → Existence Layer 2  
 → Belief Core / Branch / Leaf  
+→ beliefTension  
 → preconditionFilter  
 → preconditionBias  
-→ beliefTension  
+→ dynamic field / reaction / stance  
 → **Decision Layer**  
 → 表層生成 / prompt builder
 

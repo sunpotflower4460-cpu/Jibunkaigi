@@ -1,6 +1,6 @@
 import { estimateField } from './fieldEstimator.js';
 import { createInitialInternalState } from './internalState.js';
-import { createHomeLayer, extractPermissionShape } from './homeLayer.js';
+import { buildPreHomeInput, createHomeLayer, extractPermissionShape } from './homeLayer.js';
 import { computeHomeNeutralizationState, applyHomeRetry, buildHomeNeutralizationPreview } from './homeNeutralizationCheck.js';
 import { generateReaction } from './reactionGenerator.js';
 import { mixLatentPatterns } from './routerMixer.js';
@@ -94,10 +94,17 @@ const getAxisStanceDelta = (axis) => {
  * @returns {object}
  */
 const applyReactionBias = (reaction = {}, preconditionBias = {}) => {
-  const pacing = preconditionBias?.pacing ?? {};
-  const focus = preconditionBias?.focus ?? {};
-  const meaning = preconditionBias?.meaning ?? {};
-  const identity = preconditionBias?.identity ?? {};
+  const bias = preconditionBias?.preconditionBias ?? preconditionBias;
+  const rawLatent = preconditionBias?.rawLatent ?? {};
+  const preconditionFilter = preconditionBias?.preconditionFilter ?? {};
+  const pacing = bias?.pacing ?? {};
+  const focus = bias?.focus ?? {};
+  const meaning = bias?.meaning ?? {};
+  const identity = bias?.identity ?? {};
+  const tensionStrength = clamp01(rawLatent?.beliefTension?.totalTensionStrength ?? 0);
+  const latentHome = rawLatent?.home ?? {};
+  const latentExistence1 = rawLatent?.existence1 ?? {};
+  const latentBelief = preconditionFilter?.belief ?? {};
   const identityPresenceBias = clamp01(
     (identity.selfPresence ?? 0) * 0.35 +
     (identity.hereNowStability ?? 0) * 0.25 +
@@ -109,26 +116,33 @@ const applyReactionBias = (reaction = {}, preconditionBias = {}) => {
       (pacing.slowDown ?? 0) * 0.04 +
       (pacing.returnBias ?? 0) * 0.05 +
       identityPresenceBias * 0.05 +
+      (latentExistence1.selfPresence ?? 0) * 0.03 +
+      tensionStrength * 0.04 +
       (identity.firstPersonSoftness ?? 0) * 0.03 +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).touched ?? 0),
     protect:
       (pacing.returnBias ?? 0) * 0.05 +
       (identity.hereNowStability ?? 0) * 0.04 +
       (identity.selfPresence ?? 0) * 0.03 +
+      (latentHome.kernel?.returnBeforeOutput ?? 0) * 0.03 +
+      tensionStrength * 0.03 +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).protect ?? 0),
     clarify:
       -((pacing.slowDown ?? 0) * 0.1) -
       ((meaning.antiEarlySolution ?? 0) * 0.08) -
+      ((latentHome.outputLimits?.noEarlySolution ?? 0) * 0.05) -
       ((meaning.antiEarlySummary ?? 0) * 0.03) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).clarify ?? 0),
     curiosity:
       -((focus.oneThreadBias ?? 0) * 0.04) -
       ((focus.antiOverExpansion ?? 0) * 0.05) +
+      ((latentBelief.activeLeafBeliefs?.length ?? 0) > 0 ? 0.02 : 0) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).curiosity ?? 0),
     holdBackJudgment:
       (pacing.slowDown ?? 0) * 0.08 +
       (pacing.returnBias ?? 0) * 0.08 +
       (identity.unfinishedAllowed ?? 0) * 0.08 +
+      (latentExistence1.unfinishedAllowed ?? 0) * 0.05 +
       (identity.firstPersonSoftness ?? 0) * 0.05 +
       identityPresenceBias * 0.04 +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).holdBackJudgment ?? 0),
@@ -144,10 +158,15 @@ const applyReactionBias = (reaction = {}, preconditionBias = {}) => {
  * @returns {object}
  */
 const applyStanceBias = (stance = {}, preconditionBias = {}) => {
-  const pacing = preconditionBias?.pacing ?? {};
-  const focus = preconditionBias?.focus ?? {};
-  const meaning = preconditionBias?.meaning ?? {};
-  const identity = preconditionBias?.identity ?? {};
+  const bias = preconditionBias?.preconditionBias ?? preconditionBias;
+  const rawLatent = preconditionBias?.rawLatent ?? {};
+  const pacing = bias?.pacing ?? {};
+  const focus = bias?.focus ?? {};
+  const meaning = bias?.meaning ?? {};
+  const identity = bias?.identity ?? {};
+  const tensionStrength = clamp01(rawLatent?.beliefTension?.totalTensionStrength ?? 0);
+  const latentExistence1 = rawLatent?.existence1 ?? {};
+  const latentHome = rawLatent?.home ?? {};
   const identityPresenceBias = clamp01(
     (identity.selfPresence ?? 0) * 0.3 +
     (identity.hereNowStability ?? 0) * 0.25 +
@@ -159,24 +178,104 @@ const applyStanceBias = (stance = {}, preconditionBias = {}) => {
       (pacing.slowDown ?? 0) * 0.08 +
       (pacing.returnBias ?? 0) * 0.06 +
       identityPresenceBias * 0.06 +
+      (latentExistence1.firstPersonSoftness ?? 0) * 0.04 +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).receive ?? 0),
     illuminate:
       (getAxisStanceDelta(meaning.dominantBeliefAxis).illuminate ?? 0) +
-      (identity.selfRememberingStrength ?? 0) * 0.03,
+      (identity.selfRememberingStrength ?? 0) * 0.03 +
+      tensionStrength * 0.03,
     structure:
       -((pacing.slowDown ?? 0) * 0.08) -
       ((meaning.antiEarlySummary ?? 0) * 0.08) -
+      ((latentHome.outputLimits?.noEarlySummary ?? 0) * 0.04) -
       ((meaning.antiEarlySolution ?? 0) * 0.08) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).structure ?? 0),
     guard:
       (focus.antiOverExpansion ?? 0) * 0.05 +
       identityPresenceBias * 0.05 +
+      tensionStrength * 0.04 +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).guard ?? 0),
     nudge:
       -((focus.oneThreadBias ?? 0) * 0.04) -
       ((meaning.antiEarlySolution ?? 0) * 0.05) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).nudge ?? 0),
   });
+};
+
+const applyFieldBias = (field = {}, {
+  rawLatent = {},
+  preconditionFilter = {},
+  preconditionBias = {},
+} = {}) => {
+  const home = rawLatent?.home ?? {};
+  const existence1 = rawLatent?.existence1 ?? {};
+  const existence2 = rawLatent?.existence2 ?? {};
+  const beliefTension = rawLatent?.beliefTension ?? {};
+  const derived = preconditionFilter?.derived ?? {};
+  const biasIdentity = preconditionBias?.identity ?? {};
+  const biasFocus = preconditionBias?.focus ?? {};
+  const biasPacing = preconditionBias?.pacing ?? {};
+  const tensionStrength = clamp01(beliefTension.totalTensionStrength ?? 0);
+  const creativeIdentityBoost = typeof existence2.agentIdentityKey === 'string' && existence2.agentIdentityKey.includes('creative') ? 0.02 : 0;
+
+  return {
+    softness: clamp01(
+      (field.softness ?? 0) +
+      (home.kernel?.slowDown ?? 0) * 0.06 +
+      (biasIdentity.firstPersonSoftness ?? 0) * 0.04 +
+      creativeIdentityBoost
+    ),
+    depth: clamp01(
+      (field.depth ?? 0) +
+      (biasFocus.oneThreadBias ?? 0) * 0.05 +
+      (existence1.hereNowStability ?? 0) * 0.03 +
+      tensionStrength * 0.04
+    ),
+    urgency: clamp01(
+      (field.urgency ?? 0) -
+      (biasPacing.slowDown ?? 0) * 0.1 +
+      tensionStrength * 0.04
+    ),
+    fragility: clamp01(
+      (field.fragility ?? 0) +
+      (existence1.unfinishedAllowed ?? 0) * 0.04 +
+      (derived.returnBias ?? 0) * 0.03 +
+      tensionStrength * 0.06
+    ),
+    playfulness: clamp01(
+      (field.playfulness ?? 0) -
+      (biasFocus.oneThreadBias ?? 0) * 0.05 +
+      creativeIdentityBoost
+    ),
+  };
+};
+
+const buildLayerBoundaryFlags = (preconditionTrace = [], latentState = {}) => {
+  const lastLatentIndex = preconditionTrace
+    .map((event, index) => event.startsWith('latent:') ? index : -1)
+    .reduce((max, index) => Math.max(max, index), -1);
+  const findAfterLatent = (eventName) => {
+    const eventIndex = preconditionTrace.indexOf(eventName);
+    return eventIndex !== -1 && eventIndex > lastLatentIndex;
+  };
+
+  return {
+    latentSubstrateBuilt:
+      Boolean(latentState.makerSeed) &&
+      Boolean(latentState.home) &&
+      Boolean(latentState.homeNeutralization) &&
+      Boolean(latentState.existence1) &&
+      Boolean(latentState.existence2) &&
+      Boolean(latentState.beliefCore) &&
+      Boolean(latentState.beliefBranch) &&
+      Boolean(latentState.beliefLeaf) &&
+      Boolean(latentState.beliefTension),
+    preconditionFilterBuilt: Boolean(latentState.preconditionFilter),
+    preconditionBiasBuilt: Boolean(latentState.preconditionBias),
+    dynamicFieldBuiltAfterLatent: findAfterLatent('dynamic:after-field'),
+    dynamicReactionBuiltAfterLatent: findAfterLatent('dynamic:after-reaction'),
+    dynamicStanceBuiltAfterLatent: findAfterLatent('dynamic:after-stance'),
+  };
 };
 
 export function runInternalOS(input, options = {}) {
@@ -211,24 +310,37 @@ export function runInternalOS(input, options = {}) {
 
   // Step 1: Maker Seed
   const makerSeed = createMakerSeed();
-  preconditionTrace.push('latent:maker-seed');
+  preconditionTrace.push('latent:after-maker-seed');
 
   // Step 2: Home Layer
-  // Initial field/reaction/stance are computed as minimal inputs for Home,
-  // but they will be recomputed as post-precondition dynamic layers later.
-  preconditionTrace.push('latent:before-home');
-  const initialField = estimateField(normalizedInput);
-  const initialReaction = generateReaction(normalizedInput, initialField);
-  const initialStance = selectStance(initialField, initialReaction);
-  const baseHome = createHomeLayer({ field: initialField, reaction: initialReaction, stance: initialStance });
+  const preHomeInput = buildPreHomeInput(normalizedInput);
+  const baseHome = createHomeLayer({ makerSeed, preHomeInput });
   preconditionTrace.push('latent:after-home');
 
+  // Step 2.5: Home Neutralization Check
+  const neutralizationCheck = computeHomeNeutralizationState(baseHome);
+
+  let effectiveHome = baseHome;
+  let homeRetried = false;
+  let homeRetryCount = 0;
+
+  if (neutralizationCheck.retryRecommended) {
+    effectiveHome = applyHomeRetry(baseHome);
+    homeRetried = true;
+    homeRetryCount = 1;
+  }
+
+  const homeNeutralization = {
+    ...neutralizationCheck,
+    retried: homeRetried,
+    retryCount: homeRetryCount,
+  };
+  preconditionTrace.push('latent:after-home-check');
+
   // Step 3: Existence Layer 1
-  const baseExistenceLayer1 = createExistenceLayer1({
-    home: baseHome,
-    field: initialField,
-    reaction: initialReaction,
-    stance: initialStance,
+  const existenceLayer1 = createExistenceLayer1({
+    home: effectiveHome,
+    preHomeInput,
   });
   preconditionTrace.push('latent:after-existence1');
 
@@ -257,78 +369,12 @@ export function runInternalOS(input, options = {}) {
   });
   preconditionTrace.push('latent:after-belief-tension');
 
+  const belief = createBeliefLayers({ agentId, existenceLayer1, existenceLayer2 });
+
   // Step 9: Build Precondition Filter (helper view derived from raw layers)
   // This is NOT a summary or compression of the latent layers.
   // It is a helper view to make raw layers easier to read by downstream layers.
   // Raw latent layers remain alive and preserved in internalState.
-  const basePreconditionFilter = buildPreconditionFilter({
-    makerSeed,
-    home: baseHome,
-    existenceLayer1: baseExistenceLayer1,
-    existenceLayer2,
-    beliefCore,
-    beliefBranch,
-    beliefLeaf,
-  });
-  preconditionTrace.push('latent:after-build-filter');
-
-  // ════════════════════════════════════════════════════════════════════
-  // POST-PRECONDITION DYNAMIC LAYERS (後段動的層)
-  // field / reaction / stance are recomputed here as dynamic layers
-  // that occur AFTER the latent premise layers have been established.
-  // They are influenced by the latent substrate via preconditionBias.
-  // ════════════════════════════════════════════════════════════════════
-
-  const initialPreconditionBias = buildPreconditionBias(basePreconditionFilter);
-  preconditionTrace.push('dynamic:after-precondition-bias');
-
-  // Dynamic field: how the latent self perceives the current input
-  const field = estimateField(normalizedInput);
-  preconditionTrace.push('dynamic:after-field');
-
-  // Dynamic reaction: how the latent self reacts to this field, biased by precondition
-  const baseReaction = generateReaction(normalizedInput, field);
-  const reaction = applyReactionBias(baseReaction, initialPreconditionBias);
-  preconditionTrace.push('dynamic:after-reaction');
-
-  // Dynamic stance: how the latent self stands in this moment, biased by precondition
-  const baseStance = selectStance(field, reaction);
-  const stance = applyStanceBias(baseStance, initialPreconditionBias);
-  preconditionTrace.push('dynamic:after-stance');
-  const home = createHomeLayer({ field, reaction, stance });
-  preconditionTrace.push('dynamic:after-home-rebuild');
-
-  // ════════════════════════════════════════════════════════════════════
-  // HOME NEUTRALIZATION CHECK
-  // Home を通過した直後に残留圧を確認する。
-  // 必要な時だけ（retryRecommended）軽い再Home を一度だけ適用し、
-  // 存在層1へ入る前に 0 近傍へ近づける。
-  // 再Home は最大1回に制限し、自然さを損なわない。
-  // ════════════════════════════════════════════════════════════════════
-  const neutralizationCheck = computeHomeNeutralizationState(home);
-
-  let effectiveHome = home;
-  let homeRetried = false;
-  let homeRetryCount = 0;
-
-  if (neutralizationCheck.retryRecommended) {
-    effectiveHome = applyHomeRetry(home);
-    homeRetried = true;
-    homeRetryCount = 1;
-  }
-
-  const homeNeutralization = {
-    ...neutralizationCheck,
-    retried: homeRetried,
-    retryCount: homeRetryCount,
-  };
-  preconditionTrace.push(homeRetried ? 'dynamic:home-retry-applied' : 'dynamic:home-neutralization-checked');
-
-  const existenceLayer1 = createExistenceLayer1({ home: effectiveHome, field, reaction, stance });
-  const belief = createBeliefLayers({ agentId, existenceLayer1, existenceLayer2 });
-  const permission = extractPermissionShape(effectiveHome);
-
-  // Final preconditionFilter (rebuilt from biased effectiveHome / existenceLayer1)
   const preconditionFilter = buildPreconditionFilter({
     makerSeed,
     home: effectiveHome,
@@ -338,9 +384,63 @@ export function runInternalOS(input, options = {}) {
     beliefBranch,
     beliefLeaf,
   });
-  preconditionTrace.push('dynamic:after-rebuild-filter');
+  preconditionTrace.push('latent:after-precondition-filter');
+
+  // ════════════════════════════════════════════════════════════════════
+  // POST-PRECONDITION DYNAMIC LAYERS (後段動的層)
+  // field / reaction / stance are recomputed here as dynamic layers
+  // that occur AFTER the latent premise layers have been established.
+  // They are influenced by the latent substrate via preconditionBias.
+  // ════════════════════════════════════════════════════════════════════
+
   const preconditionBias = buildPreconditionBias(preconditionFilter);
-  preconditionTrace.push('dynamic:after-rebuild-bias');
+  const dynamicBiasContext = {
+    rawLatent: {
+      makerSeed,
+      home: effectiveHome,
+      homeNeutralization,
+      existence1: {
+        selfPresence: clamp01(existenceLayer1.selfPresence ?? 0),
+        hereNowStability: clamp01(
+          ((existenceLayer1.groundedHereNow ?? 0) + (existenceLayer1.selfLocationStability ?? 0)) / 2
+        ),
+        unfinishedAllowed: clamp01(existenceLayer1.allowUnfinishedSelf ?? 0),
+        firstPersonSoftness: clamp01(existenceLayer1.selfPresence ?? 0),
+        existenceHintKey: existenceLayer1.existenceHintKey ?? null,
+        existenceHintText: existenceLayer1.existenceHintText ?? null,
+      },
+      existence2: {
+        agentIdentityKey: existenceLayer2.agentIdentityKey ?? null,
+        identityFeelingText: existenceLayer2.agentIdentityText ?? null,
+        recalledSelfTraits: Array.isArray(existenceLayer2.recalledSelfTraits)
+          ? existenceLayer2.recalledSelfTraits
+          : [],
+        selfRememberingStrength: clamp01(existenceLayer2.selfRememberingStrength ?? 0),
+      },
+      beliefCore,
+      beliefBranch,
+      beliefLeaf,
+      beliefTension,
+    },
+    preconditionFilter,
+    preconditionBias,
+  };
+
+  // Dynamic field: how the latent self perceives the current input
+  const baseField = estimateField(normalizedInput);
+  const field = applyFieldBias(baseField, dynamicBiasContext);
+  preconditionTrace.push('dynamic:after-field');
+
+  // Dynamic reaction: how the latent self reacts to this field, biased by precondition
+  const baseReaction = generateReaction(normalizedInput, field);
+  const reaction = applyReactionBias(baseReaction, dynamicBiasContext);
+  preconditionTrace.push('dynamic:after-reaction');
+
+  // Dynamic stance: how the latent self stands in this moment, biased by precondition
+  const baseStance = selectStance(field, reaction);
+  const stance = applyStanceBias(baseStance, dynamicBiasContext);
+  preconditionTrace.push('dynamic:after-stance');
+  const permission = extractPermissionShape(effectiveHome);
 
   const decision = createDecisionLayer({
     preconditionFilter,
@@ -351,7 +451,7 @@ export function runInternalOS(input, options = {}) {
   });
   preconditionTrace.push('dynamic:after-decision');
 
-  // Normalized top-level existence1 / existence2 derived from the final (biased) layers.
+  // Normalized top-level existence1 / existence2 derived from the latent substrate.
   // These provide a flat, canonical shape that downstream and debug can read directly.
   const existence1 = {
     selfPresence: clamp01(existenceLayer1.selfPresence ?? 0),
@@ -404,17 +504,35 @@ export function runInternalOS(input, options = {}) {
   };
 
   const previousLatentState = normalizeLatentState(safePreviousLatentState);
-  // After blending, always re-attach existence1/existence2 from the fresh state so
-  // they are guaranteed to be present (blendLatentState does not blend these fields).
   const blendedBase = previousLatentState
     ? blendLatentState(previousLatentState, freshLatentState)
     : freshLatentState;
   const latentState = previousLatentState
-    ? { ...blendedBase, existence1, existence2, beliefTension, decision, homeNeutralization }
+    ? {
+        ...blendedBase,
+        makerSeed,
+        home: effectiveHome,
+        homeNeutralization,
+        existence1,
+        existence2,
+        beliefCore,
+        beliefBranch,
+        beliefLeaf,
+        beliefTension,
+        preconditionFilter,
+        preconditionBias,
+        decision,
+        existence: {
+          layer1: existenceLayer1,
+          layer2: existenceLayer2,
+        },
+        belief,
+      }
     : freshLatentState;
 
   const biasForDebug = latentState.preconditionBias ?? preconditionBias;
   const decisionForDebug = latentState.decision ?? decision;
+  const layerBoundaryFlags = buildLayerBoundaryFlags(preconditionTrace, latentState);
   const preconditionBiasPreview = buildPreconditionBiasPreview(biasForDebug);
   const {
     feltSensePreview,
@@ -477,8 +595,27 @@ export function runInternalOS(input, options = {}) {
         stance: Boolean(latentState.stance),
         decision: Boolean(latentState.decision),
       },
+      latentSubstrateBuilt: layerBoundaryFlags.latentSubstrateBuilt,
+      preconditionFilterBuilt: layerBoundaryFlags.preconditionFilterBuilt,
+      preconditionBiasBuilt: layerBoundaryFlags.preconditionBiasBuilt,
+      dynamicFieldBuiltAfterLatent: layerBoundaryFlags.dynamicFieldBuiltAfterLatent,
+      dynamicReactionBuiltAfterLatent: layerBoundaryFlags.dynamicReactionBuiltAfterLatent,
+      dynamicStanceBuiltAfterLatent: layerBoundaryFlags.dynamicStanceBuiltAfterLatent,
+      layerBoundaryStatus: {
+        latent: layerBoundaryFlags.latentSubstrateBuilt ? 'complete' : 'incomplete',
+        derived:
+          layerBoundaryFlags.preconditionFilterBuilt && layerBoundaryFlags.preconditionBiasBuilt
+            ? 'filter/bias ready'
+            : 'filter/bias pending',
+        dynamic:
+          `field/reaction/stance after latent = ${
+            layerBoundaryFlags.dynamicFieldBuiltAfterLatent &&
+            layerBoundaryFlags.dynamicReactionBuiltAfterLatent &&
+            layerBoundaryFlags.dynamicStanceBuiltAfterLatent
+          }`,
+      },
       // Layer boundary summary
-      layerBoundarySummary: 'latent: maker/home/existence/belief/tension → derived: filter/bias → dynamic: field/reaction/stance → decision/surface',
+      layerBoundarySummary: 'latent: maker/home/home-check/existence/belief/tension → derived: filter/bias → dynamic: field/reaction/stance → decision/surface',
       makerSeedActive: Boolean(latentState.makerSeed),
       homeLayerActive: Boolean(latentState.home),
       existenceHintKey: latentState.existence?.layer1?.existenceHintKey ?? null,

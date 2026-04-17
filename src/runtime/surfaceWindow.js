@@ -38,5 +38,6 @@ export function buildSurfaceWindow(latentState = {}) {
     windowLines.push('Note: handle the fragile edge gently.');
   }
 
-  return windowLines;
+  return windowLines.map((line) => sanitizeSurfaceOutput(line)).filter(Boolean);
 }
+import { sanitizeSurfaceOutput } from './surfaceGuard.js';
