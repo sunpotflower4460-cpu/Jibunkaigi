@@ -4,12 +4,14 @@
 // that should influence output but NOT appear verbatim in user-facing responses.
 //
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Mina De-templating Pilot: Template Repetition Detection
+// De-templating Pilot: Template Repetition Detection
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //
-// Purpose: Detect and prevent repeated template phrases in Mina's responses
+// Purpose: Detect and prevent repeated template phrases in agent responses
 // without removing all characteristic expressions. Guard against template
-// reproduction, not against Mina's natural voice.
+// reproduction, not against natural voice.
+//
+// Covered agents: Mina (empath), Satou (critic)
 
 /**
  * Mina-specific template phrases to monitor for repetition.
@@ -23,6 +25,23 @@ const MINA_TEMPLATE_PHRASES = [
   'そのままでいい',
   'ここにいていい',
   '無理しなくていい',
+].filter((phrase) => typeof phrase === 'string' && phrase.trim());
+
+/**
+ * Satou-specific template phrases to monitor for repetition.
+ * These are monitored for SHORT-TERM repetition (not banned outright).
+ */
+const SATOU_TEMPLATE_PHRASES = [
+  'お前',
+  'じゃないか',
+  '焦る必要はねぇ',
+  'ちゃんと見ろ',
+  'そこだけは曲げんな',
+  'まあ聞けよ',
+  '正直に言うと',
+  'そこは甘くないか',
+  'お前なら分かるだろ',
+  'まあ、分かる',
 ].filter((phrase) => typeof phrase === 'string' && phrase.trim());
 
 /**
@@ -54,6 +73,81 @@ export function detectMinaTemplateRepetition(currentText, recentResponses = [], 
 
   // Count occurrences across recent responses + current
   for (const phrase of MINA_TEMPLATE_PHRASES) {
+    const normalizedPhrase = phrase.toLowerCase();
+    let count = 0;
+
+    // Count in current response
+    if (normalizedCurrent.includes(normalizedPhrase)) {
+      count++;
+    }
+
+    // Count in recent responses (last 3)
+    for (const recent of normalizedRecent.slice(-3)) {
+      if (recent.includes(normalizedPhrase)) {
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      phraseCounts.set(phrase, count);
+    }
+
+    // If same phrase appears 3+ times in short window, flag it
+    if (count >= 3) {
+      repeatedPhrases.push(phrase);
+    }
+  }
+
+  // Calculate risk level
+  let riskLevel = 'none';
+  if (repeatedPhrases.length >= 2) {
+    riskLevel = 'high';
+  } else if (repeatedPhrases.length === 1) {
+    riskLevel = 'medium';
+  } else if (phraseCounts.size >= 3) {
+    riskLevel = 'low';
+  }
+
+  // Regenerate only on high risk (multiple repeated phrases)
+  const shouldRegenerate = riskLevel === 'high';
+
+  return {
+    riskLevel,
+    repeatedPhrases,
+    phraseCounts: Object.fromEntries(phraseCounts),
+    shouldRegenerate,
+  };
+}
+
+/**
+ * Detect Satou template phrase repetition in recent responses.
+ * Returns risk level and detected repeated phrases.
+ *
+ * @param {string} currentText - Current response text
+ * @param {Array<string>} recentResponses - Recent response history (last 3-5)
+ * @param {string} agentId - Agent ID (only applies to 'critic'/'Satou')
+ * @returns {object} - { riskLevel: 'none'|'low'|'medium'|'high', repeatedPhrases: string[], shouldRegenerate: boolean }
+ */
+export function detectSatouTemplateRepetition(currentText, recentResponses = [], agentId = '') {
+  // Only apply to Satou
+  if (agentId !== 'critic') {
+    return { riskLevel: 'none', repeatedPhrases: [], shouldRegenerate: false };
+  }
+
+  if (typeof currentText !== 'string' || !currentText.trim()) {
+    return { riskLevel: 'none', repeatedPhrases: [], shouldRegenerate: false };
+  }
+
+  const normalizedCurrent = currentText.toLowerCase();
+  const normalizedRecent = recentResponses
+    .filter((r) => typeof r === 'string')
+    .map((r) => r.toLowerCase());
+
+  const repeatedPhrases = [];
+  const phraseCounts = new Map();
+
+  // Count occurrences across recent responses + current
+  for (const phrase of SATOU_TEMPLATE_PHRASES) {
     const normalizedPhrase = phrase.toLowerCase();
     let count = 0;
 

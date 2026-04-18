@@ -79,7 +79,8 @@ test('each agent system prompt contains its own voice differentiation block', ()
   assert.match(buildAgentSystemPrompt('strategist', baseParams), /【ケンの触れ方/);
   // Mina now uses perceptual tendencies instead of "触れ方" section
   assert.match(buildAgentSystemPrompt('empath', baseParams), /【ミナの知覚傾向】/);
-  assert.match(buildAgentSystemPrompt('critic', baseParams), /【サトウの触れ方/);
+  // Satou now uses perceptual tendencies instead of "触れ方" section
+  assert.match(buildAgentSystemPrompt('critic', baseParams), /【サトウの知覚傾向】/);
 });
 
 test('Joe system prompt focuses on 一点 and forbids 全体総括 / 教訓', () => {
