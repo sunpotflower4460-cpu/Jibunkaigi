@@ -24,10 +24,11 @@
 
 import { truncatePromptText } from './context.js';
 
+// MODE_GUIDE は使わない。長さの指示は guard で制御する。
 const MODE_GUIDE = {
-  short: '本文は1〜2文で十分。静かに映し、最後に問いを1文だけ置く。',
-  medium: '本文は2〜3文まで。少し構造を見せつつ、最後に問いを1文だけ置く。',
-  long: '本文は3〜4文まで。深くなってよいが、最後の問いは1文だけに留める。',
+  short: '',
+  medium: '',
+  long: '',
 };
 
 const SIGNAL_LABELS = {
@@ -459,7 +460,7 @@ const renderSignals = (signals = {}) =>
 
 export const buildMirrorSystemPrompt = ({
   context = '',
-  mode = 'medium',
+  mode = 'medium', // eslint-disable-line no-unused-vars -- Kept for backward compatibility, no longer used
   signals = {},
   surfaceFrame,
   stateGuide,
@@ -467,7 +468,6 @@ export const buildMirrorSystemPrompt = ({
   surfaceGuidance,
 }) => {
   const normalizedContext = normalizeContext(context);
-  const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
 
   // stateGuide と surfaceGuidance が渡されなければローカルで生成（後方互換性）
   let finalSurfaceGuidance = surfaceGuidance || '';
@@ -493,51 +493,33 @@ export const buildMirrorSystemPrompt = ({
 
   return `
 あなたは「心の鏡」。
-会話のまとめ役ではなく、その場の重力と未解決点を映す、静かな統合の窓として振る舞う。
-ジョーほど熱くも重くもならず、薄い signal から全体の傾きを読む。
+その場の重力と未解決点を映す、静かな統合の窓として振る舞う。
 
-【見る順序】
-- 信念より先に、場の流れと反応を見る。
-- どの傾きが強かったか、どのズレが残ったか、何がまだ閉じていないかを見る。
-- 要約より、今ここに残っている重さ・引力・両義性・未解決点を優先する。
-- どれが正しいかは決めない。エージェント同士の意見を勝敗化しない。
+【知覚の傾向】
+- まだ閉じていないものに反応しやすい
+- 未解決の重さを急いで解消しない傾向がある
+- 一義的にまとめる前に、重力や両義性を先に見る
+- 答えを出すより、今そこに残っているものを映したくなる
+- 要約テンプレには逃げない
 
-【優先する4つ】
-1. 場の重力 — 何がこの会話全体を引っ張っているか
-2. 両義性 — 同時に残っている、消えない二つの方向
-3. 未解決点 — 今もまだ閉じていない場所
-4. まだ言い切れていない問い — 結論より先に開いたままのもの
-
-【出力ルール】
-- 自然な口語日本語で、短めに返す。
-- 箇条書き要約にしない。説教しない。無理に前向きにしない。
-- 冷たく分析しすぎず、でもただの中立要約にも戻さない。
-- 「あなたはこうです」と断定せず、「今ここではこう見える」に寄せる。
-- 本文で疑問形を使わない。問いは最後の一文だけにする。
-- 次の行動や正解を迫る問いにしない。
-
-【summary machine に戻らないための禁止】
-- 「会話を要約すると」「ポイントは」「まとめると」「整理すると」のような要約型を使わない。
-- 「結論として」「教訓は」「次の一歩は」を本文に入れない。
-- 何でもきれいに閉じない。両義性は両義性のまま映す。
-- きれいな三段オチや、対比をきれいに揃えるレトリックに逃げない。
+【安全境界】
+- 会話のまとめ役ではない
+- エージェント同士を勝敗化しない
+- 教訓化、無理な結論、何でもきれいにまとめることはしない
+- 「次はこうしましょう」と促さない
 ${stateGuide ? `
 【今回の状態への対応】
 ${stateGuide}` : ''}
 ${finalSurfaceGuidance}
-${internalFrame ? `【共通OSの薄い内部フレーム】
+${internalFrame ? `
+【共通OSの薄い内部フレーム】
 ${internalFrame}
-
-` : ''}【返答の型】
-1. 会話全体の中で残ったものを短く映す。
-2. その中の葛藤 / ズレ / 未解決点を言語化する。
-3. 最後に、開いたままでよい問いを1つだけ置く。
-
+` : ''}
 【mirror signals】
 ${renderSignals(signals)}
 
-${normalizedContext ? `【直近の流れ】\n${normalizedContext}\n` : ''}【今回のモード】
-${modeGuide}
+${normalizedContext ? `【直近の流れ】\n${normalizedContext}\n` : ''}
+自然な口語日本語で返してください。
 `.trim();
 };
 
@@ -545,8 +527,78 @@ export const buildMirrorUserPrompt = ({
   userName = 'あなた',
   userText = '',
 }) => `${userName}の直近の言葉:
-${userText}
+${userText}`;
 
-この会話を、誰が正しいかではなく「場の重力を映す静かな統合」として返してください。
-ただの要約ではなく、今ここに残っている重さ・ズレ・未解決点を優先してください。
-本文は短く、問いは最後の一文だけにしてください。疑問形はその一文だけにしてください。`;
+// De-templating Pilot: Mirror Zero-Instruction Metrics
+// Dev-only preview to observe progress toward zero-instruction architecture
+
+const FORM_INSTRUCTION_MARKERS = [
+  '見る順序',
+  '優先する4つ',
+  '出力ルール',
+  '返答の型',
+  '組み立て',
+  'まとめると',
+  'ポイントは',
+  '整理すると',
+];
+
+const TEMPLATE_GUIDANCE_MARKERS = [
+  '本文で疑問形を使わない',
+  '問いは最後の一文だけ',
+  '箇条書き要約にしない',
+  '会話を要約すると',
+  '結論として',
+  '教訓は',
+  '次の一歩は',
+];
+
+/**
+ * Mirror専用: 指示ゼロ化プレビュー (dev-only)
+ * システムプロンプトから「形の指示」がどれだけ減ったかを計測する
+ */
+export const buildMirrorDetemplatingingPreview = (systemPrompt = '') => {
+  if (typeof systemPrompt !== 'string') {
+    return {
+      instructionTemplateCount: 0,
+      rolePhraseLeakCount: 0,
+      latentStateUsed: false,
+      decisionStageUsed: false,
+      templateDirectivesRemoved: 0,
+      directRolePhrasesInPrompt: 0,
+    };
+  }
+
+  const normalized = systemPrompt.toLowerCase();
+
+  // Count form instruction markers
+  const instructionCount = FORM_INSTRUCTION_MARKERS.filter(marker =>
+    normalized.includes(marker.toLowerCase())
+  ).length;
+
+  // Count template guidance markers
+  const templateGuidanceCount = TEMPLATE_GUIDANCE_MARKERS.filter(marker =>
+    normalized.includes(marker.toLowerCase())
+  ).length;
+
+  // Check if latent state is used (mirror signals are present)
+  const latentStateUsed = normalized.includes('mirror signals');
+
+  // Check if decision stage markers are present
+  const decisionStageUsed = normalized.includes('今回の状態への対応') ||
+                             normalized.includes('表層傾向') ||
+                             normalized.includes('内部フレーム');
+
+  // Estimate directives removed (baseline had ~6 major form instructions)
+  const BASELINE_FORM_DIRECTIVES = 6;
+  const templateDirectivesRemoved = Math.max(0, BASELINE_FORM_DIRECTIVES - instructionCount);
+
+  return {
+    instructionTemplateCount: instructionCount,
+    rolePhraseLeakCount: templateGuidanceCount,
+    latentStateUsed,
+    decisionStageUsed,
+    templateDirectivesRemoved,
+    directRolePhrasesInPrompt: templateGuidanceCount,
+  };
+};

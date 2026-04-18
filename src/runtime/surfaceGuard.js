@@ -11,7 +11,10 @@
 // without removing all characteristic expressions. Guard against template
 // reproduction, not against natural voice.
 //
-// Covered agents: Ken (strategist), Mina (empath), Satou (critic), Ray (soul)
+// Covered agents: Ken (strategist), Mina (empath), Satou (critic), Ray (soul), Mirror
+//
+// Mirror De-templating Pilot: Added Mirror-specific template phrase detection
+// to prevent summary template reproduction while preserving reflective quality.
 
 /**
  * Ken-specific template phrases to monitor for repetition.
@@ -78,11 +81,104 @@ const SATOU_TEMPLATE_PHRASES = [
 ].filter((phrase) => typeof phrase === 'string' && phrase.trim());
 
 /**
- * Detect Ken template phrase repetition in recent responses.
+ * Mirror-specific template phrases to monitor for repetition.
+ * These are monitored for SHORT-TERM repetition (not banned outright).
+ * Mirror pilot: Detect summary/closure template reproduction.
+ */
+const MIRROR_TEMPLATE_PHRASES = [
+  'まだ閉じていません',
+  '重さがありますね',
+  '両方あるように見えます',
+  '整理しきらない方がよさそうです',
+  '静かに映るのは',
+  'まとめると',
+  '会話を要約すると',
+  'ポイントは',
+  '整理すると',
+  '結論として',
+  '教訓は',
+  '次の一歩は',
+  '開いたままでよい',
+  '閉じずに置く',
+].filter((phrase) => typeof phrase === 'string' && phrase.trim());
+
+/**
+ * Detect Mirror template phrase repetition in recent responses.
  * Returns risk level and detected repeated phrases.
  *
  * @param {string} currentText - Current response text
  * @param {Array<string>} recentResponses - Recent response history (last 3-5)
+ * @param {string} agentId - Agent ID (only applies to 'master'/'Mirror')
+ * @returns {object} - { riskLevel: 'none'|'low'|'medium'|'high', repeatedPhrases: string[], shouldRegenerate: boolean }
+ */
+export function detectMirrorTemplateRepetition(currentText, recentResponses = [], agentId = '') {
+  // Only apply to Mirror
+  if (agentId !== 'master') {
+    return { riskLevel: 'none', repeatedPhrases: [], shouldRegenerate: false };
+  }
+
+  if (typeof currentText !== 'string' || !currentText.trim()) {
+    return { riskLevel: 'none', repeatedPhrases: [], shouldRegenerate: false };
+  }
+
+  const normalizedCurrent = currentText.toLowerCase();
+  const normalizedRecent = recentResponses
+    .filter((r) => typeof r === 'string')
+    .map((r) => r.toLowerCase());
+
+  const repeatedPhrases = [];
+  const phraseCounts = new Map();
+
+  // Count occurrences across recent responses + current
+  for (const phrase of MIRROR_TEMPLATE_PHRASES) {
+    const normalizedPhrase = phrase.toLowerCase();
+    let count = 0;
+
+    // Count in current response
+    if (normalizedCurrent.includes(normalizedPhrase)) {
+      count++;
+    }
+
+    // Count in recent responses (last 3)
+    for (const recent of normalizedRecent.slice(-3)) {
+      if (recent.includes(normalizedPhrase)) {
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      phraseCounts.set(phrase, count);
+    }
+
+    // If same phrase appears 3+ times in short window, flag it
+    if (count >= 3) {
+      repeatedPhrases.push(phrase);
+    }
+  }
+
+  // Calculate risk level
+  let riskLevel = 'none';
+  if (repeatedPhrases.length >= 2) {
+    riskLevel = 'high';
+  } else if (repeatedPhrases.length === 1) {
+    riskLevel = 'medium';
+  } else if (phraseCounts.size >= 3) {
+    riskLevel = 'low';
+  }
+
+  // Regenerate only on high risk (multiple repeated phrases)
+  const shouldRegenerate = riskLevel === 'high';
+
+  return {
+    riskLevel,
+    repeatedPhrases,
+    phraseCounts: Object.fromEntries(phraseCounts),
+    shouldRegenerate,
+  };
+}
+
+/**
+ * Detect Ken template phrase repetition in recent responses.
  * @param {string} agentId - Agent ID (only applies to 'strategist'/'Ken')
  * @returns {object} - { riskLevel: 'none'|'low'|'medium'|'high', repeatedPhrases: string[], shouldRegenerate: boolean }
  */
