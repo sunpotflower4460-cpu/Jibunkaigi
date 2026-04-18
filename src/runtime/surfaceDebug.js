@@ -22,15 +22,15 @@ export const truncateForDebug = (text, max = 140) => {
 };
 
 /**
- * Build de-templating metrics for Ray (zero-instruction pilot)
+ * Build de-templating metrics for agents (zero-instruction pilot)
  * @param {object} params
- * @param {string} params.agentId - Agent ID (only applies to 'soul'/'Ray')
+ * @param {string} params.agentId - Agent ID
  * @param {string} params.systemPrompt - Generated system prompt
  * @param {string} params.userPrompt - Generated user prompt
  * @param {object} params.stateGuide - State guide text
  * @param {object} params.surfaceGuidance - Surface guidance text
  * @param {boolean} params.usedDecisionLayer - Whether decision layer was used
- * @returns {object|null} - De-templating metrics or null if not Ray
+ * @returns {object|null} - De-templating metrics or null if not applicable
  */
 export const buildDetemplatingMetrics = ({
   agentId = '',
@@ -40,29 +40,41 @@ export const buildDetemplatingMetrics = ({
   surfaceGuidance = '',
   usedDecisionLayer = false,
 } = {}) => {
-  // Only apply to Ray
-  if (agentId !== 'soul') return null;
+  // Only apply to Ray and Ken (de-templating pilots)
+  if (agentId !== 'soul' && agentId !== 'strategist') return null;
 
   const fullPrompt = `${systemPrompt}\n${userPrompt}`;
 
   // Count template directives removed (rough heuristic)
   const hasNoAssemblySteps = !fullPrompt.includes('まず') || !fullPrompt.includes('次に');
-  const hasNoExamplePhrases = !fullPrompt.includes('〜ですね') && !fullPrompt.includes('〜かもしれません');
+  const hasNoExamplePhrases = agentId === 'soul'
+    ? (!fullPrompt.includes('〜ですね') && !fullPrompt.includes('〜かもしれません'))
+    : (!fullPrompt.includes('整理すると') && !fullPrompt.includes('ポイントは'));
   const hasNoQualityContract = !systemPrompt.includes('品質基準');
+  const hasNoReturnFormat = !fullPrompt.includes('返答の組み立て方') && !fullPrompt.includes('返答の運び方');
 
   const templateDirectivesRemoved =
     (hasNoAssemblySteps ? 2 : 0) +
     (hasNoExamplePhrases ? 2 : 0) +
-    (hasNoQualityContract ? 2 : 0);
+    (hasNoQualityContract ? 2 : 0) +
+    (hasNoReturnFormat ? 2 : 0);
 
   // Count direct role phrases in prompt (should be 0 for zero-instruction)
   let directRolePhraseCount = 0;
-  const rolePhrasePatterns = [
-    /こう返せ/gi,
-    /こういう書き出し/gi,
-    /返答の組み立て方/gi,
-    /返答の運び方/gi,
-  ];
+  const rolePhrasePatterns = agentId === 'soul'
+    ? [
+        /こう返せ/gi,
+        /こういう書き出し/gi,
+        /返答の組み立て方/gi,
+        /返答の運び方/gi,
+      ]
+    : [
+        /こう整理する/gi,
+        /こう説明する/gi,
+        /返答の組み立て方/gi,
+        /返答の運び方/gi,
+        /こういう口調/gi,
+      ];
   for (const pattern of rolePhrasePatterns) {
     const matches = systemPrompt.match(pattern);
     if (matches) directRolePhraseCount += matches.length;
@@ -75,8 +87,14 @@ export const buildDetemplatingMetrics = ({
   // Estimate template repeat risk based on stateGuide/surfaceGuidance patterns
   let templateRepeatRisk = 'low';
   if (stateGuide && stateGuide.length > 200) templateRepeatRisk = 'medium';
-  if (surfaceGuidance && surfaceGuidance.includes('照らす') && surfaceGuidance.includes('示す')) {
-    templateRepeatRisk = 'high';
+  if (agentId === 'soul') {
+    if (surfaceGuidance && surfaceGuidance.includes('照らす') && surfaceGuidance.includes('示す')) {
+      templateRepeatRisk = 'high';
+    }
+  } else if (agentId === 'strategist') {
+    if (surfaceGuidance && surfaceGuidance.includes('整理') && surfaceGuidance.includes('構造')) {
+      templateRepeatRisk = 'high';
+    }
   }
 
   return {
@@ -85,7 +103,8 @@ export const buildDetemplatingMetrics = ({
     latentStateUsed,
     decisionStageUsed,
     templateRepeatRisk,
-    zeroInstructionScore: templateDirectivesRemoved >= 4 && directRolePhraseCount === 0 ? 'high' : 'partial',
+    zeroInstructionScore: templateDirectivesRemoved >= 6 && directRolePhraseCount === 0 ? 'high' : 'partial',
+    agentId,
   };
 };
 
