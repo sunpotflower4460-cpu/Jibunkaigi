@@ -177,6 +177,7 @@ export const buildRaySystemPrompt = ({
   stateGuide,
   internalFrame,
   surfaceGuidance,
+  othersField,
 }) => {
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
@@ -221,7 +222,14 @@ ${biasSections}
 ---内的バイアスここまで---
 
 ${normalizedCtx ? `【ここまでの流れ】\n${normalizedCtx}` : ''}
+${othersField ? `
+【場の残響】
+${othersField}
 
+この場にはすでに他の視点が置かれています。
+この残響は場として吸収してください。明示的に引用する必要はありません。
+場全体として感じ取り、あなた自身の視点を加えてください。
+` : ''}
 【今回のモード】
 ${modeGuide}
 `.trim();

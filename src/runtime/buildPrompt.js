@@ -526,6 +526,7 @@ const buildStateGuide = (state = {}) => {
 //   internalFrame    → Layer C: 今の場の重力 / 姿勢 / fragility
 //   surfaceGuidance  → Layer C: 言い方の傾き
 //   activated bias   → Layer B: ジョーが内側で参照する素材
+//   othersField      → 顕在層 v0.1: 先行エージェントが残した場の残響
 export const buildJoeSystemPrompt = ({
   activated,
   context = '',
@@ -538,6 +539,7 @@ export const buildJoeSystemPrompt = ({
   stateGuide,
   internalFrame,
   surfaceGuidance,
+  othersField,
 }) => {
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
@@ -639,7 +641,15 @@ ${biasSections}
 ---内的バイアスここまで---
 
 ${normalizedContext ? `【ここまでの流れ】\n${normalizedContext}` : ''}
+${othersField ? `
+【場の残響】
+${othersField}
 
+この場にはすでに他の視点が置かれています。
+この残響は場として吸収してください。明示的に引用する必要はありません。
+「ミナがこう言っていたけど」「ケンはこう見ているが」のような言及は避けてください。
+場全体として感じ取り、あなた自身の視点を加えてください。
+` : ''}
 【今回のモード】
 ${modeGuide}
 `.trim();

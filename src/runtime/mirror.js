@@ -466,6 +466,7 @@ export const buildMirrorSystemPrompt = ({
   stateGuide,
   internalFrame,
   surfaceGuidance,
+  othersField,
 }) => {
   const normalizedContext = normalizeContext(context);
 
@@ -518,6 +519,14 @@ ${internalFrame}
 【mirror signals】
 ${renderSignals(signals)}
 
+${othersField ? `【場の残響】
+${othersField}
+
+この会議の場には、他のエージェントが残した視点がすでに置かれています。
+これらは「誰が何を言った」という逐語記録ではなく、場に残った gist / tone / force です。
+あなたは心の鏡として、これらの残響を読み取り、場全体の重力を映してください。
+個別のエージェントを引用するのではなく、場全体として何が重なり、何がまだ開いているかを見てください。
+` : ''}
 ${normalizedContext ? `【直近の流れ】\n${normalizedContext}\n` : ''}
 自然な口語日本語で返してください。
 `.trim();
