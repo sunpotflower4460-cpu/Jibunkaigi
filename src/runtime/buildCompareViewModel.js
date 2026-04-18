@@ -47,6 +47,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.decisionMetaPreview] - Decision Layer meta preview (dev-only)
  * @param {object} [params.layerBoundaryPreview] - latent / derived / dynamic boundary preview (dev-only)
  * @param {object} [params.reservoirPreview] - Reservoir stats preview (dev-only)
+ * @param {object} [params.activatedThoughtsPreview] - Activated thoughts preview (dev-only, Phase 4)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -75,6 +76,7 @@ export const buildCompareViewModel = ({
   decisionMetaPreview = null,
   layerBoundaryPreview = null,
   reservoirPreview = null,
+  activatedThoughtsPreview = null,
   focusBiasApplied = false,
   meaningBiasApplied = false,
   identityBiasApplied = null,
@@ -316,6 +318,20 @@ export const buildCompareViewModel = ({
   // Reservoir Preview (dev-only) - 顕在層 v0.1 particle reservoir
   const normalizedReservoirPreview = reservoirPreview || (agentId ? getReservoirStats(agentId) : null)
 
+  // Activated Thoughts Preview (dev-only) - Phase 4
+  const normalizedActivatedThoughtsPreview = activatedThoughtsPreview ? {
+    activatedThoughtCount: activatedThoughtsPreview.activationMeta?.selectedCount ?? 0,
+    totalCandidates: activatedThoughtsPreview.activationMeta?.totalCandidates ?? 0,
+    topThoughtIds: (activatedThoughtsPreview.topThoughtIds ?? []).slice(0, 3),
+    dominantThoughtAxes: activatedThoughtsPreview.activationMeta?.dominantAxes ?? [],
+    thoughtActivationReasons: (activatedThoughtsPreview.items ?? []).slice(0, 3).map(t => ({
+      nodeId: t.nodeId,
+      owner: t.owner,
+      score: t.score,
+      reasons: t.reasons,
+    })),
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -358,6 +374,7 @@ export const buildCompareViewModel = ({
     decisionMetaPreview: normalizedDecisionMetaPreview,
     layerBoundaryPreview: normalizedLayerBoundaryPreview,
     reservoirPreview: normalizedReservoirPreview,
+    activatedThoughtsPreview: normalizedActivatedThoughtsPreview,
     focusBiasApplied: Boolean(focusBiasApplied),
     meaningBiasApplied: Boolean(meaningBiasApplied),
     identityBiasApplied: identityBiasApplied ?? null,
@@ -384,6 +401,7 @@ export const buildCompareViewModel = ({
       hasDecisionMetaPreview: Boolean(normalizedDecisionMetaPreview),
       hasLayerBoundaryPreview: Boolean(normalizedLayerBoundaryPreview),
       hasReservoirPreview: Boolean(normalizedReservoirPreview),
+      hasActivatedThoughtsPreview: Boolean(normalizedActivatedThoughtsPreview),
     },
   }
 }

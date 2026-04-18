@@ -18,6 +18,7 @@ import { buildPreconditionFilter } from './buildPreconditionFilter.js';
 import { buildPreconditionBias, buildPreconditionBiasPreview } from './buildPreconditionBias.js';
 import { createBeliefTensionLayer } from './beliefTensionLayer.js';
 import { buildDecisionPreviews, createDecisionLayer } from './decisionLayer.js';
+import { activateThoughts } from './activateThoughts.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 
@@ -467,6 +468,89 @@ export function runInternalOS(input, options = {}) {
   });
   preconditionTrace.push('dynamic:after-decision');
 
+  // ════════════════════════════════════════════════════════════════════
+  // EMERGING FIELD (emergingField)
+  // Phase 4: Build context for thought activation
+  // Synthesize attention targets, resonance axes, body signals, and atmosphere
+  // from precondition layers and dynamic state
+  // ════════════════════════════════════════════════════════════════════
+
+  // Extract attention targets from user text and belief tension
+  const attentionTargets = [];
+  if (normalizedInput) {
+    // Simple keyword extraction (in future, this could be more sophisticated)
+    const words = normalizedInput.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+    attentionTargets.push(...words.slice(0, 3));
+  }
+  if (beliefTension?.activeTensions?.length > 0) {
+    beliefTension.activeTensions.slice(0, 2).forEach(t => {
+      if (t.axis) attentionTargets.push(t.axis);
+    });
+  }
+
+  // Collect resonance axes from belief layers
+  const resonanceAxes = [];
+  if (beliefCore?.dominantBeliefAxis) {
+    resonanceAxes.push(beliefCore.dominantBeliefAxis);
+  }
+  if (beliefBranch?.dominantBranchAxis) {
+    resonanceAxes.push(beliefBranch.dominantBranchAxis);
+  }
+  if (beliefTension?.dominantTensionAxis) {
+    resonanceAxes.push(beliefTension.dominantTensionAxis);
+  }
+
+  // Map field to body signals
+  const bodySignals = {
+    tension: clamp01(field.urgency * 0.7 + field.fragility * 0.3),
+    softness: clamp01(field.softness),
+    hesitation: clamp01(field.fragility * 0.6 + (1 - field.urgency) * 0.4),
+    urgency: clamp01(field.urgency),
+    warmth: clamp01(field.softness * 0.5 + field.playfulness * 0.3),
+    contraction: clamp01(field.fragility * 0.5 + (1 - field.playfulness) * 0.3),
+  };
+
+  // Build atmosphere from stance and reaction
+  const atmosphere = [];
+  if (stance.receive > 0.6) atmosphere.push('receiving');
+  if (stance.guard > 0.6) atmosphere.push('protective');
+  if (stance.illuminate > 0.5) atmosphere.push('illuminating');
+  if (reaction.touched > 0.6) atmosphere.push('touched');
+  if (reaction.holdBackJudgment > 0.5) atmosphere.push('open');
+
+  const emergingField = {
+    attentionTargets,
+    resonanceAxes,
+    bodySignals,
+    atmosphere,
+  };
+
+  // ════════════════════════════════════════════════════════════════════
+  // ACTIVATE THOUGHTS (Phase 4)
+  // Use emergingField + precondition layers to activate thought particles
+  // This is NOT selection or final utterance - just surfacing likely thoughts
+  // ════════════════════════════════════════════════════════════════════
+
+  const activatedThoughtsResult = activateThoughts({
+    agentId,
+    userText: normalizedInput,
+    preconditionBias,
+    beliefTension,
+    emergingField,
+    topN: 5,
+  });
+
+  const activatedThoughts = {
+    items: activatedThoughtsResult.activatedThoughts || [],
+    topThoughtIds: activatedThoughtsResult.topThoughtIds || [],
+    activationMeta: activatedThoughtsResult.activationMeta || {
+      totalCandidates: 0,
+      selectedCount: 0,
+      dominantAxes: [],
+    },
+  };
+  preconditionTrace.push('dynamic:after-activate-thoughts');
+
   const freshLatentState = {
     ...initialState,
     // Raw latent layers (live latent substrate) — preserved as-is, not compressed
@@ -489,6 +573,8 @@ export function runInternalOS(input, options = {}) {
     permission,
     // Decision layer
     decision,
+    // Activated thoughts (Phase 4)
+    activatedThoughts,
     // Legacy/backward compatibility
     existence: {
       layer1: existenceLayer1,
@@ -516,6 +602,7 @@ export function runInternalOS(input, options = {}) {
         preconditionFilter,
         preconditionBias,
         decision,
+        activatedThoughts,
         existence: {
           layer1: existenceLayer1,
           layer2: existenceLayer2,
