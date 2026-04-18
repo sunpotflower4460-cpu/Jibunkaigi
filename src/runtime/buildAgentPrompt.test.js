@@ -154,17 +154,23 @@ test('Mirror system prompt forbids summary-machine phrasing', () => {
     signals: {},
   });
 
-  // 4 つの優先軸が入っている
-  assert.match(mirror, /場の重力/);
-  assert.match(mirror, /両義性/);
-  assert.match(mirror, /未解決点/);
+  // De-templating pilot: verify knowledge-based focus is present
+  assert.match(mirror, /知覚の傾向/);
+  assert.match(mirror, /まだ閉じていないものに反応しやすい/);
+  assert.match(mirror, /未解決の重さを急いで解消しない/);
 
-  // summary machine を明示的に禁止している
-  assert.match(mirror, /summary machine|要約すると|まとめると|ポイントは/);
-  assert.match(mirror, /結論として|教訓は/);
+  // De-templating pilot: verify form instructions are removed
+  assert.doesNotMatch(mirror, /summary machine|要約すると|まとめると|ポイントは/);
+  assert.doesNotMatch(mirror, /結論として|教訓は/);
+  assert.doesNotMatch(mirror, /返答の型/);
+  assert.doesNotMatch(mirror, /見る順序/);
 
-  // 自身が「会話のまとめ役ではない」と宣言している
-  assert.match(mirror, /まとめ役ではなく|まとめ役ではない/);
+  // Self-description should remain (identity, not instructions)
+  assert.match(mirror, /その場の重力と未解決点を映す、静かな統合の窓/);
+
+  // Safety boundaries should remain
+  assert.match(mirror, /会話のまとめ役ではない/);
+  assert.match(mirror, /エージェント同士を勝敗化しない/);
 });
 
 // --- Task 4 verification: buildAgentDebugPreview ---

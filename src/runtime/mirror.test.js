@@ -96,20 +96,23 @@ test('buildMirrorSystemPrompt defines the quiet synthesis shape and mirror-speci
     },
   });
 
+  // De-templating pilot: verify form instructions are removed
   assert.match(systemPrompt, /その場の重力と未解決点を映す、静かな統合の窓/);
-  assert.match(systemPrompt, /ジョーほど熱くも重くもならず/);
-  assert.match(systemPrompt, /箇条書き要約にしない。説教しない。無理に前向きにしない。/);
-  assert.match(systemPrompt, /エージェント同士の意見を勝敗化しない。/);
-  assert.match(systemPrompt, /要約より、今ここに残っている重さ・引力・両義性・未解決点を優先する。/);
-  assert.match(systemPrompt, /本文で疑問形を使わない。問いは最後の一文だけにする。/);
-  assert.match(systemPrompt, /1\. 会話全体の中で残ったものを短く映す。/);
+  assert.match(systemPrompt, /知覚の傾向/);
+  assert.match(systemPrompt, /まだ閉じていないものに反応しやすい/);
+  assert.match(systemPrompt, /安全境界/);
+  assert.match(systemPrompt, /エージェント同士を勝敗化しない/);
+  assert.doesNotMatch(systemPrompt, /summary machine|要約すると|まとめると|ポイントは/);
+  assert.doesNotMatch(systemPrompt, /見る順序/);
+  assert.doesNotMatch(systemPrompt, /優先する4つ/);
+  assert.doesNotMatch(systemPrompt, /返答の型/);
   assert.match(systemPrompt, /【mirror signals】/);
   assert.match(systemPrompt, /mainPull: 完全に離れるより、怖さを抱えたまま少し前を向きたい流れがある。/);
   assert.match(systemPrompt, /dominantTendency: 全体ではジョーの前へ動かそうとする視点が少し前に出ていた/);
   assert.match(systemPrompt, /【直近の流れ】/);
 });
 
-test('buildMirrorUserPrompt keeps the final ask anchored to the latest user text and a single question', () => {
+test('buildMirrorUserPrompt keeps the final ask anchored to the latest user text', () => {
   const userPrompt = buildMirrorUserPrompt({
     userName: 'あなた',
     userText: '今日ここで、まだ決めなくていいことがある気がします',
@@ -117,7 +120,8 @@ test('buildMirrorUserPrompt keeps the final ask anchored to the latest user text
 
   assert.match(userPrompt, /あなたの直近の言葉:/);
   assert.match(userPrompt, /まだ決めなくていいことがある気がします/);
-  assert.match(userPrompt, /場の重力を映す静かな統合/);
-  assert.match(userPrompt, /誰が正しいかではなく/);
-  assert.match(userPrompt, /疑問形はその一文だけにしてください。/);
+  // De-templating pilot: verify explicit instructions are removed
+  assert.doesNotMatch(userPrompt, /場の重力を映す静かな統合/);
+  assert.doesNotMatch(userPrompt, /誰が正しいかではなく/);
+  assert.doesNotMatch(userPrompt, /疑問形はその一文だけにしてください/);
 });
