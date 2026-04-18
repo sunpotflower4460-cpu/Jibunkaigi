@@ -31,6 +31,7 @@ import { activateAgent } from './runtime/activateAgent';
 import { buildAgentSystemPrompt, buildAgentUserPrompt, buildAgentDebugPreview } from './runtime/buildAgentPrompt';
 import { buildPromptContext } from './runtime/context';
 import { buildMirrorSystemPrompt, buildMirrorUserPrompt, selectMirrorSignals } from './runtime/mirror';
+import { summarizeToOthersField, renderOthersFieldForPrompt, formatOthersFieldForDebug } from './runtime/othersField';
 import { buildAgentStateGuide } from './runtime/buildAgentStateGuide';
 import { buildAgentInternalFrame } from './runtime/buildAgentInternalFrame';
 import { buildAgentSurfaceGuidance } from './runtime/buildAgentSurfaceGuidance';
@@ -1313,6 +1314,28 @@ const App = () => {
     let aiMsgId = null;
     let aiPersistenceState = 'not-created';
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // others_field の生成 (顕在層 v0.1)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 先行エージェントの発話から OthersField を生成し、
+    // 後続エージェントが「場の残響」として読めるようにする
+    const othersFieldEntries = [];
+    for (const msg of baseMessages) {
+      if (msg?.role === 'ai' && msg.agentId && msg.content) {
+        const entry = summarizeToOthersField(msg.agentId, msg.content);
+        if (entry) {
+          othersFieldEntries.push(entry);
+        }
+      }
+    }
+    const othersFieldText = renderOthersFieldForPrompt(othersFieldEntries, false);
+    const othersFieldDebug = formatOthersFieldForDebug(othersFieldEntries);
+    if (othersFieldDebug) {
+      console.info("[others_field]", othersFieldDebug);
+      pushAgentDebugEvent({ tag: 'others_field', count: othersFieldEntries.length, preview: othersFieldDebug });
+    }
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
     let activated = null;
     if (isMaster) {
       const mirrorContext = buildPromptContext({
@@ -1352,6 +1375,7 @@ const App = () => {
         stateGuide: mirrorStateGuide,
         internalFrame: mirrorInternalFrame,
         surfaceGuidance: mirrorSurfaceGuidance,
+        othersField: othersFieldText,
       });
       promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
       const mirrorUsedAfterglow = !!(
@@ -1468,6 +1492,7 @@ const App = () => {
           stateGuide: agentStateGuide,
           internalFrame: agentInternalFrame,
           surfaceGuidance: agentSurfaceGuidance,
+          othersField: othersFieldText,
         });
       } catch (err) {
         handlePhaseError('system-prompt', err);
