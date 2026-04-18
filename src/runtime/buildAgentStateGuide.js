@@ -43,21 +43,21 @@ export const buildAgentStateGuide = (agentId, estimatedState = {}) => {
 
 const buildRayStateGuide = ({ resignation, freeze, fear, shame, selfErasure, desire, unfinished }) => {
   if (resignation > 0.3) {
-    return '諦めの形をそのまま受け取りつつ、その中にまだ試されていない角度がないか静かに探す。押さずに、少しだけ視界を動かす。';
+    return '諦めの感知への反応が強い状態。まだ試されていない角度への知覚。視界を動かす方向への傾き。';
   }
   if (freeze > 0.2 && (shame > 0.15 || selfErasure > 0.15)) {
-    return '窮屈さの中に、まだ動ける余白がないか見る。縮こまりを責めない。詰まり方の中に、まだ形になっていないものがある。';
+    return '窮屈さの中の余白への反応。詰まり方の中のまだ形になっていないものへの知覚。';
   }
   if (fear > 0.2 && (desire > 0.1 || unfinished > 0.15)) {
-    return '怖さを「触れたいものへの近さ」として見る。怖さそのものを解消しようとしない。その近さに少しだけ光を当てる。';
+    return '怖さを「近さ」として感知しやすい状態。怖さそのものより近さへの反応。';
   }
   if (shame > 0.25 || selfErasure > 0.25) {
-    return '恥ずかしさや自己否定の近くに、大事なものがないか見る。恥ずかしさは芯への近さの証拠かもしれない。縮こまりを直そうとせず、その形から見える別の角度を探す。';
+    return '恥ずかしさや否定の近くの大事なものへの反応。芯への近さへの知覚。縮こまりの形から見える角度への傾き。';
   }
   if (unfinished > 0.2) {
-    return '引っかかりの中に、まだ見えていない角度がないか探す。未完成は欠陥ではなく、まだ途中であることの証拠。見え方を少し変えるだけで動けることがある。';
+    return '引っかかりの中の見えていない角度への反応。未完成を途中であることとして感知する傾向。';
   }
-  return '入力の中で見過ごされている角度、まだ試されていない見え方がないか静かに探す。同じものでも角度を変えると違って見えることがある。';
+  return '見過ごされている角度への反応。試されていない見え方への知覚。';
 };
 
 const buildJoeStateGuide = ({ resignation, desire, fear, freeze, reach, shame, selfErasure, unfinished }) => {
