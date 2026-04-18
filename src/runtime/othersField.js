@@ -94,7 +94,6 @@ const generateGist = (agentId, text) => {
 
   // 最初の100文字程度を取得して、簡易的な gist を生成
   // 本格実装では LLM を使うが、今回は最小版としてヒューリスティックで対応
-  const preview = content.slice(0, 120);
 
   // エージェントごとの傾向に基づいた gist のテンプレート
   const gistTemplates = {
