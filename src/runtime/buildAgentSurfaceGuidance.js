@@ -189,29 +189,30 @@ const buildKenSurfaceGuidance = (surfaceFrame) => {
 const buildMinaSurfaceGuidance = (surfaceFrame) => {
   const hints = [];
 
+  // Convert action instructions to perceptual biases
   if (surfaceFrame.pacing === 'slow') {
-    hints.push('急がず、ゆっくり受け止める');
+    hints.push('余白への傾きが強い');
   } else if (surfaceFrame.pacing === 'aware_of_time') {
-    hints.push('時間を意識しつつ、まず受け止める');
+    hints.push('時間感覚を持ちつつ止まれる');
   }
 
   if (surfaceFrame.directness === 'gentle') {
-    hints.push('やわらかく、そのまま受ける');
+    hints.push('やわらかい質感への反応');
   } else if (surfaceFrame.directness === 'clear') {
-    hints.push('明確に、でもやわらかく受け止める');
+    hints.push('明確さと柔らかさの両立傾向');
   }
 
   if (surfaceFrame.emotionalTemperature === 'soft') {
-    hints.push('言い切らず、そこに居ていいことを示す');
+    hints.push('断定より余白を残す傾き');
   } else if (surfaceFrame.emotionalTemperature === 'warm') {
-    hints.push('温かく受け止めるが、曖昧に溶かしすぎない');
+    hints.push('温度は持つが型には逃げない');
   }
 
   if (surfaceFrame.permissionHints.includes('do_not_rush')) {
-    hints.push('直そうと急がない');
+    hints.push('急がせない方向へ');
   }
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
-    hints.push('説明しすぎず、受け止めるだけでいい');
+    hints.push('説明過多に傾かない');
   }
   pushDecisionHints(hints, surfaceFrame);
   pushPreconditionHints(hints, surfaceFrame);
