@@ -11,6 +11,7 @@ import {
   normalizeRevisionLabels,
   parseOuterGuideSections,
 } from './compareInsights.js'
+import { getReservoirStats } from '../reservoir/loadReservoir.js'
 
 const normalize = (text = '') => (text ?? '').toString().trim()
 const openingKey = (text = '') => {
@@ -45,6 +46,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.restraintPreview] - Decision Layer restraint preview (dev-only)
  * @param {object} [params.decisionMetaPreview] - Decision Layer meta preview (dev-only)
  * @param {object} [params.layerBoundaryPreview] - latent / derived / dynamic boundary preview (dev-only)
+ * @param {object} [params.reservoirPreview] - Reservoir stats preview (dev-only)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -72,6 +74,7 @@ export const buildCompareViewModel = ({
   restraintPreview = null,
   decisionMetaPreview = null,
   layerBoundaryPreview = null,
+  reservoirPreview = null,
   focusBiasApplied = false,
   meaningBiasApplied = false,
   identityBiasApplied = null,
@@ -310,6 +313,9 @@ export const buildCompareViewModel = ({
     },
   } : null
 
+  // Reservoir Preview (dev-only) - 顕在層 v0.1 particle reservoir
+  const normalizedReservoirPreview = reservoirPreview || (agentId ? getReservoirStats(agentId) : null)
+
   return {
     agentId,
     userText: user,
@@ -351,6 +357,7 @@ export const buildCompareViewModel = ({
     restraintPreview: normalizedRestraintPreview,
     decisionMetaPreview: normalizedDecisionMetaPreview,
     layerBoundaryPreview: normalizedLayerBoundaryPreview,
+    reservoirPreview: normalizedReservoirPreview,
     focusBiasApplied: Boolean(focusBiasApplied),
     meaningBiasApplied: Boolean(meaningBiasApplied),
     identityBiasApplied: identityBiasApplied ?? null,
@@ -376,6 +383,7 @@ export const buildCompareViewModel = ({
       hasRestraintPreview: Boolean(normalizedRestraintPreview),
       hasDecisionMetaPreview: Boolean(normalizedDecisionMetaPreview),
       hasLayerBoundaryPreview: Boolean(normalizedLayerBoundaryPreview),
+      hasReservoirPreview: Boolean(normalizedReservoirPreview),
     },
   }
 }

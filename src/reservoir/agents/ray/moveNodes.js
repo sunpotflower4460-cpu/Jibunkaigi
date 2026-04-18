@@ -1,0 +1,12 @@
+/**
+ * Ray's move nodes
+ *
+ * Phase 0: Empty - to be populated later
+ */
+
+import { NodeOwners, NodeCategories } from '../../types.js';
+
+/**
+ * @type {import('../../types.js').MoveNode[]}
+ */
+export const rayMoveNodes = [];
