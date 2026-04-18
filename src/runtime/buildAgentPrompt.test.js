@@ -77,7 +77,8 @@ test('each agent system prompt contains its own voice differentiation block', ()
   assert.match(buildAgentSystemPrompt('creative', baseParams), /【ジョーの触れ方/);
   // Ray now uses perceptual tendencies instead of "触れ方" section (de-templating pilot)
   assert.match(buildAgentSystemPrompt('soul', baseParams), /【知覚傾向】/);
-  assert.match(buildAgentSystemPrompt('strategist', baseParams), /【ケンの触れ方/);
+  // Ken now uses perceptual tendencies instead of "触れ方" section (de-templating pilot)
+  assert.match(buildAgentSystemPrompt('strategist', baseParams), /【知覚傾向】/);
   // Mina now uses perceptual tendencies instead of "触れ方" section
   assert.match(buildAgentSystemPrompt('empath', baseParams), /【ミナの知覚傾向】/);
   // Satou now uses perceptual tendencies instead of "触れ方" section

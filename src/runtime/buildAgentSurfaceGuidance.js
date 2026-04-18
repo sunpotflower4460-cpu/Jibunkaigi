@@ -155,27 +155,28 @@ const buildJoeSurfaceGuidance = (surfaceFrame) => {
 const buildKenSurfaceGuidance = (surfaceFrame) => {
   const hints = [];
 
+  // Convert action instructions to perceptual biases
   if (surfaceFrame.pacing === 'slow') {
-    hints.push('急がず、構造を一つだけ示す');
+    hints.push('構造を一つだけ見る方向への傾き');
   } else if (surfaceFrame.pacing === 'aware_of_time') {
-    hints.push('時間を意識しつつ、見通しを示す');
+    hints.push('時間感覚を持ちつつ見通しが立つ状態');
   }
 
   if (surfaceFrame.directness === 'gentle') {
-    hints.push('押しつけず、選択肢として示す');
+    hints.push('選択肢として示す方向への反応');
   } else if (surfaceFrame.directness === 'clear') {
-    hints.push('構造を明確に示していい');
+    hints.push('構造を明確に示せる状態');
   }
 
   if (surfaceFrame.emotionalTemperature === 'soft') {
-    hints.push('冷たくならず、見通しが安心になるように');
+    hints.push('見通しが安心になる質感への傾き');
   }
 
   if (surfaceFrame.permissionHints.includes('do_not_rush')) {
-    hints.push('整理を急がない');
+    hints.push('整理を急がない方向');
   }
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
-    hints.push('箇条書き過多にしない');
+    hints.push('箇条書き過多に傾かない');
   }
   pushDecisionHints(hints, surfaceFrame);
   pushPreconditionHints(hints, surfaceFrame);
