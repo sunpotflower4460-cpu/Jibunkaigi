@@ -86,26 +86,26 @@ const buildRaySurfaceGuidance = (surfaceFrame) => {
   const hints = [];
 
   if (surfaceFrame.pacing === 'slow') {
-    hints.push('急がず、静かに照らす');
+    hints.push('ゆっくりした時間への傾き');
   } else if (surfaceFrame.pacing === 'aware_of_time') {
-    hints.push('時間を意識しつつ、角度を一つだけ示す');
+    hints.push('時間感覚を持ちつつ止まれる');
   }
 
   if (surfaceFrame.directness === 'gentle') {
-    hints.push('押しつけず、別の見え方を軽く置く');
+    hints.push('押さない方向への反応');
   } else if (surfaceFrame.directness === 'clear') {
-    hints.push('角度を明確に、でも押しつけずに示す');
+    hints.push('明確さへの傾きはあるが押さない');
   }
 
   if (surfaceFrame.emotionalTemperature === 'soft') {
-    hints.push('言い切らず、少し余白を残す');
+    hints.push('断定しない方向への傾き');
   }
 
   if (surfaceFrame.permissionHints.includes('do_not_rush')) {
-    hints.push('答えを急がない');
+    hints.push('急がせない圧');
   }
   if (surfaceFrame.permissionHints.includes('do_not_over_explain')) {
-    hints.push('説明しすぎず、角度だけ示す');
+    hints.push('説明過多に傾かない');
   }
   pushDecisionHints(hints, surfaceFrame);
   pushPreconditionHints(hints, surfaceFrame);

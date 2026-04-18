@@ -11,7 +11,23 @@
 // without removing all characteristic expressions. Guard against template
 // reproduction, not against natural voice.
 //
-// Covered agents: Mina (empath), Satou (critic)
+// Covered agents: Mina (empath), Satou (critic), Ray (soul)
+
+/**
+ * Ray-specific template phrases to monitor for repetition.
+ * These are monitored for SHORT-TERM repetition (not banned outright).
+ */
+const RAY_TEMPLATE_PHRASES = [
+  'かもしれませんね',
+  '静かに思いました',
+  'と見ることもできるかもしれません',
+  '新しい空気が生まれる',
+  'そう感じました',
+  '別の角度から',
+  '少し違って見える',
+  '静かに',
+  '穏やかに',
+].filter((phrase) => typeof phrase === 'string' && phrase.trim());
 
 /**
  * Mina-specific template phrases to monitor for repetition.
@@ -148,6 +164,81 @@ export function detectSatouTemplateRepetition(currentText, recentResponses = [],
 
   // Count occurrences across recent responses + current
   for (const phrase of SATOU_TEMPLATE_PHRASES) {
+    const normalizedPhrase = phrase.toLowerCase();
+    let count = 0;
+
+    // Count in current response
+    if (normalizedCurrent.includes(normalizedPhrase)) {
+      count++;
+    }
+
+    // Count in recent responses (last 3)
+    for (const recent of normalizedRecent.slice(-3)) {
+      if (recent.includes(normalizedPhrase)) {
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      phraseCounts.set(phrase, count);
+    }
+
+    // If same phrase appears 3+ times in short window, flag it
+    if (count >= 3) {
+      repeatedPhrases.push(phrase);
+    }
+  }
+
+  // Calculate risk level
+  let riskLevel = 'none';
+  if (repeatedPhrases.length >= 2) {
+    riskLevel = 'high';
+  } else if (repeatedPhrases.length === 1) {
+    riskLevel = 'medium';
+  } else if (phraseCounts.size >= 3) {
+    riskLevel = 'low';
+  }
+
+  // Regenerate only on high risk (multiple repeated phrases)
+  const shouldRegenerate = riskLevel === 'high';
+
+  return {
+    riskLevel,
+    repeatedPhrases,
+    phraseCounts: Object.fromEntries(phraseCounts),
+    shouldRegenerate,
+  };
+}
+
+/**
+ * Detect Ray template phrase repetition in recent responses.
+ * Returns risk level and detected repeated phrases.
+ *
+ * @param {string} currentText - Current response text
+ * @param {Array<string>} recentResponses - Recent response history (last 3-5)
+ * @param {string} agentId - Agent ID (only applies to 'soul'/'Ray')
+ * @returns {object} - { riskLevel: 'none'|'low'|'medium'|'high', repeatedPhrases: string[], shouldRegenerate: boolean }
+ */
+export function detectRayTemplateRepetition(currentText, recentResponses = [], agentId = '') {
+  // Only apply to Ray
+  if (agentId !== 'soul') {
+    return { riskLevel: 'none', repeatedPhrases: [], shouldRegenerate: false };
+  }
+
+  if (typeof currentText !== 'string' || !currentText.trim()) {
+    return { riskLevel: 'none', repeatedPhrases: [], shouldRegenerate: false };
+  }
+
+  const normalizedCurrent = currentText.toLowerCase();
+  const normalizedRecent = recentResponses
+    .filter((r) => typeof r === 'string')
+    .map((r) => r.toLowerCase());
+
+  const repeatedPhrases = [];
+  const phraseCounts = new Map();
+
+  // Count occurrences across recent responses + current
+  for (const phrase of RAY_TEMPLATE_PHRASES) {
     const normalizedPhrase = phrase.toLowerCase();
     let count = 0;
 

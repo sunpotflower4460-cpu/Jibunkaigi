@@ -21,6 +21,74 @@ export const truncateForDebug = (text, max = 140) => {
   return trimmed.length > max ? trimmed.slice(0, max) + '…' : trimmed;
 };
 
+/**
+ * Build de-templating metrics for Ray (zero-instruction pilot)
+ * @param {object} params
+ * @param {string} params.agentId - Agent ID (only applies to 'soul'/'Ray')
+ * @param {string} params.systemPrompt - Generated system prompt
+ * @param {string} params.userPrompt - Generated user prompt
+ * @param {object} params.stateGuide - State guide text
+ * @param {object} params.surfaceGuidance - Surface guidance text
+ * @param {boolean} params.usedDecisionLayer - Whether decision layer was used
+ * @returns {object|null} - De-templating metrics or null if not Ray
+ */
+export const buildDetemplatingMetrics = ({
+  agentId = '',
+  systemPrompt = '',
+  userPrompt = '',
+  stateGuide = '',
+  surfaceGuidance = '',
+  usedDecisionLayer = false,
+} = {}) => {
+  // Only apply to Ray
+  if (agentId !== 'soul') return null;
+
+  const fullPrompt = `${systemPrompt}\n${userPrompt}`;
+
+  // Count template directives removed (rough heuristic)
+  const hasNoAssemblySteps = !fullPrompt.includes('まず') || !fullPrompt.includes('次に');
+  const hasNoExamplePhrases = !fullPrompt.includes('〜ですね') && !fullPrompt.includes('〜かもしれません');
+  const hasNoQualityContract = !systemPrompt.includes('品質基準');
+
+  const templateDirectivesRemoved =
+    (hasNoAssemblySteps ? 2 : 0) +
+    (hasNoExamplePhrases ? 2 : 0) +
+    (hasNoQualityContract ? 2 : 0);
+
+  // Count direct role phrases in prompt (should be 0 for zero-instruction)
+  let directRolePhraseCount = 0;
+  const rolePhrasePatterns = [
+    /こう返せ/gi,
+    /こういう書き出し/gi,
+    /返答の組み立て方/gi,
+    /返答の運び方/gi,
+  ];
+  for (const pattern of rolePhrasePatterns) {
+    const matches = systemPrompt.match(pattern);
+    if (matches) directRolePhraseCount += matches.length;
+  }
+
+  // Check if latent state and decision layer are used
+  const latentStateUsed = systemPrompt.includes('内的バイアス') || systemPrompt.includes('推定状態メモ');
+  const decisionStageUsed = usedDecisionLayer || systemPrompt.includes('今回の状態への対応');
+
+  // Estimate template repeat risk based on stateGuide/surfaceGuidance patterns
+  let templateRepeatRisk = 'low';
+  if (stateGuide && stateGuide.length > 200) templateRepeatRisk = 'medium';
+  if (surfaceGuidance && surfaceGuidance.includes('照らす') && surfaceGuidance.includes('示す')) {
+    templateRepeatRisk = 'high';
+  }
+
+  return {
+    templateDirectivesRemoved,
+    directRolePhraseCount,
+    latentStateUsed,
+    decisionStageUsed,
+    templateRepeatRisk,
+    zeroInstructionScore: templateDirectivesRemoved >= 4 && directRolePhraseCount === 0 ? 'high' : 'partial',
+  };
+};
+
 // Build a short internal guidance preview from surfaceFrame (mirrors logic in buildPrompt / mirror)
 const buildGuidancePreview = (surfaceFrame, isMirror) => {
   if (!surfaceFrame) return '';
@@ -103,5 +171,7 @@ export const buildSurfaceDebugEntry = ({
     identityBiasApplied: continuityInternalOS?.debugInfo?.identityBiasApplied ?? null,
     // dev-only agent quality preview (no raw prompts)
     agentQualityPreview: agentQualityPreview || null,
+    // de-templating metrics (Ray pilot)
+    detemplatingMetrics: frame.detemplatingMetrics || null,
   };
 };
