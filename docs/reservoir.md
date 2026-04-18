@@ -13,14 +13,20 @@ Reservoir は、顕在層（Surface Layer）v0.1 の第2段階として実装さ
 
 ## 実装状況
 
-### Phase 0 (現在)
+### Phase 0 (現在) - 最小初期 thought 粒子セット投入完了
 
 - ✅ 型定義（ThoughtNode, FeelingNode, MoveNode, NodeRelation）
 - ✅ ファイル構成（shared, agents, relations）
 - ✅ Loader 関数（getThoughtReservoir など）
 - ✅ compare/debug サポート（reservoir stats）
-- ✅ 最小初期セット（thought 粒子のみ、約10個）
+- ✅ **最小初期セット投入完了**
+  - shared thought: 5粒子
+  - agent thought: 各3粒子 × 5エージェント (Joe/Mina/Ray/Ken/Satou) = 15粒子
+  - 合計 20粒子
+  - 最小 relation: 8本 (shared 3本 + agent 5本)
+- ✅ anti-triggers を最初から含む（activate 段階で使用予定）
 - ⏸️ feeling / move は placeholder のみ（今後実装）
+- ⏸️ mirror の thought 粒子は後回し（others_field と連携段階で投入予定）
 
 ### 今後の段階
 
@@ -164,16 +170,43 @@ const stats = getReservoirStats('joe');
 ### Good Examples（良い例）
 
 ```javascript
+// Shared thought - 何が比較されているか、何を失った気がするか
 {
   id: 'shared-thought-001',
   owner: 'shared',
   category: 'thought',
-  textSeed: 'what is not yet said',           // ✅ 種
-  tags: ['unsaid', 'holding'],
-  axis: ['presence'],
-  triggers: ['pause', 'hesitation'],
-  antiTriggers: ['rush', 'closure-pressure'],
-  weight: 0.7,
+  textSeed: 'what is being compared, what feels lost in comparing',
+  tags: ['comparison', 'loss', 'measure'],
+  axis: ['structure', 'holding'],
+  triggers: ['comparison-present', 'inadequacy', 'measure-against'],
+  antiTriggers: ['acceptance-only', 'dismissal'],
+  weight: 0.75,
+}
+
+// Joe thought - まだ残っている方向性、消えていない
+{
+  id: 'joe-thought-001',
+  owner: 'joe',
+  category: 'thought',
+  textSeed: 'direction that remains, not erased',
+  tags: ['vitality', 'direction', 'remaining'],
+  axis: ['illumination'],
+  triggers: ['life-present', 'energy-detected', 'remnant-force'],
+  antiTriggers: ['forced-positivity', 'generic-hope'],
+  weight: 0.85,
+}
+
+// Ken thought - 身体感覚が前景化している場では抑制される
+{
+  id: 'ken-thought-001',
+  owner: 'ken',
+  category: 'thought',
+  textSeed: 'questions entangled, which is which',
+  tags: ['structure', 'separation', 'clarity'],
+  axis: ['structure'],
+  triggers: ['confusion', 'multiple-layers', 'entanglement'],
+  antiTriggers: ['body-foregrounded', 'raw-feeling-dominant'], // ✅ activate段階で抑制
+  weight: 0.78,
 }
 ```
 
@@ -184,6 +217,7 @@ const stats = getReservoirStats('joe');
   textSeed: 'それは大丈夫だよ、まだ時間はあるから', // ❌ 完成文
   textSeed: 'こう言えばジョーっぽい',              // ❌ 発話指示
   textSeed: '前向きに返す',                       // ❌ 返答方針
+  textSeed: '「無理しなくていいよ」と伝える',      // ❌ 発話テンプレ
 }
 ```
 
@@ -228,28 +262,52 @@ reservoir: sharedFeeling=1 / joeFeeling=0
 reservoir: relations=0
 ```
 
-## USER が次に書くべきもの
+## Phase 0 実装完了内容
 
-### Phase 0 の核粒子（合計20粒子前後）
+### ✅ 投入済み thought 粒子（合計20個）
 
-1. **各エージェントの thought 粒子を 3個ずつ追加**:
-   - ジョー: `src/reservoir/agents/joe/thoughtNodes.js`
-   - ミナ: `src/reservoir/agents/mina/thoughtNodes.js`
-   - レイ: `src/reservoir/agents/ray/thoughtNodes.js`
-   - ケン: `src/reservoir/agents/ken/thoughtNodes.js`
-   - サトウ: `src/reservoir/agents/satou/thoughtNodes.js`
-   - 心の鏡: `src/reservoir/agents/mirror/thoughtNodes.js`
+1. **shared thought 粒子: 5個**
+   - 比較している時、何を失った気がするか
+   - 今の痛みは何を守ろうとしているか
+   - 急いで答えを出したい理由は何か
+   - 本当は二つの問いが重なっていないか
+   - まだ閉じたくないものが残っていないか
 
-2. **shared thought 粒子を追加**:
-   - 現在5個 → さらに追加可能（`src/reservoir/shared/thoughtNodes.js`）
+2. **agent thought 粒子: 各3個 × 5エージェント = 15個**
+   - **Joe (3個)**: まだ残っている向きに目が行く / 消えきっていない力 / 折れたのではなく押し込められた可能性
+   - **Mina (3個)**: ほどける余地 / 崩れたまま置ける場所 / 進めない理由を責めずに見る
+   - **Ray (3個)**: 言葉になる前の揺れ / まだ意味にしなくてよいもの / 曖昧さの中に残っている気配
+   - **Ken (3個)**: 二つの問いが混ざっていないか / どこが結び目か / 表面の言葉と本音のズレ
+   - **Satou (3個)**: 足場が失われていないか / 理想と現実の断絶 / 何を先に支えないと崩れるか
 
-### 今はまだ不要
+3. **最小 relation: 8本**
+   - shared 同士: 3本
+   - agent → shared: 5本
+   - relationType: supports / extends / tensions_with / grounds / softens
 
-- feeling を大量に書くこと
-- move を大量に書くこと
-- relation を全部埋めること
+### ✅ anti-triggers の投入
 
-まずは thought の核だけで十分です。
+- **Ken**: 身体感覚が強く前景化している場では構造粒子が抑制される
+- **Mina**: 即答・solution圧の場でholding粒子がむしろ立ちやすくなる設計
+- **Satou**: 甘い受容だけで閉じそうな場では grounding 粒子が残る
+
+### 次の段階へ向けて
+
+USER が確認すべきこと:
+1. 各エージェントの thought が返答文ではなく**思考の種**になっているか
+2. Joe / Mina / Ray / Ken / Satou の thought が本当に**違う方向**を向いているか
+3. Ken の構造 thought が説明テンプレになっていないか
+4. Mina の thought が受容文テンプレになっていないか
+5. Satou の thought が兄貴発話そのものになっていないか
+
+### 今後の実装（今回は対象外）
+
+- feeling 粒子の本投入
+- move 粒子の本投入
+- activate の本実装
+- bind の本実装
+- select の本実装
+- mirror の thought 粒子本投入（others_field と連携段階で）
 
 ## 参考
 

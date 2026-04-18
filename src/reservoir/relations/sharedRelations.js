@@ -13,13 +13,25 @@ import { RelationTypes } from '../types.js';
  * @type {import('../types.js').NodeRelation[]}
  */
 export const sharedRelations = [
-  // Phase 0: Empty - to be populated when bind is implemented
-  // Example structure:
-  // {
-  //   id: 'rel-001',
-  //   from: 'shared-thought-001',
-  //   to: 'shared-thought-003',
-  //   relationType: RelationTypes.SUPPORTS,
-  //   weight: 0.6,
-  // },
+  {
+    id: 'rel-001',
+    from: 'shared-thought-002',
+    to: 'shared-thought-005',
+    relationType: RelationTypes.SUPPORTS,
+    weight: 0.7,
+  },
+  {
+    id: 'rel-002',
+    from: 'shared-thought-004',
+    to: 'shared-thought-003',
+    relationType: RelationTypes.TENSIONS_WITH,
+    weight: 0.65,
+  },
+  {
+    id: 'rel-003',
+    from: 'shared-thought-005',
+    to: 'shared-thought-003',
+    relationType: RelationTypes.TENSIONS_WITH,
+    weight: 0.6,
+  },
 ];
