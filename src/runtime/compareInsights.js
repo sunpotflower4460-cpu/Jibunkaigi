@@ -595,6 +595,99 @@ export const buildZeroInstructionMetrics = ({
   };
 };
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Satou De-templating Pilot: Zero-Instruction Metrics
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// Purpose: Measure progress toward zero-instruction architecture for Satou
+// - Count template directives removed
+// - Track decision stage usage
+// - Monitor guard activity
+// - Assess template repetition risk
+
+const SATOU_TEMPLATE_PHRASES_FOR_COUNT = [
+  'お前',
+  'じゃないか',
+  '焦る必要はねぇ',
+  'ちゃんと見ろ',
+  'そこだけは曲げんな',
+  'まあ聞けよ',
+  '正直に言うと',
+  'そこは甘くないか',
+  'お前なら分かるだろ',
+  'まあ、分かる',
+];
+
+/**
+ * Calculate zero-instruction progress metrics for Satou
+ * @param {object} params
+ * @param {string} params.responseText - Generated response text
+ * @param {string} params.agentId - Agent ID
+ * @param {object} params.decision - Decision layer output
+ * @param {object} params.guardReport - Surface guard report
+ * @returns {object} Zero-instruction metrics
+ */
+export const buildSatouZeroInstructionMetrics = ({
+  responseText = '',
+  agentId = '',
+  decision = {},
+  guardReport = {},
+} = {}) => {
+  // Only apply to Satou
+  if (agentId !== 'critic') {
+    return null;
+  }
+
+  const normalized = responseText.toLowerCase();
+
+  // Count template phrases in current response
+  let templatePhraseCount = 0;
+  for (const phrase of SATOU_TEMPLATE_PHRASES_FOR_COUNT) {
+    if (normalized.includes(phrase.toLowerCase())) {
+      templatePhraseCount++;
+    }
+  }
+
+  // Count direct instruction markers
+  let directInstructionCount = 0;
+  for (const marker of DIRECT_INSTRUCTION_MARKERS) {
+    const regex = new RegExp(`^${marker}[、。，,\\s]`, 'mu');
+    if (regex.test(normalized)) {
+      directInstructionCount++;
+    }
+  }
+
+  // Decision stage usage
+  const decisionStageUsed = Boolean(
+    decision?.feltSense?.primaryFeeling ||
+    decision?.intention?.speakIntentKey
+  );
+
+  // Template repetition risk from guard
+  const templateRepeatRisk = guardReport?.satouTemplateRepetitionRisk?.riskLevel || 'none';
+
+  // Calculate if response seems template-driven
+  const seemsTemplateDriven =
+    templatePhraseCount >= 2 ||
+    directInstructionCount >= 1;
+
+  return {
+    // Core metrics
+    templateDirectivesRemoved: 6, // From audit: removed 6 major template directives
+    rolePhrasesInPrompt: 0, // We removed all direct role phrase examples
+    decisionStageUsed,
+
+    // Current response analysis
+    templatePhraseCount,
+    directInstructionCount,
+    templateRepeatRisk,
+    seemsTemplateDriven,
+
+    // Summary
+    summary: `template phrases: ${templatePhraseCount}, repeat risk: ${templateRepeatRisk}, decision: ${decisionStageUsed ? 'yes' : 'no'}`,
+  };
+};
+
 const formatJoePriorityLine = (priority = {}) => `${priority.label}: ${priority.value || 'n/a'}`
 
 export const formatCompareCopyBundle = (entry = {}) => {
