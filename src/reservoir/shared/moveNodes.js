@@ -8,6 +8,10 @@
 
 import { NodeOwners, NodeCategories } from '../types.js';
 
+const tonalHints = ['中立的', '場として当然'];
+const stanceHints = ['そこにある', '動かさない'];
+const avoidHints = ['意図を付け加える'];
+
 /**
  * @type {import('../types.js').MoveNode[]}
  */
@@ -22,6 +26,9 @@ export const sharedMoveNodes = [
     triggers: ['incompleteness', 'still-alive', 'not-done'],
     antiTriggers: ['force-close', 'end-now'],
     weight: 0.73,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-move-002',
@@ -33,6 +40,9 @@ export const sharedMoveNodes = [
     triggers: ['uncertainty', 'need-confirm', 'check-urge'],
     antiTriggers: ['assume-known', 'skip-check'],
     weight: 0.7,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-move-003',
@@ -44,6 +54,9 @@ export const sharedMoveNodes = [
     triggers: ['too-close', 'overwhelm', 'need-distance'],
     antiTriggers: ['stay-merged', 'closer-pressure'],
     weight: 0.68,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-move-004',
@@ -55,6 +68,9 @@ export const sharedMoveNodes = [
     triggers: ['care', 'connection', 'draw-near'],
     antiTriggers: ['distance-required', 'space-needed'],
     weight: 0.71,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-move-005',
@@ -66,6 +82,9 @@ export const sharedMoveNodes = [
     triggers: ['not-now', 'pause-needed', 'timing-off'],
     antiTriggers: ['solve-now', 'force-complete'],
     weight: 0.69,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-move-006',
@@ -77,5 +96,50 @@ export const sharedMoveNodes = [
     triggers: ['delicate', 'gentle-approach', 'careful'],
     antiTriggers: ['grab', 'force-hold'],
     weight: 0.72,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'shared-move-007',
+    owner: NodeOwners.SHARED,
+    category: NodeCategories.MOVE,
+    textSeed: 'lingering while things settle',
+    tags: ['linger', 'settle', 'wait'],
+    axis: ['holding', 'presence'],
+    triggers: ['unsettled', 'still-moving', 'needs-time'],
+    antiTriggers: ['rush-conclusion', 'force-move'],
+    weight: 0.7,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'shared-move-008',
+    owner: NodeOwners.SHARED,
+    category: NodeCategories.MOVE,
+    textSeed: 'making room without filling it',
+    tags: ['room', 'space', 'allow'],
+    axis: ['presence', 'structure'],
+    triggers: ['crowded', 'need-space', 'overfull'],
+    antiTriggers: ['pack-in', 'close-gap'],
+    weight: 0.69,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'shared-move-009',
+    owner: NodeOwners.SHARED,
+    category: NodeCategories.MOVE,
+    textSeed: 'listening for what has no name yet',
+    tags: ['listening', 'nameless', 'edge'],
+    axis: ['illumination', 'presence'],
+    triggers: ['no-words', 'emerging', 'edge-of-language'],
+    antiTriggers: ['name-now', 'define-fast'],
+    weight: 0.71,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
 ];

@@ -132,34 +132,52 @@ describe('Reservoir Loader', () => {
     }
   });
 
-  // L2 Phase specific tests (thought expansion)
-  test('L2 Phase: shared thought count is 5', () => {
-    const nodes = getSharedThoughtNodes();
-    assert.strictEqual(nodes.length, 5, 'L2 Phase should have exactly 5 shared thought nodes');
+  // Expanded reservoir counts
+  test('Shared reservoirs reflect expanded counts', () => {
+    const sharedThought = getSharedThoughtNodes();
+    const sharedFeeling = getSharedFeelingNodes();
+    const sharedMove = getSharedMoveNodes();
+
+    assert.strictEqual(sharedThought.length, 8, 'Shared thought nodes should be 8');
+    assert.strictEqual(sharedFeeling.length, 9, 'Shared feeling nodes should be 9');
+    assert.strictEqual(sharedMove.length, 9, 'Shared move nodes should be 9');
   });
 
-  test('L2 Phase: Joe/Mina/Ray/Ken/Satou each have 5 thought nodes', () => {
-    const agents = ['joe', 'mina', 'ray', 'ken', 'satou'];
-    for (const agentId of agents) {
-      const nodes = getAgentThoughtNodes(agentId);
-      assert.strictEqual(nodes.length, 5, `${agentId} should have exactly 5 thought nodes in L2 Phase`);
+  test('Agent reservoirs reflect expanded counts', () => {
+    const expectations = {
+      joe: { thought: 7, feeling: 5, move: 5 },
+      ken: { thought: 6, feeling: 5, move: 5 },
+      mina: { thought: 6, feeling: 6, move: 5 },
+      ray: { thought: 6, feeling: 5, move: 5 },
+      satou: { thought: 5, feeling: 4, move: 5 },
+      mirror: { thought: 5, feeling: 4, move: 4 },
+    };
+
+    for (const [agentId, counts] of Object.entries(expectations)) {
+      assert.strictEqual(getAgentThoughtNodes(agentId).length, counts.thought, `${agentId} thought count`);
+      assert.strictEqual(getAgentFeelingNodes(agentId).length, counts.feeling, `${agentId} feeling count`);
+      assert.strictEqual(getAgentMoveNodes(agentId).length, counts.move, `${agentId} move count`);
     }
   });
 
-  test('L2 Phase: total thought count is ~30', () => {
+  test('Reservoir stats match shared + agent totals', () => {
     const stats = getReservoirStats('joe');
-    // 5 shared + 5 joe = 10 for joe's reservoir
-    assert.strictEqual(stats.totalThoughtCount, 10);
+    assert.strictEqual(stats.sharedThoughtCount, 8);
+    assert.strictEqual(stats.agentThoughtCount, 7);
+    assert.strictEqual(stats.totalThoughtCount, 15);
 
-    // Total across all agents: 5 shared + (5 × 5 agents) = 30
-    // But each agent's stats only show their own
-    assert.strictEqual(stats.sharedThoughtCount, 5);
-    assert.strictEqual(stats.agentThoughtCount, 5);
+    assert.strictEqual(stats.sharedFeelingCount, 9);
+    assert.strictEqual(stats.agentFeelingCount, 5);
+    assert.strictEqual(stats.totalFeelingCount, 14);
+
+    assert.strictEqual(stats.sharedMoveCount, 9);
+    assert.strictEqual(stats.agentMoveCount, 5);
+    assert.strictEqual(stats.totalMoveCount, 14);
   });
 
-  test('Phase 0: minimal relations exist', () => {
+  test('Expanded relations exist', () => {
     const relations = getNodeRelations('joe');
-    assert.ok(relations.length >= 8, 'Phase 0 should have at least 8 relations');
+    assert.ok(relations.length >= 36, 'Expanded reservoir should have at least 36 relations');
 
     // Check relation structure
     for (const rel of relations) {

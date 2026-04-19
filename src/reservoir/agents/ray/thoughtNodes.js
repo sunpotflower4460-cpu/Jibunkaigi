@@ -8,6 +8,10 @@
 
 import { NodeOwners, NodeCategories } from '../../types.js';
 
+const tonalHints = ['静か', '余白', '比喩的', '間を持つ'];
+const stanceHints = ['気配を映す', '直接は言わない', '奥を見る'];
+const avoidHints = ['直接的な言い切り', '過剰な比喩の連打', '説明的な語り'];
+
 /**
  * @type {import('../../types.js').ThoughtNode[]}
  */
@@ -22,6 +26,9 @@ export const rayThoughtNodes = [
     triggers: ['hesitation', 'forming', 'almost-visible'],
     antiTriggers: ['demand-articulation', 'name-it-now'],
     weight: 0.76,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'ray-thought-002',
@@ -33,6 +40,9 @@ export const rayThoughtNodes = [
     triggers: ['vague', 'unclear', 'multiple-meanings'],
     antiTriggers: ['clarity-demand', 'definition-pressure'],
     weight: 0.74,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'ray-thought-003',
@@ -44,6 +54,9 @@ export const rayThoughtNodes = [
     triggers: ['silence-alive', 'pause-meaningful', 'atmosphere'],
     antiTriggers: ['fill-silence', 'explain-away'],
     weight: 0.77,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'ray-thought-004',
@@ -55,6 +68,9 @@ export const rayThoughtNodes = [
     triggers: ['naming-urge', 'thinning-risk', 'conflict-in-clarity'],
     antiTriggers: ['force-define', 'must-articulate'],
     weight: 0.72,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'ray-thought-005',
@@ -66,5 +82,22 @@ export const rayThoughtNodes = [
     triggers: ['stillness-disrupted', 'noise-encroaching', 'gap-threatened'],
     antiTriggers: ['accept-static', 'let-noise-win'],
     weight: 0.73,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'ray-thought-006',
+    owner: NodeOwners.RAY,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'the thread that runs underneath',
+    tags: ['underthread', 'hidden', 'movement'],
+    axis: ['presence', 'illumination'],
+    triggers: ['background-flow', 'unspoken-connection', 'quiet-current'],
+    antiTriggers: ['overt-logic', 'surface-only'],
+    weight: 0.75,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
 ];

@@ -15,6 +15,10 @@
 
 import { NodeOwners, NodeCategories } from '../types.js';
 
+const tonalHints = ['中立的', '場として当然'];
+const stanceHints = ['そこにある', '動かさない'];
+const avoidHints = ['意図を付け加える'];
+
 /**
  * @type {import('../types.js').ThoughtNode[]}
  */
@@ -29,6 +33,9 @@ export const sharedThoughtNodes = [
     triggers: ['comparison-present', 'inadequacy', 'measure-against'],
     antiTriggers: ['acceptance-only', 'dismissal'],
     weight: 0.75,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-thought-002',
@@ -40,6 +47,9 @@ export const sharedThoughtNodes = [
     triggers: ['resistance', 'tension', 'defense'],
     antiTriggers: ['minimization', 'forced-release'],
     weight: 0.78,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-thought-003',
@@ -51,6 +61,9 @@ export const sharedThoughtNodes = [
     triggers: ['rush', 'answer-pressure', 'decision-demand'],
     antiTriggers: ['already-patient'],
     weight: 0.7,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-thought-004',
@@ -62,6 +75,9 @@ export const sharedThoughtNodes = [
     triggers: ['confusion', 'entanglement', 'complexity'],
     antiTriggers: ['simple-clear'],
     weight: 0.68,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-thought-005',
@@ -73,5 +89,50 @@ export const sharedThoughtNodes = [
     triggers: ['incompleteness', 'not-ready', 'still-alive'],
     antiTriggers: ['forced-closure', 'end-pressure'],
     weight: 0.72,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'shared-thought-006',
+    owner: NodeOwners.SHARED,
+    category: NodeCategories.THOUGHT,
+    textSeed: "something that hasn't settled yet",
+    tags: ['unsettled', 'moving', 'open'],
+    axis: ['presence', 'holding'],
+    triggers: ['still-shifting', 'no-rest', 'unsettled'],
+    antiTriggers: ['force-settle', 'conclude-fast'],
+    weight: 0.71,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'shared-thought-007',
+    owner: NodeOwners.SHARED,
+    category: NodeCategories.THOUGHT,
+    textSeed: "the space that doesn't need filling",
+    tags: ['space', 'rest', 'allowance'],
+    axis: ['presence', 'holding'],
+    triggers: ['silence-ok', 'not-yet', 'breathing-room'],
+    antiTriggers: ['fill-gap', 'force-content'],
+    weight: 0.69,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'shared-thought-008',
+    owner: NodeOwners.SHARED,
+    category: NodeCategories.THOUGHT,
+    textSeed: "what we don't have words for yet",
+    tags: ['preverbal', 'unknown', 'emerging'],
+    axis: ['illumination', 'presence'],
+    triggers: ['no-words', 'forming', 'edge-of-language'],
+    antiTriggers: ['name-too-fast', 'force-label'],
+    weight: 0.72,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
 ];

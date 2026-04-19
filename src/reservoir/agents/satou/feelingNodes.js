@@ -7,6 +7,10 @@
 
 import { NodeOwners, NodeCategories } from '../../types.js';
 
+const tonalHints = ['短い', '現実的', '角がある', 'ごまかさない'];
+const stanceHints = ['現実を示す', '必要なことだけ', '突き放さない'];
+const avoidHints = ['説教', '長い分析', '突き放す言い方'];
+
 /**
  * @type {import('../../types.js').FeelingNode[]}
  */
@@ -21,6 +25,9 @@ export const satouFeelingNodes = [
     triggers: ['foundation-unstable', 'ground-loss', 'shaking'],
     antiTriggers: ['bypass', 'nice-over-real'],
     weight: 0.72,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'satou-feeling-002',
@@ -32,6 +39,9 @@ export const satouFeelingNodes = [
     triggers: ['reality-call', 'ground-needed', 'ideal-floating'],
     antiTriggers: ['stay-in-fantasy', 'avoid-real'],
     weight: 0.7,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'satou-feeling-003',
@@ -43,5 +53,22 @@ export const satouFeelingNodes = [
     triggers: ['care-as-harsh', 'protection-misread', 'rejected-care'],
     antiTriggers: ['soften-truth', 'abandon-care'],
     weight: 0.68,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'satou-feeling-004',
+    owner: NodeOwners.SATOU,
+    category: NodeCategories.FEELING,
+    textSeed: 'edge felt when reality presses in',
+    tags: ['edge', 'reality', 'press'],
+    axis: ['structure', 'presence'],
+    triggers: ['reality-call', 'avoidance-detected', 'fantasy-gap'],
+    antiTriggers: ['sugarcoat', 'ignore-cuts'],
+    weight: 0.72,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
 ];

@@ -11,6 +11,10 @@
  * - antiTriggers are included from the start for future activate implementation
  */
 
+// IMPORTANT: tonalHints / stanceHints / avoidHints は、activate/select stage での
+// 重み計算・優先順位調整に内部で使う。LLM への文字列として渡してはならない。
+// これらは "外からの指示" ではなく "粒子の内部プロパティ" である。
+
 /**
  * NodeOwner type - identifies who owns this node
  * @typedef {'shared' | 'joe' | 'ken' | 'mina' | 'ray' | 'satou' | 'mirror'} NodeOwner
@@ -28,6 +32,9 @@
  * @property {string[]} [antiTriggers] - Conditions that suppress this node (used in activate phase)
  * @property {number} weight - Base weight for this node (0-1)
  * @property {string[]} [relationIds] - IDs of related nodes
+ * @property {string[]} [tonalHints] - Tonal quality hints (for internal activate/select weighting, NOT for LLM)
+ * @property {string[]} [stanceHints] - Stance hints (for internal activate/select weighting, NOT for LLM)
+ * @property {string[]} [avoidHints] - What this particle naturally avoids (for internal filter, NOT for LLM)
  */
 
 /**
