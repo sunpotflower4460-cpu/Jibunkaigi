@@ -509,6 +509,26 @@ const INTERNAL_PHRASE_MARKERS = [
   'preconditionBias',
   'latent layer',
   'raw latent',
+
+  // Surface v0.2 internal labels (must NOT leak to user-facing text)
+  'emotionalColor',
+  'motionBias',
+  'speakIntent',
+  'holdBack',
+  'focalCluster',
+  'surfacePlan',
+  'touch-the-living-point',
+  'clarify-the-knot',
+  'make-room-without-closing',
+  'return-to-footing',
+  'return-to-ground',
+  'reflect-the-unsettled-weight',
+  'consciousIntent',
+  'lengthPlan',
+  'othersPresence',
+  'dominantForces',
+  'selectedMixedClusters',
+  'textSeed',
 ].filter((phrase) => typeof phrase === 'string' && phrase.trim());
 
 /**
