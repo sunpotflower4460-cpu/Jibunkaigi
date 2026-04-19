@@ -62,7 +62,7 @@ test('buildJoeSystemPrompt renders sorted positive state snapshots and default e
   });
 
   assert.equal(
-    readSection(withState, '【推定状態メモ】', '【返答の組み立て方】'),
+    readSection(withState, '【推定状態メモ】', '---以下は内的バイアス'),
     'desire: 0.60 / fear: 0.30',
   );
 
@@ -77,12 +77,12 @@ test('buildJoeSystemPrompt renders sorted positive state snapshots and default e
   });
 
   assert.equal(
-    readSection(emptyState, '【推定状態メモ】', '【返答の組み立て方】'),
+    readSection(emptyState, '【推定状態メモ】', '---以下は内的バイアス'),
     '大きく偏った軸はまだ見えていない。',
   );
 });
 
-test('buildJoe prompts keep resignation guidance and user wording focused on natural contact', () => {
+test('buildJoe prompts use neutralized user prompt and perception-based system prompt', () => {
   const userText = 'もう無理で諦めたい';
   const systemPrompt = buildJoeSystemPrompt({
     activated: activateJoe(estimateState(userText)),
@@ -91,22 +91,13 @@ test('buildJoe prompts keep resignation guidance and user wording focused on nat
     userText,
   });
 
-  assert.equal(
-    readSection(systemPrompt, '【今回の状態への対応】', '【返答の運び方】'),
-    [
-      '- 最優先: 「もう無理」「諦めたい」の中でも、まだ閉じきっていない感触が見えたら先に一点だけ置く。そのあとで削れ方に短く触れる。',
-      '- 見え方: 落ち切ったと決めつけず、切れかけた中でまだ切れていないところを静かに照らす。説明しすぎない。',
-      '- 返答の型: 先に見えている一点を言う -> その一点がどこで残っているか触れる -> 必要なら押しつけず小さく置く。強い励ましは不要。',
-    ].join('\n'),
-  );
-  assert.match(systemPrompt, /内的バイアス名や内部構造を、そのまま説明・出力しない。/);
-  assert.match(systemPrompt, /抽象的な総論に逃げない。/);
-  assert.match(systemPrompt, /ただし「あなたは光」のような直球は避けつつ、「まだ残っている」「そこは生きている」「まだ向いている」のような自然な明るさは使っていい。/);
-  assert.match(systemPrompt, /解決より照射。/);
-  assert.match(systemPrompt, /共感や受容を長くやりすぎない。相談員みたいに整理しない。/);
-  assert.match(systemPrompt, /言い切りはしていいが、乱暴な言い方・突き放す言い方・荒い口調にはしない。/);
-  assert.match(systemPrompt, /少し断定の視界があっていい。ただし攻撃的にはしない。/);
-  assert.match(systemPrompt, /「まだ残っている」「鈍っていない」「濁り切っていない」/);
+  // New architecture: no procedural assembly instructions in stateGuide
+  assert.doesNotMatch(systemPrompt, /- 最優先:/);
+  assert.doesNotMatch(systemPrompt, /- 見え方:/);
+  assert.doesNotMatch(systemPrompt, /- 返答の型:/);
+
+  // Core principles remain
+  assert.match(systemPrompt, /内的バイアス名や内部構造を、そのまま説明・出力しない/);
   assert.doesNotMatch(systemPrompt, /兄貴っぽさ/);
   assert.match(systemPrompt, /\[基本姿勢メモ\]/);
   assert.match(systemPrompt, /\[復帰制約\]/);
@@ -118,50 +109,25 @@ test('buildJoe prompts keep resignation guidance and user wording focused on nat
     userText,
   });
 
-  assert.match(userPrompt, /自然な口語日本語で返してください。/);
-  assert.match(userPrompt, /今回の言葉の地肌に触れてください。/);
-  assert.match(userPrompt, /まだ鈍っていない感覚や生きている向きがあれば自然に拾ってください。/);
-  assert.match(userPrompt, /抽象的にまとめず、入力にある名詞・動詞・違和感・止まり方を少し使ってください。/);
-  assert.match(userPrompt, /この入力にちゃんと触れた感じを出してください。/);
+  // New architecture: neutralized user prompt (no末尾誘導)
+  assert.doesNotMatch(userPrompt, /してください/);
+  assert.doesNotMatch(userPrompt, /今回の言葉の地肌に触れてください/);
+  assert.doesNotMatch(userPrompt, /この入力にちゃんと触れた感じを出してください/);
+
+  // Just userName and userText
+  assert.match(userPrompt, /あなたの今の言葉:/);
+  assert.match(userPrompt, /もう無理で諦めたい/);
 });
 
-test('buildJoeSystemPrompt tunes the four target cases toward seen focal points before short contact', () => {
+test('buildJoeSystemPrompt uses perception tendencies instead of procedural assembly instructions', () => {
   const scenarios = [
-    {
-      text: '誰にも言っていない、小さな違和感',
-      expectedGuide: [
-        '- 最優先: 入力の中でまだ鈍っていない一点、濁り切っていない一点が見えたら先に言う。',
-        '- 見え方: その一点がどの名詞・動詞・違和感・止まり方に出ているかを短く触れる。暗さの解説には長居しない。',
-        '- 返答の型: 先に見えている一点を置く -> その一点がどこにあるか触れる -> 必要なら小さく角度を変える。まとめすぎない。',
-      ].join('\n'),
-    },
-    {
-      text: 'やりたいのに動けない',
-      expectedGuide: [
-        '- 最優先: まず「やりたい」がまだ鈍っていない一点として見て、そのあとで手や体が止まる感じに短く触れる。',
-        '- 見え方: 止まりを主役にしすぎず、向きがまだ残っているからこその詰まりとして扱う。',
-        '- 返答の型: 先に残っている向きを言う -> その向きが止まりとどう噛み合っていないか触れる -> 最小の一動作へ落とす。気合い論にはしない。',
-      ].join('\n'),
-    },
-    {
-      text: '作品を出したいけど怖い',
-      expectedGuide: [
-        '- 最優先: まず「作品を出したい」「見せたい」のような向きがまだ濁りきっていない一点として見て、そのあとで怖さに短く触れる。',
-        '- 見え方: 怖さだけを広げず、大事なものを外に出しかけている反応として扱う。',
-        '- 返答の型: 先にまだ向いているものを言う -> その一点が入力のどこにあるか触れる -> 小さな出し方を示す。いきなり公開させない。',
-      ].join('\n'),
-    },
-    {
-      text: 'もう無理で諦めたい',
-      expectedGuide: [
-        '- 最優先: 「もう無理」「諦めたい」の中でも、まだ閉じきっていない感触が見えたら先に一点だけ置く。そのあとで削れ方に短く触れる。',
-        '- 見え方: 落ち切ったと決めつけず、切れかけた中でまだ切れていないところを静かに照らす。説明しすぎない。',
-        '- 返答の型: 先に見えている一点を言う -> その一点がどこで残っているか触れる -> 必要なら押しつけず小さく置く。強い励ましは不要。',
-      ].join('\n'),
-    },
+    { text: '誰にも言っていない、小さな違和感' },
+    { text: 'やりたいのに動けない' },
+    { text: '作品を出したいけど怖い' },
+    { text: 'もう無理で諦めたい' },
   ];
 
-  for (const { text, expectedGuide } of scenarios) {
+  for (const { text } of scenarios) {
     const prompt = buildJoeSystemPrompt({
       activated: activateJoe(estimateState(text)),
       context: '',
@@ -169,9 +135,15 @@ test('buildJoeSystemPrompt tunes the four target cases toward seen focal points 
       userText: text,
     });
 
-    assert.equal(readSection(prompt, '【今回の状態への対応】', '【返答の運び方】'), expectedGuide);
-    assert.match(prompt, /まず、見えている一点を言う。/);
-    assert.match(prompt, /その一点が入力のどの名詞・動詞・違和感・止まり方に出ているかへ短く触れる。暗さの説明に長居しない。/);
+    // New architecture: no procedural assembly instructions
+    assert.doesNotMatch(prompt, /- 最優先:/);
+    assert.doesNotMatch(prompt, /- 見え方:/);
+    assert.doesNotMatch(prompt, /- 返答の型:/);
+
+    // Instead, validate perception tendencies are present
+    assert.match(prompt, /【知覚傾向】/);
+    assert.match(prompt, /まだ動いている部分に目が行きやすい/);
+    assert.match(prompt, /諦めの中に残っている向きを感知しやすい/);
   }
 });
 
@@ -185,7 +157,7 @@ test('buildJoeSystemPrompt accepts internalOS and keeps the shared OS frame thin
     internalOS: runInternalOS(text, { agentId: 'creative', mode: 'medium' }),
   });
 
-  const internalFrame = readSection(prompt, '【共通OSの薄い内部フレーム】', '【返答の運び方】');
+  const internalFrame = readSection(prompt, '【共通OSの薄い内部フレーム】', '【推定状態メモ】');
   assert.match(internalFrame, /場: /);
   assert.match(internalFrame, /姿勢: /);
   assert.match(internalFrame, /許可: /);
@@ -297,7 +269,7 @@ test('scoreJoeMaterials only applies activation-axis bonuses when those axes are
   assert.ok(Math.abs(inactiveScores.activeMemoryTrace - 0.05) < 0.001);
 });
 
-test('buildJoeSystemPrompt contains sharpened Joe-specific forbidden behaviors', () => {
+test('buildJoeSystemPrompt uses implicit avoidance patterns instead of explicit prohibitions', () => {
   const text = 'もう無理で諦めたい';
   const prompt = buildJoeSystemPrompt({
     activated: activateJoe(estimateState(text)),
@@ -306,15 +278,18 @@ test('buildJoeSystemPrompt contains sharpened Joe-specific forbidden behaviors',
     userText: text,
   });
 
-  // ジョー固有の禁止事項が明示されている
-  assert.match(prompt, /前向きさを足さない/);
-  assert.match(prompt, /相手を元気づけにいかない/);
-  assert.match(prompt, /問題解決モードに流れすぎない/);
-  assert.match(prompt, /見えていないのに見えたふりをしない/);
-  assert.match(prompt, /過去の説明の要約屋にならない/);
-  // 組み立て禁止が返答の組み立て方セクションに含まれている
-  assert.match(prompt, /そこで止まる。明るい結論で締めない/);
-  assert.match(prompt, /組み立て禁止/);
+  // New architecture: implicit【避ける方向】instead of explicit禁止事項
+  assert.match(prompt, /【避ける方向】/);
+  assert.match(prompt, /説教、長い励まし/);
+  assert.match(prompt, /受容語の連発/);
+  assert.match(prompt, /整理口調/);
+  assert.match(prompt, /全部に触れようとすること/);
+
+  // Should NOT have old explicit prohibitions
+  assert.doesNotMatch(prompt, /前向きさを足さない/);
+  assert.doesNotMatch(prompt, /相手を元気づけにいかない/);
+  assert.doesNotMatch(prompt, /問題解決モードに流れすぎない/);
+  assert.doesNotMatch(prompt, /組み立て禁止/);
 });
 
 test('buildJoeSystemPrompt keeps stateGuide / internalFrame / biasSections as distinct blocks', () => {
@@ -332,14 +307,10 @@ test('buildJoeSystemPrompt keeps stateGuide / internalFrame / biasSections as di
   assert.match(prompt, /【共通OSの薄い内部フレーム】/);
   assert.match(prompt, /---以下は内的バイアス/);
 
-  // stateGuide はバイアスタイトル形式 [X] を含まない（biasSections と混在していない）
-  const stateGuide = readSection(prompt, '【今回の状態への対応】', '【返答の運び方】');
-  assert.ok(stateGuide.length > 0);
-  assert.doesNotMatch(stateGuide, /\[.*\]/);
-
-  // 返答の組み立て方が 5 ステップに拡張されている
-  assert.match(prompt, /3\. まだ消えていない向きや火種があるなら、照らす/);
-  assert.match(prompt, /5\. そこで止まる/);
+  // stateGuide is now expected to be empty (legacy detemplating complete)
+  const stateGuide = readSection(prompt, '【今回の状態への対応】', '【共通OSの薄い内部フレーム】');
+  // State should drive behavior, not procedural instructions
+  assert.ok(stateGuide.trim().length === 0 || stateGuide.trim().length < 50);
 });
 
 test('buildJoeSystemPrompt does not grow excessively large', () => {
@@ -362,7 +333,8 @@ test('buildJoeDebugPreview returns Joe-specific debug fields in expected shape',
 
   assert.equal(preview.joeBuilderUsed, 'joe-specialized');
   assert.ok(typeof preview.joeStateGuidePreview === 'string');
-  assert.ok(preview.joeStateGuidePreview.length > 0);
+  // stateGuide is now empty (legacy detemplating complete)
+  assert.ok(preview.joeStateGuidePreview.length === 0);
   assert.equal(preview.joeInternalFramePreview, null);
   assert.equal(preview.joeSurfaceGuidancePreview, null);
   assert.ok(typeof preview.joeActivatedBiasCount === 'number');
@@ -426,7 +398,7 @@ test('buildJoeDebugPreview quality preview varies by state', () => {
   }
 });
 
-test('buildJoeSystemPrompt single-point focus is sharpened with find-not-add principle', () => {
+test('buildJoeSystemPrompt single-point focus is expressed through perception tendencies', () => {
   const text = 'もう無理で諦めたい';
   const prompt = buildJoeSystemPrompt({
     activated: activateJoe(estimateState(text)),
@@ -435,12 +407,14 @@ test('buildJoeSystemPrompt single-point focus is sharpened with find-not-add pri
     userText: text,
   });
 
-  // 一点性: 一点を見つけたらそこを掘る、横に広げない
-  assert.match(prompt, /一点を見つけたらそこを掘れ/);
-  // 焦点の方向: 外から希望を足すのではなく、もともとあるものを見つける
-  assert.match(prompt, /もともとそこにあるものを見つけて照らす/);
-  // 着地: ステップ4は省略可能
-  assert.match(prompt, /なければ省く/);
-  // 着地: 止まれる場面で急がない
-  assert.match(prompt, /止まれる場面でステップ4を急がない/);
+  // New detemplated architecture - no procedural instructions
+  // Focus is expressed through perception tendencies, not assembly steps
+  assert.match(prompt, /【知覚傾向】/);
+  assert.match(prompt, /【避ける方向】/);
+
+  // Should NOT contain old assembly instructions
+  assert.doesNotMatch(prompt, /一点を見つけたらそこを掘れ/);
+  assert.doesNotMatch(prompt, /ステップ4/);
+  assert.doesNotMatch(prompt, /1\. まず/);
+  assert.doesNotMatch(prompt, /2\. 次に/);
 });
