@@ -184,6 +184,21 @@ const createSelectedThoughtsState = () => ({
   },
 });
 
+const createConsciousIntentState = () => ({
+  userSense: [],
+  selfFeeling: [],
+  selectedClusterIds: [],
+  speakIntent: null,
+  holdBack: [],
+});
+
+const createLengthPlanState = () => ({
+  target: 'medium',
+  lineCountHint: 4,
+  expansionBudget: 0.45,
+  compressionPressure: 0.50,
+});
+
 const createDecisionState = () => ({
   feltSense: {
     primaryFeeling: null,
@@ -287,6 +302,8 @@ export function createInitialInternalState() {
     activatedThoughts: createActivatedThoughtsState(),
     boundThoughts: createBoundThoughtsState(),
     selectedThoughts: createSelectedThoughtsState(),
+    consciousIntent: createConsciousIntentState(),
+    lengthPlan: createLengthPlanState(),
     decision: createDecisionState(),
   };
 }

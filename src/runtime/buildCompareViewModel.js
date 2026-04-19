@@ -50,6 +50,8 @@ const openingKey = (text = '') => {
  * @param {object} [params.activatedThoughtsPreview] - Activated thoughts preview (dev-only, Phase 4)
  * @param {object} [params.boundThoughtsPreview] - Bound thoughts preview (dev-only, Phase 5)
  * @param {object} [params.selectedThoughtsPreview] - Selected thoughts preview (dev-only, Phase 6)
+ * @param {object} [params.consciousIntentPreview] - Conscious intent preview (dev-only, Phase 7)
+ * @param {object} [params.lengthPlanPreview] - Length plan preview (dev-only, Phase 7)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -81,6 +83,8 @@ export const buildCompareViewModel = ({
   activatedThoughtsPreview = null,
   boundThoughtsPreview = null,
   selectedThoughtsPreview = null,
+  consciousIntentPreview = null,
+  lengthPlanPreview = null,
   focusBiasApplied = false,
   meaningBiasApplied = false,
   identityBiasApplied = null,
@@ -413,6 +417,16 @@ export const buildCompareViewModel = ({
     })(),
   } : null
 
+  // Conscious Intent Preview (dev-only) - Phase 7
+  const normalizedConsciousIntentPreview = consciousIntentPreview ? {
+    summary: consciousIntentPreview ?? '',
+  } : null
+
+  // Length Plan Preview (dev-only) - Phase 7
+  const normalizedLengthPlanPreview = lengthPlanPreview ? {
+    summary: lengthPlanPreview ?? '',
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -487,6 +501,8 @@ export const buildCompareViewModel = ({
       hasActivatedThoughtsPreview: Boolean(normalizedActivatedThoughtsPreview),
       hasBoundThoughtsPreview: Boolean(normalizedBoundThoughtsPreview),
       hasSelectedThoughtsPreview: Boolean(normalizedSelectedThoughtsPreview),
+      hasConsciousIntentPreview: Boolean(normalizedConsciousIntentPreview),
+      hasLengthPlanPreview: Boolean(normalizedLengthPlanPreview),
     },
   }
 }

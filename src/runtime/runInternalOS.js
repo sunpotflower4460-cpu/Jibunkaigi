@@ -21,6 +21,8 @@ import { buildDecisionPreviews, createDecisionLayer } from './decisionLayer.js';
 import { activateThoughts } from './activateThoughts.js';
 import { bindThoughts } from './bindThoughts.js';
 import { selectThoughtClusters } from './selectThoughtClusters.js';
+import { buildConsciousIntent, formatConsciousIntentForDebug } from './buildConsciousIntent.js';
+import { buildLengthPlan, formatLengthPlanForDebug } from './buildLengthPlan.js';
 import { getNodeRelations } from '../reservoir/loadReservoir.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
@@ -603,6 +605,37 @@ export function runInternalOS(input, options = {}) {
   };
   preconditionTrace.push('dynamic:after-select-thoughts');
 
+  // ════════════════════════════════════════════════════════════════════
+  // BUILD CONSCIOUS INTENT (Phase 7)
+  // Transform selected thought clusters into internal intention state
+  // This is NOT final utterance - just internal "what do I want to say"
+  // ════════════════════════════════════════════════════════════════════
+
+  const consciousIntent = buildConsciousIntent({
+    agentId,
+    selectedThoughts,
+    boundThoughts,
+    emergingField,
+    preconditionBias,
+    beliefTension,
+    othersField: [], // TODO: wire up othersField in future
+  });
+  preconditionTrace.push('dynamic:after-conscious-intent');
+
+  // ════════════════════════════════════════════════════════════════════
+  // BUILD LENGTH PLAN (Phase 7)
+  // Determine natural speaking volume based on internal state
+  // This is NOT token count - just directional intention for length
+  // ════════════════════════════════════════════════════════════════════
+
+  const lengthPlan = buildLengthPlan({
+    userSelectedLength: 'medium', // TODO: wire up user preference in future
+    consciousIntent,
+    selectedThoughts,
+    preconditionBias,
+  });
+  preconditionTrace.push('dynamic:after-length-plan');
+
   const freshLatentState = {
     ...initialState,
     // Raw latent layers (live latent substrate) — preserved as-is, not compressed
@@ -631,6 +664,10 @@ export function runInternalOS(input, options = {}) {
     boundThoughts,
     // Selected thoughts (Phase 6)
     selectedThoughts,
+    // Conscious intent (Phase 7)
+    consciousIntent,
+    // Length plan (Phase 7)
+    lengthPlan,
     // Legacy/backward compatibility
     existence: {
       layer1: existenceLayer1,
@@ -661,6 +698,8 @@ export function runInternalOS(input, options = {}) {
         activatedThoughts,
         boundThoughts,
         selectedThoughts,
+        consciousIntent,
+        lengthPlan,
         existence: {
           layer1: existenceLayer1,
           layer2: existenceLayer2,
@@ -818,6 +857,10 @@ export function runInternalOS(input, options = {}) {
       preconditionFilterPresent: Boolean(latentState.preconditionFilter),
       // Home Neutralization (dev-only) — 残留圧チェック結果
       homeNeutralizationPreview: buildHomeNeutralizationPreview(latentState.homeNeutralization ?? homeNeutralization),
+      // Conscious intent preview (Phase 7, dev-only)
+      consciousIntentPreview: formatConsciousIntentForDebug(latentState.consciousIntent ?? consciousIntent),
+      // Length plan preview (Phase 7, dev-only)
+      lengthPlanPreview: formatLengthPlanForDebug(latentState.lengthPlan ?? lengthPlan),
     },
   };
 }
