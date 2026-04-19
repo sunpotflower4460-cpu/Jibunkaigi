@@ -3,8 +3,7 @@
  *
  * Ken's core: structure, clarity, seeing the map
  *
- * Phase 0: 1 sample node
- * USER TODO: Add 2-3 more Ken-specific thought particles here
+ * L2 Phase: Expanded to 5 particles with friction and tensions
  */
 
 import { NodeOwners, NodeCategories } from '../../types.js';
@@ -45,5 +44,27 @@ export const kenThoughtNodes = [
     triggers: ['mismatch', 'surface-vs-depth', 'stated-vs-felt'],
     antiTriggers: ['body-overwhelm'],
     weight: 0.72,
+  },
+  {
+    id: 'ken-thought-004',
+    owner: NodeOwners.KEN,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'wanting to cut clean, sense it will sever living tissue',
+    tags: ['friction', 'cutting', 'harm-risk', 'precision'],
+    axis: ['structure', 'holding'],
+    triggers: ['cut-urge', 'sever-risk', 'conflict-in-clarity'],
+    antiTriggers: ['force-separate', 'cut-regardless'],
+    weight: 0.7,
+  },
+  {
+    id: 'ken-thought-005',
+    owner: NodeOwners.KEN,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'map forming, lived texture resisting map',
+    tags: ['tension', 'structure', 'life', 'resistance'],
+    axis: ['structure', 'presence'],
+    triggers: ['structure-vs-life', 'form-resisted', 'too-clean-risk'],
+    antiTriggers: ['give-up-structure', 'force-form'],
+    weight: 0.73,
   },
 ];

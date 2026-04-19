@@ -740,6 +740,9 @@ const App = () => {
       const homeLayerPreview = internalOS?.latentState?.home ?? null;
       const existenceLayerPreview = internalOS?.latentState?.existence ?? null;
       const beliefLayerPreview = internalOS?.latentState?.belief ?? null;
+      const activatedThoughtsPreview = internalOS?.latentState?.activatedThoughts ?? null;
+      const activatedFeelingsPreview = internalOS?.latentState?.activatedFeelings ?? null;
+      const activatedMovesPreview = internalOS?.latentState?.activatedMoves ?? null;
       const preconditionFilterPreview = internalOS?.debugInfo?.preconditionFilterPreview ?? null;
       const preconditionBiasPreview = internalOS?.debugInfo?.preconditionBiasPreview ?? null;
       const feltSensePreview = internalOS?.debugInfo?.feltSensePreview ?? null;
@@ -771,6 +774,9 @@ const App = () => {
         homeLayerPreview,
         existenceLayerPreview,
         beliefLayerPreview,
+        activatedThoughtsPreview,
+        activatedFeelingsPreview,
+        activatedMovesPreview,
         preconditionFilterPreview,
         preconditionBiasPreview,
         feltSensePreview,

@@ -3,8 +3,7 @@
  *
  * Satou's core: protection through realism, facing what is being avoided
  *
- * Phase 0: 1 sample node
- * USER TODO: Add 2-3 more Satou-specific thought particles here
+ * L2 Phase: Expanded to 5 particles with friction and tensions
  */
 
 import { NodeOwners, NodeCategories } from '../../types.js';
@@ -45,5 +44,27 @@ export const satouThoughtNodes = [
     triggers: ['cascade-risk', 'dependency', 'order-matters'],
     antiTriggers: ['gentle-avoidance'],
     weight: 0.75,
+  },
+  {
+    id: 'satou-thought-004',
+    owner: NodeOwners.SATOU,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'wanting to protect, reality-check sounding harsh',
+    tags: ['friction', 'protection', 'harshness', 'care'],
+    axis: ['structure', 'holding'],
+    triggers: ['care-as-harsh', 'protection-misread', 'conflict-in-grounding'],
+    antiTriggers: ['soften-truth', 'nice-over-real'],
+    weight: 0.71,
+  },
+  {
+    id: 'satou-thought-005',
+    owner: NodeOwners.SATOU,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'forward motion desired, ground not ready',
+    tags: ['tension', 'forward', 'foundation', 'timing'],
+    axis: ['structure', 'illumination'],
+    triggers: ['push-vs-ground', 'premature-forward', 'base-not-ready'],
+    antiTriggers: ['wait-forever', 'abandon-forward'],
+    weight: 0.72,
   },
 ];
