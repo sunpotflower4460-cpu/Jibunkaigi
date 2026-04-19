@@ -37,7 +37,8 @@
 //     構造化: しない / 流れの中に残ったものを映すだけ
 //     避ける: 要約係、教訓化、無理な結論
 
-import { buildJoeSystemPrompt, buildJoeUserPrompt, buildJoeDebugPreview } from './buildPrompt.js';
+import { buildJoeSystemPrompt, buildJoeUserPrompt } from './prompts/joe.js';
+import { buildJoeDebugPreview } from './buildPrompt.js';
 import { buildRaySystemPrompt, buildRayUserPrompt, scoreRayMaterials } from './prompts/ray.js';
 import { buildKenSystemPrompt, buildKenUserPrompt, scoreKenMaterials } from './prompts/ken.js';
 import { buildMinaSystemPrompt, buildMinaUserPrompt, scoreMinaMaterials } from './prompts/mina.js';

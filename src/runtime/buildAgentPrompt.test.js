@@ -74,21 +74,20 @@ test('dispatcher routes each agent id to its own builder (unique self-introducti
 // --- Task 7-2: agent ごとに固有のキーフレーズ / 禁止事項 / 方針が含まれる ---
 
 test('each agent system prompt contains its own voice differentiation block', () => {
-  assert.match(buildAgentSystemPrompt('creative', baseParams), /【ジョーの触れ方/);
-  // Ray now uses perceptual tendencies instead of "触れ方" section (de-templating pilot)
+  // All agents now use perception tendencies instead of "触れ方" sections (de-templating)
+  assert.match(buildAgentSystemPrompt('creative', baseParams), /【知覚傾向】/);
   assert.match(buildAgentSystemPrompt('soul', baseParams), /【知覚傾向】/);
-  // Ken now uses perceptual tendencies instead of "触れ方" section (de-templating pilot)
   assert.match(buildAgentSystemPrompt('strategist', baseParams), /【知覚傾向】/);
-  // Mina now uses perceptual tendencies instead of "触れ方" section
-  assert.match(buildAgentSystemPrompt('empath', baseParams), /【ミナの知覚傾向】/);
-  // Satou now uses perceptual tendencies instead of "触れ方" section
-  assert.match(buildAgentSystemPrompt('critic', baseParams), /【サトウの知覚傾向】/);
+  assert.match(buildAgentSystemPrompt('empath', baseParams), /【知覚傾向】/);
+  assert.match(buildAgentSystemPrompt('critic', baseParams), /【知覚傾向】/);
 });
 
-test('Joe system prompt focuses on 一点 and forbids 全体総括 / 教訓', () => {
+test('Joe system prompt focuses on single point via perception tendencies', () => {
   const prompt = buildAgentSystemPrompt('creative', baseParams);
-  assert.match(prompt, /一点/);
-  assert.match(prompt, /全体総括|教訓|励まし/);
+  // New architecture: focus is expressed through perception tendencies
+  assert.match(prompt, /まだ動いている部分に目が行きやすい/);
+  assert.match(prompt, /【避ける方向】/);
+  assert.match(prompt, /説教、長い励まし/);
 });
 
 test('Ray system prompt forbids spiritual/mystical vocabulary and emphasizes 角度', () => {

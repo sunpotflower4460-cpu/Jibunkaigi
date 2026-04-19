@@ -23,6 +23,7 @@ export const truncateForDebug = (text, max = 140) => {
 
 /**
  * Build de-templating metrics for agents (zero-instruction pilot)
+ * Now includes legacy prompt tracking metrics
  * @param {object} params
  * @param {string} params.agentId - Agent ID
  * @param {string} params.systemPrompt - Generated system prompt
@@ -30,6 +31,7 @@ export const truncateForDebug = (text, max = 140) => {
  * @param {object} params.stateGuide - State guide text
  * @param {object} params.surfaceGuidance - Surface guidance text
  * @param {boolean} params.usedDecisionLayer - Whether decision layer was used
+ * @param {object} params.surfacePlan - Surface plan (v0.2)
  * @returns {object|null} - De-templating metrics or null if not applicable
  */
 export const buildDetemplatingMetrics = ({
@@ -39,42 +41,68 @@ export const buildDetemplatingMetrics = ({
   stateGuide = '',
   surfaceGuidance = '',
   usedDecisionLayer = false,
+  surfacePlan = null,
 } = {}) => {
-  // Only apply to Ray and Ken (de-templating pilots)
-  if (agentId !== 'soul' && agentId !== 'strategist') return null;
-
+  // Legacy tracking metrics
   const fullPrompt = `${systemPrompt}\n${userPrompt}`;
 
-  // Count template directives removed (rough heuristic)
-  const hasNoAssemblySteps = !fullPrompt.includes('まず') || !fullPrompt.includes('次に');
-  const hasNoExamplePhrases = agentId === 'soul'
-    ? (!fullPrompt.includes('〜ですね') && !fullPrompt.includes('〜かもしれません'))
-    : (!fullPrompt.includes('整理すると') && !fullPrompt.includes('ポイントは'));
-  const hasNoQualityContract = !systemPrompt.includes('品質基準');
+  // Count legacy patterns removed
+  const hasNoAssemblySteps = !fullPrompt.includes('1. まず') && !fullPrompt.includes('2. 次に');
   const hasNoReturnFormat = !fullPrompt.includes('返答の組み立て方') && !fullPrompt.includes('返答の運び方');
+  const hasNoUserDirectives = !userPrompt.includes('触れてください') && !userPrompt.includes('応答してください');
+  const hasNoProcedureInstructions = !systemPrompt.includes('最優先:') && !systemPrompt.includes('返答の型:');
+
+  // Count prohibited phrase lists (should be minimal now)
+  const prohibitedSectionCount = (systemPrompt.match(/【禁止/g) || []).length;
+  const avoidSectionCount = (systemPrompt.match(/【避ける/g) || []).length;
+
+  // Legacy instruction count
+  const legacyInstructionCount =
+    (hasNoAssemblySteps ? 0 : 2) +
+    (hasNoReturnFormat ? 0 : 2) +
+    (hasNoUserDirectives ? 0 : 1) +
+    (hasNoProcedureInstructions ? 0 : 3) +
+    prohibitedSectionCount +
+    (avoidSectionCount > 1 ? avoidSectionCount - 1 : 0); // 1 avoid section is ok
+
+  // User prompt directive count
+  const userPromptDirectiveCount = (userPrompt.match(/(触れて|応答して|してください)/g) || []).length;
+
+  // Joe independence check
+  const joeIndependentPrompt = agentId === 'creative'
+    ? (!systemPrompt.includes('建構築する') && !systemPrompt.includes('Layer B'))
+    : true;
+
+  // Surface uses internal state check
+  const surfaceUsesInternalState = !!(surfacePlan || (
+    systemPrompt.includes('内的バイアス') &&
+    (systemPrompt.includes('今回の状態への対応') || systemPrompt.includes('推定状態メモ'))
+  ));
+
+  // Prompt diet score (lighter is better)
+  const systemPromptLength = systemPrompt.length;
+  const hasPerceptionSection = systemPrompt.includes('【知覚傾向】');
+  const hasAvoidSection = systemPrompt.includes('【避ける方向】') || systemPrompt.includes('【避ける】');
+  const promptDietReduced = hasPerceptionSection && hasAvoidSection && systemPromptLength < 2000;
 
   const templateDirectivesRemoved =
     (hasNoAssemblySteps ? 2 : 0) +
-    (hasNoExamplePhrases ? 2 : 0) +
-    (hasNoQualityContract ? 2 : 0) +
-    (hasNoReturnFormat ? 2 : 0);
+    (hasNoReturnFormat ? 2 : 0) +
+    (hasNoUserDirectives ? 1 : 0) +
+    (hasNoProcedureInstructions ? 3 : 0);
 
   // Count direct role phrases in prompt (should be 0 for zero-instruction)
   let directRolePhraseCount = 0;
-  const rolePhrasePatterns = agentId === 'soul'
-    ? [
-        /こう返せ/gi,
-        /こういう書き出し/gi,
-        /返答の組み立て方/gi,
-        /返答の運び方/gi,
-      ]
-    : [
-        /こう整理する/gi,
-        /こう説明する/gi,
-        /返答の組み立て方/gi,
-        /返答の運び方/gi,
-        /こういう口調/gi,
-      ];
+  const rolePhrasePatterns = [
+    /こう返せ/gi,
+    /こういう書き出し/gi,
+    /返答の組み立て方/gi,
+    /返答の運び方/gi,
+    /こう整理する/gi,
+    /こう説明する/gi,
+    /最優先:/gi,
+    /返答の型:/gi,
+  ];
   for (const pattern of rolePhrasePatterns) {
     const matches = systemPrompt.match(pattern);
     if (matches) directRolePhraseCount += matches.length;
@@ -98,6 +126,15 @@ export const buildDetemplatingMetrics = ({
   }
 
   return {
+    // Legacy tracking metrics (new)
+    legacyPromptPathUsed: !joeIndependentPrompt,
+    legacyInstructionCount,
+    userPromptDirectiveCount,
+    surfaceUsesInternalState,
+    joePromptIndependent: joeIndependentPrompt,
+    promptDietReduced,
+
+    // Existing metrics
     templateDirectivesRemoved,
     directRolePhraseCount,
     latentStateUsed,
