@@ -48,6 +48,8 @@ const openingKey = (text = '') => {
  * @param {object} [params.layerBoundaryPreview] - latent / derived / dynamic boundary preview (dev-only)
  * @param {object} [params.reservoirPreview] - Reservoir stats preview (dev-only)
  * @param {object} [params.activatedThoughtsPreview] - Activated thoughts preview (dev-only, Phase 4)
+ * @param {object} [params.activatedFeelingsPreview] - Activated feelings preview (dev-only, L2 Phase)
+ * @param {object} [params.activatedMovesPreview] - Activated moves preview (dev-only, L2 Phase)
  * @param {object} [params.boundThoughtsPreview] - Bound thoughts preview (dev-only, Phase 5)
  * @param {object} [params.selectedThoughtsPreview] - Selected thoughts preview (dev-only, Phase 6)
  * @param {object} [params.consciousIntentPreview] - Conscious intent preview (dev-only, Phase 7)
@@ -81,6 +83,8 @@ export const buildCompareViewModel = ({
   layerBoundaryPreview = null,
   reservoirPreview = null,
   activatedThoughtsPreview = null,
+  activatedFeelingsPreview = null,
+  activatedMovesPreview = null,
   boundThoughtsPreview = null,
   selectedThoughtsPreview = null,
   consciousIntentPreview = null,
@@ -340,6 +344,34 @@ export const buildCompareViewModel = ({
     })),
   } : null
 
+  // Activated Feelings Preview (dev-only) - L2 Phase
+  const normalizedActivatedFeelingsPreview = activatedFeelingsPreview ? {
+    activatedFeelingCount: activatedFeelingsPreview.activationMeta?.selectedCount ?? 0,
+    totalCandidates: activatedFeelingsPreview.activationMeta?.totalCandidates ?? 0,
+    topFeelingIds: (activatedFeelingsPreview.topFeelingIds ?? []).slice(0, 3),
+    dominantFeelingAxes: activatedFeelingsPreview.activationMeta?.dominantAxes ?? [],
+    feelingActivationReasons: (activatedFeelingsPreview.items ?? []).slice(0, 3).map(f => ({
+      nodeId: f.nodeId,
+      owner: f.owner,
+      score: f.score,
+      reasons: f.reasons,
+    })),
+  } : null
+
+  // Activated Moves Preview (dev-only) - L2 Phase
+  const normalizedActivatedMovesPreview = activatedMovesPreview ? {
+    activatedMoveCount: activatedMovesPreview.activationMeta?.selectedCount ?? 0,
+    totalCandidates: activatedMovesPreview.activationMeta?.totalCandidates ?? 0,
+    topMoveIds: (activatedMovesPreview.topMoveIds ?? []).slice(0, 3),
+    dominantMoveAxes: activatedMovesPreview.activationMeta?.dominantAxes ?? [],
+    moveActivationReasons: (activatedMovesPreview.items ?? []).slice(0, 3).map(m => ({
+      nodeId: m.nodeId,
+      owner: m.owner,
+      score: m.score,
+      reasons: m.reasons,
+    })),
+  } : null
+
   // Bound Thoughts Preview (dev-only) - Phase 5
   const normalizedBoundThoughtsPreview = boundThoughtsPreview ? {
     boundThoughtClusterCount: boundThoughtsPreview.clusterMeta?.boundClusterCount ?? 0,
@@ -470,6 +502,8 @@ export const buildCompareViewModel = ({
     layerBoundaryPreview: normalizedLayerBoundaryPreview,
     reservoirPreview: normalizedReservoirPreview,
     activatedThoughtsPreview: normalizedActivatedThoughtsPreview,
+    activatedFeelingsPreview: normalizedActivatedFeelingsPreview,
+    activatedMovesPreview: normalizedActivatedMovesPreview,
     boundThoughtsPreview: normalizedBoundThoughtsPreview,
     selectedThoughtsPreview: normalizedSelectedThoughtsPreview,
     focusBiasApplied: Boolean(focusBiasApplied),
@@ -499,6 +533,8 @@ export const buildCompareViewModel = ({
       hasLayerBoundaryPreview: Boolean(normalizedLayerBoundaryPreview),
       hasReservoirPreview: Boolean(normalizedReservoirPreview),
       hasActivatedThoughtsPreview: Boolean(normalizedActivatedThoughtsPreview),
+      hasActivatedFeelingsPreview: Boolean(normalizedActivatedFeelingsPreview),
+      hasActivatedMovesPreview: Boolean(normalizedActivatedMovesPreview),
       hasBoundThoughtsPreview: Boolean(normalizedBoundThoughtsPreview),
       hasSelectedThoughtsPreview: Boolean(normalizedSelectedThoughtsPreview),
       hasConsciousIntentPreview: Boolean(normalizedConsciousIntentPreview),
