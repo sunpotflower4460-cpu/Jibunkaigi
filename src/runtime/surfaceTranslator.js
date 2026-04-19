@@ -323,6 +323,10 @@ export const buildSurfaceFrame = ({
   const identityHint = describeIdentityHint(normalizedLatent.preconditionBias);
   const decision = normalizedLatent.decision ?? {};
 
+  // Phase 8: Extract consciousIntent and lengthPlan from latentState
+  const consciousIntent = normalizedLatent.consciousIntent ?? null;
+  const lengthPlan = normalizedLatent.lengthPlan ?? null;
+
   // Mirror mode adjustments
   if (isMirror) {
     if (directness === 'clear') directness = 'medium';
@@ -357,5 +361,8 @@ export const buildSurfaceFrame = ({
     surfaceHint,
     afterglowHint,
     mirrorMode: isMirror,
+    // Phase 8: Include consciousIntent and lengthPlan
+    consciousIntent,
+    lengthPlan,
   };
 };
