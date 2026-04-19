@@ -19,6 +19,8 @@ import { buildPreconditionBias, buildPreconditionBiasPreview } from './buildPrec
 import { createBeliefTensionLayer } from './beliefTensionLayer.js';
 import { buildDecisionPreviews, createDecisionLayer } from './decisionLayer.js';
 import { activateThoughts } from './activateThoughts.js';
+import { activateFeelings } from './activateFeelings.js';
+import { activateMoves } from './activateMoves.js';
 import { bindThoughts } from './bindThoughts.js';
 import { selectThoughtClusters } from './selectThoughtClusters.js';
 import { buildConsciousIntent, formatConsciousIntentForDebug } from './buildConsciousIntent.js';
@@ -557,6 +559,58 @@ export function runInternalOS(input, options = {}) {
   preconditionTrace.push('dynamic:after-activate-thoughts');
 
   // ════════════════════════════════════════════════════════════════════
+  // ACTIVATE FEELINGS (L2 Phase)
+  // Surface feeling particles that naturally rise in this context
+  // Feeling particles have higher bodyAffinity influence
+  // ════════════════════════════════════════════════════════════════════
+
+  const activatedFeelingsResult = activateFeelings({
+    agentId,
+    userText: normalizedInput,
+    preconditionBias,
+    beliefTension,
+    emergingField,
+    topN: 4,
+  });
+
+  const activatedFeelings = {
+    items: activatedFeelingsResult.activatedFeelings || [],
+    topFeelingIds: activatedFeelingsResult.topFeelingIds || [],
+    activationMeta: activatedFeelingsResult.activationMeta || {
+      totalCandidates: 0,
+      selectedCount: 0,
+      dominantAxes: [],
+    },
+  };
+  preconditionTrace.push('dynamic:after-activate-feelings');
+
+  // ════════════════════════════════════════════════════════════════════
+  // ACTIVATE MOVES (L2 Phase)
+  // Surface move particles (directional inclinations) that naturally rise
+  // Move particles are influenced by focus/pacing from preconditionBias
+  // ════════════════════════════════════════════════════════════════════
+
+  const activatedMovesResult = activateMoves({
+    agentId,
+    userText: normalizedInput,
+    preconditionBias,
+    beliefTension,
+    emergingField,
+    topN: 4,
+  });
+
+  const activatedMoves = {
+    items: activatedMovesResult.activatedMoves || [],
+    topMoveIds: activatedMovesResult.topMoveIds || [],
+    activationMeta: activatedMovesResult.activationMeta || {
+      totalCandidates: 0,
+      selectedCount: 0,
+      dominantAxes: [],
+    },
+  };
+  preconditionTrace.push('dynamic:after-activate-moves');
+
+  // ════════════════════════════════════════════════════════════════════
   // BIND THOUGHTS (Phase 5)
   // Use activated thoughts + relations to create small thought clusters
   // This is NOT final selection - just grouping related thoughts
@@ -660,6 +714,10 @@ export function runInternalOS(input, options = {}) {
     decision,
     // Activated thoughts (Phase 4)
     activatedThoughts,
+    // Activated feelings (L2 Phase)
+    activatedFeelings,
+    // Activated moves (L2 Phase)
+    activatedMoves,
     // Bound thoughts (Phase 5)
     boundThoughts,
     // Selected thoughts (Phase 6)
@@ -696,6 +754,8 @@ export function runInternalOS(input, options = {}) {
         preconditionBias,
         decision,
         activatedThoughts,
+        activatedFeelings,
+        activatedMoves,
         boundThoughts,
         selectedThoughts,
         consciousIntent,
