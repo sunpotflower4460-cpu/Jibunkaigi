@@ -25,7 +25,7 @@ Reservoir は、顕在層（Surface Layer）v0.1 の第2段階として実装さ
   - 合計 20粒子
   - 最小 relation: 8本 (shared 3本 + agent 5本)
 - ✅ anti-triggers を最初から含む（activate 段階で使用予定）
-- ⏸️ feeling / move は placeholder のみ（今後実装）
+- ✅ feeling / move は placeholder 投入（L2 で本投入済み）
 - ⏸️ mirror の thought 粒子は後回し（others_field と連携段階で投入予定）
 
 ### Phase 4 (完了) - activate の最小実装
@@ -38,14 +38,31 @@ Reservoir は、顕在層（Surface Layer）v0.1 の第2段階として実装さ
 - ✅ compare/debug 表示対応
 - ✅ テスト完備
 - ✅ ドキュメント整備（docs/activate-phase.md）
-- ⏸️ feeling / move activate は未実装（thought のみ）
+- ✅ feeling / move activate 実装完了（L2 Phase）
 - ⏸️ bind / select は未実装
+
+### L2 Phase (完了) - feeling / move 粒子の導入と3カテゴリ activation
+
+- ✅ thought 粒子を3粒子から5粒子に拡張（friction と tension を追加）
+- ✅ feeling 粒子の本投入
+  - shared feeling: 6粒子
+  - agent feeling: 各3粒子 × 5エージェント = 15粒子
+  - 合計 21粒子
+- ✅ move 粒子の本投入
+  - shared move: 6粒子
+  - agent move: 各3粒子 × 5エージェント = 15粒子
+  - 合計 21粒子
+- ✅ activateFeelings 関数実装（bodyAffinity 重視）
+- ✅ activateMoves 関数実装（focusPacing 重視）
+- ✅ runInternalOS への3カテゴリ統合
+- ✅ internalState への activatedFeelings / activatedMoves 追加
+- ✅ compare/debug での3カテゴリ表示対応
+- ✅ テスト完備（activateFeelings.test.js, activateMoves.test.js）
 
 ### 今後の段階
 
 - Phase 5: bind の本実装（NodeRelation を使った粒子の結合）
 - Phase 6: select の本実装（最終的な粒子選択）
-- Phase 7: feeling / move の activate 実装
 - Phase 8: particle-aware surface translation
 
 ## ディレクトリ構成
@@ -56,14 +73,14 @@ src/reservoir/
   loadReservoir.js            # Loader 関数
   loadReservoir.test.js       # テスト
   shared/
-    thoughtNodes.js           # 共通 thought 粒子
-    feelingNodes.js           # 共通 feeling 粒子（Phase 0: 空）
-    moveNodes.js              # 共通 move 粒子（Phase 0: 空）
+    thoughtNodes.js           # 共通 thought 粒子（5個）
+    feelingNodes.js           # 共通 feeling 粒子（6個）
+    moveNodes.js              # 共通 move 粒子（6個）
   agents/
     joe/
-      thoughtNodes.js         # ジョー専用 thought 粒子
-      feelingNodes.js         # （Phase 0: 空）
-      moveNodes.js            # （Phase 0: 空）
+      thoughtNodes.js         # ジョー専用 thought 粒子（5個）
+      feelingNodes.js         # ジョー専用 feeling 粒子（3個）
+      moveNodes.js            # ジョー専用 move 粒子（3個）
     mina/...
     ray/...
     ken/...
@@ -149,11 +166,21 @@ const reservoir = getThoughtReservoir('joe');
 
 ### getFeelingReservoir(agentId)
 
-共通 + エージェント専用の feeling 粒子をまとめて取得（Phase 0: 空）
+共通 + エージェント専用の feeling 粒子をまとめて取得
+
+```javascript
+const reservoir = getFeelingReservoir('joe');
+// => [...sharedFeelingNodes, ...joeFeelingNodes]
+```
 
 ### getMoveReservoir(agentId)
 
-共通 + エージェント専用の move 粒子をまとめて取得（Phase 0: 空）
+共通 + エージェント専用の move 粒子をまとめて取得
+
+```javascript
+const reservoir = getMoveReservoir('joe');
+// => [...sharedMoveNodes, ...joeMoveNodes]
+```
 
 ### getNodeRelations(agentId)
 
@@ -167,15 +194,15 @@ Reservoir の統計情報を取得（compare/debug 用）
 const stats = getReservoirStats('joe');
 // => {
 //   sharedThoughtCount: 5,
-//   agentThoughtCount: 1,
-//   totalThoughtCount: 6,
-//   sharedFeelingCount: 1,
-//   agentFeelingCount: 0,
-//   totalFeelingCount: 1,
-//   sharedMoveCount: 1,
-//   agentMoveCount: 0,
-//   totalMoveCount: 1,
-//   relationCount: 0
+//   agentThoughtCount: 5,
+//   totalThoughtCount: 10,
+//   sharedFeelingCount: 6,
+//   agentFeelingCount: 3,
+//   totalFeelingCount: 9,
+//   sharedMoveCount: 6,
+//   agentMoveCount: 3,
+//   totalMoveCount: 9,
+//   relationCount: 8
 // }
 ```
 
@@ -271,30 +298,54 @@ antiTriggers: ['dismissal', 'minimization'],
 Compare Mode で reservoir の統計が表示されます:
 
 ```
-reservoir: sharedThought=5 / joeThought=1
-reservoir: sharedFeeling=1 / joeFeeling=0
-reservoir: relations=0
+reservoir: thoughts=10/30 (shared=5/agent=5)
+reservoir: feelings=9/21 (shared=6/agent=3)
+reservoir: moves=9/21 (shared=6/agent=3)
+reservoir: relations=8
 ```
 
-## Phase 0 実装完了内容
+## Phase 0 + L2 実装完了内容
 
-### ✅ 投入済み thought 粒子（合計20個）
+### ✅ 投入済み粒子
 
-1. **shared thought 粒子: 5個**
-   - 比較している時、何を失った気がするか
-   - 今の痛みは何を守ろうとしているか
-   - 急いで答えを出したい理由は何か
-   - 本当は二つの問いが重なっていないか
-   - まだ閉じたくないものが残っていないか
+#### 1. **Thought 粒子（合計30個）**
+   - **shared thought: 5個**
+     - 比較している時、何を失った気がするか
+     - 今の痛みは何を守ろうとしているか
+     - 急いで答えを出したい理由は何か
+     - 本当は二つの問いが重なっていないか
+     - まだ閉じたくないものが残っていないか
 
-2. **agent thought 粒子: 各3個 × 5エージェント = 15個**
-   - **Joe (3個)**: まだ残っている向きに目が行く / 消えきっていない力 / 折れたのではなく押し込められた可能性
-   - **Mina (3個)**: ほどける余地 / 崩れたまま置ける場所 / 進めない理由を責めずに見る
-   - **Ray (3個)**: 言葉になる前の揺れ / まだ意味にしなくてよいもの / 曖昧さの中に残っている気配
-   - **Ken (3個)**: 二つの問いが混ざっていないか / どこが結び目か / 表面の言葉と本音のズレ
-   - **Satou (3個)**: 足場が失われていないか / 理想と現実の断絶 / 何を先に支えないと崩れるか
+   - **agent thought: 各5個 × 5エージェント = 25個**
+     - **Joe (5個)**: まだ残っている向き / 消えきっていない力 / 折れたのではなく押し込められた / 光が見たがっている、動けなさが遮る / 消えていないが動けない痛み
+     - **Mina (5個)**: ほどける余地 / 崩れたまま置ける場所 / 進めない理由を責めずに見る / 壊れたまま大丈夫な場所 / 前に進めないのが悪いわけではない
+     - **Ray (5個)**: 言葉になる前の揺れ / まだ意味にしなくてよいもの / 曖昧さの中に残っている気配 / 前言語的な感覚の輪郭 / 意味づけ前の揺れが生きている
+     - **Ken (5個)**: 二つの問いが混ざっていないか / どこが結び目か / 表面の言葉と本音のズレ / 問いの仮定自体がおかしくないか / 絡まった糸はどこで絡んでいるか
+     - **Satou (5個)**: 足場が失われていないか / 理想と現実の断絶 / 何を先に支えないと崩れるか / 土台が砂上になっていないか / 幻想と現実の摩擦
 
-3. **最小 relation: 8本**
+#### 2. **Feeling 粒子（合計21個、L2 Phase で追加）**
+   - **shared feeling: 6個**
+     - chest tightening / throat closing / belly warmth / limbs heavy / breath shallow / warmth remaining
+
+   - **agent feeling: 各3個 × 5エージェント = 15個**
+     - **Joe (3個)**: ember still warm / pull not gone / faint heat
+     - **Mina (3個)**: shoulders drop / breath deepens / weight settles
+     - **Ray (3個)**: shimmer not named / formless pulse / pre-shape sensing
+     - **Ken (3個)**: sharp at edges / clarity cuts / tension in jaw
+     - **Satou (3個)**: ground underfoot / feet planted / weight distributed
+
+#### 3. **Move 粒子（合計21個、L2 Phase で追加）**
+   - **shared move: 6個**
+     - not ready to close / pausing before rush / holding incompleteness / staying with not-knowing / resisting closure / slowing the grab
+
+   - **agent move: 各3個 × 5エージェント = 15個**
+     - **Joe (3個)**: toward the one point / keeping the opening / returning to what's alive
+     - **Mina (3個)**: making space to rest it here / not pushing forward yet / protecting from more
+     - **Ray (3個)**: keeping it undefined / letting it shimmer longer / no definitions yet
+     - **Ken (3個)**: finding the knot location / not cutting too fast / checking where it binds
+     - **Satou (3個)**: back to ground level / stabilizing first, then forward / not sugar-coating
+
+#### 4. **最小 relation: 8本**
    - shared 同士: 3本
    - agent → shared: 5本
    - relationType: supports / extends / tensions_with / grounds / softens
@@ -314,14 +365,12 @@ USER が確認すべきこと:
 4. Mina の thought が受容文テンプレになっていないか
 5. Satou の thought が兄貴発話そのものになっていないか
 
-### 今後の実装（今回は対象外）
+### 今後の実装（L2 完了後）
 
-- feeling 粒子の本投入
-- move 粒子の本投入
-- activate の本実装
-- bind の本実装
+- bind 粒子の本実装（mixed bind は将来）
 - select の本実装
-- mirror の thought 粒子本投入（others_field と連携段階で）
+- particle-aware surface translation の強化
+- mirror の thought/feeling/move 粒子本投入（others_field と連携段階で）
 
 ## 参考
 
