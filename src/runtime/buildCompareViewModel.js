@@ -49,6 +49,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.reservoirPreview] - Reservoir stats preview (dev-only)
  * @param {object} [params.activatedThoughtsPreview] - Activated thoughts preview (dev-only, Phase 4)
  * @param {object} [params.boundThoughtsPreview] - Bound thoughts preview (dev-only, Phase 5)
+ * @param {object} [params.selectedThoughtsPreview] - Selected thoughts preview (dev-only, Phase 6)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -79,6 +80,7 @@ export const buildCompareViewModel = ({
   reservoirPreview = null,
   activatedThoughtsPreview = null,
   boundThoughtsPreview = null,
+  selectedThoughtsPreview = null,
   focusBiasApplied = false,
   meaningBiasApplied = false,
   identityBiasApplied = null,
@@ -370,6 +372,47 @@ export const buildCompareViewModel = ({
     })(),
   } : null
 
+  // Selected Thoughts Preview (dev-only) - Phase 6
+  const normalizedSelectedThoughtsPreview = selectedThoughtsPreview ? {
+    selectedThoughtCount: selectedThoughtsPreview.selectionMeta?.selectedCount ?? 0,
+    totalClusters: selectedThoughtsPreview.selectionMeta?.totalClusters ?? 0,
+    primaryThoughtCluster: (() => {
+      const primary = (selectedThoughtsPreview.selected ?? []).find(s => s.role === 'primary')
+      return primary ? {
+        clusterId: primary.clusterId,
+        score: primary.score,
+        reasons: primary.reasons,
+      } : null
+    })(),
+    secondaryThoughtCluster: (() => {
+      const secondary = (selectedThoughtsPreview.selected ?? []).find(s => s.role === 'secondary')
+      return secondary ? {
+        clusterId: secondary.clusterId,
+        score: secondary.score,
+        reasons: secondary.reasons,
+      } : null
+    })(),
+    dominantSelectedAxis: selectedThoughtsPreview.selectionMeta?.dominantSelectedAxis ?? [],
+    selectionReasons: (() => {
+      const allReasons = new Set()
+      ;(selectedThoughtsPreview.selected ?? []).forEach(s => {
+        ;(s.reasons ?? []).forEach(r => allReasons.add(r))
+      })
+      return Array.from(allReasons)
+    })(),
+    othersFieldInfluence: (() => {
+      const reasons = new Set()
+      ;(selectedThoughtsPreview.selected ?? []).forEach(s => {
+        ;(s.reasons ?? []).forEach(r => {
+          if (r.includes('novelty') || r.includes('redundancy')) {
+            reasons.add(r)
+          }
+        })
+      })
+      return Array.from(reasons).join(', ') || 'none'
+    })(),
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -414,6 +457,7 @@ export const buildCompareViewModel = ({
     reservoirPreview: normalizedReservoirPreview,
     activatedThoughtsPreview: normalizedActivatedThoughtsPreview,
     boundThoughtsPreview: normalizedBoundThoughtsPreview,
+    selectedThoughtsPreview: normalizedSelectedThoughtsPreview,
     focusBiasApplied: Boolean(focusBiasApplied),
     meaningBiasApplied: Boolean(meaningBiasApplied),
     identityBiasApplied: identityBiasApplied ?? null,
@@ -441,6 +485,8 @@ export const buildCompareViewModel = ({
       hasLayerBoundaryPreview: Boolean(normalizedLayerBoundaryPreview),
       hasReservoirPreview: Boolean(normalizedReservoirPreview),
       hasActivatedThoughtsPreview: Boolean(normalizedActivatedThoughtsPreview),
+      hasBoundThoughtsPreview: Boolean(normalizedBoundThoughtsPreview),
+      hasSelectedThoughtsPreview: Boolean(normalizedSelectedThoughtsPreview),
     },
   }
 }

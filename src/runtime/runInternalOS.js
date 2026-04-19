@@ -20,6 +20,7 @@ import { createBeliefTensionLayer } from './beliefTensionLayer.js';
 import { buildDecisionPreviews, createDecisionLayer } from './decisionLayer.js';
 import { activateThoughts } from './activateThoughts.js';
 import { bindThoughts } from './bindThoughts.js';
+import { selectThoughtClusters } from './selectThoughtClusters.js';
 import { getNodeRelations } from '../reservoir/loadReservoir.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
@@ -577,6 +578,31 @@ export function runInternalOS(input, options = {}) {
   };
   preconditionTrace.push('dynamic:after-bind-thoughts');
 
+  // ════════════════════════════════════════════════════════════════════
+  // SELECT THOUGHT CLUSTERS (Phase 6)
+  // Choose which clusters naturally rise to foreground in this moment
+  // This is NOT final utterance - just selecting primary + optional secondary
+  // ════════════════════════════════════════════════════════════════════
+
+  const selectedThoughtsResult = selectThoughtClusters({
+    agentId,
+    clusters: boundThoughts.clusters,
+    preconditionBias,
+    beliefTension,
+    othersField: [], // TODO: wire up othersField in future
+    lengthPreference: 'medium',
+  });
+
+  const selectedThoughts = {
+    selected: selectedThoughtsResult.selected || [],
+    selectionMeta: selectedThoughtsResult.selectionMeta || {
+      totalClusters: 0,
+      selectedCount: 0,
+      dominantSelectedAxis: [],
+    },
+  };
+  preconditionTrace.push('dynamic:after-select-thoughts');
+
   const freshLatentState = {
     ...initialState,
     // Raw latent layers (live latent substrate) — preserved as-is, not compressed
@@ -603,6 +629,8 @@ export function runInternalOS(input, options = {}) {
     activatedThoughts,
     // Bound thoughts (Phase 5)
     boundThoughts,
+    // Selected thoughts (Phase 6)
+    selectedThoughts,
     // Legacy/backward compatibility
     existence: {
       layer1: existenceLayer1,
@@ -632,6 +660,7 @@ export function runInternalOS(input, options = {}) {
         decision,
         activatedThoughts,
         boundThoughts,
+        selectedThoughts,
         existence: {
           layer1: existenceLayer1,
           layer2: existenceLayer2,
