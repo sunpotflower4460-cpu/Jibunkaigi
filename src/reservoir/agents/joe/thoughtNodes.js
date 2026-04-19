@@ -4,8 +4,7 @@
  * Joe's core: what is still alive, what hasn't died yet
  * Not about stating hope, but about seeing the point that matters
  *
- * Phase 0: 1 sample node
- * USER TODO: Add 2-3 more Joe-specific thought particles here
+ * L2 Phase: Expanded to 5 particles with friction and tensions
  */
 
 import { NodeOwners, NodeCategories } from '../../types.js';
@@ -46,5 +45,27 @@ export const joeThoughtNodes = [
     triggers: ['core-intact', 'care-present', 'mattering'],
     antiTriggers: ['collapse-total', 'indifference'],
     weight: 0.82,
+  },
+  {
+    id: 'joe-thought-004',
+    owner: NodeOwners.JOE,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'light wanting to be seen, immobility blocking it',
+    tags: ['friction', 'desire', 'blockage', 'light'],
+    axis: ['illumination', 'structure'],
+    triggers: ['want-but-cannot', 'frozen', 'conflict-present'],
+    antiTriggers: ['action-pressure', 'solve-now'],
+    weight: 0.78,
+  },
+  {
+    id: 'joe-thought-005',
+    owner: NodeOwners.JOE,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'heat not cooled, not allowed to move',
+    tags: ['tension', 'suppression', 'alive', 'stuck'],
+    axis: ['illumination', 'holding'],
+    triggers: ['stuck-energy', 'want-to-emerge', 'held-back'],
+    antiTriggers: ['gentle-acceptance-only', 'bypass'],
+    weight: 0.77,
   },
 ];

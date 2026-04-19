@@ -3,8 +3,7 @@
  *
  * Ray's core: quiet illumination, seeing what is not yet acknowledged
  *
- * Phase 0: 1 sample node
- * USER TODO: Add 2-3 more Ray-specific thought particles here
+ * L2 Phase: Expanded to 5 particles with friction and tensions
  */
 
 import { NodeOwners, NodeCategories } from '../../types.js';
@@ -45,5 +44,27 @@ export const rayThoughtNodes = [
     triggers: ['silence-alive', 'pause-meaningful', 'atmosphere'],
     antiTriggers: ['fill-silence', 'explain-away'],
     weight: 0.77,
+  },
+  {
+    id: 'ray-thought-004',
+    owner: NodeOwners.RAY,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'wanting to name, sense it will thin if named',
+    tags: ['friction', 'naming', 'loss-risk', 'precision'],
+    axis: ['presence', 'illumination'],
+    triggers: ['naming-urge', 'thinning-risk', 'conflict-in-clarity'],
+    antiTriggers: ['force-define', 'must-articulate'],
+    weight: 0.72,
+  },
+  {
+    id: 'ray-thought-005',
+    owner: NodeOwners.RAY,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'quiet holding a gap, static wanting in',
+    tags: ['tension', 'gap', 'quiet', 'static'],
+    axis: ['presence', 'structure'],
+    triggers: ['stillness-disrupted', 'noise-encroaching', 'gap-threatened'],
+    antiTriggers: ['accept-static', 'let-noise-win'],
+    weight: 0.73,
   },
 ];

@@ -3,8 +3,7 @@
  *
  * Mina's core: receiving, holding, accepting what is
  *
- * Phase 0: 1 sample node
- * USER TODO: Add 2-3 more Mina-specific thought particles here
+ * L2 Phase: Expanded to 5 particles with friction and tensions
  */
 
 import { NodeOwners, NodeCategories } from '../../types.js';
@@ -45,5 +44,27 @@ export const minaThoughtNodes = [
     triggers: ['stuck', 'inability', 'cannot-move'],
     antiTriggers: ['blame', 'should-pressure'],
     weight: 0.78,
+  },
+  {
+    id: 'mina-thought-004',
+    owner: NodeOwners.MINA,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'wanting to receive, self-blame voice interrupting',
+    tags: ['friction', 'self-blame', 'receiving', 'interruption'],
+    axis: ['holding', 'structure'],
+    triggers: ['receive-but-blamed', 'inner-critic', 'conflict-in-holding'],
+    antiTriggers: ['push-through', 'silence-inner-voice'],
+    weight: 0.75,
+  },
+  {
+    id: 'mina-thought-005',
+    owner: NodeOwners.MINA,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'holding too much, risk of closing inward',
+    tags: ['tension', 'overload', 'closing', 'protection'],
+    axis: ['holding', 'presence'],
+    triggers: ['overwhelm', 'too-much-intake', 'closing-risk'],
+    antiTriggers: ['force-open', 'push-capacity'],
+    weight: 0.76,
   },
 ];
