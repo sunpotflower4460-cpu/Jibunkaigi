@@ -38,7 +38,7 @@
 //     避ける: 要約係、教訓化、無理な結論
 
 import { buildJoeSystemPrompt, buildJoeUserPrompt } from './prompts/joe.js';
-import { buildJoeDebugPreview } from './buildPrompt.js';
+import { buildJoeDebugPreview } from './debug/joeDebugPreview.js';
 import { buildRaySystemPrompt, buildRayUserPrompt, scoreRayMaterials } from './prompts/ray.js';
 import { buildKenSystemPrompt, buildKenUserPrompt, scoreKenMaterials } from './prompts/ken.js';
 import { buildMinaSystemPrompt, buildMinaUserPrompt, scoreMinaMaterials } from './prompts/mina.js';
