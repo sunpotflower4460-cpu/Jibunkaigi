@@ -22,6 +22,7 @@ import { activateThoughts } from './activateThoughts.js';
 import { activateFeelings } from './activateFeelings.js';
 import { activateMoves } from './activateMoves.js';
 import { bindThoughts } from './bindThoughts.js';
+import { bindMixedNodes } from './bindMixedNodes.js';
 import { selectThoughtClusters } from './selectThoughtClusters.js';
 import { buildConsciousIntent, formatConsciousIntentForDebug } from './buildConsciousIntent.js';
 import { buildLengthPlan, formatLengthPlanForDebug } from './buildLengthPlan.js';
@@ -635,6 +636,32 @@ export function runInternalOS(input, options = {}) {
   preconditionTrace.push('dynamic:after-bind-thoughts');
 
   // ════════════════════════════════════════════════════════════════════
+  // BIND MIXED NODES (Mixed Cluster Phase)
+  // Use activated thoughts/feelings/moves + relations to create mixed clusters
+  // thought-centered grouping: thought + nearby feeling/move
+  // This is NOT final selection - just grouping thought/feeling/move together
+  // ════════════════════════════════════════════════════════════════════
+
+  const boundMixedNodesResult = bindMixedNodes({
+    activatedThoughts: activatedThoughts.items,
+    activatedFeelings: activatedFeelings.items,
+    activatedMoves: activatedMoves.items,
+    relations: nodeRelations,
+    bindThreshold: 0.35,
+  });
+
+  const boundMixedNodes = {
+    clusters: boundMixedNodesResult.clusters || [],
+    clusterMeta: boundMixedNodesResult.clusterMeta || {
+      totalActivatedNodes: 0,
+      totalClusters: 0,
+      boundClusterCount: 0,
+      singleClusterCount: 0,
+    },
+  };
+  preconditionTrace.push('dynamic:after-bind-mixed-nodes');
+
+  // ════════════════════════════════════════════════════════════════════
   // SELECT THOUGHT CLUSTERS (Phase 6)
   // Choose which clusters naturally rise to foreground in this moment
   // This is NOT final utterance - just selecting primary + optional secondary
@@ -720,6 +747,8 @@ export function runInternalOS(input, options = {}) {
     activatedMoves,
     // Bound thoughts (Phase 5)
     boundThoughts,
+    // Bound mixed nodes (Mixed Cluster Phase)
+    boundMixedNodes,
     // Selected thoughts (Phase 6)
     selectedThoughts,
     // Conscious intent (Phase 7)

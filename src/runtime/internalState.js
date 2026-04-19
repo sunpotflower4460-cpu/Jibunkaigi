@@ -175,6 +175,16 @@ const createBoundThoughtsState = () => ({
   },
 });
 
+const createBoundMixedNodesState = () => ({
+  clusters: [],
+  clusterMeta: {
+    totalActivatedNodes: 0,
+    totalClusters: 0,
+    boundClusterCount: 0,
+    singleClusterCount: 0,
+  },
+});
+
 const createSelectedThoughtsState = () => ({
   selected: [],
   selectionMeta: {
@@ -301,6 +311,7 @@ export function createInitialInternalState() {
     preconditionBias: createPreconditionBiasState(),
     activatedThoughts: createActivatedThoughtsState(),
     boundThoughts: createBoundThoughtsState(),
+    boundMixedNodes: createBoundMixedNodesState(),
     selectedThoughts: createSelectedThoughtsState(),
     consciousIntent: createConsciousIntentState(),
     lengthPlan: createLengthPlanState(),
