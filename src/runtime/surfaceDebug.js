@@ -152,6 +152,10 @@ export const buildSurfaceDebugEntry = ({
     (afterglowSeed.previousMix || afterglowSeed.previousLatentState)
   );
 
+  // Phase 8: Extract consciousIntent and lengthPlan from surfaceFrame
+  const consciousIntent = frame.consciousIntent ?? null;
+  const lengthPlan = frame.lengthPlan ?? null;
+
   return {
     timestamp: Date.now(),
     agentId,
@@ -192,5 +196,14 @@ export const buildSurfaceDebugEntry = ({
     agentQualityPreview: agentQualityPreview || null,
     // de-templating metrics (Ray pilot)
     detemplatingMetrics: frame.detemplatingMetrics || null,
+    // Phase 8: Surface connection metrics
+    surfaceUsedConsciousIntent: !!consciousIntent,
+    surfaceUsedLengthPlan: !!lengthPlan,
+    surfaceSpeakIntent: consciousIntent?.speakIntent ?? null,
+    surfaceHoldBack: consciousIntent?.holdBack ?? [],
+    surfaceLengthTarget: lengthPlan?.target ?? null,
+    surfaceLineHint: lengthPlan?.lineCountHint ?? null,
+    surfaceExpansionBudget: lengthPlan?.expansionBudget ?? null,
+    surfaceCompressionPressure: lengthPlan?.compressionPressure ?? null,
   };
 };

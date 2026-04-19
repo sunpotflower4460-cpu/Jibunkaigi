@@ -1,6 +1,8 @@
 // src/runtime/buildAgentSurfaceGuidance.js
 // エージェント別の表層ガイダンス生成
 // 共通 surfaceFrame を、各エージェントの表の出方に変換する
+//
+// Phase 8: Now includes consciousIntent and lengthPlan integration
 
 import { sanitizeSurfaceOutput } from './surfaceGuard.js';
 
@@ -82,6 +84,66 @@ const pushDecisionHints = (hints, surfaceFrame) => {
   }
 };
 
+// Phase 8: Push hints from consciousIntent
+const pushConsciousIntentHints = (hints, surfaceFrame) => {
+  const consciousIntent = surfaceFrame.consciousIntent;
+  if (!consciousIntent) return;
+
+  const speakIntent = consciousIntent.speakIntent;
+  const holdBack = consciousIntent.holdBack ?? [];
+
+  // Add speakIntent as directional hint (NOT verbatim)
+  switch (speakIntent) {
+    case 'touch-the-living-point':
+      hints.push('まだ鈍っていない一点へ');
+      break;
+    case 'clarify-the-knot':
+      hints.push('結び目を短く言う');
+      break;
+    case 'make-room-without-closing':
+      hints.push('余白をつくる');
+      break;
+    case 'return-to-footing':
+      hints.push('足場に戻る');
+      break;
+    case 'reflect-the-unsettled-weight':
+      hints.push('閉じていない重さを映す');
+      break;
+    default:
+      break;
+  }
+
+  // Add holdBack as narrowing pressure (NOT prohibitions)
+  if (holdBack.includes('no-early-summary')) {
+    hints.push('要約調を抑える');
+  }
+  if (holdBack.includes('no-fix-yet')) {
+    hints.push('解決を急がない');
+  }
+  if (holdBack.includes('no-over-expansion')) {
+    hints.push('触れる点数を増やしすぎない');
+  }
+  if (holdBack.includes('do-not-close')) {
+    hints.push('断定で閉じすぎない');
+  }
+};
+
+// Phase 8: Push hints from lengthPlan
+const pushLengthPlanHints = (hints, surfaceFrame) => {
+  const lengthPlan = surfaceFrame.lengthPlan;
+  if (!lengthPlan) return;
+
+  const target = lengthPlan.target ?? 'medium';
+  const lineCountHint = lengthPlan.lineCountHint ?? 4;
+
+  // Add target-based natural hints
+  if (target === 'short' && lineCountHint <= 2) {
+    hints.push('短く収める');
+  } else if (target === 'long' && lineCountHint >= 6) {
+    hints.push('少し広げてよい');
+  }
+};
+
 const buildRaySurfaceGuidance = (surfaceFrame) => {
   const hints = [];
 
@@ -108,10 +170,12 @@ const buildRaySurfaceGuidance = (surfaceFrame) => {
     hints.push('説明過多に傾かない');
   }
   pushDecisionHints(hints, surfaceFrame);
+  pushConsciousIntentHints(hints, surfaceFrame); // Phase 8
+  pushLengthPlanHints(hints, surfaceFrame); // Phase 8
   pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
-    return `\n【表層傾向】${hints.slice(0, 4).join('。')}。`;
+    return `\n【表層傾向】${hints.slice(0, 5).join('。')}。`;
   }
   return '';
 };
@@ -144,10 +208,12 @@ const buildJoeSurfaceGuidance = (surfaceFrame) => {
     hints.push('説明しすぎない');
   }
   pushDecisionHints(hints, surfaceFrame);
+  pushConsciousIntentHints(hints, surfaceFrame); // Phase 8
+  pushLengthPlanHints(hints, surfaceFrame); // Phase 8
   pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
-    return `\n【表層傾向】${hints.slice(0, 4).join(' ')}`;
+    return `\n【表層傾向】${hints.slice(0, 5).join(' ')}`;
   }
   return '';
 };
@@ -179,10 +245,12 @@ const buildKenSurfaceGuidance = (surfaceFrame) => {
     hints.push('箇条書き過多に傾かない');
   }
   pushDecisionHints(hints, surfaceFrame);
+  pushConsciousIntentHints(hints, surfaceFrame); // Phase 8
+  pushLengthPlanHints(hints, surfaceFrame); // Phase 8
   pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
-    return `\n【表層傾向】${hints.slice(0, 4).join('。')}。`;
+    return `\n【表層傾向】${hints.slice(0, 5).join('。')}。`;
   }
   return '';
 };
@@ -216,10 +284,12 @@ const buildMinaSurfaceGuidance = (surfaceFrame) => {
     hints.push('説明過多に傾かない');
   }
   pushDecisionHints(hints, surfaceFrame);
+  pushConsciousIntentHints(hints, surfaceFrame); // Phase 8
+  pushLengthPlanHints(hints, surfaceFrame); // Phase 8
   pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
-    return `\n【表層傾向】${hints.slice(0, 4).join('。')}。`;
+    return `\n【表層傾向】${hints.slice(0, 5).join('。')}。`;
   }
   return '';
 };
@@ -250,10 +320,12 @@ const buildSatouSurfaceGuidance = (surfaceFrame) => {
     hints.push('説明しすぎず、核心だけ');
   }
   pushDecisionHints(hints, surfaceFrame);
+  pushConsciousIntentHints(hints, surfaceFrame); // Phase 8
+  pushLengthPlanHints(hints, surfaceFrame); // Phase 8
   pushPreconditionHints(hints, surfaceFrame);
 
   if (hints.length > 0) {
-    return `\n【表層傾向】${hints.slice(0, 4).join('。')}。`;
+    return `\n【表層傾向】${hints.slice(0, 5).join('。')}。`;
   }
   return '';
 };
