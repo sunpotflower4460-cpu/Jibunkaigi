@@ -165,6 +165,16 @@ const createActivatedThoughtsState = () => ({
   },
 });
 
+const createBoundThoughtsState = () => ({
+  clusters: [],
+  clusterMeta: {
+    totalActivatedThoughts: 0,
+    totalClusters: 0,
+    boundClusterCount: 0,
+    singleClusterCount: 0,
+  },
+});
+
 const createDecisionState = () => ({
   feltSense: {
     primaryFeeling: null,
@@ -266,6 +276,7 @@ export function createInitialInternalState() {
     preconditionFilter: createPreconditionFilterState(),
     preconditionBias: createPreconditionBiasState(),
     activatedThoughts: createActivatedThoughtsState(),
+    boundThoughts: createBoundThoughtsState(),
     decision: createDecisionState(),
   };
 }
