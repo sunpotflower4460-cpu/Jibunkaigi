@@ -155,6 +155,16 @@ const createMakerSeedState = () => ({
   position: 'foundation',
 });
 
+const createActivatedThoughtsState = () => ({
+  items: [],
+  topThoughtIds: [],
+  activationMeta: {
+    totalCandidates: 0,
+    selectedCount: 0,
+    dominantAxes: [],
+  },
+});
+
 const createDecisionState = () => ({
   feltSense: {
     primaryFeeling: null,
@@ -255,6 +265,7 @@ export function createInitialInternalState() {
     belief: createBeliefLayersState(),
     preconditionFilter: createPreconditionFilterState(),
     preconditionBias: createPreconditionBiasState(),
+    activatedThoughts: createActivatedThoughtsState(),
     decision: createDecisionState(),
   };
 }

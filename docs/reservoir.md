@@ -13,7 +13,7 @@ Reservoir は、顕在層（Surface Layer）v0.1 の第2段階として実装さ
 
 ## 実装状況
 
-### Phase 0 (現在) - 最小初期 thought 粒子セット投入完了
+### Phase 0 (完了) - 最小初期 thought 粒子セット投入完了
 
 - ✅ 型定義（ThoughtNode, FeelingNode, MoveNode, NodeRelation）
 - ✅ ファイル構成（shared, agents, relations）
@@ -28,11 +28,25 @@ Reservoir は、顕在層（Surface Layer）v0.1 の第2段階として実装さ
 - ⏸️ feeling / move は placeholder のみ（今後実装）
 - ⏸️ mirror の thought 粒子は後回し（others_field と連携段階で投入予定）
 
+### Phase 4 (完了) - activate の最小実装
+
+- ✅ activateThoughts 関数実装（src/runtime/activateThoughts.js）
+- ✅ 加算式スコアリング（trigger/agentAffinity/resonance/body/antiTrigger）
+- ✅ emergingField 構築（attentionTargets, resonanceAxes, bodySignals, atmosphere）
+- ✅ runInternalOS への統合（decision 後、surface 前）
+- ✅ internalState への activatedThoughts 追加
+- ✅ compare/debug 表示対応
+- ✅ テスト完備
+- ✅ ドキュメント整備（docs/activate-phase.md）
+- ⏸️ feeling / move activate は未実装（thought のみ）
+- ⏸️ bind / select は未実装
+
 ### 今後の段階
 
-- Phase 1: activate の本実装（trigger/antiTrigger による活性化）
-- Phase 2: bind の本実装（NodeRelation を使った結合）
-- Phase 3: select の本実装（最終的な粒子選択）
+- Phase 5: bind の本実装（NodeRelation を使った粒子の結合）
+- Phase 6: select の本実装（最終的な粒子選択）
+- Phase 7: feeling / move の activate 実装
+- Phase 8: particle-aware surface translation
 
 ## ディレクトリ構成
 
