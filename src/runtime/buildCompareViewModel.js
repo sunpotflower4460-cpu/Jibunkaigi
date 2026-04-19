@@ -48,6 +48,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.layerBoundaryPreview] - latent / derived / dynamic boundary preview (dev-only)
  * @param {object} [params.reservoirPreview] - Reservoir stats preview (dev-only)
  * @param {object} [params.activatedThoughtsPreview] - Activated thoughts preview (dev-only, Phase 4)
+ * @param {object} [params.boundThoughtsPreview] - Bound thoughts preview (dev-only, Phase 5)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -77,6 +78,7 @@ export const buildCompareViewModel = ({
   layerBoundaryPreview = null,
   reservoirPreview = null,
   activatedThoughtsPreview = null,
+  boundThoughtsPreview = null,
   focusBiasApplied = false,
   meaningBiasApplied = false,
   identityBiasApplied = null,
@@ -332,6 +334,42 @@ export const buildCompareViewModel = ({
     })),
   } : null
 
+  // Bound Thoughts Preview (dev-only) - Phase 5
+  const normalizedBoundThoughtsPreview = boundThoughtsPreview ? {
+    boundThoughtClusterCount: boundThoughtsPreview.clusterMeta?.boundClusterCount ?? 0,
+    singleThoughtClusterCount: boundThoughtsPreview.clusterMeta?.singleClusterCount ?? 0,
+    totalClusters: boundThoughtsPreview.clusterMeta?.totalClusters ?? 0,
+    totalActivatedThoughts: boundThoughtsPreview.clusterMeta?.totalActivatedThoughts ?? 0,
+    topBoundCluster: (() => {
+      const topBound = (boundThoughtsPreview.clusters ?? []).find(c => c.clusterType === 'bound')
+      return topBound ? {
+        thoughtIds: topBound.thoughtIds,
+        relationTypes: topBound.relationTypes,
+        dominantAxis: topBound.dominantAxis,
+        score: topBound.score,
+      } : null
+    })(),
+    relationTypesPreview: (() => {
+      const relationTypes = new Set()
+      ;(boundThoughtsPreview.clusters ?? []).forEach(c => {
+        ;(c.relationTypes ?? []).forEach(rt => relationTypes.add(rt))
+      })
+      return Array.from(relationTypes)
+    })(),
+    dominantClusterAxes: (() => {
+      const axisCount = {}
+      ;(boundThoughtsPreview.clusters ?? []).forEach(c => {
+        ;(c.dominantAxis ?? []).forEach(axis => {
+          axisCount[axis] = (axisCount[axis] || 0) + 1
+        })
+      })
+      return Object.entries(axisCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([axis]) => axis)
+    })(),
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -375,6 +413,7 @@ export const buildCompareViewModel = ({
     layerBoundaryPreview: normalizedLayerBoundaryPreview,
     reservoirPreview: normalizedReservoirPreview,
     activatedThoughtsPreview: normalizedActivatedThoughtsPreview,
+    boundThoughtsPreview: normalizedBoundThoughtsPreview,
     focusBiasApplied: Boolean(focusBiasApplied),
     meaningBiasApplied: Boolean(meaningBiasApplied),
     identityBiasApplied: identityBiasApplied ?? null,

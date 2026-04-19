@@ -19,6 +19,8 @@ import { buildPreconditionBias, buildPreconditionBiasPreview } from './buildPrec
 import { createBeliefTensionLayer } from './beliefTensionLayer.js';
 import { buildDecisionPreviews, createDecisionLayer } from './decisionLayer.js';
 import { activateThoughts } from './activateThoughts.js';
+import { bindThoughts } from './bindThoughts.js';
+import { getNodeRelations } from '../reservoir/loadReservoir.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 
@@ -551,6 +553,30 @@ export function runInternalOS(input, options = {}) {
   };
   preconditionTrace.push('dynamic:after-activate-thoughts');
 
+  // ════════════════════════════════════════════════════════════════════
+  // BIND THOUGHTS (Phase 5)
+  // Use activated thoughts + relations to create small thought clusters
+  // This is NOT final selection - just grouping related thoughts
+  // ════════════════════════════════════════════════════════════════════
+
+  const nodeRelations = getNodeRelations(agentId);
+  const boundThoughtsResult = bindThoughts({
+    activatedThoughts: activatedThoughts.items,
+    relations: nodeRelations,
+    bindThreshold: 0.35,
+  });
+
+  const boundThoughts = {
+    clusters: boundThoughtsResult.clusters || [],
+    clusterMeta: boundThoughtsResult.clusterMeta || {
+      totalActivatedThoughts: 0,
+      totalClusters: 0,
+      boundClusterCount: 0,
+      singleClusterCount: 0,
+    },
+  };
+  preconditionTrace.push('dynamic:after-bind-thoughts');
+
   const freshLatentState = {
     ...initialState,
     // Raw latent layers (live latent substrate) — preserved as-is, not compressed
@@ -575,6 +601,8 @@ export function runInternalOS(input, options = {}) {
     decision,
     // Activated thoughts (Phase 4)
     activatedThoughts,
+    // Bound thoughts (Phase 5)
+    boundThoughts,
     // Legacy/backward compatibility
     existence: {
       layer1: existenceLayer1,
@@ -603,6 +631,7 @@ export function runInternalOS(input, options = {}) {
         preconditionBias,
         decision,
         activatedThoughts,
+        boundThoughts,
         existence: {
           layer1: existenceLayer1,
           layer2: existenceLayer2,
