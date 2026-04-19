@@ -1,3 +1,24 @@
+/**
+ * decisionLayer.js
+ * Decision Layer: Bridge / Adapter position (Surface v0.2 update)
+ *
+ * ARCHITECTURAL ROLE CHANGE (Surface v0.2):
+ * Previously: Primary decision maker for surface generation
+ * Now: Bridge / Adapter layer that connects precondition layers to conscious intent
+ *
+ * The main surface planning responsibility has moved to:
+ * - buildConsciousIntent (Phase 7)
+ * - buildLengthPlan (Phase 7)
+ * - buildSurfacePlan (Surface v0.2)
+ *
+ * This layer still provides:
+ * - feltSense (emotional/tension state)
+ * - intention (speak intent, touch depth, focus target)
+ * - restraint (holdBack levels)
+ *
+ * But these are now inputs to surfacePlan, not the final surface decision.
+ */
+
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 
 const getStrongestTension = (beliefTension = {}) => {

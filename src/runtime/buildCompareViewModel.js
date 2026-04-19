@@ -55,6 +55,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.selectedThoughtsPreview] - Selected thoughts preview (dev-only, Phase 6)
  * @param {object} [params.consciousIntentPreview] - Conscious intent preview (dev-only, Phase 7)
  * @param {object} [params.lengthPlanPreview] - Length plan preview (dev-only, Phase 7)
+ * @param {object} [params.surfacePlanPreview] - Surface plan preview (dev-only, Surface v0.2)
  * @returns {object}
  */
 export const buildCompareViewModel = ({
@@ -91,6 +92,7 @@ export const buildCompareViewModel = ({
   selectedThoughtsPreview = null,
   consciousIntentPreview = null,
   lengthPlanPreview = null,
+  surfacePlanPreview = null,
   focusBiasApplied = false,
   meaningBiasApplied = false,
   identityBiasApplied = null,
@@ -499,6 +501,11 @@ export const buildCompareViewModel = ({
     summary: lengthPlanPreview ?? '',
   } : null
 
+  // Surface Plan Preview (dev-only) - Surface v0.2
+  const normalizedSurfacePlanPreview = surfacePlanPreview ? {
+    summary: surfacePlanPreview ?? '',
+  } : null
+
   return {
     agentId,
     userText: user,
@@ -547,6 +554,9 @@ export const buildCompareViewModel = ({
     boundThoughtsPreview: normalizedBoundThoughtsPreview,
     boundMixedNodesPreview: normalizedBoundMixedNodesPreview,
     selectedThoughtsPreview: normalizedSelectedThoughtsPreview,
+    consciousIntentPreview: normalizedConsciousIntentPreview,
+    lengthPlanPreview: normalizedLengthPlanPreview,
+    surfacePlanPreview: normalizedSurfacePlanPreview,
     focusBiasApplied: Boolean(focusBiasApplied),
     meaningBiasApplied: Boolean(meaningBiasApplied),
     identityBiasApplied: identityBiasApplied ?? null,
@@ -580,6 +590,7 @@ export const buildCompareViewModel = ({
       hasSelectedThoughtsPreview: Boolean(normalizedSelectedThoughtsPreview),
       hasConsciousIntentPreview: Boolean(normalizedConsciousIntentPreview),
       hasLengthPlanPreview: Boolean(normalizedLengthPlanPreview),
+      hasSurfacePlanPreview: Boolean(normalizedSurfacePlanPreview),
     },
   }
 }

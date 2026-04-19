@@ -26,6 +26,7 @@ import { bindMixedNodes } from './bindMixedNodes.js';
 import { selectThoughtClusters } from './selectThoughtClusters.js';
 import { buildConsciousIntent, formatConsciousIntentForDebug } from './buildConsciousIntent.js';
 import { buildLengthPlan, formatLengthPlanForDebug } from './buildLengthPlan.js';
+import { buildSurfacePlan, formatSurfacePlanForDebug } from './buildSurfacePlan.js';
 import { getNodeRelations } from '../reservoir/loadReservoir.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
@@ -717,6 +718,29 @@ export function runInternalOS(input, options = {}) {
   });
   preconditionTrace.push('dynamic:after-length-plan');
 
+  // ════════════════════════════════════════════════════════════════════
+  // BUILD SURFACE PLAN (Surface v0.2)
+  // Transform internal state into surface-ready plan
+  // Reads mixed clusters (when available), feelings, moves, and builds
+  // emotionalColor, motionBias, othersPresence for natural surface generation
+  // ════════════════════════════════════════════════════════════════════
+
+  const surfacePlan = buildSurfacePlan({
+    selectedMixedClusters: null, // TODO: wire up selectedMixedClusters when implemented
+    selectedThoughts,
+    boundMixedNodes,
+    boundThoughts,
+    activatedFeelings,
+    activatedMoves,
+    consciousIntent,
+    lengthPlan,
+    beliefTension,
+    preconditionBias,
+    othersField: [], // TODO: wire up othersField in future
+    isMirror: agentId === 'master',
+  });
+  preconditionTrace.push('dynamic:after-surface-plan');
+
   const freshLatentState = {
     ...initialState,
     // Raw latent layers (live latent substrate) — preserved as-is, not compressed
@@ -755,6 +779,8 @@ export function runInternalOS(input, options = {}) {
     consciousIntent,
     // Length plan (Phase 7)
     lengthPlan,
+    // Surface plan (Surface v0.2)
+    surfacePlan,
     // Legacy/backward compatibility
     existence: {
       layer1: existenceLayer1,
@@ -789,6 +815,7 @@ export function runInternalOS(input, options = {}) {
         selectedThoughts,
         consciousIntent,
         lengthPlan,
+        surfacePlan,
         existence: {
           layer1: existenceLayer1,
           layer2: existenceLayer2,
@@ -950,6 +977,8 @@ export function runInternalOS(input, options = {}) {
       consciousIntentPreview: formatConsciousIntentForDebug(latentState.consciousIntent ?? consciousIntent),
       // Length plan preview (Phase 7, dev-only)
       lengthPlanPreview: formatLengthPlanForDebug(latentState.lengthPlan ?? lengthPlan),
+      // Surface plan preview (Surface v0.2, dev-only)
+      surfacePlanPreview: formatSurfacePlanForDebug(latentState.surfacePlan ?? surfacePlan),
     },
   };
 }
