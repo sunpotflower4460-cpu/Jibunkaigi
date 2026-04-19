@@ -51,6 +51,7 @@ const openingKey = (text = '') => {
  * @param {object} [params.activatedFeelingsPreview] - Activated feelings preview (dev-only, L2 Phase)
  * @param {object} [params.activatedMovesPreview] - Activated moves preview (dev-only, L2 Phase)
  * @param {object} [params.boundThoughtsPreview] - Bound thoughts preview (dev-only, Phase 5)
+ * @param {object} [params.boundMixedNodesPreview] - Bound mixed nodes preview (dev-only, Mixed Cluster Phase)
  * @param {object} [params.selectedThoughtsPreview] - Selected thoughts preview (dev-only, Phase 6)
  * @param {object} [params.consciousIntentPreview] - Conscious intent preview (dev-only, Phase 7)
  * @param {object} [params.lengthPlanPreview] - Length plan preview (dev-only, Phase 7)
@@ -86,6 +87,7 @@ export const buildCompareViewModel = ({
   activatedFeelingsPreview = null,
   activatedMovesPreview = null,
   boundThoughtsPreview = null,
+  boundMixedNodesPreview = null,
   selectedThoughtsPreview = null,
   consciousIntentPreview = null,
   lengthPlanPreview = null,
@@ -408,6 +410,44 @@ export const buildCompareViewModel = ({
     })(),
   } : null
 
+  // Bound Mixed Nodes Preview (dev-only) - Mixed Cluster Phase
+  const normalizedBoundMixedNodesPreview = boundMixedNodesPreview ? {
+    mixedClusterCount: boundMixedNodesPreview.clusterMeta?.totalClusters ?? 0,
+    mixedBoundClusterCount: boundMixedNodesPreview.clusterMeta?.boundClusterCount ?? 0,
+    mixedSingleClusterCount: boundMixedNodesPreview.clusterMeta?.singleClusterCount ?? 0,
+    totalActivatedNodes: boundMixedNodesPreview.clusterMeta?.totalActivatedNodes ?? 0,
+    topMixedCluster: (() => {
+      const topBound = (boundMixedNodesPreview.clusters ?? []).find(c => c.clusterType === 'bound')
+      return topBound ? {
+        thoughtIds: topBound.thoughtIds,
+        feelingIds: topBound.feelingIds,
+        moveIds: topBound.moveIds,
+        relationTypes: topBound.relationTypes,
+        dominantAxis: topBound.dominantAxis,
+        score: topBound.score,
+      } : null
+    })(),
+    mixedRelationTypes: (() => {
+      const relationTypes = new Set()
+      ;(boundMixedNodesPreview.clusters ?? []).forEach(c => {
+        ;(c.relationTypes ?? []).forEach(rt => relationTypes.add(rt))
+      })
+      return Array.from(relationTypes)
+    })(),
+    mixedClusterAxes: (() => {
+      const axisCount = {}
+      ;(boundMixedNodesPreview.clusters ?? []).forEach(c => {
+        ;(c.dominantAxis ?? []).forEach(axis => {
+          axisCount[axis] = (axisCount[axis] || 0) + 1
+        })
+      })
+      return Object.entries(axisCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([axis]) => axis)
+    })(),
+  } : null
+
   // Selected Thoughts Preview (dev-only) - Phase 6
   const normalizedSelectedThoughtsPreview = selectedThoughtsPreview ? {
     selectedThoughtCount: selectedThoughtsPreview.selectionMeta?.selectedCount ?? 0,
@@ -505,6 +545,7 @@ export const buildCompareViewModel = ({
     activatedFeelingsPreview: normalizedActivatedFeelingsPreview,
     activatedMovesPreview: normalizedActivatedMovesPreview,
     boundThoughtsPreview: normalizedBoundThoughtsPreview,
+    boundMixedNodesPreview: normalizedBoundMixedNodesPreview,
     selectedThoughtsPreview: normalizedSelectedThoughtsPreview,
     focusBiasApplied: Boolean(focusBiasApplied),
     meaningBiasApplied: Boolean(meaningBiasApplied),
