@@ -30,9 +30,18 @@ import { buildLengthPlan, formatLengthPlanForDebug } from './buildLengthPlan.js'
 import { buildSurfacePlan, formatSurfacePlanForDebug } from './buildSurfacePlan.js';
 import { buildFinalDecisionSubstrate, formatFinalDecisionSubstrateForDebug } from './buildFinalDecisionSubstrate.js';
 import { estimateMicroSignals } from './estimateMicroSignals.js';
+import {
+  getMicroSignalValue,
+  MICRO_SIGNAL_BIAS_MAP,
+  MICRO_SIGNAL_BIAS_MAX_DELTA,
+} from './config/microSignalBias.js';
 import { getNodeRelations } from '../reservoir/loadReservoir.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+const clampSignedDelta = (value) => Math.max(
+  -MICRO_SIGNAL_BIAS_MAX_DELTA,
+  Math.min(MICRO_SIGNAL_BIAS_MAX_DELTA, Number(value) || 0),
+);
 
 const mergeSignals = (base = {}, delta = {}) => {
   const keys = new Set([...Object.keys(base), ...Object.keys(delta)]);
@@ -97,6 +106,94 @@ const getAxisStanceDelta = (axis) => {
   }
 };
 
+const buildMicroSignalLayerDelta = (layerKey, microSignals = {}) => {
+  const delta = {};
+  const bySignal = {};
+
+  Object.entries(MICRO_SIGNAL_BIAS_MAP).forEach(([signalKey, config]) => {
+    const layerMapping = config?.layers?.[layerKey];
+    if (!layerMapping || typeof layerMapping !== 'object') return;
+
+    const intensity = clamp01(getMicroSignalValue(microSignals, signalKey));
+    if (intensity <= 0) return;
+
+    const axes = {};
+    Object.entries(layerMapping).forEach(([axis, weight]) => {
+      const axisDelta = clampSignedDelta(intensity * (Number(weight) || 0));
+      if (axisDelta === 0) return;
+      axes[axis] = axisDelta;
+      delta[axis] = clampSignedDelta((delta[axis] ?? 0) + axisDelta);
+    });
+
+    if (Object.keys(axes).length > 0) {
+      bySignal[signalKey] = {
+        intensity,
+        axes,
+      };
+    }
+  });
+
+  return { delta, bySignal };
+};
+
+const buildMicroSignalBiasDebugLayer = (axes = [], baseLayer = {}, deltaLayer = {}, finalLayer = {}) => ({
+  axes: Object.fromEntries(
+    axes.map((axis) => [
+      axis,
+      {
+        base: clamp01(baseLayer[axis] ?? 0),
+        delta: clampSignedDelta(deltaLayer[axis] ?? 0),
+        final: clamp01(finalLayer[axis] ?? 0),
+      },
+    ]),
+  ),
+});
+
+const buildMicroSignalBiasDebug = ({
+  baseField = {},
+  field = {},
+  baseReaction = {},
+  reaction = {},
+  baseStance = {},
+  stance = {},
+  microSignals = {},
+} = {}) => {
+  const fieldDelta = buildMicroSignalLayerDelta('field', microSignals);
+  const reactionDelta = buildMicroSignalLayerDelta('reaction', microSignals);
+  const stanceDelta = buildMicroSignalLayerDelta('stance', microSignals);
+
+  return {
+    maxDelta: MICRO_SIGNAL_BIAS_MAX_DELTA,
+    field: {
+      ...buildMicroSignalBiasDebugLayer(
+        ['softness', 'depth', 'urgency', 'fragility', 'playfulness'],
+        baseField,
+        fieldDelta.delta,
+        field,
+      ),
+      bySignal: fieldDelta.bySignal,
+    },
+    reaction: {
+      ...buildMicroSignalBiasDebugLayer(
+        ['touched', 'protect', 'clarify', 'curiosity', 'holdBackJudgment'],
+        baseReaction,
+        reactionDelta.delta,
+        reaction,
+      ),
+      bySignal: reactionDelta.bySignal,
+    },
+    stance: {
+      ...buildMicroSignalBiasDebugLayer(
+        ['receive', 'illuminate', 'structure', 'guard', 'nudge'],
+        baseStance,
+        stanceDelta.delta,
+        stance,
+      ),
+      bySignal: stanceDelta.bySignal,
+    },
+  };
+};
+
 /**
  * preconditionBias を reaction に混ぜる。
  * Home の急がなさ、Existence の存在感、Belief の軸を足し引きして
@@ -106,7 +203,7 @@ const getAxisStanceDelta = (axis) => {
  * @param {object} preconditionBias
  * @returns {object}
  */
-const applyReactionBias = (reaction = {}, preconditionBias = {}) => {
+const applyReactionBias = (reaction = {}, preconditionBias = {}, microSignals = {}) => {
   const bias = preconditionBias?.preconditionBias ?? preconditionBias;
   const rawLatent = preconditionBias?.rawLatent ?? {};
   const preconditionFilter = preconditionBias?.preconditionFilter ?? {};
@@ -118,6 +215,7 @@ const applyReactionBias = (reaction = {}, preconditionBias = {}) => {
   const latentHome = rawLatent?.home ?? {};
   const latentExistence1 = rawLatent?.existence1 ?? {};
   const latentBelief = preconditionFilter?.belief ?? {};
+  const microSignalDelta = buildMicroSignalLayerDelta('reaction', microSignals).delta;
   const identityPresenceBias = clamp01(
     (identity.selfPresence ?? 0) * 0.35 +
     (identity.hereNowStability ?? 0) * 0.25 +
@@ -132,6 +230,7 @@ const applyReactionBias = (reaction = {}, preconditionBias = {}) => {
       (latentExistence1.selfPresence ?? 0) * 0.03 +
       tensionStrength * 0.04 +
       (identity.firstPersonSoftness ?? 0) * 0.03 +
+      (microSignalDelta.touched ?? 0) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).touched ?? 0),
     protect:
       (pacing.returnBias ?? 0) * 0.05 +
@@ -139,17 +238,20 @@ const applyReactionBias = (reaction = {}, preconditionBias = {}) => {
       (identity.selfPresence ?? 0) * 0.03 +
       (latentHome.kernel?.returnBeforeOutput ?? 0) * 0.03 +
       tensionStrength * 0.03 +
+      (microSignalDelta.protect ?? 0) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).protect ?? 0),
     clarify:
       -((pacing.slowDown ?? 0) * 0.1) -
       ((meaning.antiEarlySolution ?? 0) * 0.08) -
       ((latentHome.outputLimits?.noEarlySolution ?? 0) * 0.05) -
       ((meaning.antiEarlySummary ?? 0) * 0.03) +
+      (microSignalDelta.clarify ?? 0) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).clarify ?? 0),
     curiosity:
       -((focus.oneThreadBias ?? 0) * 0.04) -
       ((focus.antiOverExpansion ?? 0) * 0.05) +
       ((latentBelief.activeLeafBeliefs?.length ?? 0) > 0 ? 0.02 : 0) +
+      (microSignalDelta.curiosity ?? 0) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).curiosity ?? 0),
     holdBackJudgment:
       (pacing.slowDown ?? 0) * 0.08 +
@@ -158,6 +260,7 @@ const applyReactionBias = (reaction = {}, preconditionBias = {}) => {
       (latentExistence1.unfinishedAllowed ?? 0) * 0.05 +
       (identity.firstPersonSoftness ?? 0) * 0.05 +
       identityPresenceBias * 0.04 +
+      (microSignalDelta.holdBackJudgment ?? 0) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).holdBackJudgment ?? 0),
   });
 };
@@ -170,7 +273,7 @@ const applyReactionBias = (reaction = {}, preconditionBias = {}) => {
  * @param {object} preconditionBias
  * @returns {object}
  */
-const applyStanceBias = (stance = {}, preconditionBias = {}) => {
+const applyStanceBias = (stance = {}, preconditionBias = {}, microSignals = {}) => {
   const bias = preconditionBias?.preconditionBias ?? preconditionBias;
   const rawLatent = preconditionBias?.rawLatent ?? {};
   const pacing = bias?.pacing ?? {};
@@ -180,6 +283,7 @@ const applyStanceBias = (stance = {}, preconditionBias = {}) => {
   const tensionStrength = clamp01(rawLatent?.beliefTension?.totalTensionStrength ?? 0);
   const latentExistence1 = rawLatent?.existence1 ?? {};
   const latentHome = rawLatent?.home ?? {};
+  const microSignalDelta = buildMicroSignalLayerDelta('stance', microSignals).delta;
   const identityPresenceBias = clamp01(
     (identity.selfPresence ?? 0) * 0.3 +
     (identity.hereNowStability ?? 0) * 0.25 +
@@ -192,8 +296,10 @@ const applyStanceBias = (stance = {}, preconditionBias = {}) => {
       (pacing.returnBias ?? 0) * 0.06 +
       identityPresenceBias * 0.06 +
       (latentExistence1.firstPersonSoftness ?? 0) * 0.04 +
+      (microSignalDelta.receive ?? 0) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).receive ?? 0),
     illuminate:
+      (microSignalDelta.illuminate ?? 0) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).illuminate ?? 0) +
       (identity.selfRememberingStrength ?? 0) * 0.03 +
       tensionStrength * 0.03,
@@ -202,15 +308,18 @@ const applyStanceBias = (stance = {}, preconditionBias = {}) => {
       ((meaning.antiEarlySummary ?? 0) * 0.08) -
       ((latentHome.outputLimits?.noEarlySummary ?? 0) * 0.04) -
       ((meaning.antiEarlySolution ?? 0) * 0.08) +
+      (microSignalDelta.structure ?? 0) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).structure ?? 0),
     guard:
       (focus.antiOverExpansion ?? 0) * 0.05 +
       identityPresenceBias * 0.05 +
       tensionStrength * 0.04 +
+      (microSignalDelta.guard ?? 0) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).guard ?? 0),
     nudge:
       -((focus.oneThreadBias ?? 0) * 0.04) -
       ((meaning.antiEarlySolution ?? 0) * 0.05) +
+      (microSignalDelta.nudge ?? 0) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).nudge ?? 0),
   });
 };
@@ -219,7 +328,7 @@ const applyFieldBias = (field = {}, {
   rawLatent = {},
   preconditionFilter = {},
   preconditionBias = {},
-} = {}) => {
+} = {}, microSignals = {}) => {
   const home = rawLatent?.home ?? {};
   const existence1 = rawLatent?.existence1 ?? {};
   const existence2 = rawLatent?.existence2 ?? {};
@@ -230,34 +339,40 @@ const applyFieldBias = (field = {}, {
   const biasPacing = preconditionBias?.pacing ?? {};
   const tensionStrength = clamp01(beliefTension.totalTensionStrength ?? 0);
   const identityPlayfulnessBoost = getIdentityPlayfulnessBoost(existence2.agentIdentityKey);
+  const microSignalDelta = buildMicroSignalLayerDelta('field', microSignals).delta;
 
   return {
     softness: clamp01(
       (field.softness ?? 0) +
       (home.kernel?.slowDown ?? 0) * 0.06 +
       (biasIdentity.firstPersonSoftness ?? 0) * 0.04 +
+      (microSignalDelta.softness ?? 0) +
       identityPlayfulnessBoost
     ),
     depth: clamp01(
       (field.depth ?? 0) +
       (biasFocus.oneThreadBias ?? 0) * 0.05 +
       (existence1.hereNowStability ?? 0) * 0.03 +
+      (microSignalDelta.depth ?? 0) +
       tensionStrength * 0.04
     ),
     urgency: clamp01(
       (field.urgency ?? 0) -
       (biasPacing.slowDown ?? 0) * 0.1 +
+      (microSignalDelta.urgency ?? 0) +
       tensionStrength * 0.04
     ),
     fragility: clamp01(
       (field.fragility ?? 0) +
       (existence1.unfinishedAllowed ?? 0) * 0.04 +
       (derived.returnBias ?? 0) * 0.03 +
+      (microSignalDelta.fragility ?? 0) +
       tensionStrength * 0.06
     ),
     playfulness: clamp01(
       (field.playfulness ?? 0) -
       (biasFocus.oneThreadBias ?? 0) * 0.05 +
+      (microSignalDelta.playfulness ?? 0) +
       identityPlayfulnessBoost
     ),
   };
@@ -465,18 +580,27 @@ export function runInternalOS(input, options = {}) {
 
   // Dynamic field: how the latent self perceives the current input
   const baseField = estimateField(normalizedInput);
-  const field = applyFieldBias(baseField, dynamicBiasContext);
+  const field = applyFieldBias(baseField, dynamicBiasContext, microSignals);
   preconditionTrace.push('dynamic:after-field');
 
   // Dynamic reaction: how the latent self reacts to this field, biased by precondition
   const baseReaction = generateReaction(normalizedInput, field);
-  const reaction = applyReactionBias(baseReaction, dynamicBiasContext);
+  const reaction = applyReactionBias(baseReaction, dynamicBiasContext, microSignals);
   preconditionTrace.push('dynamic:after-reaction');
 
   // Dynamic stance: how the latent self stands in this moment, biased by precondition
   const baseStance = selectStance(field, reaction);
-  const stance = applyStanceBias(baseStance, dynamicBiasContext);
+  const stance = applyStanceBias(baseStance, dynamicBiasContext, microSignals);
   preconditionTrace.push('dynamic:after-stance');
+  const microSignalBiasDebug = buildMicroSignalBiasDebug({
+    baseField,
+    field,
+    baseReaction,
+    reaction,
+    baseStance,
+    stance,
+    microSignals,
+  });
   const permission = extractPermissionShape(effectiveHome);
 
   const decision = createDecisionLayer({
@@ -1012,6 +1136,7 @@ export function runInternalOS(input, options = {}) {
       meaningBiasApplied,
       identityBiasApplied,
       microSignals,
+      microSignalBias: microSignalBiasDebug,
       // Precondition chain trace — dev/debug only, not exposed to UX
       preconditionTrace,
       existence1Present: Boolean(latentState.existence1),

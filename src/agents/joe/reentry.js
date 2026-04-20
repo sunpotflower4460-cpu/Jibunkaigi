@@ -4,6 +4,10 @@
 // モデルが直接台詞として使いやすい文体を避け、知覚・制約の言葉にとどめる。
 
 import { selectTaggedReentry } from '../../runtime/reentrySelection.js';
+import {
+  getMicroSignalValue,
+  JOE_REENTRY_MICRO_SIGNAL_TAG_BIAS,
+} from '../../runtime/config/microSignalBias.js';
 
 export const REENTRY_VARIANTS = [
   {
@@ -33,5 +37,38 @@ export const REENTRY_VARIANTS = [
   },
 ];
 
-export const getJoeReentry = (state = {}, options = {}) =>
-  selectTaggedReentry(REENTRY_VARIANTS, state, options);
+const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+
+const normalizeJoeReentryInput = (input = {}) => {
+  if (input && typeof input === 'object' && 'state' in input) {
+    return {
+      state: input.state && typeof input.state === 'object' ? input.state : {},
+      microSignals: input.microSignals && typeof input.microSignals === 'object' ? input.microSignals : {},
+    };
+  }
+
+  return {
+    state: input && typeof input === 'object' ? input : {},
+    microSignals: {},
+  };
+};
+
+const applyMicroSignalTagBias = (state = {}, microSignals = {}) => {
+  const derivedState = { ...state };
+
+  Object.entries(JOE_REENTRY_MICRO_SIGNAL_TAG_BIAS).forEach(([signalKey, tagWeights]) => {
+    const intensity = clamp01(getMicroSignalValue(microSignals, signalKey));
+    if (intensity <= 0) return;
+
+    Object.entries(tagWeights).forEach(([tag, weight]) => {
+      derivedState[tag] = clamp01((derivedState[tag] ?? 0) + (intensity * (Number(weight) || 0)));
+    });
+  });
+
+  return derivedState;
+};
+
+export const getJoeReentry = (input = {}, options = {}) => {
+  const { state, microSignals } = normalizeJoeReentryInput(input);
+  return selectTaggedReentry(REENTRY_VARIANTS, applyMicroSignalTagBias(state, microSignals), options);
+};

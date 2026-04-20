@@ -28,6 +28,36 @@ const sampleEntry = {
     selfHedging: { epistemicLowering: 0.44 },
     quotation: { distancing: 0.12 },
   },
+  microSignalBias: {
+    maxDelta: 0.15,
+    field: {
+      axes: {
+        softness: { base: 0.42, delta: 0.04, final: 0.46 },
+        depth: { base: 0.51, delta: 0, final: 0.51 },
+        urgency: { base: 0.2, delta: 0.03, final: 0.23 },
+        fragility: { base: 0.37, delta: 0.06, final: 0.43 },
+        playfulness: { base: 0.12, delta: 0, final: 0.12 },
+      },
+    },
+    reaction: {
+      axes: {
+        touched: { base: 0.33, delta: 0.08, final: 0.41 },
+        protect: { base: 0.29, delta: 0.05, final: 0.34 },
+        clarify: { base: 0.14, delta: 0, final: 0.14 },
+        curiosity: { base: 0.21, delta: 0, final: 0.21 },
+        holdBackJudgment: { base: 0.48, delta: 0.11, final: 0.59 },
+      },
+    },
+    stance: {
+      axes: {
+        receive: { base: 0.35, delta: 0.09, final: 0.44 },
+        illuminate: { base: 0.28, delta: 0.05, final: 0.33 },
+        structure: { base: 0.31, delta: -0.04, final: 0.27 },
+        guard: { base: 0.22, delta: 0, final: 0.22 },
+        nudge: { base: 0.19, delta: 0, final: 0.19 },
+      },
+    },
+  },
   activated: {
     activeBeliefs: [
       { id: 'unfinished_is_alive', sense: '未完成は欠陥より、まだ途中に見える', score: 0.82 },
@@ -121,6 +151,9 @@ test('JoeDebugPanel renders micro-signal values', () => {
   assert.match(html, /punctuation/);
   assert.match(html, /softNegation/);
   assert.match(html, /epistemicLowering/);
+  assert.match(html, /micro-signal による補正量 delta/);
+  assert.match(html, /各軸の delta 上限: ±0.15/);
+  assert.match(html, /structure/);
 });
 
 test('JoeDebugPanel shows the reentry state-driven badge', () => {

@@ -12,6 +12,6 @@ import { activateGeneric } from './activateGeneric.js';
  * @param {object} state     - Output of estimateState().
  * @returns {object|null}    - Activation result, or null for unknown agents.
  */
-export const activateAgent = (agentId, state = {}) => {
-  return activateGeneric(agentId, state);
+export const activateAgent = (agentId, state = {}, options = {}) => {
+  return activateGeneric(agentId, state, options);
 };

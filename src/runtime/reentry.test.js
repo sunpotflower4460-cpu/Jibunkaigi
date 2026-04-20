@@ -79,3 +79,28 @@ test('activateGeneric threads structured reentry and debug candidates', () => {
     Math.random = originalRandom;
   }
 });
+
+test('joe reentry uses hesitation micro-signal to strengthen freeze variants', () => {
+  const baseline = getJoeReentry(
+    { state: { desire: 0.7, reach: 0.65, freeze: 0.2, unfinished: 0.2 } },
+    { random: () => 0 },
+  );
+  const withMicroSignals = getJoeReentry(
+    {
+      state: { desire: 0.7, reach: 0.65, freeze: 0.2, unfinished: 0.2 },
+      microSignals: {
+        punctuation: { hesitation: 1, trailOff: 0, assertion: 0 },
+        fillers: { fillerDensity: 0 },
+        negationPrefix: { softNegation: 0 },
+        sentenceLength: { burstiness: 0, shortnessPressure: 0 },
+        selfHedging: { epistemicLowering: 0 },
+        quotation: { distancing: 0 },
+      },
+    },
+    { random: () => 0 },
+  );
+
+  assert.notEqual(baseline.selected.text, withMicroSignals.selected.text);
+  assert.ok(withMicroSignals.selected.tags.includes('freeze'));
+  assert.ok(withMicroSignals.allCandidates[0].score > baseline.allCandidates[0].score);
+});

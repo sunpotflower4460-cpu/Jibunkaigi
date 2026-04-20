@@ -34,6 +34,10 @@ const clamp01 = (value) => {
 };
 
 const formatScore = (value) => clamp01(value).toFixed(2);
+const formatSignedScore = (value) => {
+  const num = typeof value === 'number' && !Number.isNaN(value) ? value : 0;
+  return `${num >= 0 ? '+' : ''}${num.toFixed(2)}`;
+};
 
 const getTopItems = (items, limit = 2) => (
   Array.isArray(items) ? items.slice(0, limit) : []
@@ -272,9 +276,54 @@ const MicroSignalGroupCard = ({ microSignals, group }) => h(
   ],
 );
 
+const MICRO_SIGNAL_BIAS_LAYER_LABELS = {
+  field: 'field',
+  reaction: 'reaction',
+  stance: 'stance',
+};
+
+const MicroSignalBiasLayerCard = ({ layerKey, layerBias }) => {
+  const axes = Object.entries(layerBias?.axes || {});
+
+  return h(
+    'div',
+    {
+      className: 'rounded-md border border-slate-800 bg-slate-900/80 p-2 text-[11px] text-slate-200',
+    },
+    [
+      h('div', { key: 'title', className: 'mb-2 font-mono text-orange-200' }, MICRO_SIGNAL_BIAS_LAYER_LABELS[layerKey] || layerKey),
+      h('div', { key: 'header', className: 'grid grid-cols-[minmax(0,1fr)_3.5rem_3.5rem_3.5rem] gap-2 border-b border-slate-800 pb-1 text-[10px] font-mono text-slate-500' }, [
+        h('span', { key: 'axis' }, 'axis'),
+        h('span', { key: 'base', className: 'text-right' }, '元'),
+        h('span', { key: 'delta', className: 'text-right' }, '+delta'),
+        h('span', { key: 'final', className: 'text-right' }, '最終'),
+      ]),
+      ...axes.map(([axis, values]) => h('div', {
+        key: axis,
+        className: 'grid grid-cols-[minmax(0,1fr)_3.5rem_3.5rem_3.5rem] gap-2 border-b border-slate-900/80 py-1 last:border-b-0',
+      }, [
+        h('span', { key: 'axis', className: 'font-mono text-slate-300' }, axis),
+        h('span', { key: 'base', className: 'text-right font-mono text-slate-400' }, formatScore(values?.base)),
+        h(
+          'span',
+          {
+            key: 'delta',
+            className: `text-right font-mono ${
+              (values?.delta ?? 0) < 0 ? 'text-sky-300' : 'text-amber-200'
+            }`,
+          },
+          formatSignedScore(values?.delta),
+        ),
+        h('span', { key: 'final', className: 'text-right font-mono text-orange-200' }, formatScore(values?.final)),
+      ])),
+    ],
+  );
+};
+
 const JoeDebugPanel = ({ entry = null, onClose }) => {
   const estimateState = entry?.estimateState || {};
   const microSignals = entry?.microSignals || {};
+  const microSignalBias = entry?.microSignalBias || null;
   const activated = entry?.activated || {};
   const beliefs = getTopItems(activated.activeBeliefs);
   const memories = getTopItems(activated.activeMemories);
@@ -349,6 +398,25 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
                 microSignals,
               })),
             ),
+            microSignalBias
+              ? h(
+                  'div',
+                  { key: 'micro-signal-bias', className: 'space-y-2 pt-2' },
+                  [
+                    h('p', { key: 'caption', className: 'text-[10px] font-mono text-slate-400' }, 'micro-signal による補正量 delta'),
+                    h('p', { key: 'limit', className: 'text-[10px] text-slate-500' }, `各軸の delta 上限: ±${formatScore(microSignalBias.maxDelta)}`),
+                    h(
+                      'div',
+                      { key: 'tables', className: 'grid grid-cols-1 gap-2' },
+                      ['field', 'reaction', 'stance'].map((layerKey) => h(MicroSignalBiasLayerCard, {
+                        key: layerKey,
+                        layerKey,
+                        layerBias: microSignalBias[layerKey],
+                      })),
+                    ),
+                  ],
+                )
+              : null,
           ),
           h(
             Section,
