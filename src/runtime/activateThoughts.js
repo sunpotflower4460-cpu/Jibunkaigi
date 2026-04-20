@@ -36,11 +36,33 @@ const canonicalizeAgentId = (agentId) => AGENT_ALIAS_MAP[normalizeText(agentId)]
 const extractNarrativeTokens = (protoMeaning = {}) => {
   if (!Array.isArray(protoMeaning?.narrative)) return [];
 
-  return [...new Set(
-    protoMeaning.narrative
-      .flatMap((line) => String(line || '').toLowerCase().match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}a-z0-9]{2,}/gu) || [])
-      .filter((token) => token.length >= 2)
-  )];
+  const cues = new Set();
+
+  protoMeaning.narrative.forEach((line) => {
+    const normalizedLine = normalizeText(line);
+    if (!normalizedLine) return;
+
+    if (/残|火種|消していない|芯/.test(normalizedLine)) {
+      ['remaining', 'alive', 'remnant', 'core', 'mattering'].forEach((cue) => cues.add(cue));
+    }
+    if (/守り|壊さず/.test(normalizedLine)) {
+      ['holding', 'protect', 'held-back'].forEach((cue) => cues.add(cue));
+    }
+    if (/届|前に出|向き/.test(normalizedLine)) {
+      ['direction', 'forward', 'motion', 'want-to-emerge'].forEach((cue) => cues.add(cue));
+    }
+    if (/ためら|文章になる前|言葉になる前/.test(normalizedLine)) {
+      ['frozen', 'stuck', 'raw', 'still-raw'].forEach((cue) => cues.add(cue));
+    }
+    if (/引っ込め|乱さない/.test(normalizedLine)) {
+      ['suppression', 'compressed', 'held-back'].forEach((cue) => cues.add(cue));
+    }
+    if (/諦めかけ/.test(normalizedLine)) {
+      ['pressure', 'suppression', 'compressed'].forEach((cue) => cues.add(cue));
+    }
+  });
+
+  return [...cues];
 };
 
 const calculateProtoMeaningMatch = (node = {}, protoMeaning = {}) => {

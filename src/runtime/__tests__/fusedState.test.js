@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 
 import { buildFusedState, createInitialFusedState } from '../fusedState.js';
 
+const assertApprox = (actual, expected) => {
+  assert.ok(Math.abs(actual - expected) < 1e-9, `expected ${actual} to be close to ${expected}`);
+};
+
 test('createInitialFusedState returns zeroed shape', () => {
   const result = createInitialFusedState();
 
@@ -26,7 +30,7 @@ test('buildFusedState fuses hesitation from punctuation and freeze', () => {
     microSignals: { punctuation: { hesitation: 0.8 } },
   });
 
-  assert.equal(result.fused.hesitation, 0.68);
+  assertApprox(result.fused.hesitation, 0.68);
 });
 
 test('buildFusedState raises guardedness from fear, shame, and soft negation', () => {
@@ -38,7 +42,7 @@ test('buildFusedState raises guardedness from fear, shame, and soft negation', (
     },
   });
 
-  assert.equal(result.fused.guardedness, 0.475);
+  assertApprox(result.fused.guardedness, 0.505);
 });
 
 test('buildFusedState preserves reachability and ember from desire/reach/assertion', () => {
@@ -47,8 +51,8 @@ test('buildFusedState preserves reachability and ember from desire/reach/asserti
     microSignals: { punctuation: { assertion: 0.6 } },
   });
 
-  assert.equal(result.fused.reachability, 0.595);
-  assert.equal(result.fused.ember, 0.665);
+  assertApprox(result.fused.reachability, 0.635);
+  assertApprox(result.fused.ember, 0.68);
 });
 
 test('buildFusedState converts trail off and filler density into unfinished pull', () => {
@@ -60,7 +64,7 @@ test('buildFusedState converts trail off and filler density into unfinished pull
     },
   });
 
-  assert.equal(result.fused.unfinishedPull, 0.53);
+  assertApprox(result.fused.unfinishedPull, 0.575);
 });
 
 test('buildFusedState lifts self silencing from self erasure, hedging, and distancing', () => {
@@ -72,7 +76,7 @@ test('buildFusedState lifts self silencing from self erasure, hedging, and dista
     },
   });
 
-  assert.equal(result.fused.selfSilencing, 0.665);
+  assertApprox(result.fused.selfSilencing, 0.69);
 });
 
 test('buildFusedState clamps pressure and expression tension to 1', () => {

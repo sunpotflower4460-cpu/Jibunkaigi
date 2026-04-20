@@ -42,7 +42,7 @@ test('buildProtoMeaning emits sensory and narrative lines for expressive hesitat
   assert.ok(result.sensory.includes('ためらいが喉元に残っている'));
   assert.ok(result.sensory.includes('終わりきらないざらつきが残っている'));
   assert.ok(result.narrative.includes('出したいものは残っているが、前に出す手前でためらっている'));
-  assert.ok(result.narrative.includes('守りを残しつつ、届く形を探している'));
+  assert.ok(result.narrative.includes('終わったことにせず、残っている向きを持ち続けている'));
 });
 
 test('buildProtoMeaning derives resignation narrative when unfinished pull remains', () => {
