@@ -128,9 +128,10 @@ export const activateJoe = (state = {}) => {
   const activeResidue = buildJoeResidue(residueContext);
 
   const activeMemoryTrace = buildMemoryTrace(activeMemories);
+  const reentryPick = getJoeReentry(state);
 
   return {
-    reentry: getJoeReentry(),
+    reentry: reentryPick.selected,
     refresh: JOE_REFRESH,
 
     activeBeliefs,
@@ -145,6 +146,7 @@ export const activateJoe = (state = {}) => {
       pickedBeliefIds: activeBeliefs.map((b) => b.id),
       pickedMemoryIds: activeMemories.map((m) => m.id),
       pickedFieldIds: activeField.map((f) => f.id),
+      reentryCandidates: reentryPick.allCandidates,
     },
   };
 };

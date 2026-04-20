@@ -72,6 +72,14 @@ const activatedWithHints = {
   ],
 };
 
+const activatedWithReentry = {
+  ...activatedWithHints,
+  reentry: {
+    text: '観察の起点: 止まり方、届かなさ、引っかかり。',
+    tags: ['fear', 'freeze'],
+  },
+};
+
 const assertNoNaturalDirectives = (prompt) => {
   NATURAL_DIRECTIVE_PATTERNS.forEach((pattern) => {
     assert.ok(!pattern.test(prompt), `found natural directive: ${pattern}`);
@@ -154,6 +162,22 @@ test('system prompts render activated particles without leaking internal hints',
     activated: activatedWithHints,
   });
   assertRendersActivatedSeed(mirror);
+});
+
+test('system prompts inject thin reentry guidance below activated particles', () => {
+  for (const agentId of AGENT_IDS) {
+    const prompt = buildAgentSystemPrompt(agentId, {
+      ...baseParams,
+      activated: activatedWithReentry,
+    });
+
+    assert.ok(prompt.includes('【内的方向づけ（この回だけの構え）】'));
+    assert.ok(prompt.includes(activatedWithReentry.reentry.text));
+    assert.ok(
+      prompt.indexOf('direction that remains')
+      < prompt.indexOf('【内的方向づけ（この回だけの構え）】'),
+    );
+  }
 });
 
 test('system prompts stay concise', () => {

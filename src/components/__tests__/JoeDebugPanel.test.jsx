@@ -47,7 +47,44 @@ const sampleEntry = {
       '解釈を重ねすぎない。言い切りすぎない。',
       '未完成を責めない。途中として扱う。',
     ].join('\n'),
-    reentry: '観察の起点: 止まり方、届かなさ、引っかかり。\n判断: 消えたと決めつけない。',
+    reentry: {
+      text: '観察の起点: 止まり方、届かなさ、引っかかり。\n判断: 消えたと決めつけない。',
+      tags: ['fear', 'freeze'],
+      score: 1.4,
+      weight: 0.61,
+      breakdown: [
+        { tag: 'fear', value: 0.6 },
+        { tag: 'freeze', value: 0.3 },
+        { tag: 'unfinished', value: 0.5 },
+      ],
+    },
+    debug: {
+      reentryCandidates: [
+        {
+          text: '観察の起点: 止まり方、届かなさ、引っかかり。\n判断: 消えたと決めつけない。',
+          tags: ['fear', 'freeze'],
+          score: 1.4,
+          weight: 0.61,
+          selected: true,
+          breakdown: [
+            { tag: 'fear', value: 0.6 },
+            { tag: 'freeze', value: 0.3 },
+            { tag: 'unfinished', value: 0.5 },
+          ],
+        },
+        {
+          text: '見る方向: 細くても残っている向き。\n返し方: 押すより触れる。',
+          tags: ['reach', 'desire'],
+          score: 0.55,
+          weight: 0.12,
+          selected: false,
+          breakdown: [
+            { tag: 'reach', value: 0.55 },
+            { tag: 'desire', value: 0.7 },
+          ],
+        },
+      ],
+    },
   },
   systemInstruction: 'SYSTEM PROMPT',
   promptText: 'USER PROMPT',
@@ -86,7 +123,9 @@ test('JoeDebugPanel renders micro-signal values', () => {
   assert.match(html, /epistemicLowering/);
 });
 
-test('JoeDebugPanel shows the reentry warning badge', () => {
+test('JoeDebugPanel shows the reentry state-driven badge', () => {
   const html = renderPanel();
   assert.match(html, new RegExp(JOE_REENTRY_WARNING_TEXT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(html, /なぜこの reentry が選ばれたか/);
+  assert.match(html, /breakdown: fear:0.60 \/ freeze:0.30 \/ unfinished:0.50/);
 });

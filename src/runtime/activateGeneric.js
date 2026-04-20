@@ -136,9 +136,10 @@ export const activateGeneric = (agentId, state = {}) => {
   const activeResidue = materials.buildResidue(residueContext);
 
   const activeMemoryTrace = buildMemoryTrace(activeMemories);
+  const reentryPick = materials.getReentry(state);
 
   return {
-    reentry: materials.getReentry(),
+    reentry: reentryPick.selected,
     refresh: materials.refresh,
 
     activeBeliefs,
@@ -153,6 +154,7 @@ export const activateGeneric = (agentId, state = {}) => {
       pickedBeliefIds: activeBeliefs.map((b) => b.id),
       pickedMemoryIds: activeMemories.map((m) => m.id),
       pickedFieldIds: activeField.map((f) => f.id),
+      reentryCandidates: reentryPick.allCandidates,
     },
   };
 };

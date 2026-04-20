@@ -26,7 +26,7 @@ export const JOE_DEBUG_SECTION_LABELS = [
   '10. 最終 promptText',
 ];
 
-export const JOE_REENTRY_WARNING_TEXT = '⚠️ 現在プロンプト未使用・ランダム選択';
+export const JOE_REENTRY_WARNING_TEXT = '✅ 状態駆動・プロンプト使用中';
 
 const clamp01 = (value) => {
   const num = typeof value === 'number' && !Number.isNaN(value) ? value : 0;
@@ -46,6 +46,41 @@ const getResidueLines = (value) => {
     .map((line) => line.trim())
     .filter(Boolean)
     .slice(0, 4);
+};
+
+const getReentryText = (reentry) => {
+  if (typeof reentry === 'string') return reentry;
+  if (reentry && typeof reentry.text === 'string') return reentry.text;
+  return '';
+};
+
+const getReentryCandidates = (activated = {}) => {
+  if (Array.isArray(activated?.debug?.reentryCandidates)) {
+    return activated.debug.reentryCandidates;
+  }
+  if (Array.isArray(activated?.reentry?.allCandidates)) {
+    return activated.reentry.allCandidates;
+  }
+  return [];
+};
+
+const formatWeight = (value) => {
+  const num = typeof value === 'number' && !Number.isNaN(value) ? value : 0;
+  return num.toFixed(3);
+};
+
+const formatReentryBreakdown = (candidate = {}) => {
+  if (Array.isArray(candidate.breakdown) && candidate.breakdown.length > 0) {
+    return candidate.breakdown
+      .map(({ tag, value }) => `${tag}:${formatScore(value)}`)
+      .join(' / ');
+  }
+
+  if (Array.isArray(candidate.tags) && candidate.tags.length > 0) {
+    return candidate.tags.join(' / ');
+  }
+
+  return '—';
 };
 
 const copyText = async (text) => {
@@ -140,6 +175,40 @@ const CodeBlock = ({ text }) => h(
   typeof text === 'string' && text.trim() ? text : '—',
 );
 
+const ReentryCandidateCard = ({ candidate }) => h(
+  'div',
+  {
+    className: `rounded-md border p-2 text-[11px] ${
+      candidate?.selected
+        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-50'
+        : 'border-slate-800 bg-slate-900/80 text-slate-200'
+    }`,
+  },
+  [
+    h('div', { key: 'meta', className: 'flex items-center justify-between gap-3' }, [
+      h('div', { key: 'left', className: 'flex items-center gap-2' }, [
+        candidate?.selected
+          ? h(
+              'span',
+              {
+                key: 'selected',
+                className: 'rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-200',
+              },
+              'selected',
+            )
+          : null,
+        h('span', { key: 'tags', className: 'font-mono text-orange-200' }, (candidate?.tags || []).join(' / ') || 'untagged'),
+      ]),
+      h('span', { key: 'score', className: 'font-mono text-slate-400 shrink-0' }, `score ${formatScore(candidate?.score)}`),
+    ]),
+    h('p', { key: 'text', className: 'mt-2 whitespace-pre-wrap break-words text-slate-100' }, candidate?.text || '—'),
+    h('div', { key: 'details', className: 'mt-2 space-y-1 text-[10px] text-slate-400' }, [
+      h('p', { key: 'breakdown' }, `breakdown: ${formatReentryBreakdown(candidate)}`),
+      h('p', { key: 'weight' }, `weight: ${formatWeight(candidate?.weight)}`),
+    ]),
+  ],
+);
+
 const CopyButton = ({ text, label }) => h(
   'button',
   {
@@ -211,6 +280,8 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
   const memories = getTopItems(activated.activeMemories);
   const fieldNodes = getTopItems(activated.activeField);
   const residueLines = getResidueLines(activated.activeResidue);
+  const reentryText = getReentryText(activated.reentry);
+  const reentryCandidates = getReentryCandidates(activated);
 
   return h(
     'aside',
@@ -345,7 +416,22 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
                 ),
               ],
             },
-            h('p', { className: 'whitespace-pre-wrap break-words text-slate-100' }, activated.reentry || '—'),
+            [
+              h('p', { key: 'selected-text', className: 'whitespace-pre-wrap break-words text-slate-100' }, reentryText || '—'),
+              reentryCandidates.length
+                ? h(
+                    'div',
+                    { key: 'reentry-candidates', className: 'space-y-2' },
+                    [
+                      h('p', { key: 'caption', className: 'text-[10px] font-mono text-slate-400' }, 'なぜこの reentry が選ばれたか'),
+                      ...reentryCandidates.map((candidate, index) => h(ReentryCandidateCard, {
+                        key: `${candidate.text}-${index}`,
+                        candidate,
+                      })),
+                    ],
+                  )
+                : h(EmptyValue, { key: 'reentry-empty', text: 'reentry 候補のスコア内訳はありません。' }),
+            ],
           ),
           h(
             Section,
