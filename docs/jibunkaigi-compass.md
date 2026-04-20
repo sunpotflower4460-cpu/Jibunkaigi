@@ -120,6 +120,7 @@ Lexical Stream が意味側の傾き、Micro-Signal Stream が言葉になる前
 
 ### D 系 docs の辿り方
 
+- D closeout: D 系の到達点・非目的・残制約・E/M への引き渡しは [D Series Closeout](./d-series-closeout.md)
 - D-1: Lexical Stream 側の入口は `estimateState(...)` と `runInternalOS` 内の `lexicalState` で、現状は [Dual Stream Architecture](./dual-stream-architecture.md) の Lexical Stream 節から辿る
 - D-2: Joe の旧 tagged selection path は [Joe reentry composition](./joe-reentry-composition.md) の「D-2 tagged selection と D-4 dynamic composition の関係」と `src/agents/joe/reentry.js` を見る
 - D-3: `micro-signal-injection` の説明文書は、実ファイル名では [Micro-Signal Stream](./micro-signal-stream.md) に置いている
