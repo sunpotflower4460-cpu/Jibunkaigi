@@ -68,6 +68,12 @@ const getReentryCandidates = (activated = {}) => {
   return [];
 };
 
+const getReentryComposition = (activated = {}) => (
+  activated?.debug?.reentryComposition
+  || activated?.reentry?.composition
+  || null
+);
+
 const formatWeight = (value) => {
   const num = typeof value === 'number' && !Number.isNaN(value) ? value : 0;
   return num.toFixed(3);
@@ -86,6 +92,19 @@ const formatReentryBreakdown = (candidate = {}) => {
 
   return '—';
 };
+
+const formatReentryInputs = (inputs = []) => (
+  Array.isArray(inputs) && inputs.length > 0
+    ? inputs
+      .map((item) => {
+        const tag = typeof item?.tag === 'string' && item.tag.trim() ? item.tag : null;
+        if (!tag) return null;
+        return `${tag}:${formatScore(item?.value)}`;
+      })
+      .filter(Boolean)
+      .join(' / ')
+    : '—'
+);
 
 const copyText = async (text) => {
   const safeText = typeof text === 'string' ? text : '';
@@ -213,6 +232,22 @@ const ReentryCandidateCard = ({ candidate }) => h(
   ],
 );
 
+const ReentryCompositionCard = ({ part }) => h(
+  'div',
+  {
+    className: 'rounded-md border border-slate-800 bg-slate-900/80 p-2 text-[11px] text-slate-200',
+  },
+  [
+    h('div', { key: 'meta', className: 'flex items-center justify-between gap-3' }, [
+      h('span', { key: 'label', className: 'font-mono text-orange-200' }, part?.label || '—'),
+      h('span', { key: 'score', className: 'font-mono text-slate-400 shrink-0' }, `選択スコア: ${formatScore(part?.selected?.score)}`),
+    ]),
+    h('p', { key: 'inputs', className: 'mt-2 text-[10px] text-slate-400' }, `入力: ${formatReentryInputs(part?.input)}`),
+    h('p', { key: 'selected-text', className: 'mt-2 whitespace-pre-wrap break-words text-slate-100' }, part?.selected?.text || '—'),
+    h('p', { key: 'selected-tags', className: 'mt-2 text-[10px] text-slate-400' }, `選択タグ: ${(part?.selected?.tags || []).join(' / ') || '—'}`),
+  ],
+);
+
 const CopyButton = ({ text, label }) => h(
   'button',
   {
@@ -331,6 +366,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
   const residueLines = getResidueLines(activated.activeResidue);
   const reentryText = getReentryText(activated.reentry);
   const reentryCandidates = getReentryCandidates(activated);
+  const reentryComposition = getReentryComposition(activated);
 
   return h(
     'aside',
@@ -486,6 +522,26 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
             },
             [
               h('p', { key: 'selected-text', className: 'whitespace-pre-wrap break-words text-slate-100' }, reentryText || '—'),
+              reentryComposition?.parts?.length
+                ? h(
+                    'div',
+                    { key: 'reentry-composition', className: 'space-y-2' },
+                    [
+                      h('p', { key: 'caption', className: 'text-[10px] font-mono text-slate-400' }, '合成の過程'),
+                      ...reentryComposition.parts.map((part, index) => h(ReentryCompositionCard, {
+                        key: `${part?.label || 'part'}-${index}`,
+                        part,
+                      })),
+                      h('div', {
+                        key: 'reentry-final',
+                        className: 'rounded-md border border-slate-800 bg-slate-950/70 p-2 text-[11px]',
+                      }, [
+                        h('p', { key: 'final-label', className: 'text-[10px] font-mono text-slate-400' }, '最終合成テキスト'),
+                        h('p', { key: 'final-text', className: 'mt-2 whitespace-pre-wrap break-words text-slate-100' }, reentryComposition.finalText || '—'),
+                      ]),
+                    ],
+                  )
+                : null,
               reentryCandidates.length
                 ? h(
                     'div',

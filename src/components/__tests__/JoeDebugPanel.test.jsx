@@ -89,6 +89,47 @@ const sampleEntry = {
       ],
     },
     debug: {
+      reentryComposition: {
+        parts: [
+          {
+            label: '観察の起点',
+            input: [
+              { tag: 'fear', value: 0.6 },
+              { tag: 'hesitation', value: 0.4 },
+            ],
+            selected: {
+              text: '止まり方、届かなさ、引っかかり。',
+              score: 0.82,
+              tags: ['fear', 'freeze', 'receive'],
+            },
+          },
+          {
+            label: '判断',
+            input: [
+              { tag: 'holdBack', value: 0.59 },
+              { tag: 'avoidAssertion', value: 0.48 },
+            ],
+            selected: {
+              text: '消えたと決めつけない。',
+              score: 0.78,
+              tags: ['holdBack', 'nonClosure'],
+            },
+          },
+          {
+            label: '出力制約',
+            input: [
+              { tag: 'structureAvoid', value: 0.66 },
+              { tag: 'touch', value: 0.51 },
+            ],
+            selected: {
+              text: '整えすぎない。触れられていれば十分。',
+              score: 0.8,
+              tags: ['structureAvoid', 'touch'],
+            },
+          },
+        ],
+        finalText: '観察の起点: 止まり方、届かなさ、引っかかり。\n判断: 消えたと決めつけない。\n出力制約: 整えすぎない。触れられていれば十分。',
+      },
       reentryCandidates: [
         {
           text: '観察の起点: 止まり方、届かなさ、引っかかり。\n判断: 消えたと決めつけない。',
@@ -159,6 +200,9 @@ test('JoeDebugPanel renders micro-signal values', () => {
 test('JoeDebugPanel shows the reentry state-driven badge', () => {
   const html = renderPanel();
   assert.match(html, new RegExp(JOE_REENTRY_WARNING_TEXT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(html, /合成の過程/);
+  assert.match(html, /最終合成テキスト/);
+  assert.match(html, /入力: fear:0\.[0-9]{2} \/ hesitation:0\.[0-9]{2}/);
   assert.match(html, /なぜこの reentry が選ばれたか/);
   assert.match(html, /breakdown: fear:0.60 \/ freeze:0.30 \/ unfinished:0.50/);
 });
