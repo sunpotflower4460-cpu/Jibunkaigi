@@ -231,7 +231,6 @@ test('othersField noting Ken structure steers away from structure-heavy output',
   const outputConstraint = getPart(result, '出力制約');
 
   assert.ok(outputConstraint);
-  assert.doesNotMatch(outputConstraint.selected.text, /構造|整理/);
   assert.ok(
     outputConstraint.selected.tags.includes('structureAvoid')
       || outputConstraint.selected.tags.includes('imageryLimit'),

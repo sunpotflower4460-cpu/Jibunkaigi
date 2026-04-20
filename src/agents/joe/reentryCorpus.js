@@ -46,7 +46,7 @@ export const REENTRY_VARIANTS = [
     tags: ['fear', 'freeze', 'unfinished'],
     observation: {
       text: '止まり方、届かなさ、引っかかり。',
-      tags: ['fear', 'freeze', 'unfinished', 'receive', 'fragile', 'hesitation'],
+      tags: ['fear', 'freeze', 'unfinished', 'receive', 'fragility', 'hesitation'],
     },
     judgment: {
       text: '消えたと決めつけない。',

@@ -99,7 +99,7 @@ const deriveObservationVector = (state = {}, microSignals = {}) => {
 
   return mergeVectors(state, {
     receive: Math.max(hesitation, trailOff, clamp01(state.freeze ?? 0), clamp01(state.fear ?? 0) * 0.8),
-    fragile: Math.max(clamp01(state.fear ?? 0), clamp01(state.shame ?? 0), clamp01(state.unfinished ?? 0)),
+    fragility: Math.max(clamp01(state.fear ?? 0), clamp01(state.shame ?? 0), clamp01(state.unfinished ?? 0)),
     trace: Math.max(clamp01(state.unfinished ?? 0), clamp01(state.reach ?? 0)),
     alive: Math.max(clamp01(state.desire ?? 0), clamp01(state.reach ?? 0), clamp01(state.unfinished ?? 0) * 0.6),
     density: Math.max(clamp01(state.freeze ?? 0), clamp01(state.shame ?? 0)),

@@ -240,7 +240,7 @@ const ReentryCompositionCard = ({ part }) => h(
   [
     h('div', { key: 'meta', className: 'flex items-center justify-between gap-3' }, [
       h('span', { key: 'label', className: 'font-mono text-orange-200' }, part?.label || '—'),
-      h('span', { key: 'score', className: 'font-mono text-slate-400 shrink-0' }, `score ${formatScore(part?.selected?.score)}`),
+      h('span', { key: 'score', className: 'font-mono text-slate-400 shrink-0' }, `選択スコア: ${formatScore(part?.selected?.score)}`),
     ]),
     h('p', { key: 'inputs', className: 'mt-2 text-[10px] text-slate-400' }, `入力: ${formatReentryInputs(part?.input)}`),
     h('p', { key: 'selected-text', className: 'mt-2 whitespace-pre-wrap break-words text-slate-100' }, part?.selected?.text || '—'),
