@@ -27,6 +27,7 @@ import {
 
 // ★ 追加1：estimateState をインポート
 import { estimateState } from './runtime/stateEstimate';
+import { estimateMicroSignals } from './runtime/estimateMicroSignals.js';
 import { activateAgent } from './runtime/activateAgent';
 import { buildAgentSystemPrompt, buildAgentUserPrompt, buildAgentDebugPreview } from './runtime/buildAgentPrompt';
 import { buildPromptContext } from './runtime/context';
@@ -924,12 +925,15 @@ const App = () => {
         }
       }
 
-      const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
+      const latestUserText = getLatestUserText(effectiveSessionId, messages);
+      const microSignals = estimateMicroSignals(latestUserText);
+      const internalOS = runInternalOS(latestUserText, {
         mode: selectedMode,
         previousMix: safePreviousMix,
         previousLatentState: safePreviousLatentState,
         othersField: othersFieldEntries,
         lengthPreference: 'medium', // TODO: wire up UI selector when available
+        microSignals,
       });
       const agentId = pickContextualAgent(AGENTS, {
         patternMix: internalOS.patternMix,
@@ -1318,6 +1322,7 @@ const App = () => {
 
     // B. runInternalOS
     let continuityInternalOS;
+    const microSignals = estimateMicroSignals(latestUserText);
     try {
       continuityInternalOS = !isMaster
         ? runInternalOS(latestUserText, {
@@ -1327,6 +1332,7 @@ const App = () => {
           previousLatentState: safePreviousLatentState,
           othersField: othersFieldEntries,
           lengthPreference: 'medium', // TODO: wire up UI selector when available
+          microSignals,
         })
         : null;
     } catch (err) {
@@ -1618,6 +1624,7 @@ const App = () => {
         timestamp: Date.now(),
         userText: latestUserText,
         estimateState: estimatedState,
+        microSignals: continuityInternalOS?.debugInfo?.microSignals ?? microSignals,
         activated,
         systemInstruction,
         promptText,

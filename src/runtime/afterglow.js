@@ -208,6 +208,10 @@ const normalizeLatentState = (state) => {
     normalized.preconditionBias = state.preconditionBias;
   }
 
+  if (state.microSignals && typeof state.microSignals === 'object') {
+    normalized.microSignals = state.microSignals;
+  }
+
   if (state.decision && typeof state.decision === 'object') {
     normalized.decision = state.decision;
   }
@@ -230,6 +234,7 @@ const normalizeLatentState = (state) => {
     Boolean(normalized.existence2) ||
     Boolean(normalized.preconditionFilter) ||
     Boolean(normalized.preconditionBias) ||
+    Boolean(normalized.microSignals) ||
     Boolean(normalized.decision);
 
   return hasValues ? normalized : null;
@@ -367,6 +372,10 @@ const blendLatentState = (previousState, currentState) => {
 
   if (current.preconditionBias || prev.preconditionBias) {
     blended.preconditionBias = current.preconditionBias || prev.preconditionBias || null;
+  }
+
+  if (current.microSignals || prev.microSignals) {
+    blended.microSignals = current.microSignals || prev.microSignals || null;
   }
 
   if (current.decision || prev.decision) {

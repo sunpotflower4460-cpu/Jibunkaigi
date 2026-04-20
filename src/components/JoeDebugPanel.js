@@ -16,13 +16,14 @@ export const JOE_DEBUG_AXES = [
 export const JOE_DEBUG_SECTION_LABELS = [
   '1. 入力テキスト',
   '2. estimateState',
-  '3. activeBeliefs top2',
-  '4. activeMemories top2',
-  '5. activeField top2',
-  '6. activeResidue (4 lines)',
-  '7. reentry',
-  '8. 最終 systemInstruction',
-  '9. 最終 promptText',
+  '3. Micro-Signal',
+  '4. activeBeliefs top2',
+  '5. activeMemories top2',
+  '6. activeField top2',
+  '7. activeResidue (4 lines)',
+  '8. reentry',
+  '9. 最終 systemInstruction',
+  '10. 最終 promptText',
 ];
 
 export const JOE_REENTRY_WARNING_TEXT = '⚠️ 現在プロンプト未使用・ランダム選択';
@@ -149,8 +150,62 @@ const CopyButton = ({ text, label }) => h(
   label,
 );
 
+const MICRO_SIGNAL_GROUPS = [
+  {
+    key: 'punctuation',
+    label: 'punctuation',
+    metrics: ['assertion', 'hesitation', 'trailOff'],
+  },
+  {
+    key: 'fillers',
+    label: 'fillers',
+    metrics: ['fillerDensity'],
+  },
+  {
+    key: 'negationPrefix',
+    label: 'negationPrefix',
+    metrics: ['softNegation'],
+  },
+  {
+    key: 'sentenceLength',
+    label: 'sentenceLength',
+    metrics: ['burstiness', 'shortnessPressure'],
+  },
+  {
+    key: 'selfHedging',
+    label: 'selfHedging',
+    metrics: ['epistemicLowering'],
+  },
+  {
+    key: 'quotation',
+    label: 'quotation',
+    metrics: ['distancing'],
+  },
+];
+
+const getMicroSignalMetric = (microSignals, groupKey, metricKey) => {
+  const value = microSignals?.[groupKey]?.[metricKey];
+  return typeof value === 'number' ? value : 0;
+};
+
+const MicroSignalCard = ({ microSignals, group }) => h(
+  'div',
+  {
+    className: 'rounded-md border border-slate-800 bg-slate-900/80 p-2 text-[11px] text-slate-200',
+  },
+  [
+    h('div', { key: 'title', className: 'mb-2 font-mono text-orange-200' }, group.label),
+    ...group.metrics.map((metric) => h(ScoreBarRow, {
+      key: metric,
+      axis: metric,
+      value: getMicroSignalMetric(microSignals, group.key, metric),
+    })),
+  ],
+);
+
 const JoeDebugPanel = ({ entry = null, onClose }) => {
   const estimateState = entry?.estimateState || {};
+  const microSignals = entry?.microSignals || {};
   const activated = entry?.activated || {};
   const beliefs = getTopItems(activated.activeBeliefs);
   const memories = getTopItems(activated.activeMemories);
@@ -213,7 +268,20 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
           ),
           h(
             Section,
-            { key: 'beliefs', title: JOE_DEBUG_SECTION_LABELS[2] },
+            { key: 'microSignals', title: JOE_DEBUG_SECTION_LABELS[2] },
+            h(
+              'div',
+              { className: 'grid grid-cols-1 gap-2 sm:grid-cols-2' },
+              MICRO_SIGNAL_GROUPS.map((group) => h(MicroSignalCard, {
+                key: group.key,
+                group,
+                microSignals,
+              })),
+            ),
+          ),
+          h(
+            Section,
+            { key: 'beliefs', title: JOE_DEBUG_SECTION_LABELS[3] },
             beliefs.length
               ? beliefs.map((belief) => h(ItemCard, {
                   key: belief.id || belief.sense,
@@ -226,7 +294,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
           ),
           h(
             Section,
-            { key: 'memories', title: JOE_DEBUG_SECTION_LABELS[3] },
+            { key: 'memories', title: JOE_DEBUG_SECTION_LABELS[4] },
             memories.length
               ? memories.map((memory) => h(ItemCard, {
                   key: memory.id || memory.trace,
@@ -239,7 +307,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
           ),
           h(
             Section,
-            { key: 'field', title: JOE_DEBUG_SECTION_LABELS[4] },
+            { key: 'field', title: JOE_DEBUG_SECTION_LABELS[5] },
             fieldNodes.length
               ? fieldNodes.map((node) => h(ItemCard, {
                   key: node.id || node.text,
@@ -252,7 +320,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
           ),
           h(
             Section,
-            { key: 'residue', title: JOE_DEBUG_SECTION_LABELS[5] },
+            { key: 'residue', title: JOE_DEBUG_SECTION_LABELS[6] },
             residueLines.length
               ? h(
                   'ol',
@@ -265,7 +333,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
             Section,
             {
               key: 'reentry',
-              title: JOE_DEBUG_SECTION_LABELS[6],
+              title: JOE_DEBUG_SECTION_LABELS[7],
               actions: [
                 h(
                   'span',
@@ -283,7 +351,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
             Section,
             {
               key: 'system',
-              title: JOE_DEBUG_SECTION_LABELS[7],
+              title: JOE_DEBUG_SECTION_LABELS[8],
               actions: [h(CopyButton, { key: 'copy-system', text: entry?.systemInstruction || '', label: 'copy' })],
             },
             h(CodeBlock, { text: entry?.systemInstruction || '' }),
@@ -292,7 +360,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
             Section,
             {
               key: 'prompt',
-              title: JOE_DEBUG_SECTION_LABELS[8],
+              title: JOE_DEBUG_SECTION_LABELS[9],
               actions: [h(CopyButton, { key: 'copy-prompt', text: entry?.promptText || '', label: 'copy' })],
             },
             h(CodeBlock, { text: entry?.promptText || '' }),
