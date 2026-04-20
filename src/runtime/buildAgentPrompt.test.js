@@ -53,11 +53,11 @@ const LABEL_DIRECTIVE_PATTERNS = [
 const BIAS_MARKERS = ['---以下は内的バイアス', '---内的バイアスここまで---'];
 
 const EXISTENCE_LINES = {
-  creative: 'あなたはジョー。',
-  soul: 'あなたはレイ。',
-  strategist: 'あなたはケン。',
-  empath: 'あなたはミナ。',
-  critic: 'あなたはサトウ。',
+  creative: '（ジョーとして。）',
+  soul: '（レイとして。）',
+  strategist: '（ケンとして。）',
+  empath: '（ミナとして。）',
+  critic: '（サトウとして。）',
 };
 
 const activatedWithHints = {
