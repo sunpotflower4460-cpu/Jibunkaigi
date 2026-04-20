@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildJoeDebugEntry } from './buildJoeDebugEntry.js';
+import { buildJoeDebugEntry, shouldBuildJoeDebugEntry } from './buildJoeDebugEntry.js';
 
 test('buildJoeDebugEntry: keeps expected fields when valid input is provided', () => {
   const timestamp = Date.UTC(2026, 3, 20, 12, 0, 0);
@@ -78,4 +78,49 @@ test('buildJoeDebugEntry: normalizes invalid field types', () => {
   assert.deepEqual(result.activated, {});
   assert.equal(result.systemInstruction, '');
   assert.equal(result.promptText, '');
+});
+
+test('shouldBuildJoeDebugEntry: only allows creative non-master path when dev panel is enabled', () => {
+  assert.equal(shouldBuildJoeDebugEntry({
+    isJoeDebugAvailable: true,
+    isJoeDebugPanelVisible: true,
+    agentId: 'creative',
+    isMaster: false,
+  }), true);
+  assert.equal(shouldBuildJoeDebugEntry({
+    isJoeDebugAvailable: false,
+    isJoeDebugPanelVisible: true,
+    agentId: 'creative',
+    isMaster: false,
+  }), false);
+  assert.equal(shouldBuildJoeDebugEntry({
+    isJoeDebugAvailable: true,
+    isJoeDebugPanelVisible: true,
+    agentId: 'mirror',
+    isMaster: false,
+  }), false);
+  assert.equal(shouldBuildJoeDebugEntry({
+    isJoeDebugAvailable: true,
+    isJoeDebugPanelVisible: true,
+    agentId: 'creative',
+    isMaster: true,
+  }), false);
+});
+
+test('buildJoeDebugEntry: returns null when guarded path is not allowed', () => {
+  const result = buildJoeDebugEntry(
+    {
+      userText: 'x',
+      systemInstruction: 'SYSTEM',
+      promptText: 'PROMPT',
+    },
+    {
+      isJoeDebugAvailable: false,
+      isJoeDebugPanelVisible: true,
+      agentId: 'creative',
+      isMaster: false,
+    },
+  );
+
+  assert.equal(result, null);
 });

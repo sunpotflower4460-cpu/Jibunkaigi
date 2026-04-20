@@ -1,31 +1,39 @@
 export const JOE_DEBUG_STORAGE_KEY = 'localStorage.joeDebugEnabled';
 
-export const isJoeDebugAvailable = () => {
+export const isJoeDebugAvailable = (options = {}) => {
   try {
+    if (typeof options.dev === 'boolean') return options.dev;
     return typeof import.meta !== 'undefined' && !!import.meta.env?.DEV;
   } catch {
     return false;
   }
 };
 
-export const isJoeDebugEnabled = () => {
+export const isJoeDebugEnabled = (options = {}) => {
   try {
-    if (!isJoeDebugAvailable()) return false;
-    if (typeof window === 'undefined') return false;
-    if (new URLSearchParams(window.location.search).get('joeDebug') === '1') return true;
-    return localStorage.getItem(JOE_DEBUG_STORAGE_KEY) === '1';
+    if (!isJoeDebugAvailable(options)) return false;
+    const hasWindow = options.hasWindow ?? (typeof window !== 'undefined');
+    if (!hasWindow) return false;
+    const search = options.search ?? window.location.search;
+    const storageGetter = options.storageGetter ?? (() => localStorage.getItem(JOE_DEBUG_STORAGE_KEY));
+    if (new URLSearchParams(search).get('joeDebug') === '1') return true;
+    return storageGetter() === '1';
   } catch {
     return false;
   }
 };
 
-export const setJoeDebugEnabled = (enabled) => {
+export const setJoeDebugEnabled = (enabled, options = {}) => {
   try {
-    if (typeof window === 'undefined') return;
+    if (!isJoeDebugAvailable(options)) return;
+    const hasWindow = options.hasWindow ?? (typeof window !== 'undefined');
+    if (!hasWindow) return;
+    const storageSetter = options.storageSetter ?? ((value) => localStorage.setItem(JOE_DEBUG_STORAGE_KEY, value));
+    const storageRemover = options.storageRemover ?? (() => localStorage.removeItem(JOE_DEBUG_STORAGE_KEY));
     if (enabled) {
-      localStorage.setItem(JOE_DEBUG_STORAGE_KEY, '1');
+      storageSetter('1');
     } else {
-      localStorage.removeItem(JOE_DEBUG_STORAGE_KEY);
+      storageRemover();
     }
   } catch {
     // ignore storage failures
