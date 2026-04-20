@@ -752,7 +752,7 @@ const App = () => {
     internalOS,
   }) => {
     if (!isCompareModeEnabled) return;
-    if (agentId !== 'creative') return; // Phase1: Joe 優先
+    // Phase P-3: 全エージェント対応（creative, soul, strategist, empath, critic）
     if (!currentReply) return;
     const compareKey = `${sessionId}:${messageId || 'compare'}`;
 
