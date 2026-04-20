@@ -17,6 +17,7 @@ export function createExistenceLayer2({ agentId } = {}) {
   return {
     agentIdentityKey: profile.key,
     agentIdentityText: profile.text,
+    identityFeelingText: profile.text, // 設計書v2で参照される identityFeelingText
     recalledSelfTraits: normalizeTraits(profile.traits),
     selfRememberingStrength: clamp01(profile.strength ?? 0.7),
   };

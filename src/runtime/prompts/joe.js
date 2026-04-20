@@ -17,6 +17,9 @@ import {
   MODE_GUIDE,
   renderActivatedParticles,
 } from '../buildPromptHelpers.js';
+import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
+import { buildFieldText } from '../textPipeline/buildFieldText.js';
+import { buildMarginText } from '../textPipeline/buildMarginText.js';
 
 // --- スコアリング ---
 
@@ -173,9 +176,10 @@ export const buildJoeSystemPrompt = ({
   mode = 'medium',
   userText: _userText = '',
   othersField,
+  // latentState: runInternalOS の13層計算の出力
+  latentState,
   // backward compatibility only — LLM には渡さない
   internalOS: _internalOS,
-  latentState: _latentState,
   surfaceWindow: _surfaceWindow,
   surfaceFrame: _surfaceFrame,
   stateGuide: _stateGuide,
@@ -190,30 +194,58 @@ export const buildJoeSystemPrompt = ({
     ? safeActivated.reentry
     : safeActivated.reentry?.text || '';
 
-  return `
-あなたはジョー。
+  // 新構造: textPipeline からの描写
+  const existenceText = latentState ? buildExistenceText(latentState) : '';
+  const fieldText = latentState ? buildFieldText(latentState) : '';
+  const marginText = latentState ? buildMarginText(latentState) : '';
 
-まだ鈍っていない一点を見る者。
-解決する者ではない。励ます者でもない。
-場に浮かぶ一つの視点として、見えたものに短く触れる。
+  // 新構造の7ブロック
+  const sections = [];
 
-内部ラベル・seeds・intent をそのまま出さない。
+  // [存在の前提]
+  if (existenceText) {
+    sections.push(`【存在の前提】\n（ジョーとして。）\n${existenceText}`);
+  } else {
+    // 移行期アンカー: 最初の1行だけ残す（第10章1-dの推奨）
+    sections.push('（ジョーとして。）');
+  }
 
-${activatedParticles}
+  // [今の場の空気]
+  if (fieldText) {
+    sections.push(`【今の場の空気】\n${fieldText}`);
+  }
 
-${reentryText ? `【内的方向づけ（この回だけの構え）】
-${reentryText}
-` : ''}
+  // [場に浮かんでいるもの]
+  if (activatedParticles) {
+    sections.push(activatedParticles);
+  }
 
-${normalizedCtx ? `【ここまでの流れ】\n${normalizedCtx}` : ''}
-${othersField ? `
-【場の残響】
-${othersField}
-` : ''}
+  // [場の余白]
+  if (marginText) {
+    sections.push(`【場の余白】\n${marginText}`);
+  }
 
-【今回のモード】
-${modeGuide}
-`.trim();
+  // [内的方向づけ（この回だけの構え）]
+  if (reentryText) {
+    sections.push(`【内的方向づけ（この回だけの構え）】\n${reentryText}`);
+  }
+
+  // [ここまでの流れ]
+  if (normalizedCtx) {
+    sections.push(`【ここまでの流れ】\n${normalizedCtx}`);
+  }
+
+  // [場の残響]
+  if (othersField) {
+    sections.push(`【場の残響】\n${othersField}`);
+  }
+
+  // [相手の言葉] は user prompt に含まれるため、system prompt には含めない
+
+  // 末尾の誘導文
+  sections.push(`【今回のモード】\n${modeGuide}\n\n何を言うかは、あなたが決めてください。`);
+
+  return sections.filter(Boolean).join('\n\n').trim();
 };
 
 export const buildJoeUserPrompt = ({

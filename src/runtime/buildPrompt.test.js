@@ -111,7 +111,7 @@ test('buildJoeSystemPrompt drops directives and bias sections', () => {
     },
   });
 
-  assert.ok(prompt.includes('あなたはジョー'));
+  assert.ok(prompt.includes('（ジョーとして。）'));
   assertNoNaturalDirectives(prompt);
   assertNoLabelDirectives(prompt);
   assertNoBiasSections(prompt);

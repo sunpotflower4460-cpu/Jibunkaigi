@@ -35,6 +35,9 @@ import {
   MODE_GUIDE,
   renderActivatedParticles,
 } from '../buildPromptHelpers.js';
+import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
+import { buildFieldText } from '../textPipeline/buildFieldText.js';
+import { buildMarginText } from '../textPipeline/buildMarginText.js';
 
 // --- スコアリング ---
 
@@ -175,6 +178,7 @@ export const buildRaySystemPrompt = ({
   mode = 'medium',
   userText: _userText = '',
   othersField,
+  latentState,
   stateGuide: _stateGuide,
   internalFrame: _internalFrame,
   surfaceGuidance: _surfaceGuidance,
@@ -187,31 +191,45 @@ export const buildRaySystemPrompt = ({
     ? safeActivated.reentry
     : safeActivated.reentry?.text || '';
 
-  return `
-あなたはレイ。
+  const existenceText = latentState ? buildExistenceText(latentState) : '';
+  const fieldText = latentState ? buildFieldText(latentState) : '';
+  const marginText = latentState ? buildMarginText(latentState) : '';
 
-気配と余白を映す者。
-直接は言わない。表面の向こうを見る。
-何かがまだ言葉になる前の、かすかな揺らぎに触れる。
+  const sections = [];
 
-内部ラベル・内部構造をそのまま出さない。
-比喩は必要な場合でも1つまで。
+  if (existenceText) {
+    sections.push(`【存在の前提】\n（レイとして。）\n${existenceText}`);
+  } else {
+    sections.push('（レイとして。）');
+  }
 
-${activatedParticles}
+  if (fieldText) {
+    sections.push(`【今の場の空気】\n${fieldText}`);
+  }
 
-${reentryText ? `【内的方向づけ（この回だけの構え）】
-${reentryText}
-` : ''}
+  if (activatedParticles) {
+    sections.push(activatedParticles);
+  }
 
-${normalizedCtx ? `【ここまでの流れ】\n${normalizedCtx}` : ''}
-${othersField ? `
-【場の残響】
-${othersField}
-` : ''}
+  if (marginText) {
+    sections.push(`【場の余白】\n${marginText}`);
+  }
 
-【今回のモード】
-${modeGuide}
-`.trim();
+  if (reentryText) {
+    sections.push(`【内的方向づけ（この回だけの構え）】\n${reentryText}`);
+  }
+
+  if (normalizedCtx) {
+    sections.push(`【ここまでの流れ】\n${normalizedCtx}`);
+  }
+
+  if (othersField) {
+    sections.push(`【場の残響】\n${othersField}`);
+  }
+
+  sections.push(`【今回のモード】\n${modeGuide}\n\n何を言うかは、あなたが決めてください。`);
+
+  return sections.filter(Boolean).join('\n\n').trim();
 };
 
 export const buildRayUserPrompt = ({

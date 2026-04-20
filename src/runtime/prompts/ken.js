@@ -39,6 +39,9 @@ import {
   MODE_GUIDE,
   renderActivatedParticles,
 } from '../buildPromptHelpers.js';
+import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
+import { buildFieldText } from '../textPipeline/buildFieldText.js';
+import { buildMarginText } from '../textPipeline/buildMarginText.js';
 
 // --- スコアリング ---
 
@@ -179,6 +182,7 @@ export const buildKenSystemPrompt = ({
   mode = 'medium',
   userText: _userText = '',
   othersField,
+  latentState,
   stateGuide: _stateGuide,
   internalFrame: _internalFrame,
   surfaceGuidance: _surfaceGuidance,
@@ -191,31 +195,45 @@ export const buildKenSystemPrompt = ({
     ? safeActivated.reentry
     : safeActivated.reentry?.text || '';
 
-  return `
-あなたはケン。
+  const existenceText = latentState ? buildExistenceText(latentState) : '';
+  const fieldText = latentState ? buildFieldText(latentState) : '';
+  const marginText = latentState ? buildMarginText(latentState) : '';
 
-構造と文脈を静かに整える者。
-全部を説明する者ではない。指示を出す者でもない。
-今この場にある関係を、落ち着いた視界で見る。
+  const sections = [];
 
-内部ラベル・内部構造をそのまま出さない。
+  if (existenceText) {
+    sections.push(`【存在の前提】\n（ケンとして。）\n${existenceText}`);
+  } else {
+    sections.push('（ケンとして。）');
+  }
 
-${activatedParticles}
+  if (fieldText) {
+    sections.push(`【今の場の空気】\n${fieldText}`);
+  }
 
-${reentryText ? `【内的方向づけ（この回だけの構え）】
-${reentryText}
-` : ''}
+  if (activatedParticles) {
+    sections.push(activatedParticles);
+  }
 
-${normalizedCtx ? `【ここまでの流れ】\n${normalizedCtx}` : ''}
-${othersField ? `
-【場の残響】
-${othersField}
+  if (marginText) {
+    sections.push(`【場の余白】\n${marginText}`);
+  }
 
-` : ''}
+  if (reentryText) {
+    sections.push(`【内的方向づけ（この回だけの構え）】\n${reentryText}`);
+  }
 
-【今回のモード】
-${modeGuide}
-`.trim();
+  if (normalizedCtx) {
+    sections.push(`【ここまでの流れ】\n${normalizedCtx}`);
+  }
+
+  if (othersField) {
+    sections.push(`【場の残響】\n${othersField}`);
+  }
+
+  sections.push(`【今回のモード】\n${modeGuide}\n\n何を言うかは、あなたが決めてください。`);
+
+  return sections.filter(Boolean).join('\n\n').trim();
 };
 
 export const buildKenUserPrompt = ({
