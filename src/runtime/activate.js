@@ -119,10 +119,16 @@ const buildMemoryTrace = (activeMemories = []) => {
 
 const composeJoeRuntimeReentry = (state = {}, options = {}) => composeJoeReentry({
   state,
-  microSignals: options.microSignals,
-  beliefTension: options.beliefTension,
-  afterglowSeed: options.afterglowSeed,
-  othersField: options.othersField,
+  microSignals: options.microSignals && typeof options.microSignals === 'object'
+    ? options.microSignals
+    : {},
+  beliefTension: options.beliefTension && typeof options.beliefTension === 'object'
+    ? options.beliefTension
+    : null,
+  afterglowSeed: options.afterglowSeed && typeof options.afterglowSeed === 'object'
+    ? options.afterglowSeed
+    : null,
+  othersField: Array.isArray(options.othersField) ? options.othersField : [],
 });
 
 // --- main ---
