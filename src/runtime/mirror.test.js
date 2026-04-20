@@ -82,10 +82,21 @@ test('selectMirrorSignals applies LATEST_USER_WEIGHT_BOOST to the last user mess
   assert.match(signals.mainEmotion, /怖さや不安/);
 });
 
-test('buildMirrorSystemPrompt defines the quiet synthesis shape and mirror-specific prohibitions', () => {
+test('buildMirrorSystemPrompt presents existence and signals without directives or bias sections', () => {
   const systemPrompt = buildMirrorSystemPrompt({
     mode: 'medium',
     context: 'あなた: 進みたいけど怖い\nジョー: 小さく出してみよう\nケン: 出し方を分けよう',
+    activated: {
+      selectedClusters: [
+        {
+          id: 'mirror-1',
+          textSeed: 'remnant of motion',
+          tonalHints: ['静か'],
+          stanceHints: ['柔らかい'],
+          avoidHints: ['まとめない'],
+        },
+      ],
+    },
     signals: {
       mainEmotion: '会話の底には、怖さや不安がいちばん長く残っている。',
       mainConflict: '進みたい気持ちと、傷つく怖さが同時にある。',
@@ -96,20 +107,15 @@ test('buildMirrorSystemPrompt defines the quiet synthesis shape and mirror-speci
     },
   });
 
-  // De-templating pilot: verify form instructions are removed
-  assert.match(systemPrompt, /その場の重力と未解決点を映す、静かな統合の窓/);
-  assert.match(systemPrompt, /知覚の傾向/);
-  assert.match(systemPrompt, /まだ閉じていないものに反応しやすい/);
-  assert.match(systemPrompt, /安全境界/);
-  assert.match(systemPrompt, /エージェント同士を勝敗化しない/);
+  assert.match(systemPrompt, /あなたは「心の鏡」。/);
+  assert.match(systemPrompt, /全ての声を映す者。/);
   assert.doesNotMatch(systemPrompt, /summary machine|要約すると|まとめると|ポイントは/);
-  assert.doesNotMatch(systemPrompt, /見る順序/);
-  assert.doesNotMatch(systemPrompt, /優先する4つ/);
-  assert.doesNotMatch(systemPrompt, /返答の型/);
+  assert.doesNotMatch(systemPrompt, /pacing:\w+|directness:\w+|no-summary|lines:\d+/i);
   assert.match(systemPrompt, /【mirror signals】/);
   assert.match(systemPrompt, /mainPull: 完全に離れるより、怖さを抱えたまま少し前を向きたい流れがある。/);
-  assert.match(systemPrompt, /dominantTendency: 全体ではジョーの前へ動かそうとする視点が少し前に出ていた/);
   assert.match(systemPrompt, /【直近の流れ】/);
+  assert.match(systemPrompt, /remnant of motion/);
+  assert.doesNotMatch(systemPrompt, /静か|柔らかい|まとめない/);
 });
 
 test('buildMirrorUserPrompt keeps the final ask anchored to the latest user text', () => {

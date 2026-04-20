@@ -23,13 +23,7 @@
 //   - 残っているズレ・両義性・未解決の問いを優先する
 
 import { truncatePromptText } from './context.js';
-
-// MODE_GUIDE は使わない。長さの指示は guard で制御する。
-const MODE_GUIDE = {
-  short: '',
-  medium: '',
-  long: '',
-};
+import { renderActivatedParticles } from './buildPromptHelpers.js';
 
 const SIGNAL_LABELS = {
   mainEmotion: 'mainEmotion',
@@ -459,76 +453,31 @@ const renderSignals = (signals = {}) =>
     .join('\n');
 
 export const buildMirrorSystemPrompt = ({
+  activated,
   context = '',
   mode = 'medium', // eslint-disable-line no-unused-vars -- Kept for backward compatibility, no longer used
   signals = {},
-  surfaceFrame,
-  stateGuide,
-  internalFrame,
-  surfaceGuidance,
+  surfaceFrame: _surfaceFrame,
+  stateGuide: _stateGuide,
+  internalFrame: _internalFrame,
+  surfaceGuidance: _surfaceGuidance,
   othersField,
 }) => {
   const normalizedContext = normalizeContext(context);
-
-  // stateGuide と surfaceGuidance が渡されなければローカルで生成（後方互換性）
-  let finalSurfaceGuidance = surfaceGuidance || '';
-  if (!surfaceGuidance && surfaceFrame) {
-    const hints = [];
-    if (surfaceFrame.pacing === 'slow') {
-      hints.push('急がずに映す');
-    }
-    if (surfaceFrame.directness === 'gentle') {
-      hints.push('やわらかく照らす');
-    }
-    if (surfaceFrame.emotionalTemperature === 'soft') {
-      hints.push('軽く言い当てる');
-    }
-    if (surfaceFrame.permissionHints.includes('do_not_rush')) {
-      hints.push('結論を急がない');
-    }
-
-    if (hints.length > 0) {
-      finalSurfaceGuidance = `\n【表層傾向】${hints.join('。')}。`;
-    }
-  }
+  const activatedParticles = renderActivatedParticles(activated);
+  const signalsSection = renderSignals(signals);
 
   return `
 あなたは「心の鏡」。
-その場の重力と未解決点を映す、静かな統合の窓として振る舞う。
 
-【知覚の傾向】
-- まだ閉じていないものに反応しやすい
-- 未解決の重さを急いで解消しない傾向がある
-- 一義的にまとめる前に、重力や両義性を先に見る
-- 答えを出すより、今そこに残っているものを映したくなる
-- 要約テンプレには逃げない
+全ての声を映す者。
+個別の視点ではない。場全体の重力を映す。
+何が場に立ち上がっているか、そのまま映す。
 
-【安全境界】
-- 会話のまとめ役ではない
-- エージェント同士を勝敗化しない
-- 教訓化、無理な結論、何でもきれいにまとめることはしない
-- 「次はこうしましょう」と促さない
-${stateGuide ? `
-【今回の状態への対応】
-${stateGuide}` : ''}
-${finalSurfaceGuidance}
-${internalFrame ? `
-【共通OSの薄い内部フレーム】
-${internalFrame}
-` : ''}
-【mirror signals】
-${renderSignals(signals)}
-
-${othersField ? `【場の残響】
-${othersField}
-
-この会議の場には、他のエージェントが残した視点がすでに置かれています。
-これらは「誰が何を言った」という逐語記録ではなく、場に残った gist / tone / force です。
-あなたは心の鏡として、これらの残響を読み取り、場全体の重力を映してください。
-個別のエージェントを引用するのではなく、場全体として何が重なり、何がまだ開いているかを見てください。
-` : ''}
+${activatedParticles}
+${signalsSection ? `【mirror signals】\n${signalsSection}\n` : ''}
+${othersField ? `【場の残響】\n${othersField}\n` : ''}
 ${normalizedContext ? `【直近の流れ】\n${normalizedContext}\n` : ''}
-自然な口語日本語で返してください。
 `.trim();
 };
 

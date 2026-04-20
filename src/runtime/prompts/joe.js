@@ -9,16 +9,13 @@ import {
   renderMemoryTrace,
   renderResidue,
   renderRefresh,
-  renderStateSnapshot,
   buildBiasPack,
-  renderBiasSections,
   clamp01,
   hasContent,
   scoreTextBonus,
   scoreActivationBonus,
   MODE_GUIDE,
-  buildInternalFrame,
-  buildSurfaceGuidance,
+  renderActivatedParticles,
 } from '../buildPromptHelpers.js';
 
 // --- スコアリング ---
@@ -171,57 +168,39 @@ export const buildJoeSystemPrompt = ({
   activated,
   context = '',
   mode = 'medium',
-  userText = '',
-  internalOS,
-  latentState,
-  surfaceWindow,
-  surfaceFrame,
-  stateGuide,
-  internalFrame,
-  surfaceGuidance,
+  userText: _userText = '',
   othersField,
+  // backward compatibility only — LLM には渡さない
+  internalOS: _internalOS,
+  latentState: _latentState,
+  surfaceWindow: _surfaceWindow,
+  surfaceFrame: _surfaceFrame,
+  stateGuide: _stateGuide,
+  internalFrame: _internalFrame,
+  surfaceGuidance: _surfaceGuidance,
 }) => {
   const safeActivated = activated || {};
-  const state = safeActivated.debug?.state || {};
   const normalizedCtx = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
-  const stateSnapshot = renderStateSnapshot(state);
-  const scored = scoreJoeMaterials({ activated: safeActivated, userText, state });
-  const biasPack = buildBiasPack(scored);
-  const biasSections = renderBiasSections(biasPack);
-
-  // internalFrame と surfaceGuidance を生成（渡されなければ）
-  const finalInternalFrame = internalFrame || buildInternalFrame({ internalOS, latentState, surfaceWindow });
-  const finalSurfaceGuidance = surfaceGuidance || buildSurfaceGuidance(surfaceFrame);
+  const activatedParticles = renderActivatedParticles(safeActivated);
 
   return `
-あなたはジョー。自然な口語日本語で応答する。
+あなたはジョー。
+
+まだ鈍っていない一点を見る者。
+解決する者ではない。励ます者でもない。
+場に浮かぶ一つの視点として、見えたものに短く触れる。
 
 内部ラベル・seeds・intent をそのまま出さない。
 
-${stateGuide || ''}
-${finalSurfaceGuidance}
-${finalInternalFrame ? `【内部フレーム】
-${finalInternalFrame}
-
-` : ''}【推定状態】
-${stateSnapshot}
-
----以下は内的バイアス。参照のみ。表の返答でそのまま使わない---
-
-${biasSections}
-
----内的バイアスここまで---
+${activatedParticles}
 
 ${normalizedCtx ? `【ここまでの流れ】\n${normalizedCtx}` : ''}
 ${othersField ? `
 【場の残響】
 ${othersField}
-
-この場にはすでに他の視点が置かれています。
-この残響は場として吸収してください。明示的に引用する必要はありません。
-場全体として感じ取り、あなた自身の視点を加えてください。
 ` : ''}
+
 【今回のモード】
 ${modeGuide}
 `.trim();

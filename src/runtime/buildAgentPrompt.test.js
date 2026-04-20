@@ -11,170 +11,177 @@ import { buildMirrorSystemPrompt } from './mirror.js';
 const AGENT_IDS = ['creative', 'soul', 'strategist', 'empath', 'critic'];
 
 const baseParams = {
-  activated: { debug: { state: {}, dominantAxes: [] } },
+  activated: {},
   context: '',
   mode: 'medium',
-  userText: 'もう疲れた。でも、完全に諦めたわけじゃないんだよな…',
-  internalOS: null,
-  surfaceFrame: null,
-  stateGuide: '',
-  internalFrame: '',
-  surfaceGuidance: '',
+  userText: 'test input',
+  surfaceFrame: {
+    pacing: 'slow',
+    directness: 'gentle',
+    emotionalTemperature: 'soft',
+    lengthPlan: { lineCountHint: 4 },
+    restraint: { holdBackSummary: 0.8, keepSilenceMargin: 0.6 },
+    permissionHints: ['do_not_rush', 'do_not_over_explain'],
+    speakIntentKey: 'touch_living_thread',
+  },
 };
 
-// --- Task 7-1: 各 agent の system prompt が null でない ---
+const NATURAL_DIRECTIVE_PATTERNS = [
+  /まず見えている一点を言う/,
+  /名詞・動詞・違和感/,
+  /組み立て禁止/,
+  /してください/,
+  /しないでください/,
+  /避ける:/,
+];
 
-test('dispatcher returns non-null system prompt for all 5 agents', () => {
+const LABEL_DIRECTIVE_PATTERNS = [
+  /pacing:\w+/i,
+  /directness:\w+/i,
+  /no-summary/i,
+  /no-solution/i,
+  /lines:\d+/i,
+  /intent:\w+/i,
+  /depth:(high|mid|low)/i,
+  /urgency:\w+/i,
+  /permission:\[/i,
+  /stance:\[/i,
+  /field:\[/i,
+  /silence/i,
+];
+
+const BIAS_MARKERS = ['---以下は内的バイアス', '---内的バイアスここまで---'];
+
+const EXISTENCE_LINES = {
+  creative: 'あなたはジョー。',
+  soul: 'あなたはレイ。',
+  strategist: 'あなたはケン。',
+  empath: 'あなたはミナ。',
+  critic: 'あなたはサトウ。',
+};
+
+const activatedWithHints = {
+  selectedClusters: [
+    {
+      id: 'thought-001',
+      textSeed: 'direction that remains',
+      tonalHints: ['短い', '密度'],
+      stanceHints: ['一点に触れる'],
+      avoidHints: ['励ましの上塗り'],
+    },
+  ],
+};
+
+const assertNoNaturalDirectives = (prompt) => {
+  NATURAL_DIRECTIVE_PATTERNS.forEach((pattern) => {
+    assert.ok(!pattern.test(prompt), `found natural directive: ${pattern}`);
+  });
+};
+
+const assertNoLabelDirectives = (prompt) => {
+  LABEL_DIRECTIVE_PATTERNS.forEach((pattern) => {
+    assert.ok(!pattern.test(prompt), `found label directive: ${pattern}`);
+  });
+};
+
+const assertNoBiasSections = (prompt) => {
+  BIAS_MARKERS.forEach((marker) => {
+    assert.ok(!prompt.includes(marker), `found bias marker: ${marker}`);
+  });
+};
+
+const assertHasExistence = (prompt, agentId) => {
+  assert.ok(prompt.includes(EXISTENCE_LINES[agentId]), `missing existence for ${agentId}`);
+};
+
+const assertRendersActivatedSeed = (prompt) => {
+  assert.ok(prompt.includes('direction that remains'));
+  assert.ok(!prompt.includes('短い'));
+  assert.ok(!prompt.includes('密度'));
+  assert.ok(!prompt.includes('一点に触れる'));
+  assert.ok(!prompt.includes('励ましの上塗り'));
+};
+
+const assertShortPrompt = (prompt, maxLines = 50) => {
+  const lines = prompt.split('\n').filter((line) => line.trim().length > 0);
+  assert.ok(lines.length < maxLines, `prompt too long: ${lines.length} lines`);
+};
+
+test('system prompts avoid natural and label directives', () => {
+  for (const agentId of AGENT_IDS) {
+    const prompt = buildAgentSystemPrompt(agentId, {
+      ...baseParams,
+      surfaceFrame: baseParams.surfaceFrame,
+    });
+    assertNoNaturalDirectives(prompt);
+    assertNoLabelDirectives(prompt);
+    assertNoBiasSections(prompt);
+  }
+
+  const mirror = buildMirrorSystemPrompt({
+    context: '',
+    signals: {},
+    activated: {},
+    surfaceFrame: baseParams.surfaceFrame,
+  });
+  assertNoNaturalDirectives(mirror);
+  assertNoLabelDirectives(mirror);
+  assertNoBiasSections(mirror);
+});
+
+test('system prompts keep existence declarations', () => {
   for (const agentId of AGENT_IDS) {
     const prompt = buildAgentSystemPrompt(agentId, baseParams);
-    assert.ok(prompt, `${agentId} system prompt should not be null`);
-    assert.equal(typeof prompt, 'string');
-    assert.ok(prompt.length > 100, `${agentId} prompt should not be a stub`);
+    assertHasExistence(prompt, agentId);
   }
+
+  const mirror = buildMirrorSystemPrompt({ context: '', signals: {}, activated: {} });
+  assert.ok(mirror.includes('あなたは「心の鏡」。'));
 });
 
-test('dispatcher returns non-null user prompt for all 5 agents', () => {
+test('system prompts render activated particles without leaking internal hints', () => {
   for (const agentId of AGENT_IDS) {
-    const userPrompt = buildAgentUserPrompt(agentId, {
-      userName: 'あなた',
-      userText: 'テスト入力',
+    const prompt = buildAgentSystemPrompt(agentId, {
+      ...baseParams,
+      activated: activatedWithHints,
     });
-    assert.ok(userPrompt, `${agentId} user prompt should not be null`);
-    assert.match(userPrompt, /テスト入力/);
+    assertRendersActivatedSeed(prompt);
   }
+
+  const mirror = buildMirrorSystemPrompt({
+    context: '',
+    signals: {},
+    activated: activatedWithHints,
+  });
+  assertRendersActivatedSeed(mirror);
 });
 
-test('dispatcher returns null for unknown agent id', () => {
+test('system prompts stay concise', () => {
+  for (const agentId of AGENT_IDS) {
+    const prompt = buildAgentSystemPrompt(agentId, baseParams);
+    assertShortPrompt(prompt);
+  }
+  const mirror = buildMirrorSystemPrompt({ context: '', signals: {}, activated: {} });
+  assertShortPrompt(mirror);
+});
+
+test('dispatcher returns non-null prompts and still routes correctly', () => {
+  for (const agentId of AGENT_IDS) {
+    const prompt = buildAgentSystemPrompt(agentId, baseParams);
+    assert.equal(typeof prompt, 'string');
+    assert.ok(prompt.length > 10);
+  }
+
+  for (const agentId of AGENT_IDS) {
+    const userPrompt = buildAgentUserPrompt(agentId, { userName: 'あなた', userText: 'テスト入力' });
+    assert.ok(userPrompt.includes('テスト入力'));
+  }
+
   assert.equal(buildAgentSystemPrompt('unknown', baseParams), null);
   assert.equal(buildAgentUserPrompt('unknown', { userName: 'あなた', userText: 'x' }), null);
 });
 
-// --- Task 7-5: dispatcher が全5エージェントを正しく振り分ける ---
-
-test('dispatcher routes each agent id to its own builder (unique self-introduction)', () => {
-  const prompts = Object.fromEntries(
-    AGENT_IDS.map((id) => [id, buildAgentSystemPrompt(id, baseParams)]),
-  );
-
-  // 各エージェント固有の自己紹介行
-  assert.match(prompts.creative, /あなたはジョー/);
-  assert.match(prompts.soul, /あなたはレイ/);
-  assert.match(prompts.strategist, /あなたはケン/);
-  assert.match(prompts.empath, /あなたはミナ/);
-  assert.match(prompts.critic, /あなたはサトウ/);
-
-  // 他のエージェントの自己紹介行が混入していないこと
-  assert.doesNotMatch(prompts.creative, /あなたはレイ|あなたはケン|あなたはミナ|あなたはサトウ/);
-  assert.doesNotMatch(prompts.soul, /あなたはジョー|あなたはケン|あなたはミナ|あなたはサトウ/);
-  assert.doesNotMatch(prompts.strategist, /あなたはジョー|あなたはレイ|あなたはミナ|あなたはサトウ/);
-  assert.doesNotMatch(prompts.empath, /あなたはジョー|あなたはレイ|あなたはケン|あなたはサトウ/);
-  assert.doesNotMatch(prompts.critic, /あなたはジョー|あなたはレイ|あなたはケン|あなたはミナ/);
-});
-
-// --- Task 7-2: agent ごとに固有のキーフレーズ / 禁止事項 / 方針が含まれる ---
-
-test('each agent system prompt contains its own voice differentiation block', () => {
-  // All agents now use perception tendencies instead of "触れ方" sections (de-templating)
-  assert.match(buildAgentSystemPrompt('creative', baseParams), /【知覚傾向】/);
-  assert.match(buildAgentSystemPrompt('soul', baseParams), /【知覚傾向】/);
-  assert.match(buildAgentSystemPrompt('strategist', baseParams), /【知覚傾向】/);
-  assert.match(buildAgentSystemPrompt('empath', baseParams), /【知覚傾向】/);
-  assert.match(buildAgentSystemPrompt('critic', baseParams), /【知覚傾向】/);
-});
-
-test('Joe system prompt focuses on single point via perception tendencies', () => {
-  const prompt = buildAgentSystemPrompt('creative', baseParams);
-  // New architecture: focus is expressed through perception tendencies
-  assert.match(prompt, /まだ動いている部分に目が行きやすい/);
-  assert.match(prompt, /【避ける方向】/);
-  assert.match(prompt, /説教、長い励まし/);
-});
-
-test('Ray system prompt forbids spiritual/mystical vocabulary and emphasizes 角度', () => {
-  const prompt = buildAgentSystemPrompt('soul', baseParams);
-  assert.match(prompt, /角度/);
-  assert.match(prompt, /スピリチュアル|神秘|魂/);
-});
-
-test('Ken system prompt emphasizes 構造 / 見通し and forbids 箇条書き相談員', () => {
-  const prompt = buildAgentSystemPrompt('strategist', baseParams);
-  assert.match(prompt, /構造|見通し/);
-  assert.match(prompt, /箇条書き/);
-});
-
-test('Mina system prompt emphasizes 受け取る / 直さない and forbids 過剰賛美', () => {
-  const prompt = buildAgentSystemPrompt('empath', baseParams);
-  assert.match(prompt, /受け|直さない|直そう/);
-  assert.match(prompt, /過剰賛美|あなたは光|あなたは特別/);
-});
-
-test('Satou system prompt emphasizes 避けているもの / 守る and forbids 断罪/攻撃', () => {
-  const prompt = buildAgentSystemPrompt('critic', baseParams);
-  assert.match(prompt, /避け|見て見ぬふり|矛盾/);
-  assert.match(prompt, /断罪|攻撃|乱暴/);
-});
-
-// --- Task 7-3: Joe / Mina / Satou が同じ tone になっていない ---
-
-test('Joe / Mina / Satou differentiation blocks describe different first-touch targets', () => {
-  const joe = buildAgentSystemPrompt('creative', baseParams);
-  const mina = buildAgentSystemPrompt('empath', baseParams);
-  const satou = buildAgentSystemPrompt('critic', baseParams);
-
-  // Joe: まだ向いている / まだ鈍っていない一点
-  assert.match(joe, /まだ向いている|まだ鈍っていない|まだ生きている|まだ濁って/);
-  // Mina: 感情 / 晒されている疲れ
-  assert.match(mina, /感情|疲れ|脆さ/);
-  // Satou: 避けているもの / 矛盾 / 見て見ぬふり
-  assert.match(satou, /避け|矛盾|見て見ぬふり/);
-
-  // 自己宣言行の禁止が voice ごとに違うこと（人称代名詞）
-  assert.match(joe, /ジョー/);
-  assert.match(mina, /ミナ/);
-  assert.match(satou, /サトウ/);
-});
-
-test('Joe / Mina / Satou prompts are not byte-identical (sanity)', () => {
-  const joe = buildAgentSystemPrompt('creative', baseParams);
-  const mina = buildAgentSystemPrompt('empath', baseParams);
-  const satou = buildAgentSystemPrompt('critic', baseParams);
-
-  assert.notEqual(joe, mina);
-  assert.notEqual(mina, satou);
-  assert.notEqual(joe, satou);
-});
-
-// --- Task 6 verification: Mirror が summary prompt になっていない ---
-
-test('Mirror system prompt forbids summary-machine phrasing', () => {
-  const mirror = buildMirrorSystemPrompt({
-    context: '',
-    mode: 'medium',
-    signals: {},
-  });
-
-  // De-templating pilot: verify knowledge-based focus is present
-  assert.match(mirror, /知覚の傾向/);
-  assert.match(mirror, /まだ閉じていないものに反応しやすい/);
-  assert.match(mirror, /未解決の重さを急いで解消しない/);
-
-  // De-templating pilot: verify form instructions are removed
-  assert.doesNotMatch(mirror, /summary machine|要約すると|まとめると|ポイントは/);
-  assert.doesNotMatch(mirror, /結論として|教訓は/);
-  assert.doesNotMatch(mirror, /返答の型/);
-  assert.doesNotMatch(mirror, /見る順序/);
-
-  // Self-description should remain (identity, not instructions)
-  assert.match(mirror, /その場の重力と未解決点を映す、静かな統合の窓/);
-
-  // Safety boundaries should remain
-  assert.match(mirror, /会話のまとめ役ではない/);
-  assert.match(mirror, /エージェント同士を勝敗化しない/);
-});
-
-// --- Task 4 verification: buildAgentDebugPreview ---
-
-test('buildAgentDebugPreview returns shape for each agent without raw prompts', () => {
+test('buildAgentDebugPreview returns shape for each agent without leaking prompts', () => {
   for (const agentId of AGENT_IDS) {
     const preview = buildAgentDebugPreview({
       agentId,
@@ -190,7 +197,6 @@ test('buildAgentDebugPreview returns shape for each agent without raw prompts', 
     assert.ok(typeof preview.builderUsed === 'string' && preview.builderUsed.length > 0);
     assert.ok(Array.isArray(preview.dominantAxes));
     assert.equal(preview.usedAfterglow, false);
-    // 140 文字以内に切り詰められている
     assert.ok(preview.stateGuidePreview.length <= 141);
     assert.ok(preview.internalFramePreview.length <= 141);
     assert.ok(preview.surfaceGuidancePreview.length <= 141);
@@ -198,7 +204,7 @@ test('buildAgentDebugPreview returns shape for each agent without raw prompts', 
   }
 });
 
-test('buildAgentDebugPreview labels Joe as joe-specialized and others as agent-dispatcher', () => {
+test('buildAgentDebugPreview keeps joe-specialized label', () => {
   const joe = buildAgentDebugPreview({
     agentId: 'creative',
     activated: { debug: { state: {}, dominantAxes: [] } },
