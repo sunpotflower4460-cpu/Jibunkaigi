@@ -26,6 +26,9 @@ export const scoreJoeMaterials = ({
   state = activated?.debug?.state || {},
 }) => {
   const safeActivated = activated || {};
+  const reentryText = typeof safeActivated.reentry === 'string'
+    ? safeActivated.reentry
+    : safeActivated.reentry?.text || '';
   const materials = [
     {
       id: 'existence',
@@ -47,7 +50,7 @@ export const scoreJoeMaterials = ({
     {
       id: 'reentry',
       title: '内的方向づけ',
-      content: safeActivated.reentry || '',
+      content: reentryText,
       group: 'orientation',
       score:
         0.1 +
@@ -183,6 +186,9 @@ export const buildJoeSystemPrompt = ({
   const normalizedCtx = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
   const activatedParticles = renderActivatedParticles(safeActivated);
+  const reentryText = typeof safeActivated.reentry === 'string'
+    ? safeActivated.reentry
+    : safeActivated.reentry?.text || '';
 
   return `
 あなたはジョー。
@@ -194,6 +200,10 @@ export const buildJoeSystemPrompt = ({
 内部ラベル・seeds・intent をそのまま出さない。
 
 ${activatedParticles}
+
+${reentryText ? `【内的方向づけ（この回だけの構え）】
+${reentryText}
+` : ''}
 
 ${normalizedCtx ? `【ここまでの流れ】\n${normalizedCtx}` : ''}
 ${othersField ? `

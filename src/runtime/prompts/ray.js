@@ -44,6 +44,9 @@ export const scoreRayMaterials = ({
   state = activated?.debug?.state || {},
 }) => {
   const safeActivated = activated || {};
+  const reentryText = typeof safeActivated.reentry === 'string'
+    ? safeActivated.reentry
+    : safeActivated.reentry?.text || '';
   const materials = [
     {
       id: 'existence',
@@ -65,7 +68,7 @@ export const scoreRayMaterials = ({
     {
       id: 'reentry',
       title: '内的方向づけ',
-      content: safeActivated.reentry || '',
+      content: reentryText,
       group: 'orientation',
       score:
         0.1 +
@@ -164,7 +167,6 @@ export const scoreRayMaterials = ({
     .sort((a, b) => b.score - a.score);
 };
 
-
 // --- メイン ---
 
 export const buildRaySystemPrompt = ({
@@ -181,6 +183,9 @@ export const buildRaySystemPrompt = ({
   const normalizedCtx = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
   const activatedParticles = renderActivatedParticles(safeActivated);
+  const reentryText = typeof safeActivated.reentry === 'string'
+    ? safeActivated.reentry
+    : safeActivated.reentry?.text || '';
 
   return `
 あなたはレイ。
@@ -193,6 +198,10 @@ export const buildRaySystemPrompt = ({
 比喩は必要な場合でも1つまで。
 
 ${activatedParticles}
+
+${reentryText ? `【内的方向づけ（この回だけの構え）】
+${reentryText}
+` : ''}
 
 ${normalizedCtx ? `【ここまでの流れ】\n${normalizedCtx}` : ''}
 ${othersField ? `
