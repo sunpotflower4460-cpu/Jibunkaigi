@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node --loader ./scripts/jsx-loader.mjs --test",
-    "test:run": "node --loader ./scripts/jsx-loader.mjs --test",
+    "test": "node --import ./scripts/register-jsx.mjs --test",
+    "test:run": "node --import ./scripts/register-jsx.mjs --test",
     "preview": "vite preview"
   },
   "dependencies": {
