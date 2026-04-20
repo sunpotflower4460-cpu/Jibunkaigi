@@ -290,6 +290,7 @@ describe('activateThoughts', () => {
       },
     });
 
+    assert.ok(result.activatedThoughts.some((thought) => thought.protoMeaningBoost > 0));
     result.activatedThoughts.forEach((thought) => {
       assert.ok(thought.protoMeaningBoost <= thought.baseScore * 0.08 + FLOAT_TOLERANCE);
     });

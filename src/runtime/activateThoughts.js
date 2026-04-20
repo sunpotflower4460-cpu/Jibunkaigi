@@ -379,6 +379,7 @@ export const activateThoughts = (input = {}) => {
     topN = 5,
   } = input;
   const canonicalAgentId = canonicalizeAgentId(agentId);
+  const isJoe = canonicalAgentId === 'joe';
 
   // Validate agentId
   const validAgents = ['joe', 'ken', 'mina', 'ray', 'satou', 'mirror'];
@@ -417,10 +418,10 @@ export const activateThoughts = (input = {}) => {
       beliefTension,
       emergingField,
     });
-    const protoMeaningMatch = canonicalAgentId === 'joe'
+    const protoMeaningMatch = isJoe
       ? calculateProtoMeaningMatch(node, protoMeaning)
       : 0;
-    const protoMeaningBoost = canonicalAgentId === 'joe'
+    const protoMeaningBoost = isJoe
       ? score * PROTO_MEANING_BOOST_FACTOR * protoMeaningMatch
       : 0;
 

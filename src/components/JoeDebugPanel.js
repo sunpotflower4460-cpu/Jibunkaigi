@@ -390,7 +390,7 @@ const ProtoMeaningCard = ({ title, items = [] }) => h(
       ? h(
           'ul',
           { key: 'items', className: 'list-disc space-y-1 pl-4 text-slate-100' },
-          items.map((item, index) => h('li', { key: `${title}-${index}-${item}` }, item)),
+          items.map((item) => h('li', { key: item }, item)),
         )
       : h(EmptyValue, { key: 'empty', text: '—' }),
   ],
