@@ -201,6 +201,7 @@ const buildMicroSignalBiasDebug = ({
  *
  * @param {object} reaction
  * @param {object} preconditionBias
+ * @param {object} microSignals
  * @returns {object}
  */
 const applyReactionBias = (reaction = {}, preconditionBias = {}, microSignals = {}) => {
@@ -271,6 +272,7 @@ const applyReactionBias = (reaction = {}, preconditionBias = {}, microSignals = 
  *
  * @param {object} stance
  * @param {object} preconditionBias
+ * @param {object} microSignals
  * @returns {object}
  */
 const applyStanceBias = (stance = {}, preconditionBias = {}, microSignals = {}) => {
@@ -324,6 +326,15 @@ const applyStanceBias = (stance = {}, preconditionBias = {}, microSignals = {}) 
   });
 };
 
+/**
+ * preconditionBias を field に混ぜる。
+ * 既存の latent 由来 bias を保ったまま、micro-signal の薄い delta を加える。
+ *
+ * @param {object} field
+ * @param {object} context
+ * @param {object} microSignals
+ * @returns {object}
+ */
 const applyFieldBias = (field = {}, {
   rawLatent = {},
   preconditionFilter = {},
