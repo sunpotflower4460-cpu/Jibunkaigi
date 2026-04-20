@@ -54,6 +54,7 @@ import { buildSurfaceFrame } from './runtime/surfaceTranslator';
 import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
 import { getOthersVisibilityState, getOthersEmptyMessage, getOthersDebugLabel } from './runtime/getOthersVisibilityState';
 import { isJoeDebugAvailable, isJoeDebugEnabled, setJoeDebugEnabled, JOE_DEBUG_STORAGE_KEY } from './runtime/joeDebug';
+import { buildJoeDebugEntry } from './runtime/debug/buildJoeDebugEntry';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
 import JoeDebugPanel from './components/JoeDebugPanel';
 import AgentGateDebugPanel, { isAgentDebugEnabled } from './components/AgentGateDebugPanel';
@@ -1632,7 +1633,7 @@ const App = () => {
     }
 
     if (agentId === 'creative' && !isMaster && isJoeDebugPanelVisible) {
-      setJoeDebugEntry({
+      setJoeDebugEntry(buildJoeDebugEntry({
         timestamp: Date.now(),
         userText: latestUserText,
         estimateState: estimatedState,
@@ -1643,7 +1644,7 @@ const App = () => {
         activated,
         systemInstruction,
         promptText,
-      });
+      }));
     }
 
     try {
