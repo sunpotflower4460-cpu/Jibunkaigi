@@ -1638,6 +1638,8 @@ const App = () => {
         estimateState: estimatedState,
         microSignals,
         microSignalBias: continuityInternalOS?.debugInfo?.microSignalBias ?? null,
+        fusedState: continuityInternalOS?.latentState?.fusedState ?? null,
+        protoMeaning: continuityInternalOS?.latentState?.protoMeaning ?? null,
         activated,
         systemInstruction,
         promptText,

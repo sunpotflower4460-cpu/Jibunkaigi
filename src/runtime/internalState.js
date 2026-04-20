@@ -1,4 +1,6 @@
 import { zeroMicroSignals } from './estimateMicroSignals.js';
+import { createInitialFusedState } from './fusedState.js';
+import { createInitialProtoMeaning } from './protoMeaning.js';
 
 const createFieldState = () => ({
   softness: 0,
@@ -238,6 +240,8 @@ const createDecisionState = () => ({
 });
 
 const createMicroSignalsState = () => zeroMicroSignals();
+const createFusedState = () => createInitialFusedState();
+const createProtoMeaningState = () => createInitialProtoMeaning();
 
 const createHomeState = () => ({
   kernel: {
@@ -314,6 +318,8 @@ export function createInitialInternalState() {
     preconditionFilter: createPreconditionFilterState(),
     preconditionBias: createPreconditionBiasState(),
     microSignals: createMicroSignalsState(),
+    fusedState: createFusedState(),
+    protoMeaning: createProtoMeaningState(),
     activatedThoughts: createActivatedThoughtsState(),
     boundThoughts: createBoundThoughtsState(),
     boundMixedNodes: createBoundMixedNodesState(),

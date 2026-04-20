@@ -212,6 +212,14 @@ const normalizeLatentState = (state) => {
     normalized.microSignals = state.microSignals;
   }
 
+  if (state.fusedState && typeof state.fusedState === 'object') {
+    normalized.fusedState = state.fusedState;
+  }
+
+  if (state.protoMeaning && typeof state.protoMeaning === 'object') {
+    normalized.protoMeaning = state.protoMeaning;
+  }
+
   if (state.decision && typeof state.decision === 'object') {
     normalized.decision = state.decision;
   }
@@ -235,6 +243,8 @@ const normalizeLatentState = (state) => {
     Boolean(normalized.preconditionFilter) ||
     Boolean(normalized.preconditionBias) ||
     Boolean(normalized.microSignals) ||
+    Boolean(normalized.fusedState) ||
+    Boolean(normalized.protoMeaning) ||
     Boolean(normalized.decision);
 
   return hasValues ? normalized : null;
@@ -317,6 +327,14 @@ const blendLatentState = (previousState, currentState) => {
   // Always use current home layer (home is regenerated fresh each time)
   if (current.home) {
     blended.home = current.home;
+  }
+
+  if (current.fusedState) {
+    blended.fusedState = current.fusedState;
+  }
+
+  if (current.protoMeaning) {
+    blended.protoMeaning = current.protoMeaning;
   }
 
   // Blend existence layer1; prefer current layer2 and belief layers

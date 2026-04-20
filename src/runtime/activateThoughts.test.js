@@ -243,6 +243,56 @@ describe('activateThoughts', () => {
     }
   });
 
+  it('should use joe reservoir for creative agent ids', () => {
+    const result = activateThoughts({
+      agentId: 'creative',
+      userText: '作品を出したいけど怖い',
+      emergingField: {
+        attentionTargets: ['作品', '怖い'],
+        resonanceAxes: ['illumination'],
+        bodySignals: {
+          tension: 0.5,
+          softness: 0.4,
+          hesitation: 0.6,
+          urgency: 0.3,
+          warmth: 0.4,
+          contraction: 0.4,
+        },
+        atmosphere: ['touched'],
+      },
+    });
+
+    assert.ok(result.activatedThoughts.length > 0);
+    assert.ok(result.activatedThoughts.some((thought) => thought.owner === 'joe'));
+  });
+
+  it('should keep protoMeaning narrative boost under 10 percent for creative only', () => {
+    const result = activateThoughts({
+      agentId: 'creative',
+      userText: '作品を出したいけど怖い',
+      protoMeaning: {
+        narrative: ['守りを残しつつ、届く形を探している'],
+      },
+      emergingField: {
+        attentionTargets: ['作品', '怖い'],
+        resonanceAxes: ['illumination'],
+        bodySignals: {
+          tension: 0.5,
+          softness: 0.4,
+          hesitation: 0.6,
+          urgency: 0.3,
+          warmth: 0.4,
+          contraction: 0.4,
+        },
+        atmosphere: ['touched'],
+      },
+    });
+
+    result.activatedThoughts.forEach((thought) => {
+      assert.ok(thought.protoMeaningBoost <= thought.baseScore * 0.08 + Number.EPSILON);
+    });
+  });
+
   it('should collect dominantAxes from top thoughts', () => {
     const result = activateThoughts({
       agentId: 'joe',

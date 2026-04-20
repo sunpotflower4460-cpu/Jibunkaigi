@@ -30,6 +30,9 @@ import { buildLengthPlan, formatLengthPlanForDebug } from './buildLengthPlan.js'
 import { buildSurfacePlan, formatSurfacePlanForDebug } from './buildSurfacePlan.js';
 import { buildFinalDecisionSubstrate, formatFinalDecisionSubstrateForDebug } from './buildFinalDecisionSubstrate.js';
 import { estimateMicroSignals } from './estimateMicroSignals.js';
+import { estimateState } from './stateEstimate.js';
+import { buildFusedState } from './fusedState.js';
+import { buildProtoMeaning } from './protoMeaning.js';
 import {
   getMicroSignalValue,
   MICRO_SIGNAL_BIAS_MAP,
@@ -470,6 +473,11 @@ export function runInternalOS(input, options = {}) {
     normalizedOptions.microSignals && typeof normalizedOptions.microSignals === 'object'
       ? normalizedOptions.microSignals
       : estimateMicroSignals(normalizedInput);
+  const lexicalState = estimateState(normalizedInput);
+  const fusedState = buildFusedState({
+    state: lexicalState,
+    microSignals,
+  });
 
   const initialState = createInitialInternalState();
 
@@ -571,6 +579,13 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const preconditionBias = buildPreconditionBias(preconditionFilter);
+  const protoMeaning = buildProtoMeaning(fusedState, {
+    agentId,
+    userText: normalizedInput,
+    dominantBeliefAxis: beliefCore?.dominantBeliefAxis ?? null,
+    dominantTensionAxis: beliefTension?.dominantTensionAxis ?? null,
+    identityKey: existenceLayer2?.agentIdentityKey ?? null,
+  });
   const existence1 = buildNormalizedExistence1(existenceLayer1);
   const existence2 = buildNormalizedExistence2(existenceLayer2);
   const dynamicBiasContext = {
@@ -692,6 +707,7 @@ export function runInternalOS(input, options = {}) {
     preconditionBias,
     beliefTension,
     emergingField,
+    protoMeaning,
     topN: 5,
   });
 
@@ -955,6 +971,8 @@ export function runInternalOS(input, options = {}) {
     preconditionFilter,
     preconditionBias,
     microSignals,
+    fusedState,
+    protoMeaning,
     // Post-precondition dynamic layers
     field,
     reaction,
@@ -1011,6 +1029,8 @@ export function runInternalOS(input, options = {}) {
         preconditionFilter,
         preconditionBias,
         microSignals,
+        fusedState,
+        protoMeaning,
         decision,
         activatedThoughts,
         activatedFeelings,

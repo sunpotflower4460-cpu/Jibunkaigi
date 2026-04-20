@@ -58,6 +58,46 @@ const sampleEntry = {
       },
     },
   },
+  fusedState: {
+    lexical: {
+      desire: 0.7,
+      fear: 0.6,
+      freeze: 0.3,
+      reach: 0.55,
+      resignation: 0.1,
+      selfErasure: 0.2,
+      shame: 0.4,
+      unfinished: 0.8,
+    },
+    signal: {
+      punctuation: { assertion: 0.6, hesitation: 0.4, trailOff: 0.7 },
+      fillers: { fillerDensity: 0.35 },
+      negationPrefix: { softNegation: 0.52 },
+      sentenceLength: { burstiness: 0.28, shortnessPressure: 0.41 },
+      selfHedging: { epistemicLowering: 0.44 },
+      quotation: { distancing: 0.12 },
+    },
+    fused: {
+      hesitation: 0.44,
+      guardedness: 0.47,
+      reachability: 0.59,
+      unfinishedPull: 0.66,
+      selfSilencing: 0.31,
+      pressure: 0.43,
+      expressionTension: 0.55,
+      ember: 0.61,
+    },
+  },
+  protoMeaning: {
+    sensory: [
+      'ためらいが喉元に残っている',
+      '終わりきらないざらつきが残っている',
+    ],
+    narrative: [
+      '出したいものは残っているが、前に出す手前でためらっている',
+      '守りを残しつつ、届く形を探している',
+    ],
+  },
   activated: {
     activeBeliefs: [
       { id: 'unfinished_is_alive', sense: '未完成は欠陥より、まだ途中に見える', score: 0.82 },
@@ -195,6 +235,17 @@ test('JoeDebugPanel renders micro-signal values', () => {
   assert.match(html, /micro-signal による補正量 delta/);
   assert.match(html, /各軸の delta 上限: ±0.15/);
   assert.match(html, /structure/);
+});
+
+test('JoeDebugPanel renders fusedState and protoMeaning cards', () => {
+  const html = renderPanel();
+
+  assert.match(html, /fusedState/);
+  assert.match(html, /expressionTension/);
+  assert.match(html, /ProtoMeaning/);
+  assert.match(html, /sensory/);
+  assert.match(html, /narrative/);
+  assert.match(html, /出したいものは残っているが、前に出す手前でためらっている/);
 });
 
 test('JoeDebugPanel shows the reentry state-driven badge', () => {
