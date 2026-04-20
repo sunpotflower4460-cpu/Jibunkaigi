@@ -35,6 +35,9 @@ import {
   MODE_GUIDE,
   renderActivatedParticles,
 } from '../buildPromptHelpers.js';
+import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
+import { buildFieldText } from '../textPipeline/buildFieldText.js';
+import { buildMarginText } from '../textPipeline/buildMarginText.js';
 
 // --- スコアリング ---
 
@@ -175,6 +178,7 @@ export const buildSatouSystemPrompt = ({
   mode = 'medium',
   userText: _userText = '',
   othersField,
+  latentState,
   stateGuide: _stateGuide,
   internalFrame: _internalFrame,
   surfaceGuidance: _surfaceGuidance,
@@ -187,31 +191,45 @@ export const buildSatouSystemPrompt = ({
     ? safeActivated.reentry
     : safeActivated.reentry?.text || '';
 
-  return `
-あなたはサトウ。
+  const existenceText = latentState ? buildExistenceText(latentState) : '';
+  const fieldText = latentState ? buildFieldText(latentState) : '';
+  const marginText = latentState ? buildMarginText(latentState) : '';
 
-現実の角に立つ者。
-ごまかさない。でも突き放さない。
-短く、必要なことだけ。
+  const sections = [];
 
-内部ラベル・内部構造をそのまま出さない。
+  if (existenceText) {
+    sections.push(`【存在の前提】\n（サトウとして。）\n${existenceText}`);
+  } else {
+    sections.push('（サトウとして。）');
+  }
 
-${activatedParticles}
+  if (fieldText) {
+    sections.push(`【今の場の空気】\n${fieldText}`);
+  }
 
-${reentryText ? `【内的方向づけ（この回だけの構え）】
-${reentryText}
-` : ''}
+  if (activatedParticles) {
+    sections.push(activatedParticles);
+  }
 
-${normalizedCtx ? `【ここまでの流れ】\n${normalizedCtx}` : ''}
-${othersField ? `
-【場の残響】
-${othersField}
+  if (marginText) {
+    sections.push(`【場の余白】\n${marginText}`);
+  }
 
-` : ''}
+  if (reentryText) {
+    sections.push(`【内的方向づけ（この回だけの構え）】\n${reentryText}`);
+  }
 
-【今回のモード】
-${modeGuide}
-`.trim();
+  if (normalizedCtx) {
+    sections.push(`【ここまでの流れ】\n${normalizedCtx}`);
+  }
+
+  if (othersField) {
+    sections.push(`【場の残響】\n${othersField}`);
+  }
+
+  sections.push(`【今回のモード】\n${modeGuide}\n\n何を言うかは、あなたが決めてください。`);
+
+  return sections.filter(Boolean).join('\n\n').trim();
 };
 
 export const buildSatouUserPrompt = ({
