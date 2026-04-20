@@ -74,17 +74,44 @@ function describeStanceGravity(stance = {}) {
 }
 
 /**
- * body state の描写
+ * body state の描写（第6章6-2: 外界と内面のズレ検出を含む）
  * @param {object} beliefCore - latentState.beliefCore
+ * @param {object} bodySignals - latentState.bodySignals { external, internal }
  * @returns {string}
  */
-function describeBodyState(beliefCore = {}) {
+function describeBodyState(beliefCore = {}, bodySignals = {}) {
+  const lines = [];
+
+  // 信念軸からの基本的な身体描写
   const dominantAxis = beliefCore.dominantBeliefAxis;
   if (dominantAxis && AXIS_DESCRIPTIONS[dominantAxis]) {
     const desc = AXIS_DESCRIPTIONS[dominantAxis];
-    return desc.bodyState || '';
+    if (desc.bodyState) {
+      lines.push(desc.bodyState);
+    }
   }
-  return '';
+
+  // 第6章6-2: external と internal のズレ検出
+  const external = bodySignals.external || {};
+  const internal = bodySignals.internal || {};
+
+  // 外界の緊張度（tension + urgency の平均）
+  const externalTension = ((external.tension ?? 0) + (external.urgency ?? 0)) / 2;
+  // 内面の緊張度（tension + contraction の平均）
+  const internalTension = ((internal.tension ?? 0) + (internal.contraction ?? 0)) / 2;
+
+  const mismatchThreshold = 0.3;
+
+  // パターン1: 外は穏やか、内は張っている
+  if (externalTension < 0.4 && internalTension > 0.6 && (internalTension - externalTension) > mismatchThreshold) {
+    lines.push('場は穏やかだが、内側に緊張が残っている');
+  }
+  // パターン2: 外は緊張、内は静か
+  else if (externalTension > 0.6 && internalTension < 0.4 && (externalTension - internalTension) > mismatchThreshold) {
+    lines.push('場には緊張があるが、内側は比較的落ち着いている');
+  }
+
+  return lines.filter(Boolean).join('。');
 }
 
 /**
@@ -96,6 +123,7 @@ export function buildFieldText(latentState = {}) {
   const field = latentState?.field || {};
   const stance = latentState?.stance || {};
   const beliefCore = latentState?.beliefCore || {};
+  const bodySignals = latentState?.bodySignals || {};
 
   const lines = [];
 
@@ -109,7 +137,7 @@ export function buildFieldText(latentState = {}) {
     lines.push(gravity);
   }
 
-  const body = describeBodyState(beliefCore);
+  const body = describeBodyState(beliefCore, bodySignals);
   if (body) {
     lines.push(body);
   }
