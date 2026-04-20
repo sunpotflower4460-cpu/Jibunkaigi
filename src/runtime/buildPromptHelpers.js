@@ -110,6 +110,32 @@ export const renderRefresh = (refresh = '') => {
   return refresh.trim();
 };
 
+/**
+ * 活性化した粒子を LLM に「場に浮かぶもの」として提示する。
+ * tonalHints / stanceHints / avoidHints は LLM に渡さない。
+ */
+export const renderActivatedParticles = (activated = {}) => {
+  const particles = activated?.selectedClusters
+    || activated?.selected
+    || activated?.activatedThoughts
+    || [];
+
+  if (!Array.isArray(particles) || particles.length === 0) {
+    return '';
+  }
+
+  const lines = ['【今、場に浮かんでいるもの】'];
+
+  particles.slice(0, 5).forEach((p) => {
+    const seed = p?.textSeed || p?.text || p?.id || '';
+    if (seed) {
+      lines.push(`- ${seed}`);
+    }
+  });
+
+  return lines.join('\n');
+};
+
 // --- 状態スナップショット ---
 
 export const renderStateSnapshot = (state = {}) => {

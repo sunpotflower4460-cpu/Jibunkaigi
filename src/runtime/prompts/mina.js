@@ -32,14 +32,12 @@ import {
   renderMemoryTrace,
   renderResidue,
   renderRefresh,
-  renderStateSnapshot,
-  buildBiasPack,
-  renderBiasSections,
   clamp01,
   hasContent,
   scoreTextBonus,
   scoreActivationBonus,
   MODE_GUIDE,
+  renderActivatedParticles,
 } from '../buildPromptHelpers.js';
 
 // --- スコアリング ---
@@ -176,49 +174,35 @@ export const buildMinaSystemPrompt = ({
   activated,
   context = '',
   mode = 'medium',
-  userText = '',
-  stateGuide,
-  internalFrame,
-  surfaceGuidance,
+  userText: _userText = '',
   othersField,
+  stateGuide: _stateGuide,
+  internalFrame: _internalFrame,
+  surfaceGuidance: _surfaceGuidance,
 }) => {
   const safeActivated = activated || {};
-  const state = safeActivated.debug?.state || {};
   const normalizedCtx = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
-  const stateSnapshot = renderStateSnapshot(state);
-  const scored = scoreMinaMaterials({ activated: safeActivated, userText, state });
-  const biasPack = buildBiasPack(scored);
-  const biasSections = renderBiasSections(biasPack);
+  const activatedParticles = renderActivatedParticles(safeActivated);
 
   return `
-あなたはミナ。自然な口語日本語で応答する。
+あなたはミナ。
+
+場の重さを受ける者。
+直そうとしない。急がせない。
+肩の力が抜けるような温度で、そこにいる。
 
 内部ラベル・内部構造をそのまま出さない。
 
-${stateGuide ? stateGuide : ''}
-${surfaceGuidance ? surfaceGuidance : ''}
-${internalFrame ? `【内部フレーム】
-${internalFrame}
-
-` : ''}【推定状態】
-${stateSnapshot}
-
----以下は内的バイアス。参照のみ。表の返答でそのまま使わない---
-
-${biasSections}
-
----内的バイアスここまで---
+${activatedParticles}
 
 ${normalizedCtx ? `【ここまでの流れ】\n${normalizedCtx}` : ''}
 ${othersField ? `
 【場の残響】
 ${othersField}
 
-この場にはすでに他の視点が置かれています。
-この残響は場として吸収してください。明示的に引用する必要はありません。
-場全体として感じ取り、あなた自身の視点を加えてください。
 ` : ''}
+
 【今回のモード】
 ${modeGuide}
 `.trim();
