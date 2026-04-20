@@ -21,6 +21,7 @@ import { getThoughtReservoir } from '../reservoir/loadReservoir.js';
 const AGENT_ALIAS_MAP = {
   creative: 'joe',
 };
+const PROTO_MEANING_BOOST_FACTOR = 0.08;
 
 /**
  * Normalize string for matching (lowercase, trim)
@@ -420,7 +421,7 @@ export const activateThoughts = (input = {}) => {
       ? calculateProtoMeaningMatch(node, protoMeaning)
       : 0;
     const protoMeaningBoost = canonicalAgentId === 'joe'
-      ? score * 0.08 * protoMeaningMatch
+      ? score * PROTO_MEANING_BOOST_FACTOR * protoMeaningMatch
       : 0;
 
     return {

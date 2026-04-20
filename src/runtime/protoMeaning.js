@@ -1,4 +1,6 @@
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+const DEFAULT_SENSORY_FALLBACK = 'まだ言葉になる前の感触がうっすら残っている';
+const DEFAULT_NARRATIVE_FALLBACK = 'まだ決め切らずに持っておきたい意味が残っている';
 
 const normalizeContext = (context = {}) => ({
   agentId: typeof context?.agentId === 'string' ? context.agentId : null,
@@ -149,7 +151,7 @@ export const buildProtoMeaning = (fusedState = {}, context = {}) => {
   const narrative = finalizeCandidates(narrativeCandidates);
 
   return {
-    sensory: sensory.length ? sensory : ['まだ言葉になる前の感触がうっすら残っている'],
-    narrative: narrative.length ? narrative : ['まだ決め切らずに持っておきたい意味が残っている'],
+    sensory: sensory.length ? sensory : [DEFAULT_SENSORY_FALLBACK],
+    narrative: narrative.length ? narrative : [DEFAULT_NARRATIVE_FALLBACK],
   };
 };

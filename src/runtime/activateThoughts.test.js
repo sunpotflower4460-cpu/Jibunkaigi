@@ -7,6 +7,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { activateThoughts, formatActivatedThoughtsForDebug } from './activateThoughts.js';
 
+const FLOAT_TOLERANCE = 1e-9;
+
 describe('activateThoughts', () => {
   it('should return null-safe result when no input', () => {
     const result = activateThoughts();
@@ -289,7 +291,7 @@ describe('activateThoughts', () => {
     });
 
     result.activatedThoughts.forEach((thought) => {
-      assert.ok(thought.protoMeaningBoost <= thought.baseScore * 0.08 + Number.EPSILON);
+      assert.ok(thought.protoMeaningBoost <= thought.baseScore * 0.08 + FLOAT_TOLERANCE);
     });
   });
 

@@ -240,7 +240,7 @@ test('JoeDebugPanel renders micro-signal values', () => {
 test('JoeDebugPanel renders fusedState and protoMeaning cards', () => {
   const html = renderPanel();
 
-  assert.match(html, /fusedState/);
+  assert.match(html, /FusedState/);
   assert.match(html, /expressionTension/);
   assert.match(html, /ProtoMeaning/);
   assert.match(html, /sensory/);

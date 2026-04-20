@@ -17,7 +17,7 @@ export const JOE_DEBUG_SECTION_LABELS = [
   '1. 入力テキスト',
   '2. estimateState',
   '3. マイクロシグナル',
-  '4. fusedState',
+  '4. FusedState',
   '5. ProtoMeaning',
   '6. activeBeliefs top2',
   '7. activeMemories top2',
