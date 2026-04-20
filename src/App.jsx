@@ -1505,7 +1505,7 @@ const App = () => {
 
       // D. activateAgent
       try {
-        activated = activateAgent(agentId, estimatedState);
+        activated = activateAgent(agentId, estimatedState, { microSignals });
       } catch (err) {
         handlePhaseError('activate-agent', err);
         return;
@@ -1632,6 +1632,7 @@ const App = () => {
         userText: latestUserText,
         estimateState: estimatedState,
         microSignals,
+        microSignalBias: continuityInternalOS?.debugInfo?.microSignalBias ?? null,
         activated,
         systemInstruction,
         promptText,

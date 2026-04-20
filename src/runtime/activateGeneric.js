@@ -119,7 +119,7 @@ const buildMemoryTrace = (activeMemories = []) => {
  * @param {object} state - estimateState() の出力
  * @returns {object|null} - アクティベーション結果、または素材が無い場合 null
  */
-export const activateGeneric = (agentId, state = {}) => {
+export const activateGeneric = (agentId, state = {}, options = {}) => {
   const materials = AGENT_MATERIALS[agentId];
   if (!materials) return null;
 
@@ -136,7 +136,15 @@ export const activateGeneric = (agentId, state = {}) => {
   const activeResidue = materials.buildResidue(residueContext);
 
   const activeMemoryTrace = buildMemoryTrace(activeMemories);
-  const reentryPick = materials.getReentry(state);
+  const reentryInput = agentId === 'creative'
+    ? {
+        state,
+        microSignals: options.microSignals && typeof options.microSignals === 'object'
+          ? options.microSignals
+          : {},
+      }
+    : state;
+  const reentryPick = materials.getReentry(reentryInput);
 
   return {
     reentry: reentryPick.selected,

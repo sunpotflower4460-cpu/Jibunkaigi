@@ -119,7 +119,7 @@ const buildMemoryTrace = (activeMemories = []) => {
 
 // --- main ---
 
-export const activateJoe = (state = {}) => {
+export const activateJoe = (state = {}, options = {}) => {
   const activeBeliefs = pickBeliefs(state, 2);
   const activeMemories = pickMemories(state, 2);
   const activeField = pickFieldNodes(state, activeBeliefs, 2);
@@ -128,7 +128,10 @@ export const activateJoe = (state = {}) => {
   const activeResidue = buildJoeResidue(residueContext);
 
   const activeMemoryTrace = buildMemoryTrace(activeMemories);
-  const reentryPick = getJoeReentry(state);
+  const reentryPick = getJoeReentry({
+    state,
+    microSignals: options.microSignals,
+  });
 
   return {
     reentry: reentryPick.selected,
