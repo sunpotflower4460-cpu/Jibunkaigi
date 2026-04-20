@@ -3,6 +3,8 @@
 ## 目的
 
 Joe の reentry を固定カード選択から、その場で 3 パートを合成する構造へ移した。
+現在の本番 runtime activation path の正本は `composeJoeReentry(...)` であり、D-4 dynamic composition を使う。
+`getJoeReentry(...)` は D-2 の tagged selection を残す legacy / compatibility path で、runtime の主経路には使わない。
 合成対象は次の 3 つに限定する。
 
 1. 観察の起点
@@ -47,7 +49,15 @@ Joe の reentry を固定カード選択から、その場で 3 パートを合�
   - part ごとの text / tags
   を持つ
 - 合成時は part corpus から選ぶ
-- 後方互換の `getJoeReentry` は variant 全体の選択ロジックを維持する
+- 後方互換の `getJoeReentry` は variant 全体の選択ロジックを維持する legacy / compatibility path
+
+## D-2 tagged selection と D-4 dynamic composition の関係
+
+- D-2 は `REENTRY_VARIANTS` 全体から 1 枚を選ぶ tagged selection
+- D-4 は observation / judgment / outputConstraint の 3 パートを、その場の入力から合成する dynamic composition
+- D-4 でも part corpus と candidate 表示の基礎として `REENTRY_VARIANTS` とその tags は引き続き参照する
+- つまり D-2 は「互換性のために残る旧経路」、D-4 は「本番 runtime activation path の正本」
+- debug panel の `reentryCandidates` / `reentryComposition` は D-4 の選択結果を追うための表示
 
 ## 選択ロジック
 

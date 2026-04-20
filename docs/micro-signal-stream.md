@@ -47,7 +47,7 @@ Micro-Signal は、ユーザー文面の句読点・言いよどみ・距離化�
 
 ## reentry への入力
 
-Joe の reentry は `getJoeReentry({ state, microSignals })` で受け取り、micro-signal 由来の薄い tag bias を加えます。
+Joe の runtime reentry は `composeJoeReentry({ state, microSignals, ... })` で受け取り、内部では micro-signal 由来の薄い tag bias を part selection に反映します。
 
 - hesitation → `freeze` / `unfinished`
 - trailOff → `unfinished` / `reach`

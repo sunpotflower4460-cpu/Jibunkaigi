@@ -4,7 +4,7 @@
 // エージェント固有のデータは registry.js から取得する。
 
 import { AGENT_MATERIALS } from '../agents/registry.js';
-import { composeJoeReentry } from '../agents/joe/composeReentry.js';
+import { composeJoeRuntimeReentry } from '../agents/joe/composeReentry.js';
 
 // --- util ---
 
@@ -138,19 +138,7 @@ export const activateGeneric = (agentId, state = {}, options = {}) => {
 
   const activeMemoryTrace = buildMemoryTrace(activeMemories);
   const reentryPick = agentId === 'creative'
-    ? composeJoeReentry({
-        state,
-        microSignals: options.microSignals && typeof options.microSignals === 'object'
-          ? options.microSignals
-          : {},
-        beliefTension: options.beliefTension && typeof options.beliefTension === 'object'
-          ? options.beliefTension
-          : null,
-        afterglowSeed: options.afterglowSeed && typeof options.afterglowSeed === 'object'
-          ? options.afterglowSeed
-          : null,
-        othersField: Array.isArray(options.othersField) ? options.othersField : [],
-      })
+    ? composeJoeRuntimeReentry(state, options)
     : materials.getReentry(state);
 
   return {
