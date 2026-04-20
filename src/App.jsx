@@ -52,7 +52,9 @@ import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchA
 import { buildSurfaceFrame } from './runtime/surfaceTranslator';
 import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
 import { getOthersVisibilityState, getOthersEmptyMessage, getOthersDebugLabel } from './runtime/getOthersVisibilityState';
+import { isJoeDebugAvailable, isJoeDebugEnabled, setJoeDebugEnabled, JOE_DEBUG_STORAGE_KEY } from './runtime/joeDebug';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
+import JoeDebugPanel from './components/JoeDebugPanel';
 import AgentGateDebugPanel, { isAgentDebugEnabled } from './components/AgentGateDebugPanel';
 import CompareModePanel from './components/CompareModePanel';
 import FloatingAgentBar from './components/FloatingAgentBar';
@@ -256,6 +258,8 @@ const App = () => {
   const [openToolbarMsgId, setOpenToolbarMsgId] = useState(null);
   const [autoExpandReactions, setAutoExpandReactions] = useState(null);
   const [surfaceDebugEntries, setSurfaceDebugEntries] = useState([]);
+  const [joeDebugEntry, setJoeDebugEntry] = useState(null);
+  const [isJoeDebugPanelVisible, setIsJoeDebugPanelVisible] = useState(() => isJoeDebugEnabled());
   const [optimisticSessionTitles, setOptimisticSessionTitles] = useState({});
   const [agentDebugEvents, setAgentDebugEvents] = useState([]);
   const [isCompareModeEnabled, setIsCompareModeEnabled] = useState(() => readCompareModeFlag());
@@ -358,6 +362,10 @@ const App = () => {
     setSurfaceDebugEntries((prev) => [entry, ...prev].slice(0, SURFACE_DEBUG_MAX_ENTRIES));
   };
   const clearSurfaceDebugEntries = () => setSurfaceDebugEntries([]);
+  const handleJoeDebugVisibilityChange = (nextVisible) => {
+    setJoeDebugEnabled(nextVisible);
+    setIsJoeDebugPanelVisible(nextVisible);
+  };
 
   useEffect(() => {
     mountedRef.current = true;
@@ -379,6 +387,36 @@ const App = () => {
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  useEffect(() => {
+    if (!isJoeDebugAvailable()) return undefined;
+    if (typeof window === 'undefined') return undefined;
+
+    const syncJoeDebug = () => setIsJoeDebugPanelVisible(isJoeDebugEnabled());
+    const handleStorage = (event) => {
+      if (!event || event.key === null || event.key === JOE_DEBUG_STORAGE_KEY) {
+        syncJoeDebug();
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      if (String(event.key || '').toLowerCase() !== 'j') return;
+      event.preventDefault();
+      setIsJoeDebugPanelVisible((prev) => {
+        const next = !prev;
+        setJoeDebugEnabled(next);
+        return next;
+      });
+    };
+
+    syncJoeDebug();
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   useEffect(() => {
@@ -1358,6 +1396,7 @@ const App = () => {
     let aiMsgId = null;
     let aiPersistenceState = 'not-created';
 
+    let estimatedState = null;
     let activated = null;
     if (isMaster) {
       const mirrorContext = buildPromptContext({
@@ -1442,7 +1481,6 @@ const App = () => {
       // 全エージェント統一パイプライン
 
       // C. estimateState
-      let estimatedState;
       try {
         estimatedState = estimateState(latestUserText);
       } catch (err) {
@@ -1573,6 +1611,17 @@ const App = () => {
     if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
       const refreshText = `あなたは${agent.name}として、上記の設定・活性状態・口調を維持し、一貫した応答を続けてください。`;
       systemInstruction = applyRefresh(systemInstruction, refreshText);
+    }
+
+    if (agentId === 'creative' && !isMaster && isJoeDebugPanelVisible) {
+      setJoeDebugEntry({
+        timestamp: Date.now(),
+        userText: latestUserText,
+        estimateState: estimatedState,
+        activated,
+        systemInstruction,
+        promptText,
+      });
     }
 
     try {
@@ -2337,6 +2386,13 @@ const App = () => {
         <SurfaceDebugPanel
           entries={surfaceDebugEntries}
           onClear={clearSurfaceDebugEntries}
+        />
+      )}
+
+      {isJoeDebugPanelVisible && (
+        <JoeDebugPanel
+          entry={joeDebugEntry}
+          onClose={() => handleJoeDebugVisibilityChange(false)}
         />
       )}
 
