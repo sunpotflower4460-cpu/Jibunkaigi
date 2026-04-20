@@ -195,10 +195,9 @@ const deriveOutputConstraintVector = (afterglowSeed = null, othersField = []) =>
 
 const selectPartCandidate = (partKey, vector, providedCorpus = null) => {
   const fallbackCorpus = JOE_REENTRY_PART_CORPUS[partKey] || [];
-  const hasProvidedCorpus = Array.isArray(providedCorpus);
-  const hasNonEmptyProvidedCorpus = hasProvidedCorpus && providedCorpus.length > 0;
-  const providedCorpusWasEmpty = hasProvidedCorpus && !hasNonEmptyProvidedCorpus;
-  const activeCorpus = hasNonEmptyProvidedCorpus ? providedCorpus : fallbackCorpus;
+  const activeCorpus = Array.isArray(providedCorpus) && providedCorpus.length > 0
+    ? providedCorpus
+    : fallbackCorpus;
   const scored = activeCorpus
     .map((candidate) => scoreCorpusCandidate(candidate, vector))
     .sort((a, b) => b.score - a.score);
@@ -223,7 +222,7 @@ const selectPartCandidate = (partKey, vector, providedCorpus = null) => {
       tagScore: clamp01(selected?.tagScore ?? 0),
       cosineSimilarity: clamp01(selected?.cosineSimilarity ?? 0),
     },
-    fallbackUsed: providedCorpusWasEmpty || !scored.length,
+    fallbackUsed: (Array.isArray(providedCorpus) && providedCorpus.length === 0) || !scored.length,
   };
 };
 

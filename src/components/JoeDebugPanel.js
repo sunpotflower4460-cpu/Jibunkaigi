@@ -102,7 +102,7 @@ const formatReentryInputs = (inputs = []) => (
         return `${tag}:${formatScore(item?.value)}`;
       })
       .filter(Boolean)
-      .join(' / ') || '—'
+      .join(' / ')
     : '—'
 );
 

@@ -6,6 +6,11 @@ const REENTRY_PART_LABELS = {
 
 const PART_ORDER = ['observation', 'judgment', 'outputConstraint'];
 
+const mergePartTags = (variantTags = [], partTags = []) => Array.from(new Set([
+  ...variantTags,
+  ...partTags,
+]));
+
 const buildReentryText = (parts = {}) => PART_ORDER
   .map((partKey) => {
     const text = parts?.[partKey]?.text || '';
@@ -109,10 +114,10 @@ export const JOE_REENTRY_PART_CORPUS = PART_ORDER.reduce((corpus, partKey) => ({
     variantId: variant.id,
     variantTags: variant.tags,
     text: variant.parts[partKey].text,
-    tags: Array.from(new Set([
-      ...variant.tags,
-      ...(Array.isArray(variant.parts[partKey].tags) ? variant.parts[partKey].tags : []),
-    ])),
+    tags: mergePartTags(
+      variant.tags,
+      Array.isArray(variant.parts[partKey].tags) ? variant.parts[partKey].tags : [],
+    ),
     partKey,
   })),
 }), {});

@@ -232,6 +232,15 @@ test('othersField noting Ken structure steers away from structure-heavy output',
 
   assert.ok(outputConstraint);
   assert.doesNotMatch(outputConstraint.selected.text, /構造|整理/);
+  assert.ok(
+    outputConstraint.selected.tags.includes('structureAvoid')
+      || outputConstraint.selected.tags.includes('imageryLimit'),
+  );
+  assert.ok(
+    outputConstraint.input.some(
+      ({ tag, value }) => (tag === 'structureAvoid' || tag === 'imageryLimit') && value > 0,
+    ),
+  );
 });
 
 test('empty override corpus falls back to built-in corpus', () => {
