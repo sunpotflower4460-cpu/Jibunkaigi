@@ -20,35 +20,19 @@ const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 /**
  * Transform speakIntent into surface-usable focus direction
  *
- * This maps internal speakIntent labels to natural surface guidance hints
- * WITHOUT directly exposing the intent labels to the LLM
+ * This maps internal speakIntent labels to LOW-SEMANTIC surface guidance hints
+ * WITHOUT exposing high-semantic natural language instructions to the LLM
+ *
+ * IMPORTANT: Keep these hints LOW-SEMANTIC and directional, not instructional
  *
  * @param {string|null} speakIntent - Internal speak intent label
- * @returns {string} Natural surface guidance hint
+ * @returns {string} Low-semantic surface guidance hint (empty string if no mapping needed)
  */
-export const transformSpeakIntentToSurfaceHint = (speakIntent) => {
-  switch (speakIntent) {
-    case 'touch-the-living-point':
-      return 'まだ鈍っていない一点へ触れる';
-
-    case 'clarify-the-knot':
-      return '結び目を短く言う';
-
-    case 'make-room-without-closing':
-      return '余白をつくる';
-
-    case 'return-to-footing':
-      return '足場に戻る';
-
-    case 'reflect-the-unsettled-weight':
-      return '閉じていない重さを映す';
-
-    case 'return-to-ground':
-      return '今ここに戻る';
-
-    default:
-      return '';
-  }
+export const transformSpeakIntentToSurfaceHint = (_speakIntent) => {
+  // IMPORTANT: Removed high-semantic Japanese guidance phrases
+  // These were re-inventing instructions that should come from internal state
+  // Now we return empty string - the direction comes from emotionalColor / motionBias instead
+  return '';
 };
 
 /**

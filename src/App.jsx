@@ -874,10 +874,24 @@ const App = () => {
           ? afterglowSeed.previousLatentState
           : null;
 
+      // Build minimal othersField from recent messages
+      const othersFieldEntries = [];
+      const baseMessages = messages.filter(m => m.sessionId === effectiveSessionId);
+      for (const msg of baseMessages) {
+        if (msg?.role === 'ai' && msg.agentId && msg.content) {
+          const entry = summarizeToOthersField(msg.agentId, msg.content);
+          if (entry) {
+            othersFieldEntries.push(entry);
+          }
+        }
+      }
+
       const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
         mode: selectedMode,
         previousMix: safePreviousMix,
         previousLatentState: safePreviousLatentState,
+        othersField: othersFieldEntries,
+        lengthPreference: 'medium', // TODO: wire up UI selector when available
       });
       const agentId = pickContextualAgent(AGENTS, {
         patternMix: internalOS.patternMix,
@@ -1251,6 +1265,8 @@ const App = () => {
           mode: selectedMode,
           previousMix: safePreviousMix,
           previousLatentState: safePreviousLatentState,
+          othersField: othersFieldEntries,
+          lengthPreference: 'medium', // TODO: wire up UI selector when available
         })
         : null;
     } catch (err) {

@@ -299,85 +299,29 @@ const buildSurfaceHint = (latentState = {}, dominantPatterns = [], isMirror = fa
 /**
  * Build surface hint from surfacePlan (v0.2)
  * Reads emotionalColor, motionBias, speakIntent from surfacePlan
- * Translates to natural Japanese guidance WITHOUT exposing internal labels
+ * Translates to LOW-SEMANTIC guidance WITHOUT exposing high-semantic instructions
+ *
+ * IMPORTANT: Removed high-semantic Japanese guidance phrases that re-invent instructions
+ * The internal state should speak through emotionalColor/motionBias, not through reinvented phrases
  *
  * @param {object} surfacePlan - SurfacePlan from buildSurfacePlan
  * @param {boolean} isMirror - Is mirror mode
- * @returns {string} Natural surface hint
+ * @returns {string} Low-semantic surface hint (empty for most cases)
  */
 const buildSurfaceHintFromPlan = (surfacePlan = {}, isMirror = false) => {
-  const emotionalColor = surfacePlan.emotionalColor ?? [];
-  const motionBias = surfacePlan.motionBias ?? [];
-  const speakIntent = surfacePlan.speakIntent ?? null;
   const othersPresence = surfacePlan.othersPresence ?? {};
 
-  // Mirror mode: reflect field gravity
+  // Mirror mode: reflect field gravity (low-semantic hint only)
   if (isMirror) {
     if (othersPresence.hasOthers) {
-      const forces = othersPresence.dominantForces ?? [];
-      if (forces.includes('hold') || forces.includes('stay')) {
-        return 'reflect what persists without forcing resolution';
-      }
-      if (forces.includes('clarify') || forces.includes('ground')) {
-        return 'reflect the underlying structure quietly';
-      }
-      return 'reflect field gravity and unresolved points';
+      return 'reflect what persists';
     }
-    return 'quietly reflect what patterns persist';
+    return '';
   }
 
-  // Build hint from speakIntent
-  let hint = '';
-  switch (speakIntent) {
-    case 'touch-the-living-point':
-      hint = 'まだ鈍っていない一点へ触れる';
-      break;
-    case 'clarify-the-knot':
-      hint = '結び目を短く言う';
-      break;
-    case 'make-room-without-closing':
-      hint = '余白をつくる';
-      break;
-    case 'return-to-footing':
-    case 'return-to-ground':
-      hint = '足場に戻る';
-      break;
-    case 'reflect-the-unsettled-weight':
-      hint = '閉じていない重さを映す';
-      break;
-    default:
-      hint = '';
-  }
-
-  // Modify hint with emotionalColor
-  if (emotionalColor.includes('warm') || emotionalColor.includes('soft')) {
-    if (!hint) hint = 'そっと触れる';
-  }
-  if (emotionalColor.includes('tight') || emotionalColor.includes('sharp')) {
-    if (!hint) hint = '張りを持って言う';
-  }
-  if (emotionalColor.includes('hesitant')) {
-    if (!hint) hint = 'ためらいを含めて話す';
-  }
-  if (emotionalColor.includes('quiet')) {
-    if (!hint) hint = '静かに留まる';
-  }
-  if (emotionalColor.includes('fragile')) {
-    if (!hint) hint = '繊細に触れる';
-  }
-
-  // Modify hint with motionBias
-  if (motionBias.includes('hold') && !hint) {
-    hint = '支える';
-  }
-  if (motionBias.includes('stay') && !hint) {
-    hint = 'そのままでいる';
-  }
-  if (motionBias.includes('do-not-close') && !hint) {
-    hint = '閉じない';
-  }
-
-  return hint || 'speak from what is present';
+  // For non-mirror: return empty - let emotionalColor/motionBias work through internal state
+  // Removed all high-semantic Japanese guidance phrases
+  return '';
 };
 
 export const buildSurfaceFrame = ({

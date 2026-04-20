@@ -11,18 +11,21 @@ import {
   formatSurfaceGuidanceForDebug,
 } from './surfaceBridge.js';
 
-test('transformSpeakIntentToSurfaceHint transforms known speakIntent labels', () => {
+test('transformSpeakIntentToSurfaceHint returns empty - high-semantic hints removed', () => {
+  // After Phase: Removing high-semantic re-translation
+  // transformSpeakIntentToSurfaceHint now returns empty string
+  // Internal state flows through emotionalColor/motionBias instead
   assert.equal(
     transformSpeakIntentToSurfaceHint('touch-the-living-point'),
-    'まだ鈍っていない一点へ触れる'
+    ''
   );
   assert.equal(
     transformSpeakIntentToSurfaceHint('clarify-the-knot'),
-    '結び目を短く言う'
+    ''
   );
   assert.equal(
     transformSpeakIntentToSurfaceHint('make-room-without-closing'),
-    '余白をつくる'
+    ''
   );
   assert.equal(
     transformSpeakIntentToSurfaceHint('unknown-intent'),
@@ -96,7 +99,8 @@ test('buildSurfaceGuidanceFromIntent combines consciousIntent and lengthPlan', (
 
   const guidance = buildSurfaceGuidanceFromIntent({ consciousIntent, lengthPlan });
 
-  assert.equal(guidance.speakIntentHint, '結び目を短く言う');
+  // After Phase: high-semantic hints removed, speakIntentHint is now empty
+  assert.equal(guidance.speakIntentHint, '');
   assert.equal(guidance.speakIntentKey, 'clarify-the-knot');
   assert.ok(guidance.restraintHints.includes('要約調を抑える'));
   assert.equal(guidance.lengthTarget, 'medium');

@@ -24,6 +24,7 @@ import { activateMoves } from './activateMoves.js';
 import { bindThoughts } from './bindThoughts.js';
 import { bindMixedNodes } from './bindMixedNodes.js';
 import { selectThoughtClusters } from './selectThoughtClusters.js';
+import { selectMixedClusters } from './selectMixedClusters.js';
 import { buildConsciousIntent, formatConsciousIntentForDebug } from './buildConsciousIntent.js';
 import { buildLengthPlan, formatLengthPlanForDebug } from './buildLengthPlan.js';
 import { buildSurfacePlan, formatSurfacePlanForDebug } from './buildSurfacePlan.js';
@@ -322,6 +323,10 @@ export function runInternalOS(input, options = {}) {
   const normalizedInput = typeof input === 'string' ? input : '';
   const normalizedOptions = options && typeof options === 'object' ? options : {};
   const agentId = typeof normalizedOptions.agentId === 'string' ? normalizedOptions.agentId : null;
+  const othersField = Array.isArray(normalizedOptions.othersField) ? normalizedOptions.othersField : [];
+  const lengthPreference = ['short', 'medium', 'long'].includes(normalizedOptions.lengthPreference)
+    ? normalizedOptions.lengthPreference
+    : 'medium';
 
   // Double defense: normalize previousMix and previousLatentState
   const safePreviousMix =
@@ -673,8 +678,8 @@ export function runInternalOS(input, options = {}) {
     clusters: boundThoughts.clusters,
     preconditionBias,
     beliefTension,
-    othersField: [], // TODO: wire up othersField in future
-    lengthPreference: 'medium',
+    othersField,
+    lengthPreference,
   });
 
   const selectedThoughts = {
@@ -688,6 +693,32 @@ export function runInternalOS(input, options = {}) {
   preconditionTrace.push('dynamic:after-select-thoughts');
 
   // ════════════════════════════════════════════════════════════════════
+  // SELECT MIXED CLUSTERS (Mixed Cluster Phase 2)
+  // Choose which mixed clusters naturally rise to foreground in this moment
+  // This is NOT final utterance - just selecting primary + optional secondary
+  // Priority: if mixed clusters exist, use them over thought-only clusters
+  // ════════════════════════════════════════════════════════════════════
+
+  const selectedMixedClustersResult = selectMixedClusters({
+    agentId,
+    clusters: boundMixedNodes.clusters,
+    preconditionBias,
+    beliefTension,
+    othersField,
+    lengthPreference,
+  });
+
+  const selectedMixedClusters = {
+    selected: selectedMixedClustersResult.selected || [],
+    selectionMeta: selectedMixedClustersResult.selectionMeta || {
+      totalClusters: 0,
+      selectedCount: 0,
+      dominantSelectedAxis: [],
+    },
+  };
+  preconditionTrace.push('dynamic:after-select-mixed-clusters');
+
+  // ════════════════════════════════════════════════════════════════════
   // BUILD CONSCIOUS INTENT (Phase 7)
   // Transform selected thought clusters into internal intention state
   // This is NOT final utterance - just internal "what do I want to say"
@@ -695,12 +726,14 @@ export function runInternalOS(input, options = {}) {
 
   const consciousIntent = buildConsciousIntent({
     agentId,
+    selectedMixedClusters,
     selectedThoughts,
+    boundMixedNodes,
     boundThoughts,
     emergingField,
     preconditionBias,
     beliefTension,
-    othersField: [], // TODO: wire up othersField in future
+    othersField,
   });
   preconditionTrace.push('dynamic:after-conscious-intent');
 
@@ -711,7 +744,7 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const lengthPlan = buildLengthPlan({
-    userSelectedLength: 'medium', // TODO: wire up user preference in future
+    userSelectedLength: lengthPreference,
     consciousIntent,
     selectedThoughts,
     preconditionBias,
@@ -726,7 +759,7 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const surfacePlan = buildSurfacePlan({
-    selectedMixedClusters: null, // TODO: wire up selectedMixedClusters when implemented
+    selectedMixedClusters,
     selectedThoughts,
     boundMixedNodes,
     boundThoughts,
@@ -736,7 +769,7 @@ export function runInternalOS(input, options = {}) {
     lengthPlan,
     beliefTension,
     preconditionBias,
-    othersField: [], // TODO: wire up othersField in future
+    othersField,
     isMirror: agentId === 'master',
   });
   preconditionTrace.push('dynamic:after-surface-plan');
@@ -775,6 +808,8 @@ export function runInternalOS(input, options = {}) {
     boundMixedNodes,
     // Selected thoughts (Phase 6)
     selectedThoughts,
+    // Selected mixed clusters (Mixed Cluster Phase 2)
+    selectedMixedClusters,
     // Conscious intent (Phase 7)
     consciousIntent,
     // Length plan (Phase 7)
@@ -812,7 +847,9 @@ export function runInternalOS(input, options = {}) {
         activatedFeelings,
         activatedMoves,
         boundThoughts,
+        boundMixedNodes,
         selectedThoughts,
+        selectedMixedClusters,
         consciousIntent,
         lengthPlan,
         surfacePlan,

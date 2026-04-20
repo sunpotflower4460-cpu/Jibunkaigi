@@ -113,12 +113,106 @@ export const renderRefresh = (refresh = '') => {
 /**
  * 活性化した粒子を LLM に「場に浮かぶもの」として提示する。
  * tonalHints / stanceHints / avoidHints は LLM に渡さない。
+ *
+ * Priority order:
+ * 1. activated.selectedMixedClusters?.selected (mixed clusters with thought/feeling/move)
+ * 2. activated.selectedThoughts?.selected (thought-only clusters)
+ * 3. activated.boundMixedNodes?.clusters (all mixed clusters before selection)
+ * 4. activated.activatedThoughts?.items (all activated thoughts before binding)
+ * 5. activated.selectedClusters / activated.selected / activated.activatedThoughts (legacy fallback)
  */
 export const renderActivatedParticles = (activated = {}) => {
-  const particles = activated?.selectedClusters
-    || activated?.selected
-    || activated?.activatedThoughts
-    || [];
+  let particles = [];
+
+  // Priority 1: selectedMixedClusters.selected
+  if (activated?.selectedMixedClusters?.selected && activated.selectedMixedClusters.selected.length > 0) {
+    // Get cluster IDs from selectedMixedClusters
+    const clusterIds = activated.selectedMixedClusters.selected.map(s => s.clusterId);
+
+    // Find actual clusters in boundMixedNodes
+    if (activated?.boundMixedNodes?.clusters) {
+      const clusters = activated.boundMixedNodes.clusters.filter(c =>
+        clusterIds.includes(c.clusterId)
+      );
+
+      // Extract textSeed from thought nodes in these clusters
+      clusters.forEach(cluster => {
+        if (cluster.thoughtIds && Array.isArray(cluster.thoughtIds)) {
+          cluster.thoughtIds.forEach(thoughtId => {
+            // Find thought in activatedThoughts
+            if (activated?.activatedThoughts?.items) {
+              const thought = activated.activatedThoughts.items.find(t => t.nodeId === thoughtId);
+              if (thought?.textSeed) {
+                particles.push({ textSeed: thought.textSeed });
+              }
+            }
+          });
+        }
+      });
+    }
+  }
+
+  // Priority 2: selectedThoughts.selected (fallback to thought-only)
+  if (particles.length === 0 && activated?.selectedThoughts?.selected && activated.selectedThoughts.selected.length > 0) {
+    const clusterIds = activated.selectedThoughts.selected.map(s => s.clusterId);
+
+    // Find actual clusters in boundThoughts
+    if (activated?.boundThoughts?.clusters) {
+      const clusters = activated.boundThoughts.clusters.filter(c =>
+        clusterIds.includes(c.id)
+      );
+
+      // Extract textSeed from thought nodes
+      clusters.forEach(cluster => {
+        if (cluster.thoughtIds && Array.isArray(cluster.thoughtIds)) {
+          cluster.thoughtIds.forEach(thoughtId => {
+            if (activated?.activatedThoughts?.items) {
+              const thought = activated.activatedThoughts.items.find(t => t.nodeId === thoughtId);
+              if (thought?.textSeed) {
+                particles.push({ textSeed: thought.textSeed });
+              }
+            }
+          });
+        }
+      });
+    }
+  }
+
+  // Priority 3: boundMixedNodes.clusters (before selection)
+  if (particles.length === 0 && activated?.boundMixedNodes?.clusters && activated.boundMixedNodes.clusters.length > 0) {
+    const topClusters = activated.boundMixedNodes.clusters.slice(0, 2);
+    topClusters.forEach(cluster => {
+      if (cluster.thoughtIds && Array.isArray(cluster.thoughtIds)) {
+        cluster.thoughtIds.forEach(thoughtId => {
+          if (activated?.activatedThoughts?.items) {
+            const thought = activated.activatedThoughts.items.find(t => t.nodeId === thoughtId);
+            if (thought?.textSeed) {
+              particles.push({ textSeed: thought.textSeed });
+            }
+          }
+        });
+      }
+    });
+  }
+
+  // Priority 4: activatedThoughts.items (before binding)
+  if (particles.length === 0 && activated?.activatedThoughts?.items && activated.activatedThoughts.items.length > 0) {
+    particles = activated.activatedThoughts.items
+      .slice(0, 5)
+      .map(item => ({ textSeed: item.textSeed }));
+  }
+
+  // Priority 5: Legacy fallback
+  if (particles.length === 0) {
+    const legacyParticles = activated?.selectedClusters
+      || activated?.selected
+      || activated?.activatedThoughts
+      || [];
+
+    if (Array.isArray(legacyParticles) && legacyParticles.length > 0) {
+      particles = legacyParticles;
+    }
+  }
 
   if (!Array.isArray(particles) || particles.length === 0) {
     return '';
