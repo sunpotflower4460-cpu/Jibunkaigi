@@ -31,22 +31,23 @@ Successfully migrated agent materials from 5 agents (joe, ray, ken, mina, satou)
 
 **Migration log**: `scripts/migration-log.json`
 
-### 2. State Axis Integration (Partial) 🔄
+### 2. State Axis Integration ✅
 
 **Files created/modified**:
 - `src/runtime/config/scoringWeights.js` - New scoring weights configuration
 - `src/runtime/activateThoughts.js` - Enhanced with state axis scoring
+- `src/runtime/activateFeelings.js` - Enhanced with state axis scoring
+- `src/runtime/activateMoves.js` - Enhanced with state axis scoring
+- `src/runtime/runInternalOS.js` - Wired stateAxes through all activation functions
 
 **Implementation**:
-- Created `calculateStateAxisResonance()` function using cosine similarity
-- Integrated state axes into `activateThoughts` scoring formula
+- Created `calculateStateAxisResonance()` function using cosine similarity in all three activation modules
+- Integrated state axes into all activation scoring formulas
 - Rebalanced activation weights:
-  - State axis: **0.35** (new, primary signal)
-  - Trigger match: 0.25 (reduced from 0.4)
-  - Agent affinity: 0.15 (reduced from 0.2)
-  - Resonance match: 0.15 (reduced from 0.2)
-  - Body affinity: 0.05 (reduced from 0.2)
-  - Anti-trigger penalty: -0.3 (reduced from -0.5)
+  - **Thoughts**: State axis 0.35, Trigger 0.25, Agent 0.15, Resonance 0.15, Body 0.05, Anti-trigger -0.3
+  - **Feelings**: State axis 0.35, Trigger 0.25, Agent 0.15, Resonance 0.15, Body 0.10, Anti-trigger -0.3
+  - **Moves**: State axis 0.35, Trigger 0.25, Agent 0.15, Resonance 0.12, Focus/Pacing 0.08, Anti-trigger -0.3
+- Wired `lexicalState` (from `estimateState`) as `stateAxes` parameter through runInternalOS to all three activation functions
 
 **State Axis Resonance Algorithm**:
 ```javascript
@@ -58,51 +59,7 @@ similarity = dotProduct / (||nodeVector|| * ||stateAxes||)
 
 ## Remaining Work
 
-### 3. Complete State Axis Integration
-
-**TODO**: Apply same state axis enhancement to:
-- [ ] `src/runtime/activateFeelings.js`
-- [ ] `src/runtime/activateMoves.js`
-
-**Steps for each file**:
-1. Import `STATE_AXIS_WEIGHT` from `./config/scoringWeights.js`
-2. Add `calculateStateAxisResonance()` function (copy from activateThoughts.js)
-3. Update `calculateActivationScore()` to include state axis resonance
-4. Add `stateAxes` parameter to function signature
-5. Pass `stateAxes` through to `calculateActivationScore()`
-6. Update JSDoc comments
-
-**Important**: Use appropriate body affinity weights:
-- Feelings: `BODY_AFFINITY_WEIGHT_FEELING = 0.10`
-- Moves: `BODY_AFFINITY_WEIGHT_MOVE = 0.08`
-
-### 4. Wire State Axes Through runInternalOS
-
-**File**: `src/runtime/runInternalOS.js`
-
-**TODO**:
-1. Extract `stateAxes` from `estimateState()` result (already called)
-2. Pass `stateAxes` to all three activation functions:
-   ```javascript
-   const activatedThoughtsResult = activateThoughts({
-     // existing params...
-     stateAxes,  // ADD THIS
-   });
-
-   const activatedFeelingsResult = activateFeelings({
-     // existing params...
-     stateAxes,  // ADD THIS
-   });
-
-   const activatedMovesResult = activateMoves({
-     // existing params...
-     stateAxes,  // ADD THIS
-   });
-   ```
-
-**Location**: Around lines 704-767 in runInternalOS.js
-
-### 5. Deprecate activateAgent
+### 3. Deprecate activateAgent
 
 **Step 2-1**: Strict renderActivatedParticles
 - **File**: `src/runtime/buildPromptHelpers.js`
@@ -122,7 +79,7 @@ similarity = dotProduct / (||nodeVector|| * ||stateAxes||)
   - `src/runtime/activateAgent.js`
 - **Add**: `@deprecated` JSDoc tags before moving
 
-### 6. Compare Mode Validation
+### 4. Compare Mode Validation
 
 **File to create**: `docs/p2-equivalence-review.md`
 
@@ -161,7 +118,7 @@ Select 10 representative inputs covering:
 - Notes: [specific observations]
 ```
 
-### 7. Documentation
+### 5. Documentation
 
 **File to create**: `docs/p-series.yaml`
 
@@ -182,7 +139,7 @@ p-series:
       ...
 ```
 
-### 8. Testing
+### 6. Testing
 
 **Unit tests to add**:
 - [ ] Test for migrated reservoir nodes structure
@@ -223,14 +180,32 @@ npm run test:run
 
 ## Next Steps (Priority Order)
 
-1. **Complete state axis integration** (activateFeelings, activateMoves)
-2. **Wire through runInternalOS** (pass stateAxes parameter)
+1. ✅ ~~**Complete state axis integration**~~ (activateFeelings, activateMoves) - DONE
+2. ✅ ~~**Wire through runInternalOS**~~ (pass stateAxes parameter) - DONE
 3. **Run tests** (npm run test:run)
 4. **Fix any test failures**
-5. **Deprecate activateAgent** (gradual steps 2-1, 2-2, 2-3)
+5. **Deprecate activateAgent** (gradual steps 3-1, 3-2, 3-3)
 6. **Compare Mode validation** (10 scenarios)
 7. **Documentation** (p-series.yaml)
 8. **Final validation** (full test suite + manual testing)
+
+## Progress Update (2026-04-20)
+
+**State Axis Integration: Complete ✅**
+
+All three activation modules now use state axis resonance:
+- `activateThoughts.js`: ✅ Enhanced
+- `activateFeelings.js`: ✅ Enhanced
+- `activateMoves.js`: ✅ Enhanced
+- `runInternalOS.js`: ✅ Wired stateAxes through pipeline
+
+**Key Changes**:
+1. Added `calculateStateAxisResonance()` to all activation modules (cosine similarity)
+2. Rebalanced scoring weights to make state axes primary signal (0.35 weight)
+3. Updated function signatures to accept `stateAxes` parameter
+4. Wired `lexicalState` from `estimateState()` through to all activation functions
+
+**Overall Progress**: ~55% complete (up from 40%)
 
 ## Migration Notes
 

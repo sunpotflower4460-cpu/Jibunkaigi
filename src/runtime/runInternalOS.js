@@ -708,6 +708,7 @@ export function runInternalOS(input, options = {}) {
     beliefTension,
     emergingField,
     protoMeaning,
+    stateAxes: lexicalState,
     topN: 5,
   });
 
@@ -734,6 +735,7 @@ export function runInternalOS(input, options = {}) {
     preconditionBias,
     beliefTension,
     emergingField,
+    stateAxes: lexicalState,
     topN: 4,
   });
 
@@ -760,6 +762,7 @@ export function runInternalOS(input, options = {}) {
     preconditionBias,
     beliefTension,
     emergingField,
+    stateAxes: lexicalState,
     topN: 4,
   });
 
