@@ -11,7 +11,7 @@
 //   追加の軸を増やして複雑化するのではなく、
 //   一点への絞り込みと「選ばないこと」が Layer B の本質。
 
-import { composeJoeReentry } from '../agents/joe/composeReentry.js';
+import { composeJoeRuntimeReentry } from '../agents/joe/composeReentry.js';
 import { JOE_REFRESH } from '../agents/joe/refresh.js';
 import { JOE_FIELD_NODES } from '../agents/joe/field.js';
 import { buildJoeResidue } from '../agents/joe/residue.js';
@@ -116,20 +116,6 @@ const buildMemoryTrace = (activeMemories = []) => {
   const top = activeMemories[0];
   return top.trace || '';
 };
-
-const composeJoeRuntimeReentry = (state = {}, options = {}) => composeJoeReentry({
-  state,
-  microSignals: options.microSignals && typeof options.microSignals === 'object'
-    ? options.microSignals
-    : {},
-  beliefTension: options.beliefTension && typeof options.beliefTension === 'object'
-    ? options.beliefTension
-    : null,
-  afterglowSeed: options.afterglowSeed && typeof options.afterglowSeed === 'object'
-    ? options.afterglowSeed
-    : null,
-  othersField: Array.isArray(options.othersField) ? options.othersField : [],
-});
 
 // --- main ---
 
