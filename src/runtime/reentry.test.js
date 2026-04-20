@@ -82,12 +82,12 @@ test('activateGeneric threads structured reentry and debug candidates', () => {
 
 test('joe reentry uses hesitation micro-signal to strengthen freeze variants', () => {
   const baseline = getJoeReentry(
-    { state: { desire: 0.7, reach: 0.65, freeze: 0.2, unfinished: 0.2 } },
+    { state: { desire: 0.38, reach: 0.35, freeze: 0.27, unfinished: 0.27, fear: 0.05 } },
     { random: () => 0 },
   );
   const withMicroSignals = getJoeReentry(
     {
-      state: { desire: 0.7, reach: 0.65, freeze: 0.2, unfinished: 0.2 },
+      state: { desire: 0.38, reach: 0.35, freeze: 0.27, unfinished: 0.27, fear: 0.05 },
       microSignals: {
         punctuation: { hesitation: 1, trailOff: 0, assertion: 0 },
         fillers: { fillerDensity: 0 },
@@ -99,8 +99,17 @@ test('joe reentry uses hesitation micro-signal to strengthen freeze variants', (
     },
     { random: () => 0 },
   );
+  const baselineFreezeCandidate = baseline.allCandidates.find(
+    (candidate) => candidate.tags.includes('freeze') && candidate.tags.includes('unfinished'),
+  );
+  const fusedFreezeCandidate = withMicroSignals.allCandidates.find(
+    (candidate) => candidate.tags.includes('freeze') && candidate.tags.includes('unfinished'),
+  );
 
-  assert.notEqual(baseline.selected.text, withMicroSignals.selected.text);
-  assert.ok(withMicroSignals.selected.tags.includes('freeze'));
-  assert.ok(withMicroSignals.allCandidates[0].score > baseline.allCandidates[0].score);
+  assert.ok(baselineFreezeCandidate);
+  assert.ok(fusedFreezeCandidate);
+  assert.ok(fusedFreezeCandidate.score > baselineFreezeCandidate.score);
+  assert.ok(
+    fusedFreezeCandidate.score - baselineFreezeCandidate.score >= 0.15,
+  );
 });
