@@ -110,6 +110,20 @@ const buildMemoryTrace = (activeMemories = []) => {
   return top.trace || '';
 };
 
+const composeJoeRuntimeReentry = (state = {}, options = {}) => composeJoeReentry({
+  state,
+  microSignals: options.microSignals && typeof options.microSignals === 'object'
+    ? options.microSignals
+    : {},
+  beliefTension: options.beliefTension && typeof options.beliefTension === 'object'
+    ? options.beliefTension
+    : null,
+  afterglowSeed: options.afterglowSeed && typeof options.afterglowSeed === 'object'
+    ? options.afterglowSeed
+    : null,
+  othersField: Array.isArray(options.othersField) ? options.othersField : [],
+});
+
 // --- メイン ---
 
 /**
@@ -138,19 +152,7 @@ export const activateGeneric = (agentId, state = {}, options = {}) => {
 
   const activeMemoryTrace = buildMemoryTrace(activeMemories);
   const reentryPick = agentId === 'creative'
-    ? composeJoeReentry({
-        state,
-        microSignals: options.microSignals && typeof options.microSignals === 'object'
-          ? options.microSignals
-          : {},
-        beliefTension: options.beliefTension && typeof options.beliefTension === 'object'
-          ? options.beliefTension
-          : null,
-        afterglowSeed: options.afterglowSeed && typeof options.afterglowSeed === 'object'
-          ? options.afterglowSeed
-          : null,
-        othersField: Array.isArray(options.othersField) ? options.othersField : [],
-      })
+    ? composeJoeRuntimeReentry(state, options)
     : materials.getReentry(state);
 
   return {

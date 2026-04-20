@@ -117,6 +117,14 @@ const buildMemoryTrace = (activeMemories = []) => {
   return top.trace || '';
 };
 
+const composeJoeRuntimeReentry = (state = {}, options = {}) => composeJoeReentry({
+  state,
+  microSignals: options.microSignals,
+  beliefTension: options.beliefTension,
+  afterglowSeed: options.afterglowSeed,
+  othersField: options.othersField,
+});
+
 // --- main ---
 
 export const activateJoe = (state = {}, options = {}) => {
@@ -128,13 +136,7 @@ export const activateJoe = (state = {}, options = {}) => {
   const activeResidue = buildJoeResidue(residueContext);
 
   const activeMemoryTrace = buildMemoryTrace(activeMemories);
-  const reentryPick = composeJoeReentry({
-    state,
-    microSignals: options.microSignals,
-    beliefTension: options.beliefTension,
-    afterglowSeed: options.afterglowSeed,
-    othersField: options.othersField,
-  });
+  const reentryPick = composeJoeRuntimeReentry(state, options);
 
   return {
     reentry: reentryPick.selected,

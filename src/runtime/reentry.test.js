@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { AGENT_MATERIALS } from '../agents/registry.js';
 import { getJoeReentry } from '../agents/joe/reentry.js';
 import { getRayReentry } from '../agents/ray/reentry.js';
 import { getKenReentry } from '../agents/ken/reentry.js';
 import { getMinaReentry } from '../agents/mina/reentry.js';
 import { getSatouReentry } from '../agents/satou/reentry.js';
+import { activateJoe } from './activate.js';
 import { activateGeneric } from './activateGeneric.js';
 
 const CASES = [
@@ -77,6 +79,53 @@ test('activateGeneric threads structured reentry and debug candidates', () => {
     );
   } finally {
     Math.random = originalRandom;
+  }
+});
+
+test('activateJoe keeps composed reentry as the canonical runtime path', () => {
+  const activated = activateJoe(
+    { fear: 0.9, freeze: 0.8, unfinished: 0.2 },
+    {
+      microSignals: {
+        punctuation: { hesitation: 1, trailOff: 0, assertion: 0 },
+      },
+    },
+  );
+
+  assert.equal(typeof activated?.reentry?.text, 'string');
+  assert.ok(Array.isArray(activated?.reentry?.tags));
+  assert.ok(Array.isArray(activated?.reentry?.composition?.parts));
+  assert.deepEqual(
+    activated.reentry.composition,
+    activated.debug.reentryComposition,
+  );
+});
+
+test('activateGeneric creative path does not fall back to legacy getJoeReentry', () => {
+  const originalGetReentry = AGENT_MATERIALS.creative.getReentry;
+  AGENT_MATERIALS.creative.getReentry = () => {
+    throw new Error('legacy getJoeReentry should not run on creative runtime activation');
+  };
+
+  try {
+    const activated = activateGeneric(
+      'creative',
+      { fear: 0.9, freeze: 0.8, unfinished: 0.2 },
+      {
+        microSignals: {
+          punctuation: { hesitation: 1, trailOff: 0, assertion: 0 },
+        },
+      },
+    );
+
+    assert.equal(typeof activated?.reentry?.text, 'string');
+    assert.ok(Array.isArray(activated?.reentry?.composition?.parts));
+    assert.deepEqual(
+      activated.reentry.composition,
+      activated.debug.reentryComposition,
+    );
+  } finally {
+    AGENT_MATERIALS.creative.getReentry = originalGetReentry;
   }
 });
 

@@ -2,6 +2,11 @@
 // ジョーの内的方向づけメモ。
 // 「自分がどう反応すべきか」の内部整理であり、表の返答にそのまま出す文章ではない。
 // モデルが直接台詞として使いやすい文体を避け、知覚・制約の言葉にとどめる。
+//
+// NOTE:
+// Joe の runtime activation path の正本は composeJoeReentry(...)。
+// このファイルの getJoeReentry(...) は、D-2 系の tagged selection を残す
+// legacy / compatibility path としてのみ維持する。
 
 import { selectTaggedReentry } from '../../runtime/reentrySelection.js';
 import {
@@ -42,7 +47,9 @@ export const applyMicroSignalTagBias = (state = {}, microSignals = {}) => {
 };
 
 /**
- * @deprecated Use composeJoeReentry for Joe's runtime activation path.
+ * Legacy compatibility path for D-2 tagged selection.
+ *
+ * @deprecated Use composeJoeReentry for Joe's canonical runtime activation path.
  */
 export const getJoeReentry = (input = {}, options = {}) => {
   const { state, microSignals } = normalizeJoeReentryInput(input);

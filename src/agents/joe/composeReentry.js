@@ -252,6 +252,10 @@ const buildOverallCandidates = (selected, mergedVector) => {
   ];
 };
 
+/**
+ * Canonical runtime reentry path for Joe.
+ * D-4 dynamic composition is the production activation path; tagged selection remains legacy compatibility.
+ */
 export const composeJoeReentry = (input = {}, options = {}) => {
   const {
     state,
