@@ -17,13 +17,15 @@ export const JOE_DEBUG_SECTION_LABELS = [
   '1. 入力テキスト',
   '2. estimateState',
   '3. マイクロシグナル',
-  '4. activeBeliefs top2',
-  '5. activeMemories top2',
-  '6. activeField top2',
-  '7. activeResidue (4 lines)',
-  '8. reentry',
-  '9. 最終 systemInstruction',
-  '10. 最終 promptText',
+  '4. FusedState',
+  '5. ProtoMeaning',
+  '6. activeBeliefs top2',
+  '7. activeMemories top2',
+  '8. activeField top2',
+  '9. activeResidue (4 lines)',
+  '10. reentry',
+  '11. 最終 systemInstruction',
+  '12. 最終 promptText',
 ];
 
 export const JOE_REENTRY_WARNING_TEXT = '✅ 状態駆動・プロンプト使用中';
@@ -355,10 +357,51 @@ const MicroSignalBiasLayerCard = ({ layerKey, layerBias }) => {
   );
 };
 
+const FusedStateCard = ({ fusedState }) => {
+  const fusedEntries = Object.entries(fusedState?.fused || {});
+
+  return fusedEntries.length
+    ? h(
+        'div',
+        { className: 'grid grid-cols-1 gap-2 sm:grid-cols-2' },
+        fusedEntries.map(([axis, value]) => h(
+          'div',
+          {
+            key: axis,
+            className: 'rounded-md border border-slate-800 bg-slate-900/80 p-2 text-[11px] text-slate-200',
+          },
+          [
+            h('div', { key: 'title', className: 'mb-2 font-mono text-orange-200' }, axis),
+            h(ScoreBarRow, { key: axis, axis, value }),
+          ],
+        )),
+      )
+    : h(EmptyValue, { text: 'fusedState はありません。' });
+};
+
+const ProtoMeaningCard = ({ title, items = [] }) => h(
+  'div',
+  {
+    className: 'rounded-md border border-slate-800 bg-slate-900/80 p-3 text-[11px] text-slate-200',
+  },
+  [
+    h('div', { key: 'title', className: 'mb-2 font-mono text-orange-200' }, title),
+    items.length
+      ? h(
+          'ul',
+          { key: 'items', className: 'list-disc space-y-1 pl-4 text-slate-100' },
+          items.map((item) => h('li', { key: item }, item)),
+        )
+      : h(EmptyValue, { key: 'empty', text: '—' }),
+  ],
+);
+
 const JoeDebugPanel = ({ entry = null, onClose }) => {
   const estimateState = entry?.estimateState || {};
   const microSignals = entry?.microSignals || {};
   const microSignalBias = entry?.microSignalBias || null;
+  const fusedState = entry?.fusedState || null;
+  const protoMeaning = entry?.protoMeaning || null;
   const activated = entry?.activated || {};
   const beliefs = getTopItems(activated.activeBeliefs);
   const memories = getTopItems(activated.activeMemories);
@@ -456,7 +499,33 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
           ),
           h(
             Section,
-            { key: 'beliefs', title: JOE_DEBUG_SECTION_LABELS[3] },
+            { key: 'fusedState', title: JOE_DEBUG_SECTION_LABELS[3] },
+            h('p', { className: 'text-[10px] text-slate-400' }, 'estimateState と micro-signal の観測的な合流点'),
+            h(FusedStateCard, { fusedState }),
+          ),
+          h(
+            Section,
+            { key: 'protoMeaning', title: JOE_DEBUG_SECTION_LABELS[4] },
+            h(
+              'div',
+              { className: 'grid grid-cols-1 gap-2' },
+              [
+                h(ProtoMeaningCard, {
+                  key: 'proto-sensory',
+                  title: 'sensory',
+                  items: Array.isArray(protoMeaning?.sensory) ? protoMeaning.sensory : [],
+                }),
+                h(ProtoMeaningCard, {
+                  key: 'proto-narrative',
+                  title: 'narrative',
+                  items: Array.isArray(protoMeaning?.narrative) ? protoMeaning.narrative : [],
+                }),
+              ],
+            ),
+          ),
+          h(
+            Section,
+            { key: 'beliefs', title: JOE_DEBUG_SECTION_LABELS[5] },
             beliefs.length
               ? beliefs.map((belief) => h(ItemCard, {
                   key: belief.id || belief.sense,
@@ -469,7 +538,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
           ),
           h(
             Section,
-            { key: 'memories', title: JOE_DEBUG_SECTION_LABELS[4] },
+            { key: 'memories', title: JOE_DEBUG_SECTION_LABELS[6] },
             memories.length
               ? memories.map((memory) => h(ItemCard, {
                   key: memory.id || memory.trace,
@@ -482,7 +551,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
           ),
           h(
             Section,
-            { key: 'field', title: JOE_DEBUG_SECTION_LABELS[5] },
+            { key: 'field', title: JOE_DEBUG_SECTION_LABELS[7] },
             fieldNodes.length
               ? fieldNodes.map((node) => h(ItemCard, {
                   key: node.id || node.text,
@@ -495,7 +564,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
           ),
           h(
             Section,
-            { key: 'residue', title: JOE_DEBUG_SECTION_LABELS[6] },
+            { key: 'residue', title: JOE_DEBUG_SECTION_LABELS[8] },
             residueLines.length
               ? h(
                   'ol',
@@ -508,7 +577,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
             Section,
             {
               key: 'reentry',
-              title: JOE_DEBUG_SECTION_LABELS[7],
+              title: JOE_DEBUG_SECTION_LABELS[9],
               actions: [
                 h(
                   'span',
@@ -561,7 +630,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
             Section,
             {
               key: 'system',
-              title: JOE_DEBUG_SECTION_LABELS[8],
+              title: JOE_DEBUG_SECTION_LABELS[10],
               actions: [h(CopyButton, { key: 'copy-system', text: entry?.systemInstruction || '', label: 'copy' })],
             },
             h(CodeBlock, { text: entry?.systemInstruction || '' }),
@@ -570,7 +639,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
             Section,
             {
               key: 'prompt',
-              title: JOE_DEBUG_SECTION_LABELS[9],
+              title: JOE_DEBUG_SECTION_LABELS[11],
               actions: [h(CopyButton, { key: 'copy-prompt', text: entry?.promptText || '', label: 'copy' })],
             },
             h(CodeBlock, { text: entry?.promptText || '' }),

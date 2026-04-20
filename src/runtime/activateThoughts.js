@@ -18,6 +18,11 @@
 
 import { getThoughtReservoir } from '../reservoir/loadReservoir.js';
 
+const AGENT_ALIAS_MAP = {
+  creative: 'joe',
+};
+const PROTO_MEANING_BOOST_FACTOR = 0.08;
+
 /**
  * Normalize string for matching (lowercase, trim)
  * @param {string} text
@@ -25,6 +30,63 @@ import { getThoughtReservoir } from '../reservoir/loadReservoir.js';
  */
 const normalizeText = (text) => {
   return String(text || '').toLowerCase().trim();
+};
+
+const canonicalizeAgentId = (agentId) => AGENT_ALIAS_MAP[normalizeText(agentId)] || normalizeText(agentId);
+
+const extractNarrativeTokens = (protoMeaning = {}) => {
+  if (!Array.isArray(protoMeaning?.narrative)) return [];
+
+  const cues = new Set();
+
+  protoMeaning.narrative.forEach((line) => {
+    const normalizedLine = normalizeText(line);
+    if (!normalizedLine) return;
+
+    if (/残|火種|消していない|芯/.test(normalizedLine)) {
+      ['remaining', 'alive', 'remnant', 'core', 'mattering'].forEach((cue) => cues.add(cue));
+    }
+    if (/守り|壊さず/.test(normalizedLine)) {
+      ['holding', 'protect', 'held-back'].forEach((cue) => cues.add(cue));
+    }
+    if (/届|前に出|向き/.test(normalizedLine)) {
+      ['direction', 'forward', 'motion', 'want-to-emerge'].forEach((cue) => cues.add(cue));
+    }
+    if (/ためら|文章になる前|言葉になる前/.test(normalizedLine)) {
+      ['frozen', 'stuck', 'raw', 'still-raw'].forEach((cue) => cues.add(cue));
+    }
+    if (/引っ込め|乱さない/.test(normalizedLine)) {
+      ['suppression', 'compressed', 'held-back'].forEach((cue) => cues.add(cue));
+    }
+    if (/諦めかけ/.test(normalizedLine)) {
+      ['pressure', 'suppression', 'compressed'].forEach((cue) => cues.add(cue));
+    }
+  });
+
+  return [...cues];
+};
+
+const calculateProtoMeaningMatch = (node = {}, protoMeaning = {}) => {
+  const narrativeTokens = extractNarrativeTokens(protoMeaning);
+  if (!narrativeTokens.length) return 0;
+
+  const nodeTokens = [
+    node.textSeed,
+    ...(Array.isArray(node.triggers) ? node.triggers : []),
+    ...(Array.isArray(node.tags) ? node.tags : []),
+    ...(Array.isArray(node.axis) ? node.axis : []),
+  ]
+    .map(normalizeText)
+    .filter(Boolean);
+
+  if (!nodeTokens.length) return 0;
+
+  const matchCount = narrativeTokens.reduce(
+    (count, token) => count + (nodeTokens.some((value) => value.includes(token) || token.includes(value)) ? 1 : 0),
+    0
+  );
+
+  return Math.min(1, matchCount / Math.max(narrativeTokens.length, 1));
 };
 
 /**
@@ -313,12 +375,15 @@ export const activateThoughts = (input = {}) => {
     preconditionBias = null,
     beliefTension = null,
     emergingField = null,
+    protoMeaning = null,
     topN = 5,
   } = input;
+  const canonicalAgentId = canonicalizeAgentId(agentId);
+  const isJoe = canonicalAgentId === 'joe';
 
   // Validate agentId
   const validAgents = ['joe', 'ken', 'mina', 'ray', 'satou', 'mirror'];
-  if (!validAgents.includes(agentId)) {
+  if (!validAgents.includes(canonicalAgentId)) {
     return {
       activatedThoughts: [],
       topThoughtIds: [],
@@ -331,7 +396,7 @@ export const activateThoughts = (input = {}) => {
   }
 
   // Load thought reservoir (shared + agent)
-  const thoughtNodes = getThoughtReservoir(agentId);
+  const thoughtNodes = getThoughtReservoir(canonicalAgentId);
 
   if (!thoughtNodes || thoughtNodes.length === 0) {
     return {
@@ -347,20 +412,29 @@ export const activateThoughts = (input = {}) => {
 
   // Score all nodes
   const scoredNodes = thoughtNodes.map((node) => {
-    const { score, reasons } = calculateActivationScore(node, agentId, {
+    const { score, reasons } = calculateActivationScore(node, canonicalAgentId, {
       userText,
       preconditionBias,
       beliefTension,
       emergingField,
     });
+    const protoMeaningMatch = isJoe
+      ? calculateProtoMeaningMatch(node, protoMeaning)
+      : 0;
+    const protoMeaningBoost = isJoe
+      ? score * PROTO_MEANING_BOOST_FACTOR * protoMeaningMatch
+      : 0;
 
     return {
       nodeId: node.id,
       owner: node.owner,
       textSeed: node.textSeed,
-      score,
+      score: score + protoMeaningBoost,
+      baseScore: score,
       reasons,
       dominantAxis: node.axis || [],
+      protoMeaningMatch,
+      protoMeaningBoost,
     };
   });
 

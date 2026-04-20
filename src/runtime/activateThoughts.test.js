@@ -7,6 +7,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { activateThoughts, formatActivatedThoughtsForDebug } from './activateThoughts.js';
 
+const FLOAT_TOLERANCE = 1e-9;
+
 describe('activateThoughts', () => {
   it('should return null-safe result when no input', () => {
     const result = activateThoughts();
@@ -241,6 +243,57 @@ describe('activateThoughts', () => {
       assert.ok(Array.isArray(firstThought.reasons), 'should have reasons array');
       assert.ok(Array.isArray(firstThought.dominantAxis), 'should have dominantAxis array');
     }
+  });
+
+  it('should use joe reservoir for creative agent ids', () => {
+    const result = activateThoughts({
+      agentId: 'creative',
+      userText: '作品を出したいけど怖い',
+      emergingField: {
+        attentionTargets: ['作品', '怖い'],
+        resonanceAxes: ['illumination'],
+        bodySignals: {
+          tension: 0.5,
+          softness: 0.4,
+          hesitation: 0.6,
+          urgency: 0.3,
+          warmth: 0.4,
+          contraction: 0.4,
+        },
+        atmosphere: ['touched'],
+      },
+    });
+
+    assert.ok(result.activatedThoughts.length > 0);
+    assert.ok(result.activatedThoughts.some((thought) => thought.owner === 'joe'));
+  });
+
+  it('should keep protoMeaning narrative boost under 10 percent for creative only', () => {
+    const result = activateThoughts({
+      agentId: 'creative',
+      userText: '作品を出したいけど怖い',
+      protoMeaning: {
+        narrative: ['守りを残しつつ、届く形を探している'],
+      },
+      emergingField: {
+        attentionTargets: ['作品', '怖い'],
+        resonanceAxes: ['illumination'],
+        bodySignals: {
+          tension: 0.5,
+          softness: 0.4,
+          hesitation: 0.6,
+          urgency: 0.3,
+          warmth: 0.4,
+          contraction: 0.4,
+        },
+        atmosphere: ['touched'],
+      },
+    });
+
+    assert.ok(result.activatedThoughts.some((thought) => thought.protoMeaningBoost > 0));
+    result.activatedThoughts.forEach((thought) => {
+      assert.ok(thought.protoMeaningBoost <= thought.baseScore * 0.08 + FLOAT_TOLERANCE);
+    });
   });
 
   it('should collect dominantAxes from top thoughts', () => {

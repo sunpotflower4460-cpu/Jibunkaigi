@@ -258,6 +258,19 @@ test('runInternalOS stays stable for undefined and null input', () => {
   assertNumericShape(runInternalOS(null));
 });
 
+test('runInternalOS stores fusedState and protoMeaning in latentState', () => {
+  const result = runInternalOS('作品を出したいけど怖い', { agentId: 'creative' });
+
+  assert.ok(result.latentState.fusedState);
+  assert.ok(result.latentState.fusedState.lexical);
+  assert.ok(result.latentState.fusedState.signal);
+  assert.ok(result.latentState.fusedState.fused);
+  assert.ok(Array.isArray(result.latentState.protoMeaning?.sensory));
+  assert.ok(Array.isArray(result.latentState.protoMeaning?.narrative));
+  assert.ok(result.latentState.protoMeaning.sensory.length >= 1);
+  assert.ok(result.latentState.protoMeaning.narrative.length >= 1);
+});
+
 test('runInternalOS lightly blends previous latent state without overtaking current input', () => {
   const previous = runInternalOS('やりたいのに動けない');
   const fresh = runInternalOS('もう無理で諦めたい');
