@@ -7,7 +7,11 @@ const REENTRY_PART_LABELS = {
 const PART_ORDER = ['observation', 'judgment', 'outputConstraint'];
 
 const buildReentryText = (parts = {}) => PART_ORDER
-  .map((partKey) => `${REENTRY_PART_LABELS[partKey]}: ${parts?.[partKey]?.text || ''}`.trim())
+  .map((partKey) => {
+    const text = parts?.[partKey]?.text || '';
+    return text ? `${REENTRY_PART_LABELS[partKey]}: ${text}` : '';
+  })
+  .filter(Boolean)
   .join('\n');
 
 const createVariant = ({

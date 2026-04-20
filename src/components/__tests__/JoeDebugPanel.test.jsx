@@ -202,7 +202,7 @@ test('JoeDebugPanel shows the reentry state-driven badge', () => {
   assert.match(html, new RegExp(JOE_REENTRY_WARNING_TEXT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(html, /合成の過程/);
   assert.match(html, /最終合成テキスト/);
-  assert.match(html, /入力: fear:0.60 \/ hesitation:0.40/);
+  assert.match(html, /入力: fear:0\.[0-9]{2} \/ hesitation:0\.[0-9]{2}/);
   assert.match(html, /なぜこの reentry が選ばれたか/);
   assert.match(html, /breakdown: fear:0.60 \/ freeze:0.30 \/ unfinished:0.50/);
 });

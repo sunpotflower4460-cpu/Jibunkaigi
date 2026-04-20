@@ -195,10 +195,10 @@ const deriveOutputConstraintVector = (afterglowSeed = null, othersField = []) =>
 
 const selectPartCandidate = (partKey, vector, providedCorpus = null) => {
   const fallbackCorpus = JOE_REENTRY_PART_CORPUS[partKey] || [];
-  const providedCorpusWasEmpty = Array.isArray(providedCorpus) && providedCorpus.length === 0;
-  const activeCorpus = Array.isArray(providedCorpus) && providedCorpus.length > 0
-    ? providedCorpus
-    : fallbackCorpus;
+  const hasProvidedCorpus = Array.isArray(providedCorpus);
+  const hasNonEmptyProvidedCorpus = hasProvidedCorpus && providedCorpus.length > 0;
+  const providedCorpusWasEmpty = hasProvidedCorpus && !hasNonEmptyProvidedCorpus;
+  const activeCorpus = hasNonEmptyProvidedCorpus ? providedCorpus : fallbackCorpus;
   const scored = activeCorpus
     .map((candidate) => scoreCorpusCandidate(candidate, vector))
     .sort((a, b) => b.score - a.score);

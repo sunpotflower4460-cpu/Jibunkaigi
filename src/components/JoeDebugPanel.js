@@ -95,7 +95,14 @@ const formatReentryBreakdown = (candidate = {}) => {
 
 const formatReentryInputs = (inputs = []) => (
   Array.isArray(inputs) && inputs.length > 0
-    ? inputs.map(({ tag, value }) => `${tag}:${formatScore(value)}`).join(' / ')
+    ? inputs
+      .map((item) => {
+        const tag = typeof item?.tag === 'string' && item.tag.trim() ? item.tag : null;
+        if (!tag) return null;
+        return `${tag}:${formatScore(item?.value)}`;
+      })
+      .filter(Boolean)
+      .join(' / ') || '—'
     : '—'
 );
 
