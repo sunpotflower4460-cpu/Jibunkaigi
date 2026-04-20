@@ -10,7 +10,18 @@ const normalizeObject = (value) => (isPlainObject(value) ? value : {});
 
 const normalizeNullableObject = (value) => (isPlainObject(value) ? value : null);
 
-export const buildJoeDebugEntry = (input = {}) => {
+export const shouldBuildJoeDebugEntry = (options = {}) => {
+  const {
+    isJoeDebugAvailable = false,
+    isJoeDebugPanelVisible = false,
+    agentId = '',
+    isMaster = false,
+  } = options;
+  return Boolean(isJoeDebugAvailable && isJoeDebugPanelVisible && agentId === 'creative' && !isMaster);
+};
+
+export const buildJoeDebugEntry = (input = {}, options = null) => {
+  if (options && !shouldBuildJoeDebugEntry(options)) return null;
   const source = isPlainObject(input) ? input : {};
 
   return {

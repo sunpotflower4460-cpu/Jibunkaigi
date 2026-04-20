@@ -1632,20 +1632,23 @@ const App = () => {
       systemInstruction = applyRefresh(systemInstruction, refreshText);
     }
 
-    if (agentId === 'creative' && !isMaster && isJoeDebugPanelVisible) {
-      setJoeDebugEntry(buildJoeDebugEntry({
-        timestamp: Date.now(),
-        userText: latestUserText,
-        estimateState: estimatedState,
-        microSignals,
-        microSignalBias: continuityInternalOS?.debugInfo?.microSignalBias ?? null,
-        fusedState: continuityInternalOS?.latentState?.fusedState ?? null,
-        protoMeaning: continuityInternalOS?.latentState?.protoMeaning ?? null,
-        activated,
-        systemInstruction,
-        promptText,
-      }));
-    }
+    setJoeDebugEntry(buildJoeDebugEntry({
+      timestamp: Date.now(),
+      userText: latestUserText,
+      estimateState: estimatedState,
+      microSignals,
+      microSignalBias: continuityInternalOS?.debugInfo?.microSignalBias ?? null,
+      fusedState: continuityInternalOS?.latentState?.fusedState ?? null,
+      protoMeaning: continuityInternalOS?.latentState?.protoMeaning ?? null,
+      activated,
+      systemInstruction,
+      promptText,
+    }, {
+      isJoeDebugAvailable: isJoeDebugAvailable(),
+      isJoeDebugPanelVisible,
+      agentId,
+      isMaster,
+    }));
 
     try {
       const clickStartedAt = responseTimingRef.current?.clickStartedAt ?? performance.now();
@@ -2412,7 +2415,7 @@ const App = () => {
         />
       )}
 
-      {isJoeDebugPanelVisible && (
+      {isJoeDebugPanelVisible && joeDebugEntry && (
         <JoeDebugPanel
           entry={joeDebugEntry}
           onClose={() => handleJoeDebugVisibilityChange(false)}
