@@ -1,3 +1,5 @@
+import { zeroMicroSignals } from './estimateMicroSignals.js';
+
 const createFieldState = () => ({
   softness: 0,
   depth: 0,
@@ -235,6 +237,8 @@ const createDecisionState = () => ({
   },
 });
 
+const createMicroSignalsState = () => zeroMicroSignals();
+
 const createHomeState = () => ({
   kernel: {
     releaseHelpfulness: 0,
@@ -309,6 +313,7 @@ export function createInitialInternalState() {
     belief: createBeliefLayersState(),
     preconditionFilter: createPreconditionFilterState(),
     preconditionBias: createPreconditionBiasState(),
+    microSignals: createMicroSignalsState(),
     activatedThoughts: createActivatedThoughtsState(),
     boundThoughts: createBoundThoughtsState(),
     boundMixedNodes: createBoundMixedNodesState(),

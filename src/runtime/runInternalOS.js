@@ -29,6 +29,7 @@ import { buildConsciousIntent, formatConsciousIntentForDebug } from './buildCons
 import { buildLengthPlan, formatLengthPlanForDebug } from './buildLengthPlan.js';
 import { buildSurfacePlan, formatSurfacePlanForDebug } from './buildSurfacePlan.js';
 import { buildFinalDecisionSubstrate, formatFinalDecisionSubstrateForDebug } from './buildFinalDecisionSubstrate.js';
+import { estimateMicroSignals } from './estimateMicroSignals.js';
 import { getNodeRelations } from '../reservoir/loadReservoir.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
@@ -339,6 +340,10 @@ export function runInternalOS(input, options = {}) {
     normalizedOptions.previousLatentState && typeof normalizedOptions.previousLatentState === 'object'
       ? normalizedOptions.previousLatentState
       : null;
+  const microSignals =
+    normalizedOptions.microSignals && typeof normalizedOptions.microSignals === 'object'
+      ? normalizedOptions.microSignals
+      : estimateMicroSignals(normalizedInput);
 
   const initialState = createInitialInternalState();
 
@@ -814,6 +819,7 @@ export function runInternalOS(input, options = {}) {
     // Derived helper views from raw latent layers
     preconditionFilter,
     preconditionBias,
+    microSignals,
     // Post-precondition dynamic layers
     field,
     reaction,
@@ -869,6 +875,7 @@ export function runInternalOS(input, options = {}) {
         beliefTension,
         preconditionFilter,
         preconditionBias,
+        microSignals,
         decision,
         activatedThoughts,
         activatedFeelings,
@@ -1004,6 +1011,7 @@ export function runInternalOS(input, options = {}) {
       focusBiasApplied,
       meaningBiasApplied,
       identityBiasApplied,
+      microSignals,
       // Precondition chain trace — dev/debug only, not exposed to UX
       preconditionTrace,
       existence1Present: Boolean(latentState.existence1),

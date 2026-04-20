@@ -20,6 +20,14 @@ const sampleEntry = {
     shame: 0.4,
     unfinished: 0.8,
   },
+  microSignals: {
+    punctuation: { assertion: 0.6, hesitation: 0.4, trailOff: 0.7 },
+    fillers: { fillerDensity: 0.35 },
+    negationPrefix: { softNegation: 0.52 },
+    sentenceLength: { burstiness: 0.28, shortnessPressure: 0.41 },
+    selfHedging: { epistemicLowering: 0.44 },
+    quotation: { distancing: 0.12 },
+  },
   activated: {
     activeBeliefs: [
       { id: 'unfinished_is_alive', sense: '未完成は欠陥より、まだ途中に見える', score: 0.82 },
@@ -61,12 +69,21 @@ test('JoeDebugPanel handles null activated safely', () => {
   assert.match(html, /activeField はありません。/);
 });
 
-test('JoeDebugPanel renders all 9 requested sections', () => {
+test('JoeDebugPanel renders all requested sections', () => {
   const html = renderPanel();
 
   for (const label of JOE_DEBUG_SECTION_LABELS) {
     assert.match(html, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
+});
+
+test('JoeDebugPanel renders micro-signal values', () => {
+  const html = renderPanel();
+
+  assert.match(html, /マイクロシグナル/);
+  assert.match(html, /punctuation/);
+  assert.match(html, /softNegation/);
+  assert.match(html, /epistemicLowering/);
 });
 
 test('JoeDebugPanel shows the reentry warning badge', () => {

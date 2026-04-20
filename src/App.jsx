@@ -27,6 +27,7 @@ import {
 
 // ★ 追加1：estimateState をインポート
 import { estimateState } from './runtime/stateEstimate';
+import { estimateMicroSignals } from './runtime/estimateMicroSignals.js';
 import { activateAgent } from './runtime/activateAgent';
 import { buildAgentSystemPrompt, buildAgentUserPrompt, buildAgentDebugPreview } from './runtime/buildAgentPrompt';
 import { buildPromptContext } from './runtime/context';
@@ -339,6 +340,14 @@ const App = () => {
     } finally {
       finish();
     }
+  };
+
+  const buildMicroSignalInput = (text) => {
+    const latestUserText = typeof text === 'string' ? text : '';
+    return {
+      latestUserText,
+      microSignals: estimateMicroSignals(latestUserText),
+    };
   };
 
   const readSessionAfterglow = (sessionId) => {
@@ -924,12 +933,14 @@ const App = () => {
         }
       }
 
-      const internalOS = runInternalOS(getLatestUserText(effectiveSessionId, messages), {
+      const { latestUserText, microSignals } = buildMicroSignalInput(getLatestUserText(effectiveSessionId, messages));
+      const internalOS = runInternalOS(latestUserText, {
         mode: selectedMode,
         previousMix: safePreviousMix,
         previousLatentState: safePreviousLatentState,
         othersField: othersFieldEntries,
         lengthPreference: 'medium', // TODO: wire up UI selector when available
+        microSignals,
       });
       const agentId = pickContextualAgent(AGENTS, {
         patternMix: internalOS.patternMix,
@@ -1318,6 +1329,7 @@ const App = () => {
 
     // B. runInternalOS
     let continuityInternalOS;
+    const { microSignals } = buildMicroSignalInput(latestUserText);
     try {
       continuityInternalOS = !isMaster
         ? runInternalOS(latestUserText, {
@@ -1327,6 +1339,7 @@ const App = () => {
           previousLatentState: safePreviousLatentState,
           othersField: othersFieldEntries,
           lengthPreference: 'medium', // TODO: wire up UI selector when available
+          microSignals,
         })
         : null;
     } catch (err) {
@@ -1618,6 +1631,7 @@ const App = () => {
         timestamp: Date.now(),
         userText: latestUserText,
         estimateState: estimatedState,
+        microSignals,
         activated,
         systemInstruction,
         promptText,
