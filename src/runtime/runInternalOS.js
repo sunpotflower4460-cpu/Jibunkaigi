@@ -33,6 +33,7 @@ import { estimateMicroSignals } from './estimateMicroSignals.js';
 import { estimateState } from './stateEstimate.js';
 import { buildFusedState } from './fusedState.js';
 import { buildProtoMeaning } from './protoMeaning.js';
+import { radialCondensation } from './attention/radialCondensation.js';
 import {
   getMicroSignalValue,
   MICRO_SIGNAL_BIAS_MAP,
@@ -643,9 +644,11 @@ export function runInternalOS(input, options = {}) {
   // Phase 4: Build context for thought activation
   // Synthesize attention targets, resonance axes, body signals, and atmosphere
   // from precondition layers and dynamic state
+  // P-4: Add focusPoints from radial condensation (Japanese-first attention)
   // ════════════════════════════════════════════════════════════════════
 
   // Extract attention targets from user text and belief tension
+  // NOTE: Kept for backward compatibility, but focusPoints is now primary
   const attentionTargets = [];
   if (normalizedInput) {
     // Simple keyword extraction (in future, this could be more sophisticated)
@@ -657,6 +660,15 @@ export function runInternalOS(input, options = {}) {
       if (t.axis) attentionTargets.push(t.axis);
     });
   }
+
+  // P-4: Extract focusPoints via radial condensation (3 channels)
+  const focusPoints = radialCondensation({
+    userText: normalizedInput,
+    afterglowSeed: rawAfterglowState,
+    previousLatentState: rawLatent,
+    beliefTension,
+    topN: 3,
+  });
 
   // Collect resonance axes from belief layers
   const resonanceAxes = [];
@@ -689,7 +701,8 @@ export function runInternalOS(input, options = {}) {
   if (reaction.holdBackJudgment > 0.5) atmosphere.push('open');
 
   const emergingField = {
-    attentionTargets,
+    attentionTargets, // Kept for backward compatibility
+    focusPoints, // P-4: Primary attention mechanism (Japanese-first)
     resonanceAxes,
     bodySignals,
     atmosphere,

@@ -291,6 +291,41 @@ const calculateAntiTriggerMatch = (antiTriggers = [], context = {}) => {
 };
 
 /**
+ * P-4: Calculate focus point boost from radial condensation
+ * If node tags match focusPoint signals, boost score by 0.15 * intensity
+ * @param {string[]} nodeTags - Node tags
+ * @param {Array<{signal: string, intensity: number}>} focusPoints - Focus points from P-4
+ * @returns {number} Boost score (0-1)
+ */
+const calculateFocusPointBoost = (nodeTags = [], focusPoints = []) => {
+  if (!focusPoints || focusPoints.length === 0) return 0;
+  if (!nodeTags || nodeTags.length === 0) return 0;
+
+  let maxBoost = 0;
+
+  focusPoints.forEach(({ signal, intensity }) => {
+    const normalizedSignal = normalizeText(signal);
+
+    // Check if any node tag matches the focus point signal
+    nodeTags.forEach((tag) => {
+      const normalizedTag = normalizeText(tag);
+
+      // Direct match or contains check
+      if (normalizedTag === normalizedSignal ||
+          normalizedTag.includes(normalizedSignal) ||
+          normalizedSignal.includes(normalizedTag)) {
+        const boost = 0.15 * intensity;
+        if (boost > maxBoost) {
+          maxBoost = boost;
+        }
+      }
+    });
+  });
+
+  return maxBoost;
+};
+
+/**
  * Calculate state axis resonance score
  * Phase P-2: Integrates estimateState's 8 axes with particle vectors
  *
@@ -344,6 +379,7 @@ const calculateStateAxisResonance = (nodeVector = {}, stateAxes = {}) => {
  *   + agentAffinity * 0.15
  *   + resonanceMatch * 0.15
  *   + bodyAffinity * 0.05
+ *   + focusPointBoost (P-4: 0.15 * intensity)
  *   - antiTriggerMatch * 0.3
  *
  * @param {object} node - Thought node
@@ -386,13 +422,20 @@ const calculateActivationScore = (node, agentId, context) => {
     bodySignals: context.emergingField?.bodySignals || {},
   });
 
+  // P-4: Add focus point boost
+  const focusPointBoost = calculateFocusPointBoost(
+    node.tags,
+    context.emergingField?.focusPoints || []
+  );
+
   const activationScore =
     baseScore +
     stateAxisResonance * STATE_AXIS_WEIGHT +
     triggerMatch * 0.25 +
     agentAffinity * 0.15 +
     resonanceMatch * 0.15 +
-    bodyAffinity * 0.05 -
+    bodyAffinity * 0.05 +
+    focusPointBoost -
     antiTriggerMatch * 0.3;
 
   // Build reasons for debug
@@ -402,6 +445,7 @@ const calculateActivationScore = (node, agentId, context) => {
   if (agentAffinity >= 0.20) reasons.push('owner-match');
   if (resonanceMatch > 0.3) reasons.push('axis-resonance');
   if (bodyAffinity > 0.1) reasons.push('body-affinity');
+  if (focusPointBoost > 0.05) reasons.push('focus-point-boost');
   if (antiTriggerMatch > 0.3) reasons.push('anti-trigger-suppression');
 
   return {
