@@ -8,6 +8,10 @@
 
 import { NodeOwners, NodeCategories } from '../types.js';
 
+const tonalHints = ['中立的', '場として当然'];
+const stanceHints = ['そこにある', '動かさない'];
+const avoidHints = ['意図を付け加える'];
+
 /**
  * @type {import('../types.js').FeelingNode[]}
  */
@@ -22,6 +26,9 @@ export const sharedFeelingNodes = [
     triggers: ['vulnerability', 'threat', 'exposure'],
     antiTriggers: ['body-dismissed', 'mental-only'],
     weight: 0.72,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-feeling-002',
@@ -33,6 +40,9 @@ export const sharedFeelingNodes = [
     triggers: ['care-present', 'connection', 'softness'],
     antiTriggers: ['rush', 'urgency'],
     weight: 0.7,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-feeling-003',
@@ -44,6 +54,9 @@ export const sharedFeelingNodes = [
     triggers: ['conflict', 'discord', 'tension'],
     antiTriggers: ['smooth-over', 'bypass'],
     weight: 0.68,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-feeling-004',
@@ -55,6 +68,9 @@ export const sharedFeelingNodes = [
     triggers: ['anticipation', 'uncertainty', 'pause'],
     antiTriggers: ['force-release', 'push-forward'],
     weight: 0.71,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-feeling-005',
@@ -66,6 +82,9 @@ export const sharedFeelingNodes = [
     triggers: ['relief', 'easing', 'permission'],
     antiTriggers: ['pressure-still-high', 'cannot-relax'],
     weight: 0.69,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'shared-feeling-006',
@@ -77,5 +96,50 @@ export const sharedFeelingNodes = [
     triggers: ['foundation-shaking', 'uncertainty', 'loss'],
     antiTriggers: ['override-body', 'think-only'],
     weight: 0.73,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'shared-feeling-007',
+    owner: NodeOwners.SHARED,
+    category: NodeCategories.FEELING,
+    textSeed: 'unsettled hum in the room',
+    tags: ['hum', 'unsettled', 'room'],
+    axis: ['presence', 'holding'],
+    triggers: ['still-shifting', 'collective-hum', 'unease'],
+    antiTriggers: ['force-still', 'ignore-unease'],
+    weight: 0.7,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'shared-feeling-008',
+    owner: NodeOwners.SHARED,
+    category: NodeCategories.FEELING,
+    textSeed: "open space that doesn't need filling",
+    tags: ['space', 'open', 'rest'],
+    axis: ['presence'],
+    triggers: ['silence-ok', 'pause', 'breath'],
+    antiTriggers: ['fill-gap', 'push-talk'],
+    weight: 0.69,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'shared-feeling-009',
+    owner: NodeOwners.SHARED,
+    category: NodeCategories.FEELING,
+    textSeed: 'texture with no words yet',
+    tags: ['preverbal', 'texture', 'forming'],
+    axis: ['presence', 'illumination'],
+    triggers: ['no-words', 'forming', 'edge-of-language'],
+    antiTriggers: ['name-now', 'explain-away'],
+    weight: 0.71,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
 ];

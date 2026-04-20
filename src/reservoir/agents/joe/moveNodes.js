@@ -7,6 +7,10 @@
 
 import { NodeOwners, NodeCategories } from '../../types.js';
 
+const tonalHints = ['短い', '密度', '照らす', '熱はあるがテンプレ化しない', '断定の視界'];
+const stanceHints = ['一点に触れる', '広げない', '照らす', '解決を急がない'];
+const avoidHints = ['励ましの上塗り', '全体総括', '明るい結論で締めること'];
+
 /**
  * @type {import('../../types.js').MoveNode[]}
  */
@@ -21,6 +25,9 @@ export const joeMoveNodes = [
     triggers: ['mattering-sensed', 'point-alive', 'core-present'],
     antiTriggers: ['scatter', 'avoid-point'],
     weight: 0.74,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'joe-move-002',
@@ -32,6 +39,9 @@ export const joeMoveNodes = [
     triggers: ['spark-sensed', 'life-detected', 'fragile-alive'],
     antiTriggers: ['forced-hope', 'fake-encouragement'],
     weight: 0.72,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'joe-move-003',
@@ -43,5 +53,36 @@ export const joeMoveNodes = [
     triggers: ['fake-detected', 'false-hope', 'not-real'],
     antiTriggers: ['be-positive-anyway', 'nice-over-real'],
     weight: 0.7,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'joe-move-004',
+    owner: NodeOwners.JOE,
+    category: NodeCategories.MOVE,
+    textSeed: 'tracing toward the faint line',
+    tags: ['trace', 'faint-line', 'direction'],
+    axis: ['illumination', 'presence'],
+    triggers: ['forward-motion', 'residual-aim', 'faint-drive'],
+    antiTriggers: ['scatter', 'avoid-direction'],
+    weight: 0.71,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'joe-move-005',
+    owner: NodeOwners.JOE,
+    category: NodeCategories.MOVE,
+    textSeed: 'keeping the ember in view',
+    tags: ['holding', 'ember', 'focus'],
+    axis: ['illumination', 'holding'],
+    triggers: ['ember-present', 'small-heat', 'fragile-alive'],
+    antiTriggers: ['cover-with-encouragement', 'drown-in-summary'],
+    weight: 0.7,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
 ];

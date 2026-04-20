@@ -77,6 +77,20 @@ export const agentRelations = [
     relationType: RelationTypes.TENSIONS_WITH,
     weight: 0.65,
   },
+  {
+    id: 'rel-mixed-joe-005',
+    from: 'joe-thought-006',
+    to: 'joe-feeling-004',
+    relationType: RelationTypes.SUPPORTS,
+    weight: 0.74,
+  },
+  {
+    id: 'rel-mixed-joe-006',
+    from: 'joe-thought-007',
+    to: 'joe-move-004',
+    relationType: RelationTypes.TENSIONS_WITH,
+    weight: 0.72,
+  },
 
   // Mina: thought-feeling-move bindings
   {
@@ -99,6 +113,20 @@ export const agentRelations = [
     to: 'mina-feeling-002',
     relationType: RelationTypes.SOFTENS,
     weight: 0.67,
+  },
+  {
+    id: 'rel-mixed-mina-004',
+    from: 'mina-thought-006',
+    to: 'mina-feeling-005',
+    relationType: RelationTypes.SUPPORTS,
+    weight: 0.74,
+  },
+  {
+    id: 'rel-mixed-mina-005',
+    from: 'mina-thought-006',
+    to: 'mina-move-004',
+    relationType: RelationTypes.TENSIONS_WITH,
+    weight: 0.7,
   },
 
   // Ray: thought-feeling-move bindings
@@ -123,6 +151,20 @@ export const agentRelations = [
     relationType: RelationTypes.SOFTENS,
     weight: 0.64,
   },
+  {
+    id: 'rel-mixed-ray-004',
+    from: 'ray-thought-006',
+    to: 'ray-feeling-004',
+    relationType: RelationTypes.SUPPORTS,
+    weight: 0.72,
+  },
+  {
+    id: 'rel-mixed-ray-005',
+    from: 'ray-thought-006',
+    to: 'ray-move-005',
+    relationType: RelationTypes.TENSIONS_WITH,
+    weight: 0.7,
+  },
 
   // Ken: thought-feeling-move bindings
   {
@@ -146,6 +188,20 @@ export const agentRelations = [
     relationType: RelationTypes.SUPPORTS,
     weight: 0.66,
   },
+  {
+    id: 'rel-mixed-ken-004',
+    from: 'ken-thought-006',
+    to: 'ken-move-005',
+    relationType: RelationTypes.GROUNDS,
+    weight: 0.7,
+  },
+  {
+    id: 'rel-mixed-ken-005',
+    from: 'ken-thought-006',
+    to: 'ken-feeling-004',
+    relationType: RelationTypes.TENSIONS_WITH,
+    weight: 0.69,
+  },
 
   // Satou: thought-feeling-move bindings
   {
@@ -168,5 +224,35 @@ export const agentRelations = [
     to: 'satou-feeling-002',
     relationType: RelationTypes.TENSIONS_WITH,
     weight: 0.64,
+  },
+  {
+    id: 'rel-mixed-satou-004',
+    from: 'satou-thought-004',
+    to: 'satou-feeling-004',
+    relationType: RelationTypes.TENSIONS_WITH,
+    weight: 0.69,
+  },
+  {
+    id: 'rel-mixed-satou-005',
+    from: 'satou-thought-005',
+    to: 'satou-move-005',
+    relationType: RelationTypes.GROUNDS,
+    weight: 0.7,
+  },
+
+  // Mirror: field-level bindings
+  {
+    id: 'rel-mixed-mirror-001',
+    from: 'mirror-thought-002',
+    to: 'mirror-feeling-001',
+    relationType: RelationTypes.GROUNDS,
+    weight: 0.72,
+  },
+  {
+    id: 'rel-mixed-mirror-002',
+    from: 'mirror-thought-004',
+    to: 'mirror-move-002',
+    relationType: RelationTypes.TENSIONS_WITH,
+    weight: 0.7,
   },
 ];

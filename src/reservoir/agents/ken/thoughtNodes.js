@@ -8,6 +8,10 @@
 
 import { NodeOwners, NodeCategories } from '../../types.js';
 
+const tonalHints = ['丁寧', '構造的', '落ち着いた', '説明すぎない'];
+const stanceHints = ['関係を整える', '比較対象を明示する', '枠を示す', '決めつけない'];
+const avoidHints = ['説明の羅列', '断定的な結論', '上から目線'];
+
 /**
  * @type {import('../../types.js').ThoughtNode[]}
  */
@@ -22,6 +26,9 @@ export const kenThoughtNodes = [
     triggers: ['confusion', 'multiple-layers', 'entanglement'],
     antiTriggers: ['body-foregrounded', 'raw-feeling-dominant'],
     weight: 0.78,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'ken-thought-002',
@@ -33,6 +40,9 @@ export const kenThoughtNodes = [
     triggers: ['stuck-point', 'contradiction', 'loop'],
     antiTriggers: ['somatic-intensity', 'pre-verbal'],
     weight: 0.75,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'ken-thought-003',
@@ -44,6 +54,9 @@ export const kenThoughtNodes = [
     triggers: ['mismatch', 'surface-vs-depth', 'stated-vs-felt'],
     antiTriggers: ['body-overwhelm'],
     weight: 0.72,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'ken-thought-004',
@@ -55,6 +68,9 @@ export const kenThoughtNodes = [
     triggers: ['cut-urge', 'sever-risk', 'conflict-in-clarity'],
     antiTriggers: ['force-separate', 'cut-regardless'],
     weight: 0.7,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'ken-thought-005',
@@ -66,5 +82,22 @@ export const kenThoughtNodes = [
     triggers: ['structure-vs-life', 'form-resisted', 'too-clean-risk'],
     antiTriggers: ['give-up-structure', 'force-form'],
     weight: 0.73,
+    tonalHints,
+    stanceHints,
+    avoidHints,
+  },
+  {
+    id: 'ken-thought-006',
+    owner: NodeOwners.KEN,
+    category: NodeCategories.THOUGHT,
+    textSeed: 'the map before the decision',
+    tags: ['map', 'pre-decision', 'layout'],
+    axis: ['structure', 'illumination'],
+    triggers: ['choice-ahead', 'need-map', 'compare-options'],
+    antiTriggers: ['snap-judgment', 'go-with-feel-only'],
+    weight: 0.76,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
 ];

@@ -8,6 +8,10 @@
 
 import { NodeOwners, NodeCategories } from '../../types.js';
 
+const tonalHints = ['短い', '現実的', '角がある', 'ごまかさない'];
+const stanceHints = ['現実を示す', '必要なことだけ', '突き放さない'];
+const avoidHints = ['説教', '長い分析', '突き放す言い方'];
+
 /**
  * @type {import('../../types.js').ThoughtNode[]}
  */
@@ -22,6 +26,9 @@ export const satouThoughtNodes = [
     triggers: ['foundation-shaking', 'support-loss', 'instability'],
     antiTriggers: ['sweet-acceptance-only', 'bypass'],
     weight: 0.73,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'satou-thought-002',
@@ -33,6 +40,9 @@ export const satouThoughtNodes = [
     triggers: ['idealization', 'fantasy-vs-fact', 'distance-present'],
     antiTriggers: ['cynicism', 'cruelty'],
     weight: 0.7,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'satou-thought-003',
@@ -44,6 +54,9 @@ export const satouThoughtNodes = [
     triggers: ['cascade-risk', 'dependency', 'order-matters'],
     antiTriggers: ['gentle-avoidance'],
     weight: 0.75,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'satou-thought-004',
@@ -55,6 +68,9 @@ export const satouThoughtNodes = [
     triggers: ['care-as-harsh', 'protection-misread', 'conflict-in-grounding'],
     antiTriggers: ['soften-truth', 'nice-over-real'],
     weight: 0.71,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
   {
     id: 'satou-thought-005',
@@ -66,5 +82,8 @@ export const satouThoughtNodes = [
     triggers: ['push-vs-ground', 'premature-forward', 'base-not-ready'],
     antiTriggers: ['wait-forever', 'abandon-forward'],
     weight: 0.72,
+    tonalHints,
+    stanceHints,
+    avoidHints,
   },
 ];
