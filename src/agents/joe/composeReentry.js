@@ -317,6 +317,10 @@ export const composeJoeReentry = (input = {}, options = {}) => {
   };
 };
 
+/**
+ * Shared runtime activation helper for Joe.
+ * Centralizes option normalization before delegating to composeJoeReentry(...).
+ */
 export const composeJoeRuntimeReentry = (state = {}, options = {}) => composeJoeReentry({
   state,
   microSignals: options.microSignals && typeof options.microSignals === 'object'
