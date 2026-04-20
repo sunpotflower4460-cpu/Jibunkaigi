@@ -4,6 +4,7 @@
 // エージェント固有のデータは registry.js から取得する。
 
 import { AGENT_MATERIALS } from '../agents/registry.js';
+import { composeJoeReentry } from '../agents/joe/composeReentry.js';
 
 // --- util ---
 
@@ -136,15 +137,21 @@ export const activateGeneric = (agentId, state = {}, options = {}) => {
   const activeResidue = materials.buildResidue(residueContext);
 
   const activeMemoryTrace = buildMemoryTrace(activeMemories);
-  const reentryInput = agentId === 'creative'
-    ? {
+  const reentryPick = agentId === 'creative'
+    ? composeJoeReentry({
         state,
         microSignals: options.microSignals && typeof options.microSignals === 'object'
           ? options.microSignals
           : {},
-      }
-    : state;
-  const reentryPick = materials.getReentry(reentryInput);
+        beliefTension: options.beliefTension && typeof options.beliefTension === 'object'
+          ? options.beliefTension
+          : null,
+        afterglowSeed: options.afterglowSeed && typeof options.afterglowSeed === 'object'
+          ? options.afterglowSeed
+          : null,
+        othersField: Array.isArray(options.othersField) ? options.othersField : [],
+      })
+    : materials.getReentry(state);
 
   return {
     reentry: reentryPick.selected,
@@ -163,6 +170,7 @@ export const activateGeneric = (agentId, state = {}, options = {}) => {
       pickedMemoryIds: activeMemories.map((m) => m.id),
       pickedFieldIds: activeField.map((f) => f.id),
       reentryCandidates: reentryPick.allCandidates,
+      reentryComposition: reentryPick.selected?.composition ?? null,
     },
   };
 };

@@ -1505,7 +1505,12 @@ const App = () => {
 
       // D. activateAgent
       try {
-        activated = activateAgent(agentId, estimatedState, { microSignals });
+        activated = activateAgent(agentId, estimatedState, {
+          microSignals,
+          beliefTension: continuityInternalOS?.latentState?.beliefTension ?? null,
+          afterglowSeed,
+          othersField: othersFieldEntries,
+        });
       } catch (err) {
         handlePhaseError('activate-agent', err);
         return;
