@@ -1,5 +1,20 @@
 # Joe reentry composition
 
+- 対応フェーズ: `D-4 joe-reentry-composition`（D-2 tagged selection の後継）
+- 役割: Joe の runtime activation path で `observation / judgment / outputConstraint` を動的合成し、reentry の正本経路を定義する
+- 主な実装箇所:
+  - `src/agents/joe/composeReentry.js`
+  - `src/agents/joe/reentryCorpus.js`
+  - `src/runtime/activateGeneric.js`
+  - `src/agents/joe/reentry.js`（D-2 legacy / compatibility path）
+- 関連文書:
+  - [Micro-Signal Stream](./micro-signal-stream.md) — D-3 upstream signal が part selection に入る
+  - [Dual Stream Architecture](./dual-stream-architecture.md) — D-5 parallel observation の下流関係
+  - [Dual Stream Manual Review](./dual-stream-manual-review.md) — D-5 確認時に併読する文書
+  - [Jibunkaigi Compass](./jibunkaigi-compass.md) — Compass 上の接続と読み順
+
+この文書の正本範囲は `composeJoeReentry(...)` / `composeJoeRuntimeReentry(...)` を使う D-4 runtime activation path です。`getJoeReentry(...)` は D-2 tagged selection を残す legacy / compatibility path として別扱いにします。
+
 ## 目的
 
 Joe の reentry を固定カード選択から、その場で 3 パートを合成する構造へ移した。

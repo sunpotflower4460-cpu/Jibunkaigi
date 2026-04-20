@@ -1,5 +1,21 @@
 # Dual Stream Architecture
 
+- 対応フェーズ: `D-5 dual-stream-architecture`
+- 役割: Lexical Stream と D-3 の Micro-Signal Stream を `FusedState` / `ProtoMeaning` に束ね、既存 `runInternalOS` を壊さず並行観測する
+- 主な実装箇所:
+  - `src/runtime/runInternalOS.js`
+  - `src/runtime/fusedState.js`
+  - `src/runtime/protoMeaning.js`
+  - `src/runtime/activateThoughts.js`
+  - `src/runtime/afterglow.js`
+- 関連文書:
+  - [Micro-Signal Stream](./micro-signal-stream.md) — D-3 upstream signal / Internal OS 注入
+  - [Joe reentry composition](./joe-reentry-composition.md) — D-4 runtime reentry 正本
+  - [Dual Stream Manual Review](./dual-stream-manual-review.md) — D-5 の確認記録
+  - [Jibunkaigi Compass](./jibunkaigi-compass.md) — Compass 上の接続と読み順
+
+この文書は D-5 の正本であり、`fusedState` / `protoMeaning` をどの phase で追加し、どこに保存し、どの下流へ渡すかを対応づけます。
+
 ## 位置づけ
 
 Dual Stream Architecture は、既存の `runInternalOS` を置き換えずに並行運用する観測層です。  
@@ -17,7 +33,7 @@ Dual Stream Architecture は、既存の `runInternalOS` を置き換えずに�
 
 - 入力: `estimateMicroSignals(text)`
 - 役割: 句読点、言いよどみ、距離化、短文化などの微小な残り方を数値化する
-- 特徴: dynamic layer を置き換えず、薄い bias として扱う
+- 特徴: D-3 `micro-signal-injection` の出力を受け取り、dynamic layer を置き換えず薄い bias として扱う
 
 ### 3. FusedState
 

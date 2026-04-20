@@ -1,5 +1,20 @@
 # Micro-Signal Stream
 
+- 対応フェーズ: `D-3 micro-signal-injection`（実ファイル名は `micro-signal-stream.md`）
+- 役割: `estimateMicroSignals(...)` で得た微小信号を Internal OS の dynamic layer と Joe の runtime reentry に薄く注入する
+- 主な実装箇所:
+  - `src/runtime/estimateMicroSignals.js`
+  - `src/runtime/config/microSignalBias.js`
+  - `src/runtime/runInternalOS.js`
+  - `src/agents/joe/composeReentry.js`
+- 関連文書:
+  - [Joe reentry composition](./joe-reentry-composition.md) — D-4 の runtime reentry 正本
+  - [Dual Stream Architecture](./dual-stream-architecture.md) — D-5 で `FusedState` / `ProtoMeaning` に接続
+  - [Dual Stream Manual Review](./dual-stream-manual-review.md) — D-5 の確認記録
+  - [Jibunkaigi Compass](./jibunkaigi-compass.md) — Dual Stream 系 docs の入口
+
+この文書でいう Micro-Signal Stream は、設計上の呼び名では D-3 `micro-signal-injection` に相当する Internal OS 注入の説明です。
+
 Micro-Signal は、ユーザー文面の句読点・言いよどみ・距離化のような微小な残り方を数値化し、内部 OS の dynamic layer にだけ薄く注入するための信号です。
 
 この Phase では `runInternalOS` の `field / reaction / stance` に bias delta を足し、Joe の reentry 選択にも入力します。文字列をそのまま LLM に埋め込むのではなく、数値の補正として扱います。

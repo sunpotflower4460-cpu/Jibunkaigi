@@ -1,5 +1,20 @@
 # Dual Stream Manual Review
 
+- 対応フェーズ: `D-5 manual review / acceptance`
+- 役割: D-5 `dual-stream-architecture` で追加した `fusedState` / `protoMeaning` が Joe の runtime で自然に見えるかを目視確認する
+- 主な実装箇所:
+  - `src/runtime/runInternalOS.js`
+  - `src/runtime/fusedState.js`
+  - `src/runtime/protoMeaning.js`
+  - `src/components/JoeDebugPanel.js`
+- 関連文書:
+  - [Dual Stream Architecture](./dual-stream-architecture.md) — D-5 の設計正本
+  - [Micro-Signal Stream](./micro-signal-stream.md) — D-3 upstream signal
+  - [Joe reentry composition](./joe-reentry-composition.md) — D-4 runtime reentry との接続先
+  - [Jibunkaigi Compass](./jibunkaigi-compass.md) — Compass 上の接続と読み順
+
+この文書は D-5 の確認記録であり、設計正本は [Dual Stream Architecture](./dual-stream-architecture.md) に置きます。
+
 ## 目的
 
 Dual Stream 導入後の Joe (`creative`) について、`protoMeaning` が発話前の下地として自然に見えるかを 10 ケースで目視確認した記録です。  

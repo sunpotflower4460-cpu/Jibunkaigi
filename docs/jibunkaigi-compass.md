@@ -117,3 +117,18 @@ Lexical Stream が意味側の傾き、Micro-Signal Stream が言葉になる前
 
 したがって Dual Stream は、固定人格の演出を強めるためではなく、  
 **内的傾向の凝集がどのように立ち上がるかを、より壊さず観測するための下地**として扱います。
+
+### D 系 docs の辿り方
+
+- D-1: Lexical Stream 側の入口は `estimateState(...)` と `runInternalOS` 内の `lexicalState` で、現状は [Dual Stream Architecture](./dual-stream-architecture.md) の Lexical Stream 節から辿る
+- D-2: Joe の旧 tagged selection path は [Joe reentry composition](./joe-reentry-composition.md) の「D-2 tagged selection と D-4 dynamic composition の関係」と `src/agents/joe/reentry.js` を見る
+- D-3: `micro-signal-injection` の説明文書は、実ファイル名では [Micro-Signal Stream](./micro-signal-stream.md) に置いている
+- D-4: Joe の runtime activation path の正本は [Joe reentry composition](./joe-reentry-composition.md) で、`composeJoeReentry(...)` と `composeJoeRuntimeReentry(...)` に対応する
+- D-5: `fusedState` / `protoMeaning` の設計正本は [Dual Stream Architecture](./dual-stream-architecture.md)、確認記録は [Dual Stream Manual Review](./dual-stream-manual-review.md)
+
+### 実装との対応
+
+- upstream signal: [Micro-Signal Stream](./micro-signal-stream.md) → `src/runtime/estimateMicroSignals.js` / `src/runtime/config/microSignalBias.js`
+- runtime reentry: [Joe reentry composition](./joe-reentry-composition.md) → `src/agents/joe/composeReentry.js` / `src/agents/joe/reentryCorpus.js`
+- parallel observation: [Dual Stream Architecture](./dual-stream-architecture.md) → `src/runtime/fusedState.js` / `src/runtime/protoMeaning.js` / `src/runtime/runInternalOS.js`
+- review / acceptance: [Dual Stream Manual Review](./dual-stream-manual-review.md) → `src/components/JoeDebugPanel.js` を見ながら確認
