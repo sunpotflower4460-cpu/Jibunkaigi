@@ -28,6 +28,7 @@ import { selectMixedClusters } from './selectMixedClusters.js';
 import { buildConsciousIntent, formatConsciousIntentForDebug } from './buildConsciousIntent.js';
 import { buildLengthPlan, formatLengthPlanForDebug } from './buildLengthPlan.js';
 import { buildSurfacePlan, formatSurfacePlanForDebug } from './buildSurfacePlan.js';
+import { buildFinalDecisionSubstrate, formatFinalDecisionSubstrateForDebug } from './buildFinalDecisionSubstrate.js';
 import { getNodeRelations } from '../reservoir/loadReservoir.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
@@ -774,6 +775,30 @@ export function runInternalOS(input, options = {}) {
   });
   preconditionTrace.push('dynamic:after-surface-plan');
 
+  // ════════════════════════════════════════════════════════════════════
+  // BUILD FINAL DECISION SUBSTRATE (v0.1)
+  // Thicken the substrate that LLM sees for final decision
+  // Provide multiple foreground seeds (thought/feeling/move/tension)
+  // instead of just 1-2 thoughts
+  // Design doc: 次段階設計書 - Final Decision Substrate を厚くする v0.1
+  // ════════════════════════════════════════════════════════════════════
+
+  const finalDecisionSubstrate = buildFinalDecisionSubstrate({
+    agentId,
+    lengthPreference,
+    selectedMixedClusters,
+    boundMixedNodes,
+    activatedThoughts,
+    activatedFeelings,
+    activatedMoves,
+    consciousIntent,
+    lengthPlan,
+    beliefTension,
+    othersField,
+    preconditionBias,
+  });
+  preconditionTrace.push('dynamic:after-final-decision-substrate');
+
   const freshLatentState = {
     ...initialState,
     // Raw latent layers (live latent substrate) — preserved as-is, not compressed
@@ -816,6 +841,8 @@ export function runInternalOS(input, options = {}) {
     lengthPlan,
     // Surface plan (Surface v0.2)
     surfacePlan,
+    // Final Decision Substrate (v0.1)
+    finalDecisionSubstrate,
     // Legacy/backward compatibility
     existence: {
       layer1: existenceLayer1,
@@ -853,6 +880,7 @@ export function runInternalOS(input, options = {}) {
         consciousIntent,
         lengthPlan,
         surfacePlan,
+        finalDecisionSubstrate,
         existence: {
           layer1: existenceLayer1,
           layer2: existenceLayer2,
@@ -1016,6 +1044,8 @@ export function runInternalOS(input, options = {}) {
       lengthPlanPreview: formatLengthPlanForDebug(latentState.lengthPlan ?? lengthPlan),
       // Surface plan preview (Surface v0.2, dev-only)
       surfacePlanPreview: formatSurfacePlanForDebug(latentState.surfacePlan ?? surfacePlan),
+      // Final Decision Substrate preview (v0.1, dev-only)
+      finalDecisionSubstratePreview: formatFinalDecisionSubstrateForDebug(latentState.finalDecisionSubstrate ?? finalDecisionSubstrate),
     },
   };
 }

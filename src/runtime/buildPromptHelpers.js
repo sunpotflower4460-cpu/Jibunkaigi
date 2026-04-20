@@ -114,17 +114,58 @@ export const renderRefresh = (refresh = '') => {
  * 活性化した粒子を LLM に「場に浮かぶもの」として提示する。
  * tonalHints / stanceHints / avoidHints は LLM に渡さない。
  *
- * Priority order:
- * 1. activated.selectedMixedClusters?.selected (mixed clusters with thought/feeling/move)
- * 2. activated.selectedThoughts?.selected (thought-only clusters)
- * 3. activated.boundMixedNodes?.clusters (all mixed clusters before selection)
- * 4. activated.activatedThoughts?.items (all activated thoughts before binding)
- * 5. activated.selectedClusters / activated.selected / activated.activatedThoughts (legacy fallback)
+ * Priority order (updated for Final Decision Substrate v0.1):
+ * 1. activated.finalDecisionSubstrate (Final Decision Substrate with thick foreground)
+ * 2. activated.selectedMixedClusters?.selected (mixed clusters with thought/feeling/move)
+ * 3. activated.selectedThoughts?.selected (thought-only clusters)
+ * 4. activated.boundMixedNodes?.clusters (all mixed clusters before selection)
+ * 5. activated.activatedThoughts?.items (all activated thoughts before binding)
+ * 6. activated.selectedClusters / activated.selected / activated.activatedThoughts (legacy fallback)
  */
 export const renderActivatedParticles = (activated = {}) => {
+  let lines = ['【今、場に浮かんでいるもの】'];
   let particles = [];
 
-  // Priority 1: selectedMixedClusters.selected
+  // Priority 1: Final Decision Substrate (v0.1)
+  // This provides the thickest foreground with thought/feeling/move/tension seeds
+  if (activated?.finalDecisionSubstrate?.foreground) {
+    const foreground = activated.finalDecisionSubstrate.foreground;
+
+    // Add thought seeds
+    if (foreground.thoughtSeeds && foreground.thoughtSeeds.length > 0) {
+      foreground.thoughtSeeds.forEach(seed => {
+        lines.push(`- ${seed}`);
+      });
+    }
+
+    // Add feeling seeds
+    if (foreground.feelingSeeds && foreground.feelingSeeds.length > 0) {
+      foreground.feelingSeeds.forEach(seed => {
+        lines.push(`- ${seed}`);
+      });
+    }
+
+    // Add move seeds
+    if (foreground.moveSeeds && foreground.moveSeeds.length > 0) {
+      foreground.moveSeeds.forEach(seed => {
+        lines.push(`- ${seed}`);
+      });
+    }
+
+    // Add tension seeds (if any)
+    if (foreground.tensionSeeds && foreground.tensionSeeds.length > 0) {
+      foreground.tensionSeeds.forEach(seed => {
+        lines.push(`- ${seed}`);
+      });
+    }
+
+    // Return early if we have substrate content
+    if (lines.length > 1) {
+      return lines.join('\n');
+    }
+  }
+
+  // Priority 2: selectedMixedClusters.selected
   if (activated?.selectedMixedClusters?.selected && activated.selectedMixedClusters.selected.length > 0) {
     // Get cluster IDs from selectedMixedClusters
     const clusterIds = activated.selectedMixedClusters.selected.map(s => s.clusterId);
@@ -152,7 +193,7 @@ export const renderActivatedParticles = (activated = {}) => {
     }
   }
 
-  // Priority 2: selectedThoughts.selected (fallback to thought-only)
+  // Priority 3: selectedThoughts.selected (fallback to thought-only)
   if (particles.length === 0 && activated?.selectedThoughts?.selected && activated.selectedThoughts.selected.length > 0) {
     const clusterIds = activated.selectedThoughts.selected.map(s => s.clusterId);
 
@@ -178,7 +219,7 @@ export const renderActivatedParticles = (activated = {}) => {
     }
   }
 
-  // Priority 3: boundMixedNodes.clusters (before selection)
+  // Priority 4: boundMixedNodes.clusters (before selection)
   if (particles.length === 0 && activated?.boundMixedNodes?.clusters && activated.boundMixedNodes.clusters.length > 0) {
     const topClusters = activated.boundMixedNodes.clusters.slice(0, 2);
     topClusters.forEach(cluster => {
@@ -195,14 +236,14 @@ export const renderActivatedParticles = (activated = {}) => {
     });
   }
 
-  // Priority 4: activatedThoughts.items (before binding)
+  // Priority 5: activatedThoughts.items (before binding)
   if (particles.length === 0 && activated?.activatedThoughts?.items && activated.activatedThoughts.items.length > 0) {
     particles = activated.activatedThoughts.items
       .slice(0, 5)
       .map(item => ({ textSeed: item.textSeed }));
   }
 
-  // Priority 5: Legacy fallback
+  // Priority 6: Legacy fallback
   if (particles.length === 0) {
     const legacyParticles = activated?.selectedClusters
       || activated?.selected
@@ -217,8 +258,6 @@ export const renderActivatedParticles = (activated = {}) => {
   if (!Array.isArray(particles) || particles.length === 0) {
     return '';
   }
-
-  const lines = ['【今、場に浮かんでいるもの】'];
 
   particles.slice(0, 5).forEach((p) => {
     const seed = p?.textSeed || p?.text || p?.id || '';
