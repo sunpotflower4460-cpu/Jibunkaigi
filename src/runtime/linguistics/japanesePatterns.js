@@ -2,8 +2,8 @@ export const FORMAL_SIGNAL_PATTERNS = {
   punctuation: [
     { id: 'assertion-exclamation', signal: 'assertion', pattern: /[！!]+/g, weight: 0.45 },
     { id: 'hesitation-question', signal: 'hesitation', pattern: /[？?]+/g, weight: 0.3 },
-    { id: 'hesitation-ellipsis', signal: 'hesitation', pattern: /(?:…|\.{3,})+/g, weight: 0.22 },
-    { id: 'trail-ellipsis', signal: 'trailOff', pattern: /(?:…|\.{3,})+/g, weight: 0.38 },
+    { id: 'hesitation-ellipsis', signal: 'hesitation', pattern: /(?:…|\.{3,})(?=[^。！？!?」』\s])/g, weight: 0.22 },
+    { id: 'trail-ellipsis', signal: 'trailOff', pattern: /(?:…|\.{3,})\s*$/g, weight: 0.38 },
     { id: 'trail-open-end', signal: 'trailOff', pattern: /[、,\-―〜]\s*$/g, weight: 0.2 },
   ],
   fillers: [
@@ -29,6 +29,7 @@ export const FORMAL_SIGNAL_PATTERNS = {
   ],
 };
 
+// Placeholder for P-4 semantic/somatic patterns so D-1 and P-4 can share one asset module.
 export const SOMATIC_PATTERNS = [];
 
 export const JAPANESE_PATTERN_GROUPS = {

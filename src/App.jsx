@@ -342,6 +342,14 @@ const App = () => {
     }
   };
 
+  const buildMicroSignalInput = (text) => {
+    const latestUserText = typeof text === 'string' ? text : '';
+    return {
+      latestUserText,
+      microSignals: estimateMicroSignals(latestUserText),
+    };
+  };
+
   const readSessionAfterglow = (sessionId) => {
     if (!sessionId) return null;
     return afterglowBySessionRef.current.get(sessionId) || null;
@@ -925,8 +933,7 @@ const App = () => {
         }
       }
 
-      const latestUserText = getLatestUserText(effectiveSessionId, messages);
-      const microSignals = estimateMicroSignals(latestUserText);
+      const { latestUserText, microSignals } = buildMicroSignalInput(getLatestUserText(effectiveSessionId, messages));
       const internalOS = runInternalOS(latestUserText, {
         mode: selectedMode,
         previousMix: safePreviousMix,
@@ -1322,7 +1329,7 @@ const App = () => {
 
     // B. runInternalOS
     let continuityInternalOS;
-    const microSignals = estimateMicroSignals(latestUserText);
+    const { microSignals } = buildMicroSignalInput(latestUserText);
     try {
       continuityInternalOS = !isMaster
         ? runInternalOS(latestUserText, {
@@ -1624,7 +1631,7 @@ const App = () => {
         timestamp: Date.now(),
         userText: latestUserText,
         estimateState: estimatedState,
-        microSignals: continuityInternalOS?.debugInfo?.microSignals ?? microSignals,
+        microSignals,
         activated,
         systemInstruction,
         promptText,

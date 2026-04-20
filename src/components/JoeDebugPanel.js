@@ -16,7 +16,7 @@ export const JOE_DEBUG_AXES = [
 export const JOE_DEBUG_SECTION_LABELS = [
   '1. 入力テキスト',
   '2. estimateState',
-  '3. Micro-Signal',
+  '3. マイクロシグナル',
   '4. activeBeliefs top2',
   '5. activeMemories top2',
   '6. activeField top2',
@@ -188,7 +188,7 @@ const getMicroSignalMetric = (microSignals, groupKey, metricKey) => {
   return typeof value === 'number' ? value : 0;
 };
 
-const MicroSignalCard = ({ microSignals, group }) => h(
+const MicroSignalGroupCard = ({ microSignals, group }) => h(
   'div',
   {
     className: 'rounded-md border border-slate-800 bg-slate-900/80 p-2 text-[11px] text-slate-200',
@@ -272,7 +272,7 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
             h(
               'div',
               { className: 'grid grid-cols-1 gap-2 sm:grid-cols-2' },
-              MICRO_SIGNAL_GROUPS.map((group) => h(MicroSignalCard, {
+              MICRO_SIGNAL_GROUPS.map((group) => h(MicroSignalGroupCard, {
                 key: group.key,
                 group,
                 microSignals,

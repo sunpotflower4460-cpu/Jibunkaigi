@@ -1,6 +1,11 @@
 import { FORMAL_SIGNAL_PATTERNS } from './linguistics/japanesePatterns.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+const TRAILING_SOFT_END_WEIGHT = 0.18;
+const MISSING_TERMINAL_PUNCTUATION_WEIGHT = 0.12;
+const FILLER_DENSITY_MULTIPLIER = 1.5;
+const SHORT_SENTENCE_THRESHOLD = 8;
+const ABRUPT_CHANGE_THRESHOLD = 10;
 
 export const zeroMicroSignals = () => ({
   punctuation: {
@@ -45,12 +50,15 @@ const countWeightedMatches = (text, patterns) => (
 
 const detectPunctuation = (text, sentences) => {
   const sentenceCount = Math.max(sentences.length, 1);
+  const trimmedText = text.trim();
   const exclamations = countMatches(text, /[！!]/g);
   const questions = countMatches(text, /[？?]/g);
   const ellipses = countMatches(text, /(?:…|\.{3,})/g);
   const punctuationWeight = countWeightedMatches(text, FORMAL_SIGNAL_PATTERNS.punctuation);
-  const trailingSoftEnd = /(?:…|\.{3,}|[、,\-―〜])\s*$/.test(text) ? 0.18 : 0;
-  const missingSentenceStop = text.trim() && !/[。！？!?」』]$/.test(text.trim()) ? 0.12 : 0;
+  const trailingSoftEnd = /(?:…|\.{3,}|[、,\-―〜])\s*$/.test(trimmedText) ? TRAILING_SOFT_END_WEIGHT : 0;
+  const missingSentenceStop = trimmedText && !/[。！？!?」』]$/.test(trimmedText)
+    ? MISSING_TERMINAL_PUNCTUATION_WEIGHT
+    : 0;
 
   return {
     assertion: clamp01((exclamations * 0.5) / Math.max(1, sentenceCount * 0.75)),
@@ -68,7 +76,7 @@ const detectFillers = (text, sentences) => {
   );
 
   return {
-    fillerDensity: clamp01((weightedHits * 1.5) / clauseCount),
+    fillerDensity: clamp01((weightedHits * FILLER_DENSITY_MULTIPLIER) / clauseCount),
   };
 };
 
@@ -89,13 +97,15 @@ const detectSentenceLength = (text, sentences) => {
   const lengths = sentences.map((sentence) => sentence.replace(/\s+/g, '').length);
   const average = lengths.reduce((sum, value) => sum + value, 0) / lengths.length;
   const variance = lengths.reduce((sum, value) => sum + ((value - average) ** 2), 0) / lengths.length;
-  const shortSegments = lengths.filter((length) => length <= 8).length;
+  const shortSegments = lengths.filter((length) => length <= SHORT_SENTENCE_THRESHOLD).length;
   const consecutiveShortPairs = lengths.slice(1).reduce(
-    (count, length, index) => count + ((length <= 8 && lengths[index] <= 8) ? 1 : 0),
+    (count, length, index) => count + (
+      (length <= SHORT_SENTENCE_THRESHOLD && lengths[index] <= SHORT_SENTENCE_THRESHOLD) ? 1 : 0
+    ),
     0,
   );
   const abruptChanges = lengths.slice(1).reduce(
-    (count, length, index) => count + (Math.abs(length - lengths[index]) >= 10 ? 1 : 0),
+    (count, length, index) => count + (Math.abs(length - lengths[index]) >= ABRUPT_CHANGE_THRESHOLD ? 1 : 0),
     0,
   );
   const trailingFragment = /(?:[、,\-―〜]|…|\.\.\.)\s*$/.test(text) ? 0.12 : 0;
@@ -107,7 +117,7 @@ const detectSentenceLength = (text, sentences) => {
     shortnessPressure: clamp01(
       ((shortSegments / lengths.length) * 0.6) +
       ((consecutiveShortPairs / Math.max(lengths.length - 1, 1)) * 0.35) +
-      (average <= 10 ? 0.15 : 0) +
+      (average <= ABRUPT_CHANGE_THRESHOLD ? 0.15 : 0) +
       trailingFragment,
     ),
   };
@@ -121,10 +131,10 @@ const detectSelfHedging = (text, sentences) => ({
 
 const detectQuotation = (text, sentences) => {
   const quoteWeight = countWeightedMatches(text, FORMAL_SIGNAL_PATTERNS.quotation);
-  const quoteDistanceWords = countMatches(text, /(?:って|とか|みたいに)/g);
+  const distanceMarkerCount = countMatches(text, /(?:って|とか|みたいに)/g);
 
   return {
-    distancing: clamp01((quoteWeight + (quoteDistanceWords * 0.08)) / Math.max(sentences.length, 1)),
+    distancing: clamp01((quoteWeight + (distanceMarkerCount * 0.08)) / Math.max(sentences.length, 1)),
   };
 };
 

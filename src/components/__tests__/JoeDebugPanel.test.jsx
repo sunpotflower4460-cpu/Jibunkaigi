@@ -80,7 +80,7 @@ test('JoeDebugPanel renders all requested sections', () => {
 test('JoeDebugPanel renders micro-signal values', () => {
   const html = renderPanel();
 
-  assert.match(html, /Micro-Signal/);
+  assert.match(html, /マイクロシグナル/);
   assert.match(html, /punctuation/);
   assert.match(html, /softNegation/);
   assert.match(html, /epistemicLowering/);
