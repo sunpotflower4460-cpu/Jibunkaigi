@@ -16,6 +16,7 @@
  */
 
 import { getFeelingReservoir } from '../reservoir/loadReservoir.js';
+import { STATE_AXIS_WEIGHT, BODY_AFFINITY_WEIGHT_FEELING } from './config/scoringWeights.js';
 
 /**
  * Normalize string for matching (lowercase, trim)
@@ -174,6 +175,50 @@ const calculateBodyAffinity = (nodeTags = [], bodySignals = {}) => {
 };
 
 /**
+ * Calculate state axis resonance score
+ * Phase P-2: Integrates estimateState's 8 axes with particle vectors
+ *
+ * Computes dot product between node's vector and current state axes
+ * @param {object} nodeVector - Node's vector (desire, fear, freeze, etc.)
+ * @param {object} stateAxes - estimateState result (8 axes)
+ * @returns {number} State resonance score (0-1)
+ */
+const calculateStateAxisResonance = (nodeVector = {}, stateAxes = {}) => {
+  if (!nodeVector || !stateAxes || Object.keys(nodeVector).length === 0) {
+    return 0;
+  }
+
+  // Dot product: sum of (vector[axis] * state[axis])
+  let dotProduct = 0;
+  let vectorMagnitude = 0;
+  let stateMagnitude = 0;
+
+  const allAxes = new Set([
+    ...Object.keys(nodeVector),
+    ...Object.keys(stateAxes)
+  ]);
+
+  allAxes.forEach((axis) => {
+    const nodeValue = nodeVector[axis] || 0;
+    const stateValue = stateAxes[axis] || 0;
+
+    dotProduct += nodeValue * stateValue;
+    vectorMagnitude += nodeValue * nodeValue;
+    stateMagnitude += stateValue * stateValue;
+  });
+
+  // Normalize by magnitudes (cosine similarity)
+  if (vectorMagnitude === 0 || stateMagnitude === 0) {
+    return 0;
+  }
+
+  const similarity = dotProduct / (Math.sqrt(vectorMagnitude) * Math.sqrt(stateMagnitude));
+
+  // Return normalized score (0-1)
+  return Math.max(0, Math.min(1, similarity));
+};
+
+/**
  * Check if anti-triggers match (for score reduction)
  * @param {string[]} antiTriggers - Anti-trigger patterns
  * @param {object} context - Context to check against
@@ -235,11 +280,12 @@ const calculateAntiTriggerMatch = (antiTriggers = [], context = {}) => {
  *
  * Formula (additive):
  * activationScore = baseScore
- *   + triggerMatch * 0.4
- *   + agentAffinity * 0.2
+ *   + stateAxisResonance * STATE_AXIS_WEIGHT (0.35)
+ *   + triggerMatch * 0.25
+ *   + agentAffinity * 0.15
  *   + resonanceMatch * 0.15
- *   + bodyAffinity * 0.25   (higher than thoughts)
- *   - antiTriggerMatch * 0.5
+ *   + bodyAffinity * BODY_AFFINITY_WEIGHT_FEELING (0.10)
+ *   - antiTriggerMatch * 0.3
  *
  * @param {object} node - Feeling node
  * @param {string} agentId - Current agent ID
@@ -248,6 +294,12 @@ const calculateAntiTriggerMatch = (antiTriggers = [], context = {}) => {
  */
 const calculateActivationScore = (node, agentId, context) => {
   const baseScore = node.weight || 0.5;
+
+  // Phase P-2: Add state axis resonance
+  const stateAxisResonance = calculateStateAxisResonance(
+    node.vector,
+    context.stateAxes || {}
+  );
 
   const triggerMatch = calculateTriggerMatch(node.triggers, {
     userText: context.userText,
@@ -277,18 +329,20 @@ const calculateActivationScore = (node, agentId, context) => {
 
   const activationScore =
     baseScore +
-    triggerMatch * 0.4 +
-    agentAffinity * 0.2 +
+    stateAxisResonance * STATE_AXIS_WEIGHT +
+    triggerMatch * 0.25 +
+    agentAffinity * 0.15 +
     resonanceMatch * 0.15 +
-    bodyAffinity * 0.25 -  // Higher weight for feelings
-    antiTriggerMatch * 0.5;
+    bodyAffinity * BODY_AFFINITY_WEIGHT_FEELING -
+    antiTriggerMatch * 0.3;
 
   // Build reasons for debug
   const reasons = [];
+  if (stateAxisResonance > 0.3) reasons.push('state-axis-resonance');
   if (triggerMatch > 0.3) reasons.push('trigger-match');
   if (agentAffinity >= 0.20) reasons.push('owner-match');
   if (resonanceMatch > 0.3) reasons.push('axis-resonance');
-  if (bodyAffinity > 0.15) reasons.push('body-affinity');
+  if (bodyAffinity > 0.1) reasons.push('body-affinity');
   if (antiTriggerMatch > 0.3) reasons.push('anti-trigger-suppression');
 
   return {
@@ -306,6 +360,7 @@ const calculateActivationScore = (node, agentId, context) => {
  * @param {object} input.preconditionBias - Precondition bias from earlier layers
  * @param {object} input.beliefTension - Belief tension from earlier layers
  * @param {object} input.emergingField - Emerging field (attention, resonance, body, atmosphere)
+ * @param {object} input.stateAxes - State axes from estimateState (Phase P-2)
  * @param {number} [input.topN=4] - Number of top feelings to return
  * @returns {object} ActivateFeelingsResult
  */
@@ -316,6 +371,7 @@ export const activateFeelings = (input = {}) => {
     preconditionBias = null,
     beliefTension = null,
     emergingField = null,
+    stateAxes = null,
     topN = 4,
   } = input;
 
@@ -355,6 +411,7 @@ export const activateFeelings = (input = {}) => {
       preconditionBias,
       beliefTension,
       emergingField,
+      stateAxes,
     });
 
     return {

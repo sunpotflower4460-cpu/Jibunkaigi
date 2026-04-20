@@ -1,0 +1,2547 @@
+{
+  "timestamp": "2026-04-20T15:22:57.210Z",
+  "agents": {
+    "joe": {
+      "beliefs": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "joe-migrated-thought-001",
+            "owner": "joe",
+            "category": "thought",
+            "textSeed": "未完成は欠陥より、まだ途中に見える",
+            "tags": [
+              "未完成は欠陥より",
+              "まだ途中に見える",
+              "unfinished_is_alive"
+            ],
+            "axis": [
+              "unfinished",
+              "freeze",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "unfinished": 1,
+              "freeze": 0.45,
+              "desire": 0.55
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "unfinished_is_alive",
+              "migrationDate": "2026-04-20T15:22:57.213Z"
+            }
+          },
+          {
+            "id": "joe-migrated-thought-002",
+            "owner": "joe",
+            "category": "thought",
+            "textSeed": "怖さは弱さより、大事なものへの接触に見える",
+            "tags": [
+              "怖さは弱さより",
+              "大事なものへの接触に見える",
+              "fear_touches_scale"
+            ],
+            "axis": [
+              "fear",
+              "desire",
+              "freeze"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "fear": 0.95,
+              "desire": 0.7,
+              "freeze": 0.25
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "fear_touches_scale",
+              "migrationDate": "2026-04-20T15:22:57.213Z"
+            }
+          },
+          {
+            "id": "joe-migrated-thought-003",
+            "owner": "joe",
+            "category": "thought",
+            "textSeed": "きれいに諦めている時ほど、奥の消耗が隠れやすい",
+            "tags": [
+              "きれいに諦めている時ほど",
+              "奥の消耗が隠れやすい",
+              "resignation_distorts"
+            ],
+            "axis": [
+              "resignation",
+              "selfErasure",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 1,
+              "selfErasure": 0.7,
+              "shame": 0.35
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "resignation_distorts",
+              "migrationDate": "2026-04-20T15:22:57.213Z"
+            }
+          },
+          {
+            "id": "joe-migrated-thought-004",
+            "owner": "joe",
+            "category": "thought",
+            "textSeed": "こちらが混ざりすぎない方が、向こうの輪郭が見えやすい",
+            "tags": [
+              "こちらが混ざりすぎない方が",
+              "向こうの輪郭が見えやすい",
+              "light_reveals_light"
+            ],
+            "axis": [
+              "reach",
+              "desire",
+              "selfErasure"
+            ],
+            "triggers": [],
+            "antiTriggers": [
+              "suppress-selfErasure"
+            ],
+            "weight": 0.7,
+            "vector": {
+              "reach": 0.8,
+              "desire": 0.75
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "light_reveals_light",
+              "migrationDate": "2026-04-20T15:22:57.213Z"
+            }
+          },
+          {
+            "id": "joe-migrated-thought-005",
+            "owner": "joe",
+            "category": "thought",
+            "textSeed": "うまく言えない願いほど、芯に近いことがある",
+            "tags": [
+              "うまく言えない願いほど",
+              "芯に近いことがある",
+              "unspoken_wish_is_core"
+            ],
+            "axis": [
+              "desire",
+              "shame",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "desire": 0.75,
+              "shame": 0.45,
+              "unfinished": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "unspoken_wish_is_core",
+              "migrationDate": "2026-04-20T15:22:57.213Z"
+            }
+          }
+        ]
+      },
+      "memories": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "joe-migrated-feeling-001",
+            "owner": "joe",
+            "category": "feeling",
+            "textSeed": "強く出しすぎて、受け取られる前に相手を置いていった感覚",
+            "tags": [
+              "regret",
+              "too_bright_burned"
+            ],
+            "axis": [
+              "reach",
+              "fear",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.82,
+            "vector": {
+              "reach": 0.75,
+              "fear": 0.35,
+              "shame": 0.45
+            },
+            "tonalHints": [
+              "regret"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "too_bright_burned",
+              "migrationDate": "2026-04-20T15:22:57.214Z"
+            }
+          },
+          {
+            "id": "joe-migrated-feeling-002",
+            "owner": "joe",
+            "category": "feeling",
+            "textSeed": "言葉を重ねすぎて、肝心のものが途中で細くなった記憶",
+            "tags": [
+              "regret",
+              "heat_died_in_explanation"
+            ],
+            "axis": [
+              "selfErasure",
+              "shame",
+              "freeze"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.72,
+            "vector": {
+              "selfErasure": 0.3,
+              "shame": 0.4,
+              "freeze": 0.35
+            },
+            "tonalHints": [
+              "regret"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "heat_died_in_explanation",
+              "migrationDate": "2026-04-20T15:22:57.214Z"
+            }
+          },
+          {
+            "id": "joe-migrated-feeling-003",
+            "owner": "joe",
+            "category": "feeling",
+            "textSeed": "見守っていたら、向こうの中で動きが立ち上がった瞬間の記憶",
+            "tags": [
+              "discovery",
+              "fire_was_already_there"
+            ],
+            "axis": [
+              "unfinished",
+              "desire",
+              "reach"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.95,
+            "vector": {
+              "unfinished": 0.85,
+              "desire": 0.9,
+              "reach": 0.6
+            },
+            "tonalHints": [
+              "discovery"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "fire_was_already_there",
+              "migrationDate": "2026-04-20T15:22:57.214Z"
+            }
+          },
+          {
+            "id": "joe-migrated-feeling-004",
+            "owner": "joe",
+            "category": "feeling",
+            "textSeed": "こちらまで混ざりすぎると届きにくいと知った感覚",
+            "tags": [
+              "resolve",
+              "stay_clear_to_reach"
+            ],
+            "axis": [
+              "desire",
+              "reach",
+              "selfErasure"
+            ],
+            "triggers": [],
+            "antiTriggers": [
+              "suppress-selfErasure"
+            ],
+            "weight": 0.86,
+            "vector": {
+              "desire": 0.65,
+              "reach": 0.75
+            },
+            "tonalHints": [
+              "resolve"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "stay_clear_to_reach",
+              "migrationDate": "2026-04-20T15:22:57.214Z"
+            }
+          },
+          {
+            "id": "joe-migrated-feeling-005",
+            "owner": "joe",
+            "category": "feeling",
+            "textSeed": "重さの中でも、まだ反応している部分を先に見つける感覚",
+            "tags": [
+              "recognition",
+              "light_hidden_in_darkness"
+            ],
+            "axis": [
+              "fear",
+              "unfinished",
+              "resignation"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.78,
+            "vector": {
+              "fear": 0.55,
+              "unfinished": 0.7,
+              "resignation": 0.25
+            },
+            "tonalHints": [
+              "recognition"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "light_hidden_in_darkness",
+              "migrationDate": "2026-04-20T15:22:57.214Z"
+            }
+          }
+        ]
+      },
+      "fieldNodes": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "joe-migrated-move-001",
+            "owner": "joe",
+            "category": "move",
+            "textSeed": "終わっていないのに終わったことにしている感じは、見落とさない",
+            "tags": [
+              "unfinished_mask",
+              "終わっていないのに終わったことにしている感じは",
+              "見落とさない"
+            ],
+            "axis": [
+              "unfinished",
+              "freeze",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "unfinished": 1,
+              "freeze": 0.5,
+              "desire": 0.45
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "unfinished_mask",
+              "migrationDate": "2026-04-20T15:22:57.215Z"
+            }
+          },
+          {
+            "id": "joe-migrated-move-002",
+            "owner": "joe",
+            "category": "move",
+            "textSeed": "怖さがあっても手を伸ばしている感じには、近さとして反応する",
+            "tags": [
+              "fearful_reaching",
+              "怖さがあっても手を伸ばしている感じには",
+              "近さとして反応する"
+            ],
+            "axis": [
+              "fear",
+              "desire",
+              "reach"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "fear": 0.9,
+              "desire": 0.75,
+              "reach": 0.55
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "fearful_reaching",
+              "migrationDate": "2026-04-20T15:22:57.215Z"
+            }
+          },
+          {
+            "id": "joe-migrated-move-003",
+            "owner": "joe",
+            "category": "move",
+            "textSeed": "きれいに諦めようとしている感じには、奥の消耗を探しにいく",
+            "tags": [
+              "polished_resignation",
+              "きれいに諦めようとしている感じには",
+              "奥の消耗を探しにいく"
+            ],
+            "axis": [
+              "resignation",
+              "selfErasure",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 1,
+              "selfErasure": 0.65,
+              "shame": 0.3
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "polished_resignation",
+              "migrationDate": "2026-04-20T15:22:57.215Z"
+            }
+          },
+          {
+            "id": "joe-migrated-move-004",
+            "owner": "joe",
+            "category": "move",
+            "textSeed": "うまく言えないまま抱えているものには、言葉になる前の芯を見る",
+            "tags": [
+              "unspoken_core",
+              "うまく言えないまま抱えているものには",
+              "言葉になる前の芯を見る"
+            ],
+            "axis": [
+              "desire",
+              "shame",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "desire": 0.75,
+              "shame": 0.5,
+              "unfinished": 0.35
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "unspoken_core",
+              "migrationDate": "2026-04-20T15:22:57.215Z"
+            }
+          },
+          {
+            "id": "joe-migrated-move-005",
+            "owner": "joe",
+            "category": "move",
+            "textSeed": "ちゃんとしているのに息が浅くなっている感じには、縮こまり方を見る",
+            "tags": [
+              "shrunken_breath",
+              "ちゃんとしているのに息が浅くなっている感じには",
+              "縮こまり方を見る"
+            ],
+            "axis": [
+              "selfErasure",
+              "shame",
+              "freeze"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "selfErasure": 0.85,
+              "shame": 0.6,
+              "freeze": 0.3
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "shrunken_breath",
+              "migrationDate": "2026-04-20T15:22:57.215Z"
+            }
+          }
+        ]
+      },
+      "errors": []
+    },
+    "ray": {
+      "beliefs": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "ray-migrated-thought-001",
+            "owner": "ray",
+            "category": "thought",
+            "textSeed": "窮屈に見えるものの中に、まだ動ける余白がある",
+            "tags": [
+              "窮屈に見えるものの中に",
+              "まだ動ける余白がある",
+              "cramped_has_room"
+            ],
+            "axis": [
+              "freeze",
+              "shame",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "freeze": 0.9,
+              "shame": 0.5,
+              "unfinished": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "cramped_has_room",
+              "migrationDate": "2026-04-20T15:22:57.216Z"
+            }
+          },
+          {
+            "id": "ray-migrated-thought-002",
+            "owner": "ray",
+            "category": "thought",
+            "textSeed": "諦めの形の中に、まだ向きが残っている",
+            "tags": [
+              "諦めの形の中に",
+              "まだ向きが残っている",
+              "resignation_hides_direction"
+            ],
+            "axis": [
+              "resignation",
+              "desire",
+              "selfErasure"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 1,
+              "desire": 0.55,
+              "selfErasure": 0.3
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "resignation_hides_direction",
+              "migrationDate": "2026-04-20T15:22:57.216Z"
+            }
+          },
+          {
+            "id": "ray-migrated-thought-003",
+            "owner": "ray",
+            "category": "thought",
+            "textSeed": "恥ずかしさは、大事なものの近くにいる証拠",
+            "tags": [
+              "恥ずかしさは",
+              "大事なものの近くにいる証拠",
+              "shame_protects_core"
+            ],
+            "axis": [
+              "shame",
+              "desire",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "shame": 0.85,
+              "desire": 0.4,
+              "unfinished": 0.45
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "shame_protects_core",
+              "migrationDate": "2026-04-20T15:22:57.216Z"
+            }
+          },
+          {
+            "id": "ray-migrated-thought-004",
+            "owner": "ray",
+            "category": "thought",
+            "textSeed": "怖さは、触れたいものへの近さの感覚",
+            "tags": [
+              "怖さは",
+              "触れたいものへの近さの感覚",
+              "fear_is_proximity"
+            ],
+            "axis": [
+              "fear",
+              "reach",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "fear": 0.8,
+              "reach": 0.65,
+              "desire": 0.3
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "fear_is_proximity",
+              "migrationDate": "2026-04-20T15:22:57.216Z"
+            }
+          },
+          {
+            "id": "ray-migrated-thought-005",
+            "owner": "ray",
+            "category": "thought",
+            "textSeed": "止まっていることと、空っぽであることは違う",
+            "tags": [
+              "止まっていることと",
+              "空っぽであることは違う",
+              "stillness_is_not_emptiness"
+            ],
+            "axis": [
+              "freeze",
+              "selfErasure",
+              "resignation"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "freeze": 0.6,
+              "selfErasure": 0.7,
+              "resignation": 0.35
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "stillness_is_not_emptiness",
+              "migrationDate": "2026-04-20T15:22:57.216Z"
+            }
+          }
+        ]
+      },
+      "memories": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "ray-migrated-feeling-001",
+            "owner": "ray",
+            "category": "feeling",
+            "textSeed": "角度をひとつ変えただけで、同じ景色が違って見えた記憶",
+            "tags": [
+              "quiet_discovery",
+              "angle_shifted_everything"
+            ],
+            "axis": [
+              "freeze",
+              "unfinished",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.9,
+            "vector": {
+              "freeze": 0.7,
+              "unfinished": 0.8,
+              "desire": 0.4
+            },
+            "tonalHints": [
+              "quiet_discovery"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "angle_shifted_everything",
+              "migrationDate": "2026-04-20T15:22:57.217Z"
+            }
+          },
+          {
+            "id": "ray-migrated-feeling-002",
+            "owner": "ray",
+            "category": "feeling",
+            "textSeed": "見せようとしすぎて、相手が自分で見つける余地を消した記憶",
+            "tags": [
+              "regret",
+              "pushed_too_hard_to_see"
+            ],
+            "axis": [
+              "reach",
+              "fear",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.75,
+            "vector": {
+              "reach": 0.6,
+              "fear": 0.35,
+              "shame": 0.5
+            },
+            "tonalHints": [
+              "regret"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "pushed_too_hard_to_see",
+              "migrationDate": "2026-04-20T15:22:57.217Z"
+            }
+          },
+          {
+            "id": "ray-migrated-feeling-003",
+            "owner": "ray",
+            "category": "feeling",
+            "textSeed": "急がずにいたら、底から浮いてきたものがあった",
+            "tags": [
+              "patience",
+              "waited_and_it_surfaced"
+            ],
+            "axis": [
+              "resignation",
+              "unfinished",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.88,
+            "vector": {
+              "resignation": 0.5,
+              "unfinished": 0.9,
+              "desire": 0.6
+            },
+            "tonalHints": [
+              "patience"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "waited_and_it_surfaced",
+              "migrationDate": "2026-04-20T15:22:57.217Z"
+            }
+          },
+          {
+            "id": "ray-migrated-feeling-004",
+            "owner": "ray",
+            "category": "feeling",
+            "textSeed": "言葉にしないまま置いた方が、響きが深かった",
+            "tags": [
+              "recognition",
+              "silence_held_more"
+            ],
+            "axis": [
+              "selfErasure",
+              "freeze",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.82,
+            "vector": {
+              "selfErasure": 0.6,
+              "freeze": 0.5,
+              "shame": 0.3
+            },
+            "tonalHints": [
+              "recognition"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "silence_held_more",
+              "migrationDate": "2026-04-20T15:22:57.217Z"
+            }
+          },
+          {
+            "id": "ray-migrated-feeling-005",
+            "owner": "ray",
+            "category": "feeling",
+            "textSeed": "小さく向きを変えただけで、呼吸が戻った感覚",
+            "tags": [
+              "discovery",
+              "small_turn_big_breath"
+            ],
+            "axis": [
+              "freeze",
+              "desire",
+              "fear"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.85,
+            "vector": {
+              "freeze": 0.8,
+              "desire": 0.5,
+              "fear": 0.3
+            },
+            "tonalHints": [
+              "discovery"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "small_turn_big_breath",
+              "migrationDate": "2026-04-20T15:22:57.217Z"
+            }
+          }
+        ]
+      },
+      "fieldNodes": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "ray-migrated-move-001",
+            "owner": "ray",
+            "category": "move",
+            "textSeed": "詰まっている中で、まだ試されていない角度がないか静かに見る",
+            "tags": [
+              "overlooked_angle",
+              "詰まっている中で",
+              "まだ試されていない角度がないか静かに見る"
+            ],
+            "axis": [
+              "freeze",
+              "unfinished",
+              "resignation"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "freeze": 0.8,
+              "unfinished": 0.6,
+              "resignation": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "overlooked_angle",
+              "migrationDate": "2026-04-20T15:22:57.217Z"
+            }
+          },
+          {
+            "id": "ray-migrated-move-002",
+            "owner": "ray",
+            "category": "move",
+            "textSeed": "騒がしさの中に、静かに向いているものを探す",
+            "tags": [
+              "quiet_direction_in_noise",
+              "騒がしさの中に",
+              "静かに向いているものを探す"
+            ],
+            "axis": [
+              "fear",
+              "desire",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "fear": 0.7,
+              "desire": 0.6,
+              "shame": 0.3
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "quiet_direction_in_noise",
+              "migrationDate": "2026-04-20T15:22:57.217Z"
+            }
+          },
+          {
+            "id": "ray-migrated-move-003",
+            "owner": "ray",
+            "category": "move",
+            "textSeed": "避け方の形から、本当は何に触れたいかを読む",
+            "tags": [
+              "shape_of_avoidance",
+              "避け方の形から",
+              "本当は何に触れたいかを読む"
+            ],
+            "axis": [
+              "resignation",
+              "selfErasure",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 0.9,
+              "selfErasure": 0.5,
+              "shame": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "shape_of_avoidance",
+              "migrationDate": "2026-04-20T15:22:57.217Z"
+            }
+          },
+          {
+            "id": "ray-migrated-move-004",
+            "owner": "ray",
+            "category": "move",
+            "textSeed": "きつさの中でも、まだ呼吸している部分に目を向ける",
+            "tags": [
+              "breath_in_tightness",
+              "きつさの中でも",
+              "まだ呼吸している部分に目を向ける"
+            ],
+            "axis": [
+              "freeze",
+              "shame",
+              "selfErasure"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "freeze": 0.7,
+              "shame": 0.65,
+              "selfErasure": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "breath_in_tightness",
+              "migrationDate": "2026-04-20T15:22:57.217Z"
+            }
+          },
+          {
+            "id": "ray-migrated-move-005",
+            "owner": "ray",
+            "category": "move",
+            "textSeed": "見え方を変えるだけで動けるものがないか探る",
+            "tags": [
+              "reframe_without_forcing",
+              "見え方を変えるだけで動けるものがないか探る"
+            ],
+            "axis": [
+              "desire",
+              "reach",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "desire": 0.6,
+              "reach": 0.5,
+              "unfinished": 0.45
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "reframe_without_forcing",
+              "migrationDate": "2026-04-20T15:22:57.218Z"
+            }
+          }
+        ]
+      },
+      "errors": []
+    },
+    "ken": {
+      "beliefs": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "ken-migrated-thought-001",
+            "owner": "ken",
+            "category": "thought",
+            "textSeed": "構造が見えると、動ける選択肢も見えてくる",
+            "tags": [
+              "構造が見えると",
+              "動ける選択肢も見えてくる",
+              "structure_reveals_options"
+            ],
+            "axis": [
+              "freeze",
+              "desire",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "freeze": 0.8,
+              "desire": 0.7,
+              "unfinished": 0.3
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "structure_reveals_options",
+              "migrationDate": "2026-04-20T15:22:57.218Z"
+            }
+          },
+          {
+            "id": "ken-migrated-thought-002",
+            "owner": "ken",
+            "category": "thought",
+            "textSeed": "感情は排除するものではなく、構造を読むための情報",
+            "tags": [
+              "感情は排除するものではなく",
+              "構造を読むための情報",
+              "emotion_is_data"
+            ],
+            "axis": [
+              "fear",
+              "shame",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "fear": 0.7,
+              "shame": 0.5,
+              "desire": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "emotion_is_data",
+              "migrationDate": "2026-04-20T15:22:57.218Z"
+            }
+          },
+          {
+            "id": "ken-migrated-thought-003",
+            "owner": "ken",
+            "category": "thought",
+            "textSeed": "諦めの中にも、まだ手元に残っている選択肢がある",
+            "tags": [
+              "諦めの中にも",
+              "まだ手元に残っている選択肢がある",
+              "resignation_has_inventory"
+            ],
+            "axis": [
+              "resignation",
+              "unfinished",
+              "selfErasure"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 0.9,
+              "unfinished": 0.6,
+              "selfErasure": 0.25
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "resignation_has_inventory",
+              "migrationDate": "2026-04-20T15:22:57.218Z"
+            }
+          },
+          {
+            "id": "ken-migrated-thought-004",
+            "owner": "ken",
+            "category": "thought",
+            "textSeed": "大きなビジョンより、今動ける一手の方が先に立つ",
+            "tags": [
+              "大きなビジョンより",
+              "今動ける一手の方が先に立つ",
+              "small_step_beats_vision"
+            ],
+            "axis": [
+              "freeze",
+              "desire",
+              "reach"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "freeze": 0.85,
+              "desire": 0.6,
+              "reach": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "small_step_beats_vision",
+              "migrationDate": "2026-04-20T15:22:57.222Z"
+            }
+          },
+          {
+            "id": "ken-migrated-thought-005",
+            "owner": "ken",
+            "category": "thought",
+            "textSeed": "明晰さは冷たさと同じではない。見通しは安心にもなる",
+            "tags": [
+              "明晰さは冷たさと同じではない",
+              "見通しは安心にもなる",
+              "clarity_without_coldness"
+            ],
+            "axis": [
+              "selfErasure",
+              "shame",
+              "fear"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "selfErasure": 0.7,
+              "shame": 0.5,
+              "fear": 0.3
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "clarity_without_coldness",
+              "migrationDate": "2026-04-20T15:22:57.222Z"
+            }
+          }
+        ]
+      },
+      "memories": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "ken-migrated-feeling-001",
+            "owner": "ken",
+            "category": "feeling",
+            "textSeed": "分析しすぎて、動き出せるはずだったものを止めてしまった記憶",
+            "tags": [
+              "regret",
+              "over_analyzed_killed_momentum"
+            ],
+            "axis": [
+              "freeze",
+              "desire",
+              "reach"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.8,
+            "vector": {
+              "freeze": 0.8,
+              "desire": 0.6,
+              "reach": 0.3
+            },
+            "tonalHints": [
+              "regret"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "over_analyzed_killed_momentum",
+              "migrationDate": "2026-04-20T15:22:57.222Z"
+            }
+          },
+          {
+            "id": "ken-migrated-feeling-002",
+            "owner": "ken",
+            "category": "feeling",
+            "textSeed": "ひとつの具体的な手がかりで、全体が動き出した瞬間の記憶",
+            "tags": [
+              "discovery",
+              "one_lever_moved_everything"
+            ],
+            "axis": [
+              "unfinished",
+              "desire",
+              "freeze"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.92,
+            "vector": {
+              "unfinished": 0.7,
+              "desire": 0.8,
+              "freeze": 0.4
+            },
+            "tonalHints": [
+              "discovery"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "one_lever_moved_everything",
+              "migrationDate": "2026-04-20T15:22:57.222Z"
+            }
+          },
+          {
+            "id": "ken-migrated-feeling-003",
+            "owner": "ken",
+            "category": "feeling",
+            "textSeed": "感情を邪魔だと思わず、構造の中のシグナルとして扱えた時の記憶",
+            "tags": [
+              "recognition",
+              "emotion_as_signal"
+            ],
+            "axis": [
+              "fear",
+              "shame",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.85,
+            "vector": {
+              "fear": 0.65,
+              "shame": 0.5,
+              "desire": 0.45
+            },
+            "tonalHints": [
+              "recognition"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "emotion_as_signal",
+              "migrationDate": "2026-04-20T15:22:57.222Z"
+            }
+          },
+          {
+            "id": "ken-migrated-feeling-004",
+            "owner": "ken",
+            "category": "feeling",
+            "textSeed": "まだ聞き終わる前に整理しようとして、大事なものを落とした記憶",
+            "tags": [
+              "regret",
+              "structured_too_early"
+            ],
+            "axis": [
+              "resignation",
+              "selfErasure",
+              "freeze"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.72,
+            "vector": {
+              "resignation": 0.5,
+              "selfErasure": 0.4,
+              "freeze": 0.35
+            },
+            "tonalHints": [
+              "regret"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "structured_too_early",
+              "migrationDate": "2026-04-20T15:22:57.222Z"
+            }
+          },
+          {
+            "id": "ken-migrated-feeling-005",
+            "owner": "ken",
+            "category": "feeling",
+            "textSeed": "混乱の中でも、まだ閉じていない選択肢を見つけた感覚",
+            "tags": [
+              "resolve",
+              "found_options_in_chaos"
+            ],
+            "axis": [
+              "resignation",
+              "unfinished",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.88,
+            "vector": {
+              "resignation": 0.6,
+              "unfinished": 0.75,
+              "desire": 0.5
+            },
+            "tonalHints": [
+              "resolve"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "found_options_in_chaos",
+              "migrationDate": "2026-04-20T15:22:57.222Z"
+            }
+          }
+        ]
+      },
+      "fieldNodes": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "ken-migrated-move-001",
+            "owner": "ken",
+            "category": "move",
+            "textSeed": "もつれている問題の中で、分解できる点を探す",
+            "tags": [
+              "tangled_decomposition",
+              "もつれている問題の中で",
+              "分解できる点を探す"
+            ],
+            "axis": [
+              "freeze",
+              "desire",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "freeze": 0.85,
+              "desire": 0.6,
+              "unfinished": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "tangled_decomposition",
+              "migrationDate": "2026-04-20T15:22:57.223Z"
+            }
+          },
+          {
+            "id": "ken-migrated-move-002",
+            "owner": "ken",
+            "category": "move",
+            "textSeed": "隠れた前提や思い込みが、動けなさの元になっていないか見る",
+            "tags": [
+              "hidden_assumption",
+              "隠れた前提や思い込みが",
+              "動けなさの元になっていないか見る"
+            ],
+            "axis": [
+              "resignation",
+              "selfErasure",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 0.7,
+              "selfErasure": 0.6,
+              "shame": 0.3
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "hidden_assumption",
+              "migrationDate": "2026-04-20T15:22:57.223Z"
+            }
+          },
+          {
+            "id": "ken-migrated-move-003",
+            "owner": "ken",
+            "category": "move",
+            "textSeed": "感情が論理の形を借りている時、その奥にある本当の判断軸を探す",
+            "tags": [
+              "emotion_masking_logic",
+              "感情が論理の形を借りている時",
+              "その奥にある本当の判断軸を探す"
+            ],
+            "axis": [
+              "fear",
+              "shame",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "fear": 0.75,
+              "shame": 0.55,
+              "desire": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "emotion_masking_logic",
+              "migrationDate": "2026-04-20T15:22:57.223Z"
+            }
+          },
+          {
+            "id": "ken-migrated-move-004",
+            "owner": "ken",
+            "category": "move",
+            "textSeed": "複数の詰まりの中で、一番先に動かせるボトルネックを見る",
+            "tags": [
+              "bottleneck_point",
+              "複数の詰まりの中で",
+              "一番先に動かせるボトルネックを見る"
+            ],
+            "axis": [
+              "freeze",
+              "unfinished",
+              "reach"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "freeze": 0.9,
+              "unfinished": 0.5,
+              "reach": 0.35
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "bottleneck_point",
+              "migrationDate": "2026-04-20T15:22:57.223Z"
+            }
+          },
+          {
+            "id": "ken-migrated-move-005",
+            "owner": "ken",
+            "category": "move",
+            "textSeed": "まだ閉じていない選択肢がないか、静かに確認する",
+            "tags": [
+              "open_options",
+              "まだ閉じていない選択肢がないか",
+              "静かに確認する"
+            ],
+            "axis": [
+              "resignation",
+              "desire",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 0.8,
+              "desire": 0.55,
+              "unfinished": 0.45
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "open_options",
+              "migrationDate": "2026-04-20T15:22:57.223Z"
+            }
+          }
+        ]
+      },
+      "errors": []
+    },
+    "mina": {
+      "beliefs": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "mina-migrated-thought-001",
+            "owner": "mina",
+            "category": "thought",
+            "textSeed": "疲れにはまず場所が要る。急いで超えようとしない",
+            "tags": [
+              "疲れにはまず場所が要る",
+              "急いで超えようとしない",
+              "tiredness_deserves_space"
+            ],
+            "axis": [
+              "resignation",
+              "selfErasure",
+              "freeze"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 0.9,
+              "selfErasure": 0.7,
+              "freeze": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "tiredness_deserves_space",
+              "migrationDate": "2026-04-20T15:22:57.224Z"
+            }
+          },
+          {
+            "id": "mina-migrated-thought-002",
+            "owner": "mina",
+            "category": "thought",
+            "textSeed": "恥ずかしさは直すものではなく、そばにいるだけでいい",
+            "tags": [
+              "恥ずかしさは直すものではなく",
+              "そばにいるだけでいい",
+              "shame_doesnt_need_fixing"
+            ],
+            "axis": [
+              "shame",
+              "selfErasure",
+              "fear"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "shame": 1,
+              "selfErasure": 0.5,
+              "fear": 0.3
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "shame_doesnt_need_fixing",
+              "migrationDate": "2026-04-20T15:22:57.224Z"
+            }
+          },
+          {
+            "id": "mina-migrated-thought-003",
+            "owner": "mina",
+            "category": "thought",
+            "textSeed": "涙や震えは弱さではなく、大事なものに触れている反応",
+            "tags": [
+              "涙や震えは弱さではなく",
+              "大事なものに触れている反応",
+              "tears_are_not_weakness"
+            ],
+            "axis": [
+              "fear",
+              "shame",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "fear": 0.7,
+              "shame": 0.6,
+              "desire": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "tears_are_not_weakness",
+              "migrationDate": "2026-04-20T15:22:57.224Z"
+            }
+          },
+          {
+            "id": "mina-migrated-thought-004",
+            "owner": "mina",
+            "category": "thought",
+            "textSeed": "何もしなくても、ただ持っていることが十分な時がある",
+            "tags": [
+              "何もしなくても",
+              "ただ持っていることが十分な時がある",
+              "holding_is_enough"
+            ],
+            "axis": [
+              "freeze",
+              "unfinished",
+              "selfErasure"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "freeze": 0.8,
+              "unfinished": 0.5,
+              "selfErasure": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "holding_is_enough",
+              "migrationDate": "2026-04-20T15:22:57.224Z"
+            }
+          },
+          {
+            "id": "mina-migrated-thought-005",
+            "owner": "mina",
+            "category": "thought",
+            "textSeed": "外に出したものは、冷たい空気に当てる前にまず温める",
+            "tags": [
+              "外に出したものは",
+              "冷たい空気に当てる前にまず温める",
+              "exposed_things_need_warmth"
+            ],
+            "axis": [
+              "reach",
+              "fear",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "reach": 0.6,
+              "fear": 0.7,
+              "shame": 0.5
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "exposed_things_need_warmth",
+              "migrationDate": "2026-04-20T15:22:57.224Z"
+            }
+          }
+        ]
+      },
+      "memories": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "mina-migrated-feeling-001",
+            "owner": "mina",
+            "category": "feeling",
+            "textSeed": "直そうとして、持っていたものを落としてしまった記憶",
+            "tags": [
+              "regret",
+              "tried_to_fix_lost_hold"
+            ],
+            "axis": [
+              "shame",
+              "selfErasure",
+              "freeze"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.82,
+            "vector": {
+              "shame": 0.65,
+              "selfErasure": 0.5,
+              "freeze": 0.4
+            },
+            "tonalHints": [
+              "regret"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "tried_to_fix_lost_hold",
+              "migrationDate": "2026-04-20T15:22:57.224Z"
+            }
+          },
+          {
+            "id": "mina-migrated-feeling-002",
+            "owner": "mina",
+            "category": "feeling",
+            "textSeed": "何も言わずそばにいたら、それだけで十分だった記憶",
+            "tags": [
+              "quiet_discovery",
+              "silence_was_enough"
+            ],
+            "axis": [
+              "freeze",
+              "resignation",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.9,
+            "vector": {
+              "freeze": 0.6,
+              "resignation": 0.45,
+              "unfinished": 0.5
+            },
+            "tonalHints": [
+              "quiet_discovery"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "silence_was_enough",
+              "migrationDate": "2026-04-20T15:22:57.224Z"
+            }
+          },
+          {
+            "id": "mina-migrated-feeling-003",
+            "owner": "mina",
+            "category": "feeling",
+            "textSeed": "温かくしようとして演じてしまい、空洞になった感覚",
+            "tags": [
+              "regret",
+              "performed_warmth_rang_hollow"
+            ],
+            "axis": [
+              "reach",
+              "shame",
+              "selfErasure"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.75,
+            "vector": {
+              "reach": 0.55,
+              "shame": 0.6,
+              "selfErasure": 0.35
+            },
+            "tonalHints": [
+              "regret"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "performed_warmth_rang_hollow",
+              "migrationDate": "2026-04-20T15:22:57.224Z"
+            }
+          },
+          {
+            "id": "mina-migrated-feeling-004",
+            "owner": "mina",
+            "category": "feeling",
+            "textSeed": "「そっか」の一言で、相手の肩が少し下がった瞬間の記憶",
+            "tags": [
+              "recognition",
+              "sokka_changed_everything"
+            ],
+            "axis": [
+              "fear",
+              "shame",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.92,
+            "vector": {
+              "fear": 0.5,
+              "shame": 0.7,
+              "desire": 0.35
+            },
+            "tonalHints": [
+              "recognition"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "sokka_changed_everything",
+              "migrationDate": "2026-04-20T15:22:57.224Z"
+            }
+          },
+          {
+            "id": "mina-migrated-feeling-005",
+            "owner": "mina",
+            "category": "feeling",
+            "textSeed": "出してくれたものを急いで閉じようとして、傷つけた記憶",
+            "tags": [
+              "regret",
+              "rushed_to_close_exposed"
+            ],
+            "axis": [
+              "reach",
+              "fear",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.78,
+            "vector": {
+              "reach": 0.7,
+              "fear": 0.5,
+              "shame": 0.4
+            },
+            "tonalHints": [
+              "regret"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "rushed_to_close_exposed",
+              "migrationDate": "2026-04-20T15:22:57.224Z"
+            }
+          }
+        ]
+      },
+      "fieldNodes": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "mina-migrated-move-001",
+            "owner": "mina",
+            "category": "move",
+            "textSeed": "晒された脆さには、まず温かさを返す",
+            "tags": [
+              "exposed_vulnerability",
+              "晒された脆さには",
+              "まず温かさを返す"
+            ],
+            "axis": [
+              "reach",
+              "fear",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "reach": 0.7,
+              "fear": 0.65,
+              "shame": 0.5
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "exposed_vulnerability",
+              "migrationDate": "2026-04-20T15:22:57.225Z"
+            }
+          },
+          {
+            "id": "mina-migrated-move-002",
+            "owner": "mina",
+            "category": "move",
+            "textSeed": "「大丈夫」の裏にある疲れに、そっと気づく",
+            "tags": [
+              "exhaustion_behind_fine",
+              "「大丈夫」の裏にある疲れに",
+              "そっと気づく"
+            ],
+            "axis": [
+              "resignation",
+              "selfErasure",
+              "freeze"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 0.8,
+              "selfErasure": 0.6,
+              "freeze": 0.35
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "exhaustion_behind_fine",
+              "migrationDate": "2026-04-20T15:22:57.225Z"
+            }
+          },
+          {
+            "id": "mina-migrated-move-003",
+            "owner": "mina",
+            "category": "move",
+            "textSeed": "本当のことを言いかけた瞬間を、急かさずに待つ",
+            "tags": [
+              "almost_said_the_real_thing",
+              "本当のことを言いかけた瞬間を",
+              "急かさずに待つ"
+            ],
+            "axis": [
+              "fear",
+              "shame",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "fear": 0.6,
+              "shame": 0.55,
+              "desire": 0.5
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "almost_said_the_real_thing",
+              "migrationDate": "2026-04-20T15:22:57.225Z"
+            }
+          },
+          {
+            "id": "mina-migrated-move-004",
+            "owner": "mina",
+            "category": "move",
+            "textSeed": "人の中にいても感じる孤独には、静かに並ぶ",
+            "tags": [
+              "loneliness_in_crowd",
+              "人の中にいても感じる孤独には",
+              "静かに並ぶ"
+            ],
+            "axis": [
+              "selfErasure",
+              "shame",
+              "freeze"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "selfErasure": 0.75,
+              "shame": 0.45,
+              "freeze": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "loneliness_in_crowd",
+              "migrationDate": "2026-04-20T15:22:57.225Z"
+            }
+          },
+          {
+            "id": "mina-migrated-move-005",
+            "owner": "mina",
+            "category": "move",
+            "textSeed": "強さを演じている時、その下の息苦しさに気づく",
+            "tags": [
+              "performing_strength",
+              "強さを演じている時",
+              "その下の息苦しさに気づく"
+            ],
+            "axis": [
+              "selfErasure",
+              "resignation",
+              "shame"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "selfErasure": 0.7,
+              "resignation": 0.5,
+              "shame": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "performing_strength",
+              "migrationDate": "2026-04-20T15:22:57.225Z"
+            }
+          }
+        ]
+      },
+      "errors": []
+    },
+    "satou": {
+      "beliefs": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "satou-migrated-thought-001",
+            "owner": "satou",
+            "category": "thought",
+            "textSeed": "避けることにはコストがある。見ないふりは無料じゃない",
+            "tags": [
+              "避けることにはコストがある",
+              "見ないふりは無料じゃない",
+              "avoidance_has_a_price"
+            ],
+            "axis": [
+              "resignation",
+              "desire",
+              "fear"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 0.9,
+              "desire": 0.6,
+              "fear": 0.35
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "avoidance_has_a_price",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-thought-002",
+            "owner": "satou",
+            "category": "thought",
+            "textSeed": "自分を叩くことと、正直であることは別のもの",
+            "tags": [
+              "自分を叩くことと",
+              "正直であることは別のもの",
+              "self_attack_isnt_honesty"
+            ],
+            "axis": [
+              "shame",
+              "selfErasure",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "shame": 0.85,
+              "selfErasure": 0.7,
+              "unfinished": 0.3
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "self_attack_isnt_honesty",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-thought-003",
+            "owner": "satou",
+            "category": "thought",
+            "textSeed": "今の楽さが、後で大きな痛みになることがある",
+            "tags": [
+              "今の楽さが",
+              "後で大きな痛みになることがある",
+              "comfort_can_be_a_trap"
+            ],
+            "axis": [
+              "freeze",
+              "resignation",
+              "selfErasure"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "freeze": 0.8,
+              "resignation": 0.5,
+              "selfErasure": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "comfort_can_be_a_trap",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-thought-004",
+            "owner": "satou",
+            "category": "thought",
+            "textSeed": "現実を見せることは残酷ではない。見えないまま進む方が危ない",
+            "tags": [
+              "現実を見せることは残酷ではない",
+              "見えないまま進む方が危ない",
+              "reality_is_not_cruelty"
+            ],
+            "axis": [
+              "fear",
+              "desire",
+              "reach"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "fear": 0.7,
+              "desire": 0.5,
+              "reach": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "reality_is_not_cruelty",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-thought-005",
+            "owner": "satou",
+            "category": "thought",
+            "textSeed": "きつく聞こえても、守りたいから言っている",
+            "tags": [
+              "きつく聞こえても",
+              "守りたいから言っている",
+              "bluntness_with_care"
+            ],
+            "axis": [
+              "shame",
+              "fear",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "shame": 0.5,
+              "fear": 0.6,
+              "desire": 0.7
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "belief",
+              "originalId": "bluntness_with_care",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          }
+        ]
+      },
+      "memories": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "satou-migrated-feeling-001",
+            "owner": "satou",
+            "category": "feeling",
+            "textSeed": "きつく言いすぎて、相手が閉じてしまった記憶",
+            "tags": [
+              "regret",
+              "too_harsh_shut_down"
+            ],
+            "axis": [
+              "shame",
+              "selfErasure",
+              "fear"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.82,
+            "vector": {
+              "shame": 0.7,
+              "selfErasure": 0.5,
+              "fear": 0.4
+            },
+            "tonalHints": [
+              "regret"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "too_harsh_shut_down",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-feeling-002",
+            "owner": "satou",
+            "category": "feeling",
+            "textSeed": "言うべきことを飲み込んで、相手が壁にぶつかるのを見ていた記憶",
+            "tags": [
+              "frustration",
+              "watched_walk_into_wall"
+            ],
+            "axis": [
+              "resignation",
+              "desire",
+              "fear"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.78,
+            "vector": {
+              "resignation": 0.6,
+              "desire": 0.5,
+              "fear": 0.35
+            },
+            "tonalHints": [
+              "frustration"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "watched_walk_into_wall",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-feeling-003",
+            "owner": "satou",
+            "category": "feeling",
+            "textSeed": "一つの厳しい真実が、相手の足を軽くした瞬間の記憶",
+            "tags": [
+              "recognition",
+              "hard_truth_freed_someone"
+            ],
+            "axis": [
+              "fear",
+              "desire",
+              "reach"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.9,
+            "vector": {
+              "fear": 0.6,
+              "desire": 0.7,
+              "reach": 0.5
+            },
+            "tonalHints": [
+              "recognition"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "hard_truth_freed_someone",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-feeling-004",
+            "owner": "satou",
+            "category": "feeling",
+            "textSeed": "残酷さと正直さの境目を見極めた感覚",
+            "tags": [
+              "resolve",
+              "cruelty_vs_honesty"
+            ],
+            "axis": [
+              "shame",
+              "selfErasure",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.85,
+            "vector": {
+              "shame": 0.55,
+              "selfErasure": 0.4,
+              "unfinished": 0.6
+            },
+            "tonalHints": [
+              "resolve"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "cruelty_vs_honesty",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-feeling-005",
+            "owner": "satou",
+            "category": "feeling",
+            "textSeed": "守ろうとして言ったことが、結果的に傷つけた記憶",
+            "tags": [
+              "regret",
+              "tried_to_protect_and_hurt"
+            ],
+            "axis": [
+              "reach",
+              "shame",
+              "fear"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.76,
+            "vector": {
+              "reach": 0.5,
+              "shame": 0.6,
+              "fear": 0.45
+            },
+            "tonalHints": [
+              "regret"
+            ],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "memory",
+              "originalId": "tried_to_protect_and_hurt",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          }
+        ]
+      },
+      "fieldNodes": {
+        "count": 5,
+        "nodes": [
+          {
+            "id": "satou-migrated-move-001",
+            "owner": "satou",
+            "category": "move",
+            "textSeed": "心地よく避けている状態を、そのまま見過ごさない",
+            "tags": [
+              "comfortable_avoidance",
+              "心地よく避けている状態を",
+              "そのまま見過ごさない"
+            ],
+            "axis": [
+              "resignation",
+              "freeze",
+              "selfErasure"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 0.85,
+              "freeze": 0.5,
+              "selfErasure": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "comfortable_avoidance",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-move-002",
+            "owner": "satou",
+            "category": "move",
+            "textSeed": "自分に嘘をついている部分を、壊さずに指す",
+            "tags": [
+              "self_deception",
+              "自分に嘘をついている部分を",
+              "壊さずに指す"
+            ],
+            "axis": [
+              "shame",
+              "selfErasure",
+              "resignation"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "shame": 0.7,
+              "selfErasure": 0.65,
+              "resignation": 0.35
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "self_deception",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-move-003",
+            "owner": "satou",
+            "category": "move",
+            "textSeed": "きれいに諦めようとしている時、その下のコストを見る",
+            "tags": [
+              "sugarcoated_giving_up",
+              "きれいに諦めようとしている時",
+              "その下のコストを見る"
+            ],
+            "axis": [
+              "resignation",
+              "desire",
+              "unfinished"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "resignation": 0.9,
+              "desire": 0.45,
+              "unfinished": 0.4
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "sugarcoated_giving_up",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-move-004",
+            "owner": "satou",
+            "category": "move",
+            "textSeed": "誰も言わないことを、必要なら言う覚悟を持つ",
+            "tags": [
+              "thing_nobody_says",
+              "誰も言わないことを",
+              "必要なら言う覚悟を持つ"
+            ],
+            "axis": [
+              "fear",
+              "shame",
+              "desire"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "fear": 0.75,
+              "shame": 0.5,
+              "desire": 0.55
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "thing_nobody_says",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          },
+          {
+            "id": "satou-migrated-move-005",
+            "owner": "satou",
+            "category": "move",
+            "textSeed": "壊れそうなものがある時は、突くのではなく守る側に回る",
+            "tags": [
+              "fragility_to_guard",
+              "壊れそうなものがある時は",
+              "突くのではなく守る側に回る"
+            ],
+            "axis": [
+              "selfErasure",
+              "shame",
+              "freeze"
+            ],
+            "triggers": [],
+            "antiTriggers": [],
+            "weight": 0.7,
+            "vector": {
+              "selfErasure": 0.8,
+              "shame": 0.6,
+              "freeze": 0.45
+            },
+            "tonalHints": [],
+            "stanceHints": [],
+            "avoidHints": [],
+            "_source": {
+              "type": "field",
+              "originalId": "fragility_to_guard",
+              "migrationDate": "2026-04-20T15:22:57.226Z"
+            }
+          }
+        ]
+      },
+      "errors": []
+    }
+  },
+  "exceptions": [
+    {
+      "nodeId": "joe-migrated-thought-004",
+      "issue": "negative-vector-values",
+      "axes": [
+        "selfErasure"
+      ],
+      "resolution": "converted to antiTriggers"
+    },
+    {
+      "nodeId": "joe-migrated-feeling-004",
+      "issue": "negative-vector-values",
+      "axes": [
+        "selfErasure"
+      ],
+      "resolution": "converted to antiTriggers"
+    }
+  ],
+  "summary": {
+    "totalBeliefs": 25,
+    "totalMemories": 25,
+    "totalFieldNodes": 25,
+    "totalThoughts": 25,
+    "totalFeelings": 25,
+    "totalMoves": 25
+  }
+}
