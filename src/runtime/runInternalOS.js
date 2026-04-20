@@ -34,6 +34,7 @@ import { estimateState } from './stateEstimate.js';
 import { buildFusedState } from './fusedState.js';
 import { buildProtoMeaning } from './protoMeaning.js';
 import { radialCondensation } from './attention/radialCondensation.js';
+import { buildBodySignals } from './textPipeline/buildBodySignals.js';
 import {
   getMicroSignalValue,
   MICRO_SIGNAL_BIAS_MAP,
@@ -682,7 +683,14 @@ export function runInternalOS(input, options = {}) {
     resonanceAxes.push(beliefTension.dominantTensionAxis);
   }
 
-  // Map field to body signals
+  // P-6: Build bodySignals with external/internal separation
+  const bodySignalsSnapshot = buildBodySignals({
+    field,
+    beliefTension,
+    previousLatentState: safePreviousLatentState,
+  });
+
+  // Flatten for emergingField (backward compatibility)
   const bodySignals = {
     tension: clamp01(field.urgency * 0.7 + field.fragility * 0.3),
     softness: clamp01(field.softness),
@@ -994,6 +1002,8 @@ export function runInternalOS(input, options = {}) {
     reaction,
     stance,
     permission,
+    // P-6: bodySignals with external/internal separation
+    bodySignals: bodySignalsSnapshot,
     // Decision layer
     decision,
     // Activated thoughts (Phase 4)
@@ -1047,6 +1057,7 @@ export function runInternalOS(input, options = {}) {
         microSignals,
         fusedState,
         protoMeaning,
+        bodySignals: bodySignalsSnapshot,
         decision,
         activatedThoughts,
         activatedFeelings,
