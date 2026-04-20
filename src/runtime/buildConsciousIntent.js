@@ -28,6 +28,7 @@ const buildUserSense = (context) => {
   const {
     attentionTargets = [],
     othersField = [],
+    selectedMixedClusters = null,
     selectedThoughts = null,
   } = context;
 
@@ -58,8 +59,14 @@ const buildUserSense = (context) => {
     }
   }
 
-  // From selectedThoughts primary cluster
-  if (selectedThoughts?.selected?.length > 0) {
+  // Priority: read from selectedMixedClusters if available
+  if (selectedMixedClusters?.selected?.length > 0) {
+    const primary = selectedMixedClusters.selected.find((s) => s.role === 'primary');
+    if (primary?.reasons?.includes('tension-axis-match')) {
+      labels.push('mixed-questions');
+    }
+  } else if (selectedThoughts?.selected?.length > 0) {
+    // Fallback: read from selectedThoughts
     const primary = selectedThoughts.selected.find((s) => s.role === 'primary');
     if (primary?.reasons?.includes('tension-axis-match')) {
       labels.push('mixed-questions');
@@ -86,6 +93,8 @@ const buildSelfFeeling = (context) => {
     bodySignals = {},
     dominantSelectedAxis = [],
     beliefTension = null,
+    boundMixedNodes = null,
+    selectedMixedClusters = null,
   } = context;
 
   const labels = [];
@@ -102,6 +111,18 @@ const buildSelfFeeling = (context) => {
 
   if (softness > 0.5 || warmth > 0.5) {
     labels.push('pulled-to-touch');
+  }
+
+  // Priority: extract from selectedMixedClusters and boundMixedNodes
+  if (selectedMixedClusters?.selected?.length > 0 && boundMixedNodes?.clusters) {
+    const primary = selectedMixedClusters.selected.find((s) => s.role === 'primary');
+    if (primary) {
+      const cluster = boundMixedNodes.clusters.find((c) => c.clusterId === primary.clusterId);
+      if (cluster?.feelingIds && cluster.feelingIds.length > 0) {
+        // Feeling nodes contribute to selfFeeling
+        labels.push('pulled-to-touch');
+      }
+    }
   }
 
   // From dominantSelectedAxis
@@ -139,10 +160,12 @@ const buildSelfFeeling = (context) => {
  */
 const buildSpeakIntent = (context) => {
   const {
+    selectedMixedClusters = null,
     selectedThoughts = null,
     dominantSelectedAxis = [],
     selfFeeling = [],
     othersField = [],
+    boundMixedNodes = null,
   } = context;
 
   // Check if others already covered similar territory
@@ -150,8 +173,22 @@ const buildSpeakIntent = (context) => {
     o.forceTags?.includes('clarify') || o.forceTags?.includes('ground')
   );
 
-  // Primary cluster axis
-  const primaryAxis = dominantSelectedAxis[0] ?? null;
+  // Priority: read dominant axis from selectedMixedClusters
+  let primaryAxis = null;
+  if (selectedMixedClusters?.selected?.length > 0 && boundMixedNodes?.clusters) {
+    const primary = selectedMixedClusters.selected.find((s) => s.role === 'primary');
+    if (primary) {
+      const cluster = boundMixedNodes.clusters.find((c) => c.clusterId === primary.clusterId);
+      if (cluster?.dominantAxis && cluster.dominantAxis.length > 0) {
+        primaryAxis = cluster.dominantAxis[0];
+      }
+    }
+  }
+
+  // Fallback: read from dominantSelectedAxis
+  if (!primaryAxis && dominantSelectedAxis.length > 0) {
+    primaryAxis = dominantSelectedAxis[0];
+  }
 
   // From tension and primary axis
   if (primaryAxis === 'structure' && !othersClarified) {
@@ -179,10 +216,17 @@ const buildSpeakIntent = (context) => {
     return 'clarify-the-knot';
   }
 
-  // Check if primary cluster has high score
-  const primary = selectedThoughts?.selected?.find((s) => s.role === 'primary');
-  if (primary?.score > 0.7) {
-    return 'touch-the-living-point';
+  // Check if primary cluster has high score (priority: mixed clusters)
+  if (selectedMixedClusters?.selected?.length > 0) {
+    const primary = selectedMixedClusters.selected.find((s) => s.role === 'primary');
+    if (primary?.score > 0.7) {
+      return 'touch-the-living-point';
+    }
+  } else if (selectedThoughts?.selected?.length > 0) {
+    const primary = selectedThoughts.selected.find((s) => s.role === 'primary');
+    if (primary?.score > 0.7) {
+      return 'touch-the-living-point';
+    }
   }
 
   // Default
@@ -237,12 +281,14 @@ const buildHoldBack = (context) => {
 };
 
 /**
- * Build conscious intent from selected thoughts and context
+ * Build conscious intent from selected clusters and context
  *
  * Input shape:
  * {
  *   agentId: string,
+ *   selectedMixedClusters: { selected: [...], selectionMeta: {...} } | null,
  *   selectedThoughts: { selected: [...], selectionMeta: {...} } | null,
+ *   boundMixedNodes: { clusters: [...] } | null,
  *   boundThoughts: { clusters: [...] } | null,
  *   emergingField: { attentionTargets, resonanceAxes, bodySignals, atmosphere } | null,
  *   preconditionBias: { focus: {...}, meaning: {...}, identity: {...} } | null,
@@ -276,7 +322,9 @@ export const buildConsciousIntent = (input = {}) => {
 
   const {
     agentId: _agentId = 'joe',
+    selectedMixedClusters = null,
     selectedThoughts = null,
+    boundMixedNodes = null,
     boundThoughts: _boundThoughts = null,
     emergingField = null,
     preconditionBias = null,
@@ -287,19 +335,27 @@ export const buildConsciousIntent = (input = {}) => {
   // Extract context
   const attentionTargets = emergingField?.attentionTargets ?? [];
   const bodySignals = emergingField?.bodySignals ?? {};
-  const dominantSelectedAxis = selectedThoughts?.selectionMeta?.dominantSelectedAxis ?? [];
+
+  // Priority: read dominantSelectedAxis from selectedMixedClusters if available
+  const dominantSelectedAxis = selectedMixedClusters?.selectionMeta?.dominantSelectedAxis?.length > 0
+    ? selectedMixedClusters.selectionMeta.dominantSelectedAxis
+    : (selectedThoughts?.selectionMeta?.dominantSelectedAxis ?? []);
 
   const oneThreadBias = clamp01(preconditionBias?.focus?.oneThreadBias ?? 0);
   const antiOverExpansion = clamp01(preconditionBias?.focus?.antiOverExpansion ?? 0);
 
-  // Extract selectedClusterIds
-  const selectedClusterIds = selectedThoughts?.selected?.map((s) => s.clusterId) ?? [];
+  // Extract selectedClusterIds (priority: mixed clusters)
+  const selectedClusterIds = selectedMixedClusters?.selected?.length > 0
+    ? selectedMixedClusters.selected.map((s) => s.clusterId)
+    : (selectedThoughts?.selected?.map((s) => s.clusterId) ?? []);
 
   // Build context object
   const context = {
     attentionTargets,
     othersField: Array.isArray(othersField) ? othersField : [],
+    selectedMixedClusters,
     selectedThoughts,
+    boundMixedNodes,
     bodySignals,
     dominantSelectedAxis,
     beliefTension,
