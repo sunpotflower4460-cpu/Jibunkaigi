@@ -199,11 +199,20 @@ const selectPartCandidate = (partKey, vector, providedCorpus = null) => {
   const activeCorpus = Array.isArray(providedCorpus) && providedCorpus.length > 0
     ? providedCorpus
     : fallbackCorpus;
-  const corpusToScore = activeCorpus.length > 0 ? activeCorpus : fallbackCorpus;
-  const scored = corpusToScore
+  const scored = activeCorpus
     .map((candidate) => scoreCorpusCandidate(candidate, vector))
     .sort((a, b) => b.score - a.score);
-  const selected = scored[0] || scoreCorpusCandidate(fallbackCorpus[0], vector);
+  const selected = scored[0] || (
+    fallbackCorpus[0]
+      ? scoreCorpusCandidate(fallbackCorpus[0], vector)
+      : {
+          text: '',
+          tags: [],
+          score: 0,
+          tagScore: 0,
+          cosineSimilarity: 0,
+        }
+  );
 
   return {
     label: JOE_REENTRY_PART_LABELS[partKey],
