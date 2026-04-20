@@ -1256,6 +1256,28 @@ const App = () => {
       hasPreviousLatentState: !!safePreviousLatentState,
     });
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // others_field の生成 (顕在層 v0.1)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 先行エージェントの発話から OthersField を生成し、
+    // 後続エージェントが「場の残響」として読めるようにする
+    const othersFieldEntries = [];
+    for (const msg of baseMessages) {
+      if (msg?.role === 'ai' && msg.agentId && msg.content) {
+        const entry = summarizeToOthersField(msg.agentId, msg.content);
+        if (entry) {
+          othersFieldEntries.push(entry);
+        }
+      }
+    }
+    const othersFieldText = renderOthersFieldForPrompt(othersFieldEntries, false);
+    const othersFieldDebug = formatOthersFieldForDebug(othersFieldEntries);
+    if (othersFieldDebug) {
+      console.info("[others_field]", othersFieldDebug);
+      pushAgentDebugEvent({ tag: 'others_field', count: othersFieldEntries.length, preview: othersFieldDebug });
+    }
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
     // B. runInternalOS
     let continuityInternalOS;
     try {
@@ -1335,28 +1357,6 @@ const App = () => {
       : null;
     let aiMsgId = null;
     let aiPersistenceState = 'not-created';
-
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // others_field の生成 (顕在層 v0.1)
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // 先行エージェントの発話から OthersField を生成し、
-    // 後続エージェントが「場の残響」として読めるようにする
-    const othersFieldEntries = [];
-    for (const msg of baseMessages) {
-      if (msg?.role === 'ai' && msg.agentId && msg.content) {
-        const entry = summarizeToOthersField(msg.agentId, msg.content);
-        if (entry) {
-          othersFieldEntries.push(entry);
-        }
-      }
-    }
-    const othersFieldText = renderOthersFieldForPrompt(othersFieldEntries, false);
-    const othersFieldDebug = formatOthersFieldForDebug(othersFieldEntries);
-    if (othersFieldDebug) {
-      console.info("[others_field]", othersFieldDebug);
-      pushAgentDebugEvent({ tag: 'others_field', count: othersFieldEntries.length, preview: othersFieldDebug });
-    }
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     let activated = null;
     if (isMaster) {
