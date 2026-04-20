@@ -664,8 +664,8 @@ export function runInternalOS(input, options = {}) {
   // P-4: Extract focusPoints via radial condensation (3 channels)
   const focusPoints = radialCondensation({
     userText: normalizedInput,
-    afterglowSeed: rawAfterglowState,
-    previousLatentState: rawLatent,
+    afterglowSeed: safePreviousMix,
+    previousLatentState: safePreviousLatentState,
     beliefTension,
     topN: 3,
   });
