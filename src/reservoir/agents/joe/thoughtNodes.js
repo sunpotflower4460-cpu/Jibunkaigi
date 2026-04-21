@@ -11,7 +11,7 @@ import { NodeOwners, NodeCategories } from '../../types.js';
 
 const tonalHints = ['短い', '密度', '照らす', '熱はあるがテンプレ化しない', '断定の視界'];
 const stanceHints = ['一点に触れる', '広げない', '照らす', '解決を急がない'];
-const avoidHints = ['励ましの上塗り', '全体総括', '明るい結論で締めること'];
+const avoidHints = ['励ましの上塗り', '全体総括', '明るい結論で締めること', '入力文の儀式的な言い換え', '同じ問いの反復導入'];
 
 /**
  * @type {import('../../types.js').ThoughtNode[]}
@@ -21,7 +21,7 @@ export const joeThoughtNodes = [
     id: 'joe-thought-001',
     owner: NodeOwners.JOE,
     category: NodeCategories.THOUGHT,
-    textSeed: 'direction that remains, not erased',
+    textSeed: 'まだ消えていない方向がある',
     tags: ['vitality', 'direction', 'remaining'],
     axis: ['illumination'],
     triggers: ['life-present', 'energy-detected', 'remnant-force'],
@@ -35,7 +35,7 @@ export const joeThoughtNodes = [
     id: 'joe-thought-002',
     owner: NodeOwners.JOE,
     category: NodeCategories.THOUGHT,
-    textSeed: 'force not extinguished, only compressed',
+    textSeed: '消えたのではなく、押し込まれている力がある',
     tags: ['compression', 'potential', 'alive'],
     axis: ['illumination', 'holding'],
     triggers: ['suppression-detected', 'pressure', 'hidden-energy'],
@@ -49,7 +49,7 @@ export const joeThoughtNodes = [
     id: 'joe-thought-003',
     owner: NodeOwners.JOE,
     category: NodeCategories.THOUGHT,
-    textSeed: 'point that still matters, not broken',
+    textSeed: '壊れていない一点がまだ残っている',
     tags: ['core', 'integrity', 'focus'],
     axis: ['illumination', 'presence'],
     triggers: ['core-intact', 'care-present', 'mattering'],
@@ -63,7 +63,7 @@ export const joeThoughtNodes = [
     id: 'joe-thought-004',
     owner: NodeOwners.JOE,
     category: NodeCategories.THOUGHT,
-    textSeed: 'light wanting to be seen, immobility blocking it',
+    textSeed: '見えていないだけで、光りたがっているものがある',
     tags: ['friction', 'desire', 'blockage', 'light'],
     axis: ['illumination', 'structure'],
     triggers: ['want-but-cannot', 'frozen', 'conflict-present'],
@@ -77,7 +77,7 @@ export const joeThoughtNodes = [
     id: 'joe-thought-005',
     owner: NodeOwners.JOE,
     category: NodeCategories.THOUGHT,
-    textSeed: 'heat not cooled, not allowed to move',
+    textSeed: '冷えきっていない熱が、まだ動けずにいる',
     tags: ['tension', 'suppression', 'alive', 'stuck'],
     axis: ['illumination', 'holding'],
     triggers: ['stuck-energy', 'want-to-emerge', 'held-back'],
@@ -91,7 +91,7 @@ export const joeThoughtNodes = [
     id: 'joe-thought-006',
     owner: NodeOwners.JOE,
     category: NodeCategories.THOUGHT,
-    textSeed: 'remnant of forward motion still detectable',
+    textSeed: '前へ向かう残り火が、まだ検知できる',
     tags: ['forward', 'motion', 'remnant'],
     axis: ['illumination', 'presence'],
     triggers: ['forward-motion', 'residual-aim', 'faint-drive'],
@@ -105,7 +105,7 @@ export const joeThoughtNodes = [
     id: 'joe-thought-007',
     owner: NodeOwners.JOE,
     category: NodeCategories.THOUGHT,
-    textSeed: "a part that hasn't been performed on",
+    textSeed: '演じられていない部分がまだある',
     tags: ['untouched', 'raw', 'alive'],
     axis: ['illumination', 'holding'],
     triggers: ['unperformed-part', 'still-raw', 'not-instrumentalized'],
