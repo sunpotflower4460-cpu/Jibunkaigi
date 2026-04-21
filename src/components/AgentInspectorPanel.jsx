@@ -286,6 +286,7 @@ const AgentInspectorPanel = ({ trace = null, history = [], onClose }) => {
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [exportMaskLLM, setExportMaskLLM] = useState(false);
   const [exportMaskUser, setExportMaskUser] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
 
   const turns = useMemo(() => buildTurns(trace, history), [trace, history]);
   const safeSelectedTurnIndex = selectedTurnIndex < turns.length ? selectedTurnIndex : 0;
@@ -431,6 +432,24 @@ const AgentInspectorPanel = ({ trace = null, history = [], onClose }) => {
               title="比較モード"
             >
               🔀 {isCompareMode ? '通常表示' : '比較'}
+            </button>
+
+            {/* 🎓 解説モード */}
+            <button
+              type="button"
+              onClick={() => setShowExplanation(!showExplanation)}
+              style={{
+                border: '1px solid rgba(148,163,184,0.24)',
+                background: showExplanation ? 'rgba(251,191,36,0.2)' : 'rgba(30,41,59,0.9)',
+                color: '#e2e8f0',
+                borderRadius: 8,
+                padding: '6px 10px',
+                cursor: 'pointer',
+                fontSize: 12,
+              }}
+              title="解説モード：日本語ラベルとヒントを表示"
+            >
+              🎓 {showExplanation ? 'ON' : 'OFF'}
             </button>
 
             {/* 💾 JSON保存 */}
@@ -645,15 +664,15 @@ const AgentInspectorPanel = ({ trace = null, history = [], onClose }) => {
               <div style={{ fontSize: 13, color: '#cbd5e1' }}>このタブに対応するイベントはまだありません。</div>
             ) : (
               <>
-                {activeTab === 'input' && <InputTabView events={selectedEvents} />}
-                {activeTab === 'latent' && <LatentTabView events={selectedEvents} />}
-                {activeTab === 'dynamic' && <DynamicTabView events={selectedEvents} />}
-                {activeTab === 'decision' && <DecisionTabView events={selectedEvents} />}
-                {activeTab === 'material' && <MaterialTabView events={selectedEvents} />}
-                {activeTab === 'surface' && <SurfaceTabView events={selectedEvents} />}
-                {activeTab === 'prompt' && <PromptTabView events={selectedEvents} />}
-                {activeTab === 'llm' && <LLMResponseTabView events={selectedEvents} />}
-                {activeTab === 'afterglow' && <AfterglowTabView events={selectedEvents} />}
+                {activeTab === 'input' && <InputTabView events={selectedEvents} showExplanation={showExplanation} />}
+                {activeTab === 'latent' && <LatentTabView events={selectedEvents} showExplanation={showExplanation} />}
+                {activeTab === 'dynamic' && <DynamicTabView events={selectedEvents} showExplanation={showExplanation} />}
+                {activeTab === 'decision' && <DecisionTabView events={selectedEvents} showExplanation={showExplanation} />}
+                {activeTab === 'material' && <MaterialTabView events={selectedEvents} showExplanation={showExplanation} />}
+                {activeTab === 'surface' && <SurfaceTabView events={selectedEvents} showExplanation={showExplanation} />}
+                {activeTab === 'prompt' && <PromptTabView events={selectedEvents} showExplanation={showExplanation} />}
+                {activeTab === 'llm' && <LLMResponseTabView events={selectedEvents} showExplanation={showExplanation} />}
+                {activeTab === 'afterglow' && <AfterglowTabView events={selectedEvents} showExplanation={showExplanation} />}
               </>
             )}
           </div>
