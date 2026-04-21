@@ -25,9 +25,9 @@ export const BELIEF_BRANCH_PROFILES = {
       axis: 'philosophy',
     },
     {
-      id: 'go_to_unlit_places',
+      id: 'beyond_already_visible',
       parentId: 'joe_world_unlighted_still_shines',
-      textJa: '多数派に照明が当たっている場所より、まだ暗い場所に行く意味がある',
+      textJa: 'すでに見えやすいものの外側にも、まだ意味の残るものがある',
       weight: 0.70,
       axis: 'philosophy',
     },
