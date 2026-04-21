@@ -211,9 +211,11 @@ function selectSoftReason({ field = {}, reaction = {}, stance = {} }) {
   const softness = field.softness ?? 0;
   const depth = field.depth ?? 0;
   const fragility = field.fragility ?? 0;
+  const urgency = field.urgency ?? 0;
 
   const protect = reaction.protect ?? 0;
   const holdBackJudgment = reaction.holdBackJudgment ?? 0;
+  const touched = reaction.touched ?? 0;
 
   const receive = stance.receive ?? 0;
   const illuminate = stance.illuminate ?? 0;
@@ -234,9 +236,30 @@ function selectSoftReason({ field = {}, reaction = {}, stance = {} }) {
   scores.sort((a, b) => b.score - a.score);
   const chosenDirection = scores[0].direction;
 
-  // その方向から一つ選ぶ（シンプルに最初のもの）
+  // その方向の候補から一つ選ぶ
+  // 入力場の値から fingerprint を作り、候補を安定的に選ぶ
   const candidates = SOFT_REASON_POOL.filter((r) => r.direction === chosenDirection);
-  const chosen = candidates.length > 0 ? candidates[0] : SOFT_REASON_POOL[0];
+  if (candidates.length === 0) {
+    return {
+      key: SOFT_REASON_POOL[0].key,
+      text: SOFT_REASON_POOL[0].text,
+      direction: SOFT_REASON_POOL[0].direction,
+    };
+  }
+
+  if (candidates.length === 1) {
+    return {
+      key: candidates[0].key,
+      text: candidates[0].text,
+      direction: candidates[0].direction,
+    };
+  }
+
+  // 2つ以上の候補がある場合、入力場の値から fingerprint を作る
+  // softness + touched + receive + urgency を合成し、閾値で分岐
+  const fingerprint = softness * 0.3 + touched * 0.25 + receive * 0.25 + (1 - urgency) * 0.2;
+  const candidateIndex = fingerprint >= 0.4 ? 1 : 0;
+  const chosen = candidates[candidateIndex] ?? candidates[0];
 
   return {
     key: chosen.key,

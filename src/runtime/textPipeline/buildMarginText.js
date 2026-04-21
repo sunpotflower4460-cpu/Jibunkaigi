@@ -3,11 +3,11 @@
 // 「何をしないか」を描写する
 
 const HOLD_BACK_LABEL_MAP = {
-  'no-over-expansion': '広げすぎない',
-  'no-early-summary': '早くまとめすぎない',
-  'do-not-close': 'ここで閉じない',
-  'no-fix-yet': 'すぐ解決に向かわない',
-  'no-explicit-agent-reference': '誰の声かを前に出しすぎない',
+  'no-over-expansion': 'まだ広げなくていい',
+  'no-early-summary': 'まだまとめの手前にいられる',
+  'do-not-close': 'ここではまだ閉じなくていい',
+  'no-fix-yet': 'まだ解決へ急がなくていい',
+  'no-explicit-agent-reference': '誰として話すかを前に出さなくても届く',
 };
 
 const translateHoldBackLabel = (label) => {

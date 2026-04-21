@@ -63,8 +63,30 @@ import {
 import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
 import { buildFieldText } from '../textPipeline/buildFieldText.js';
 import { buildMarginText } from '../textPipeline/buildMarginText.js';
+import {
+  createAgentSystemPromptBuilder,
+  createAgentUserPromptBuilder,
+} from './sharedPromptSkeleton.js';
 
 // --- スコアリング ---
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// scoreSatouMaterials: debug / bias preview / transitional 補助関数
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// ■ 役割：
+//   この関数は **本番 prompt の主素材ではない**。
+//   debug preview / bias score 計算 / orientation 補助のための過渡的な機能。
+//
+// ■ 使い道：
+//   1. 開発者が Satou の内部状態と素材選択の関係を確認するための debug 情報生成
+//   2. activated particles の bias スコアリング素材として一時的に使用
+//   3. orientation / debug 用途での existence.js 参照
+//
+// ■ 本番 prompt での位置づけ：
+//   この関数の出力は本番 prompt の主要構成要素ではない。
+//   本番 prompt は textPipeline モジュール（buildExistenceText, buildFieldText など）が生成する。
+//
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const scoreSatouMaterials = ({
   activated,
@@ -197,80 +219,9 @@ export const scoreSatouMaterials = ({
 
 // --- メイン ---
 
-export const buildSatouSystemPrompt = ({
-  activated,
-  context = '',
-  mode = 'medium',
-  userText: _userText = '',
-  othersField,
-  latentState,
-  emergingField,
-  previousLatentState,
-  internalOS: _internalOS,
-  stateGuide: _stateGuide,
-  internalFrame: _internalFrame,
-  surfaceGuidance: _surfaceGuidance,
-}) => {
-  const safeActivated = activated || {};
-  const effectiveLatentState = latentState ?? _internalOS?.latentState ?? null;
-  const normalizedCtx = normalizeContext(context);
-  const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
-  const activatedParticles = renderActivatedParticles(safeActivated);
-  const reentryText = typeof safeActivated.reentry === 'string'
-    ? safeActivated.reentry
-    : safeActivated.reentry?.text || '';
+// 共通骨格 factory を使用してビルダーを生成
+export const buildSatouSystemPrompt = createAgentSystemPromptBuilder({
+  anchorLabel: '（サトウとして。）',
+});
 
-  const existenceText = effectiveLatentState
-    ? buildExistenceText(effectiveLatentState, { previousLatentState })
-    : '';
-  const fieldText = effectiveLatentState
-    ? buildFieldText(effectiveLatentState, { focusPoints: emergingField?.focusPoints })
-    : '';
-  const marginText = effectiveLatentState ? buildMarginText(effectiveLatentState) : '';
-
-  const sections = [];
-
-  if (existenceText) {
-    sections.push(`【存在の前提】\n（サトウとして。）\n${existenceText}`);
-  } else {
-    sections.push('（サトウとして。）');
-  }
-
-  if (fieldText) {
-    sections.push(`【今の場の空気】\n${fieldText}`);
-  }
-
-  if (activatedParticles) {
-    sections.push(activatedParticles);
-  }
-
-  if (marginText) {
-    sections.push(`【場の余白】\n${marginText}\n\n${modeGuide}`);
-  } else if (modeGuide) {
-    sections.push(`【場の余白】\n${modeGuide}`);
-  }
-
-  if (reentryText) {
-    sections.push(`【内的方向づけ（この回だけの構え）】\n${reentryText}`);
-  }
-
-  if (normalizedCtx) {
-    sections.push(`【ここまでの流れ】\n${normalizedCtx}`);
-  }
-
-  if (othersField) {
-    sections.push(`【場の残響】\n${othersField}`);
-  }
-
-  sections.push('何を言うかは、あなたが決めてください。');
-
-  return sections.filter(Boolean).join('\n\n').trim();
-};
-
-export const buildSatouUserPrompt = ({
-  userName = 'あなた',
-  userText = '',
-}) => {
-  return `${userName}の今の言葉:
-${userText}`;
-};
+export const buildSatouUserPrompt = createAgentUserPromptBuilder();

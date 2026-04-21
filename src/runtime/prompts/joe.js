@@ -58,8 +58,30 @@ import {
 import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
 import { buildFieldText } from '../textPipeline/buildFieldText.js';
 import { buildMarginText } from '../textPipeline/buildMarginText.js';
+import {
+  createAgentSystemPromptBuilder,
+  createAgentUserPromptBuilder,
+} from './sharedPromptSkeleton.js';
 
 // --- スコアリング ---
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// scoreJoeMaterials: debug / bias preview / transitional 補助関数
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// ■ 役割：
+//   この関数は **本番 prompt の主素材ではない**。
+//   debug preview / bias score 計算 / orientation 補助のための過渡的な機能。
+//
+// ■ 使い道：
+//   1. 開発者が Joe の内部状態と素材選択の関係を確認するための debug 情報生成
+//   2. activated particles の bias スコアリング素材として一時的に使用
+//   3. orientation / debug 用途での existence.js 参照
+//
+// ■ 本番 prompt での位置づけ：
+//   この関数の出力は本番 prompt の主要構成要素ではない。
+//   本番 prompt は textPipeline モジュール（buildExistenceText, buildFieldText など）が生成する。
+//
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const scoreJoeMaterials = ({
   activated,
@@ -208,100 +230,9 @@ export const buildJoeBiasPack = ({
 
 // --- メイン ---
 
-export const buildJoeSystemPrompt = ({
-  activated,
-  context = '',
-  mode = 'medium',
-  userText: _userText = '',
-  othersField,
-  // latentState: runInternalOS の13層計算の出力
-  latentState,
-  // emergingField: focusPoints / bodySignals など
-  emergingField,
-  // previousLatentState: afterglow 用
-  previousLatentState,
-  // backward compatibility only — LLM には渡さない
-  internalOS: _internalOS,
-  surfaceWindow: _surfaceWindow,
-  surfaceFrame: _surfaceFrame,
-  stateGuide: _stateGuide,
-  internalFrame: _internalFrame,
-  surfaceGuidance: _surfaceGuidance,
-}) => {
-  const safeActivated = activated || {};
-  const effectiveLatentState = latentState ?? _internalOS?.latentState ?? null;
-  const normalizedCtx = normalizeContext(context);
-  const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
-  const activatedParticles = renderActivatedParticles(safeActivated);
-  const reentryText = typeof safeActivated.reentry === 'string'
-    ? safeActivated.reentry
-    : safeActivated.reentry?.text || '';
+// 共通骨格 factory を使用してビルダーを生成
+export const buildJoeSystemPrompt = createAgentSystemPromptBuilder({
+  anchorLabel: '（ジョーとして。）',
+});
 
-  // 新構造: textPipeline からの描写
-  const existenceText = effectiveLatentState
-    ? buildExistenceText(effectiveLatentState, { previousLatentState })
-    : '';
-  const fieldText = effectiveLatentState
-    ? buildFieldText(effectiveLatentState, { focusPoints: emergingField?.focusPoints })
-    : '';
-  const marginText = effectiveLatentState ? buildMarginText(effectiveLatentState) : '';
-
-  // 新構造の7ブロック
-  const sections = [];
-
-  // [存在の前提]
-  if (existenceText) {
-    sections.push(`【存在の前提】\n（ジョーとして。）\n${existenceText}`);
-  } else {
-    // 移行期アンカー: 最初の1行だけ残す（第10章1-dの推奨）
-    sections.push('（ジョーとして。）');
-  }
-
-  // [今の場の空気]
-  if (fieldText) {
-    sections.push(`【今の場の空気】\n${fieldText}`);
-  }
-
-  // [場に浮かんでいるもの]
-  if (activatedParticles) {
-    sections.push(activatedParticles);
-  }
-
-  // [場の余白]
-  // モード指示をここに吸収する
-  if (marginText) {
-    sections.push(`【場の余白】\n${marginText}\n\n${modeGuide}`);
-  } else if (modeGuide) {
-    sections.push(`【場の余白】\n${modeGuide}`);
-  }
-
-  // [内的方向づけ（この回だけの構え）]
-  if (reentryText) {
-    sections.push(`【内的方向づけ（この回だけの構え）】\n${reentryText}`);
-  }
-
-  // [ここまでの流れ]
-  if (normalizedCtx) {
-    sections.push(`【ここまでの流れ】\n${normalizedCtx}`);
-  }
-
-  // [場の残響]
-  if (othersField) {
-    sections.push(`【場の残響】\n${othersField}`);
-  }
-
-  // [相手の言葉] は user prompt に含まれるため、system prompt には含めない
-
-  // 末尾の静かな開口部（モード指示は前段へ移動済み）
-  sections.push('何を言うかは、あなたが決めてください。');
-
-  return sections.filter(Boolean).join('\n\n').trim();
-};
-
-export const buildJoeUserPrompt = ({
-  userName = 'あなた',
-  userText = '',
-}) => {
-  return `${userName}の今の言葉:
-${userText}`;
-};
+export const buildJoeUserPrompt = createAgentUserPromptBuilder();

@@ -903,3 +903,67 @@ test('runInternalOS dynamicLayersPresent shows all dynamic layers as true', () =
   assert.equal(dynamicPresent.stance, true);
   assert.equal(dynamicPresent.decision, true);
 });
+
+// ── Task 5: Return shape tests ────────────────────────────────────────────────
+
+test('runInternalOS returns emergingField with correct shape', () => {
+  const result = runInternalOS('やりたいのに動けない', { agentId: 'creative' });
+
+  assert.ok(result.emergingField, 'emergingField should exist in return value');
+  assert.ok(Array.isArray(result.emergingField.focusPoints), 'focusPoints should be array');
+  assert.ok(Array.isArray(result.emergingField.attentionTargets), 'attentionTargets should be array');
+  assert.ok(Array.isArray(result.emergingField.resonanceAxes), 'resonanceAxes should be array');
+  assert.ok(result.emergingField.bodySignals, 'bodySignals should exist');
+  assert.ok(Array.isArray(result.emergingField.atmosphere), 'atmosphere should be array');
+});
+
+test('runInternalOS latentState.bodySignals has external/internal split', () => {
+  const result = runInternalOS('作品を出したいけど怖い', { agentId: 'creative' });
+
+  assert.ok(result.latentState.bodySignals, 'latentState.bodySignals should exist');
+  assert.ok(result.latentState.bodySignals.external, 'bodySignals.external should exist');
+  assert.ok(result.latentState.bodySignals.internal, 'bodySignals.internal should exist');
+
+  // Verify external keys
+  const ext = result.latentState.bodySignals.external;
+  assert.equal(typeof ext.tension, 'number');
+  assert.equal(typeof ext.softness, 'number');
+  assert.equal(typeof ext.hesitation, 'number');
+  assert.equal(typeof ext.urgency, 'number');
+  assert.equal(typeof ext.warmth, 'number');
+  assert.equal(typeof ext.contraction, 'number');
+
+  // Verify internal keys
+  const int = result.latentState.bodySignals.internal;
+  assert.equal(typeof int.tension, 'number');
+  assert.equal(typeof int.hesitation, 'number');
+  assert.equal(typeof int.contraction, 'number');
+
+  // Verify all values are in [0, 1]
+  for (const val of Object.values(ext)) {
+    assert.ok(val >= 0 && val <= 1, `external value ${val} should be in [0,1]`);
+  }
+  for (const val of Object.values(int)) {
+    assert.ok(val >= 0 && val <= 1, `internal value ${val} should be in [0,1]`);
+  }
+});
+
+test('buildFieldText uses latentState.bodySignals external/internal shape', () => {
+  const result = runInternalOS('最近ちょっと自信ない', { agentId: 'empath' });
+
+  // Verify bodySignals exists with correct split
+  assert.ok(result.latentState.bodySignals);
+  assert.ok(result.latentState.bodySignals.external);
+  assert.ok(result.latentState.bodySignals.internal);
+
+  // buildFieldText should be able to work with this shape
+  // (implicitly tested via buildAgentPrompt, but we verify the shape is present)
+  const external = result.latentState.bodySignals.external;
+  const internal = result.latentState.bodySignals.internal;
+
+  // These are the keys buildFieldText expects
+  assert.ok(typeof external.tension === 'number');
+  assert.ok(typeof external.softness === 'number');
+  assert.ok(typeof internal.tension === 'number');
+  assert.ok(typeof internal.hesitation === 'number');
+});

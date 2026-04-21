@@ -123,12 +123,17 @@
 
 - `src/runtime/prompts/{joe|ray|ken|mina|satou}.js`
   - 全 agent で同じ 7ブロック順序を採用
+  - 共通 builder factory (`src/runtime/prompts/sharedPromptSkeleton.js`) を使用して DRY 化
   - block 3 は helper が返す current heading `【今、場に浮かんでいるもの】` をそのまま採用
   - `othersField` があるときだけ `【場の残響】` を追加
+- `src/runtime/prompts/sharedPromptSkeleton.js`
+  - `createAgentSystemPromptBuilder()` — 全 agent 共通の 7ブロック組み立てロジック
+  - `createAgentUserPromptBuilder()` — user prompt の整形ロジック
+  - 各 agent の差異は `anchorLabel` パラメータだけ
 - `src/runtime/buildPromptHelpers.js`
   - `renderActivatedParticles(...)`
   - `normalizeContext(...)`
-  - `MODE_GUIDE`
+  - `MODE_GUIDE` — 場の静けさ・奥行きの度合いを ambient に描写
 - `src/runtime/context.js`
   - `buildPromptContext(...)` が upstream で context 配列を整形しうる
 
@@ -149,6 +154,7 @@
 - `src/runtime/buildAgentPrompt.js`
 - `src/runtime/buildPromptHelpers.js`
 - `src/runtime/context.js`
+- `src/runtime/prompts/sharedPromptSkeleton.js`
 - `src/runtime/prompts/joe.js`
 - `src/runtime/prompts/ray.js`
 - `src/runtime/prompts/ken.js`

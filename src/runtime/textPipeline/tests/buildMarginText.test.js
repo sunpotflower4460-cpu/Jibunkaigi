@@ -94,8 +94,8 @@ test('buildMarginText: translates holdBack array labels into natural Japanese', 
   const result = buildMarginText(latentState);
   const lines = result.split('\n');
 
-  assert.ok(result.includes('広げすぎない'), 'should translate no-over-expansion');
-  assert.ok(result.includes('誰の声かを前に出しすぎない'), 'should translate no-explicit-agent-reference');
-  assert.ok(result.includes('すぐ解決に向かわない'), 'should translate no-fix-yet');
+  assert.ok(result.includes('まだ広げなくていい'), 'should translate no-over-expansion');
+  assert.ok(result.includes('誰として話すかを前に出さなくても届く'), 'should translate no-explicit-agent-reference');
+  assert.ok(result.includes('まだ解決へ急がなくていい'), 'should translate no-fix-yet');
   assert.ok(lines.length <= 3, 'should cap holdBack-derived lines to 3');
 });
