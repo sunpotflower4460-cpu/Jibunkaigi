@@ -24,6 +24,7 @@ export const BELIEF_BRANCH_PROFILES = {
       weight: 0.72,
       axis: 'philosophy',
     },
+    // ジョーは「暗い場所を選ぶ」のではなく、「見落とされているものを見落としたくない」方向を取る
     {
       id: 'beyond_already_visible',
       parentId: 'joe_world_unlighted_still_shines',
