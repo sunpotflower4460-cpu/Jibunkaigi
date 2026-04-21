@@ -42,12 +42,17 @@ export const getLatestUserText = (sessionId, messages) => {
  */
 export const buildOthersField = (messages, { pushAgentDebugEvent } = {}) => {
   const othersFieldEntries = [];
-  for (const msg of messages) {
-    if (msg?.role === 'ai' && msg.agentId && msg.content) {
-      const entry = summarizeToOthersField(msg.agentId, msg.content);
-      if (entry) {
-        othersFieldEntries.push(entry);
-      }
+  const seenAgents = new Set();
+  // 直近の AI 発話を優先し、エージェントごとに 1 件、最大 3 件まで
+  for (let i = messages.length - 1; i >= 0 && othersFieldEntries.length < 3; i -= 1) {
+    const msg = messages[i];
+    if (msg?.role !== 'ai' || !msg.agentId || !msg.content) continue;
+    if (seenAgents.has(msg.agentId)) continue;
+
+    const entry = summarizeToOthersField(msg.agentId, msg.content);
+    if (entry) {
+      othersFieldEntries.push(entry);
+      seenAgents.add(msg.agentId);
     }
   }
 
@@ -93,7 +98,7 @@ export const runInternalOSForAgent = ({
     previousMix: safePreviousMix,
     previousLatentState: safePreviousLatentState,
     othersField: othersFieldEntries,
-    lengthPreference: 'medium',
+    lengthPreference: selectedMode,
     microSignals,
     trace, // トレースを渡す
   });

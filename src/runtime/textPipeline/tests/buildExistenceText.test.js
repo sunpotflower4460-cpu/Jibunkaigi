@@ -54,3 +54,22 @@ test('buildExistenceText: handles missing latentState', () => {
   assert.ok(typeof result === 'string', 'should return string');
   assert.strictEqual(result, '', 'should return empty string');
 });
+
+test('buildExistenceText: lightly reflects dominantTensionAxis when different from belief axis', () => {
+  const latentState = {
+    existence2: {
+      identityFeelingText: '残る気配を見ている',
+    },
+    beliefCore: {
+      dominantBeliefAxis: 'illumination',
+    },
+    beliefTension: {
+      dominantTensionAxis: 'pull',
+    },
+  };
+
+  const result = buildExistenceText(latentState);
+
+  assert.ok(result.includes('引かれる'), 'should include tension feeling when axis differs');
+  assert.ok(!result.includes('場に漂っている'), 'should not degrade existing feeling text');
+});

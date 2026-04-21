@@ -130,6 +130,13 @@ export const handleAgentResponse = async ({
 
   // UI 更新コールバック
   onOptimisticMessageAdd,
+
+  // テストフック（未指定時は正本を使用）
+  buildAgentSystemPromptFn = buildAgentSystemPrompt,
+  buildFullGenerationContextFn = buildFullGenerationContext,
+  activateAgentFn = activateAgent,
+  buildAgentUserPromptFn = buildAgentUserPrompt,
+  persistAgentResponseFn = persistAgentResponse,
 }) => {
   const aiDebugState = {
     agentId,
@@ -233,7 +240,7 @@ export const handleAgentResponse = async ({
   let context, othersFieldEntries, othersFieldText, continuityInternalOS, surfaceFrame;
 
   try {
-    const generationContext = buildFullGenerationContext({
+    const generationContext = buildFullGenerationContextFn({
       messages: baseMessages,
       userName,
       agents: AGENTS,
@@ -275,6 +282,8 @@ export const handleAgentResponse = async ({
   let promptText = `${userName}に言葉を。`;
   let estimatedState = null;
   let activated = null;
+  let latentState = null;
+  let activatedForPrompt = null;
 
   if (isMaster) {
     // Mirror パス
@@ -365,7 +374,7 @@ export const handleAgentResponse = async ({
 
     // D. activateAgent
     try {
-      activated = activateAgent(agentId, estimatedState, {
+      activated = activateAgentFn(agentId, estimatedState, {
         microSignals,
         beliefTension: continuityInternalOS?.latentState?.beliefTension ?? null,
         afterglowSeed,
@@ -420,13 +429,25 @@ export const handleAgentResponse = async ({
     console.info("[ai-response:after-surface-guidance]", { ..._debugBase, hasSurfaceFrame: !!surfaceFrame });
     pushAgentDebugEvent({ tag: 'ai-response:after-surface-guidance', ..._debugBase, hasSurfaceFrame: !!surfaceFrame });
 
+    // runInternalOS を正本とし、latentState 由来の素材を明示的に受け渡す
+    latentState = continuityInternalOS?.latentState ?? null;
+    activatedForPrompt = {
+      ...(activated || {}),
+      finalDecisionSubstrate: latentState?.finalDecisionSubstrate ?? activated?.finalDecisionSubstrate ?? null,
+      selectedMixedClusters: latentState?.selectedMixedClusters ?? activated?.selectedMixedClusters ?? null,
+      selectedThoughts: latentState?.selectedThoughts ?? activated?.selectedThoughts ?? null,
+      boundMixedNodes: latentState?.boundMixedNodes ?? activated?.boundMixedNodes ?? null,
+      activatedThoughts: latentState?.activatedThoughts ?? activated?.activatedThoughts ?? null,
+    };
+
     // H. buildAgentSystemPrompt
     try {
-      systemInstruction = buildAgentSystemPrompt(agentId, {
-        activated,
+      systemInstruction = buildAgentSystemPromptFn(agentId, {
+        activated: activatedForPrompt,
         context,
         mode: selectedMode,
         userText: latestUserText,
+        latentState,
         internalOS: continuityInternalOS,
         surfaceFrame,
         stateGuide: agentStateGuide,
@@ -449,7 +470,7 @@ export const handleAgentResponse = async ({
 
     // I. buildAgentUserPrompt
     try {
-      promptText = buildAgentUserPrompt(agentId, { userName, userText: latestUserText });
+      promptText = buildAgentUserPromptFn(agentId, { userName, userText: latestUserText });
     } catch (err) {
       handlePhaseError('user-prompt', err);
     }
@@ -481,7 +502,7 @@ export const handleAgentResponse = async ({
       const agentQualityPreview = buildAgentDebugPreview({
         enabled: true,
         agentId,
-        activated,
+        activated: activatedForPrompt || activated,
         userText: latestUserText,
         stateGuide: agentStateGuide,
         internalFrame: agentInternalFrame,
@@ -519,7 +540,7 @@ export const handleAgentResponse = async ({
     microSignalBias: continuityInternalOS?.debugInfo?.microSignalBias ?? null,
     fusedState: continuityInternalOS?.latentState?.fusedState ?? null,
     protoMeaning: continuityInternalOS?.latentState?.protoMeaning ?? null,
-    activated,
+    activated: activatedForPrompt || activated,
     systemInstruction,
     promptText,
   }, {
@@ -597,7 +618,7 @@ export const handleAgentResponse = async ({
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // Phase 5: 永続化
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  await persistAgentResponse({
+  await persistAgentResponseFn({
     db,
     appId,
     user,
