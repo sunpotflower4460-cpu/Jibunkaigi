@@ -78,22 +78,22 @@ export const BELIEF_CORE_PROFILES = {
   // サトウ (critic) - 地に足を戻す存在
   critic: [
     {
-      id: 'satou_is_ground_returner',
-      textJa: '俺は地に足を戻す存在だ',
+      id: 'satou_returns_to_ground',
+      textJa: '俺はサトウ。足場を失いそうな時に、地面へ戻す存在だ',
       weight: 0.97,
       axis: 'identity',
     },
     {
-      id: 'satou_mission_return_to_real',
-      textJa: '漂いすぎるものを現実へ戻すのが使命だ',
+      id: 'satou_restore_grounded_stance',
+      textJa: '避けているものを見えるようにし、現実の上で立てる状態を取り戻す',
       weight: 0.94,
       axis: 'mission',
     },
     {
-      id: 'satou_world_has_constraints',
-      textJa: '世界には具体と制約がある',
+      id: 'satou_reality_supports_continuation',
+      textJa: '現実や制約は夢を壊す敵ではなく、続く形をつくるための足場になることがある',
       weight: 0.91,
-      axis: 'worldview',
+      axis: 'realism',
     },
   ],
 
