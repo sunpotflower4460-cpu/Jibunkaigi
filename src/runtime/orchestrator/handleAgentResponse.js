@@ -276,7 +276,6 @@ export const handleAgentResponse = async ({
         latestUserText,
         continuityInternalOS,
         afterglowSeed,
-        selectedMode,
         othersFieldText,
       });
 

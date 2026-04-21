@@ -950,9 +950,11 @@ const App = () => {
           : null;
 
       // Build minimal othersField from recent messages
+      // messages state は常に現在のアクティブセッションのメッセージのみを含む
+      // （Firestore snapshot のメッセージには sessionId フィールドがないため、
+      //   フィルタリングは不要）
       const othersFieldEntries = [];
-      const baseMessages = messages.filter(m => m.sessionId === effectiveSessionId);
-      for (const msg of baseMessages) {
+      for (const msg of messages) {
         if (msg?.role === 'ai' && msg.agentId && msg.content) {
           const entry = summarizeToOthersField(msg.agentId, msg.content);
           if (entry) {
@@ -1225,7 +1227,6 @@ const App = () => {
         // セッション状態
         activeSessionIdRef,
         lastSubmittedUserMessageRef,
-        afterglowBySessionRef,
 
         // コールバック・ヘルパー
         callGemini,
@@ -1241,11 +1242,6 @@ const App = () => {
         beginTimedPhase,
 
         // UI 更新コールバック
-        onStateUpdate: ({ isGenerating: gen, generatingAgent: genAgent, showInput }) => {
-          if (gen !== undefined) setIsGenerating(gen);
-          if (genAgent !== undefined) setGeneratingAgent(genAgent);
-          if (showInput !== undefined) setShowInput(showInput);
-        },
         onOptimisticMessageAdd: (optimisticMessage, aiMsgId, trace) => {
           responseTimingRef.current = {
             ...responseTimingRef.current,
@@ -1254,9 +1250,6 @@ const App = () => {
             awaitingResponseRender: true,
           };
           setMessages(prev => [...prev, optimisticMessage]);
-        },
-        onError: (errorMessage) => {
-          setErrorWithAutoDismiss(errorMessage);
         },
       });
 

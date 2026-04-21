@@ -188,7 +188,7 @@ function fieldToMove(fieldNode, agentName, index) {
  * Reservoir expects positive values, so we convert negative weights to suppressionTags
  */
 function handleNegativeVectorValues(node) {
-  const { vector, tags } = node;
+  const { vector } = node;
   const negativeAxes = [];
 
   for (const [key, value] of Object.entries(vector)) {

@@ -54,23 +54,20 @@ export const callGemini = async ({
         }
       }
 
-      const res = await fetch(`${endpoint}?key=${apiKey}`, {
+      const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify(body),
       });
 
       if (!res.ok) {
-        // Retry on 503 Service Unavailable.
-        if (res.status === 503) {
-          await new Promise((r) => setTimeout(r, Math.pow(2, i) * 1000));
-          continue;
-        }
-
         const errData = await res.json().catch(() => ({}));
         const message = errData?.error?.message || `HTTP ${res.status}`;
-        if (res.status >= 500) throw new Error(message);
-        throw new Error(`non-retryable: ${message}`);
+        const retryable = [429, 500, 502, 503, 504].includes(res.status);
+        if (!retryable) throw new Error(`non-retryable: ${message}`);
+        if (i === retries - 1) throw new Error(message);
+        await new Promise((r) => setTimeout(r, Math.pow(2, i) * 1000));
+        continue;
       }
 
       const data = await res.json();
