@@ -44,7 +44,12 @@ const getDominantAxes = (state = {}, topN = 3) => {
 
 // belief を state との共鳴で選ぶ
 const pickBeliefs = (state = {}, max = 2) => {
-  const scored = beliefFilters.map((belief) => ({
+  // Convert object-based beliefFilters to array format
+  const beliefFiltersArray = Array.isArray(beliefFilters)
+    ? beliefFilters
+    : Object.entries(beliefFilters).map(([id, filter]) => ({ id, ...filter }));
+
+  const scored = beliefFiltersArray.map((belief) => ({
     ...belief,
     score: clamp01(dotScore(state, belief.vector || {})),
   }));

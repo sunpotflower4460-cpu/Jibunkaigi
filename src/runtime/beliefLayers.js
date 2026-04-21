@@ -35,7 +35,15 @@ const buildCoreLayer = (agentId, existenceLayer2 = {}) => {
 
 const buildMidLayer = (agentId, existenceLayer1 = {}) => {
   const materials = AGENT_MATERIALS[agentId];
-  const filters = Array.isArray(materials?.beliefFilters) ? materials.beliefFilters : [];
+  const beliefFiltersRaw = materials?.beliefFilters;
+
+  // Convert object-based filters to array format for processing
+  const filters = Array.isArray(beliefFiltersRaw)
+    ? beliefFiltersRaw
+    : beliefFiltersRaw && typeof beliefFiltersRaw === 'object'
+    ? Object.entries(beliefFiltersRaw).map(([id, filter]) => ({ id, ...filter }))
+    : [];
+
   const baseWeight = clamp01(0.5 + (existenceLayer1.selfPresence ?? 0) * 0.15);
 
   if (!filters.length) {

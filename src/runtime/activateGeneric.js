@@ -33,7 +33,14 @@ export const getDominantAxes = (state = {}, topN = 3) =>
 // --- 共通 pick 関数 ---
 
 export const pickBeliefs = (state = {}, beliefFilters = [], max = 2) => {
-  const scored = beliefFilters.map((belief) => ({
+  // Convert object-based beliefFilters to array format
+  const beliefFiltersArray = Array.isArray(beliefFilters)
+    ? beliefFilters
+    : beliefFilters && typeof beliefFilters === 'object'
+    ? Object.entries(beliefFilters).map(([id, filter]) => ({ id, ...filter }))
+    : [];
+
+  const scored = beliefFiltersArray.map((belief) => ({
     ...belief,
     score: clamp01(dotScore(state, belief.vector || {})),
   }));
