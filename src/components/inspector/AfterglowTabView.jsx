@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const AfterglowTabView = ({ events }) => {
+const AfterglowTabView = ({ events, showExplanation: _showExplanation = false }) => {
   const [showRawJson, setShowRawJson] = useState(false);
 
   // AFTERGLOW_SAVE段階のイベントを探す

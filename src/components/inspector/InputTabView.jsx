@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import LabelWithTooltip from './LabelWithTooltip.jsx';
 
-const InputTabView = ({ events }) => {
+const InputTabView = ({ events, showExplanation = false }) => {
   const [showRawJson, setShowRawJson] = useState(false);
 
   // INPUT段階のイベントを探す
@@ -19,7 +20,9 @@ const InputTabView = ({ events }) => {
     return (
       <div key={label} style={{ marginBottom: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11 }}>
-          <span style={{ color: '#cbd5e1' }}>{label}</span>
+          <span style={{ color: '#cbd5e1' }}>
+            <LabelWithTooltip fieldKey={label} showExplanation={showExplanation} />
+          </span>
           <span style={{ color: '#94a3b8', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
             {percent}%
           </span>

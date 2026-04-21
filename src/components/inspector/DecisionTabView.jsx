@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const DecisionTabView = ({ events }) => {
+const DecisionTabView = ({ events, showExplanation: _showExplanation = false }) => {
   const [showRawJson, setShowRawJson] = useState(false);
 
   // DECISION/ACTIVATION/MATERIAL_PICK段階のイベントを探す

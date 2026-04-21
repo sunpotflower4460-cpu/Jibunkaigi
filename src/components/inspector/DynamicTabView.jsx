@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import LabelWithTooltip from './LabelWithTooltip.jsx';
 
-const DynamicTabView = ({ events }) => {
+const DynamicTabView = ({ events, showExplanation = false }) => {
   const [showRawJson, setShowRawJson] = useState(false);
 
   // 動的層関連のイベントを抽出
@@ -75,17 +76,27 @@ const DynamicTabView = ({ events }) => {
             const labelX = center + labelRadius * Math.cos(p.angle);
             const labelY = center + labelRadius * Math.sin(p.angle);
             return (
-              <text
-                key={`label-${i}`}
-                x={labelX}
-                y={labelY}
-                fill="#cbd5e1"
-                fontSize="9"
-                textAnchor="middle"
-                dominantBaseline="middle"
-              >
-                {p.key}
-              </text>
+              <g key={`label-${i}`}>
+                <foreignObject
+                  x={labelX - 40}
+                  y={labelY - 10}
+                  width={80}
+                  height={20}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      fontSize: 9,
+                      color: '#cbd5e1',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <LabelWithTooltip fieldKey={p.key} showExplanation={showExplanation} />
+                  </div>
+                </foreignObject>
+              </g>
             );
           })}
         </svg>
@@ -114,7 +125,9 @@ const DynamicTabView = ({ events }) => {
           return (
             <div key={key} style={{ marginBottom: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3, fontSize: 10 }}>
-                <span style={{ color: '#cbd5e1' }}>{key}</span>
+                <span style={{ color: '#cbd5e1' }}>
+                  <LabelWithTooltip fieldKey={key} showExplanation={showExplanation} />
+                </span>
                 <span style={{ color: '#94a3b8', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
                   {percent}%
                 </span>
@@ -171,7 +184,9 @@ const DynamicTabView = ({ events }) => {
               <span style={{ color: isActive ? '#10b981' : '#64748b', fontSize: 14 }}>
                 {isActive ? '✓' : '○'}
               </span>
-              <span>{key}</span>
+              <span>
+                <LabelWithTooltip fieldKey={key} showExplanation={showExplanation} />
+              </span>
               <span style={{ marginLeft: 'auto', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', color: '#94a3b8', fontSize: 10 }}>
                 {percent}%
               </span>

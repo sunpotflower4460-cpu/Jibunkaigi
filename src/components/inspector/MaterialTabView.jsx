@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { formatLabel } from '../../runtime/trace/labelDict.js';
+import LabelWithTooltip from './LabelWithTooltip.jsx';
 
-const MaterialTabView = ({ events }) => {
+const MaterialTabView = ({ events, showExplanation = false }) => {
   const [showRawJson, setShowRawJson] = useState(false);
 
   // ACTIVATION段階のイベントからactivated.debugを取得
@@ -97,7 +99,10 @@ const MaterialTabView = ({ events }) => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3);
     if (entries.length === 0) return '—';
-    return entries.map(([k, v]) => `${k}:${Math.round(v * 100)}%`).join(', ');
+    return entries.map(([k, v]) => {
+      const label = showExplanation ? formatLabel(k, true) : k;
+      return `${label}:${Math.round(v * 100)}%`;
+    }).join(', ');
   };
 
   // Reentry候補テーブル（専用表示）
