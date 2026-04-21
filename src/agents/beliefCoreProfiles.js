@@ -1,6 +1,7 @@
 // src/agents/beliefCoreProfiles.js
-// 信念層1（強固な信念）: 各エージェントの最深部の core belief プロフィール
-// identity / mission / world-view の3軸で構成する
+// 信念層1（強固な信念）の正本。
+// 各エージェントの最深部の core belief profile をここで管理する。
+// identity / mission / world-view の3軸で構成する。
 
 /**
  * @typedef {{ id: string, textJa: string, weight: number, axis: string }} BeliefCore

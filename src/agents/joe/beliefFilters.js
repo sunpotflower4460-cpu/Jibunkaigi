@@ -1,7 +1,9 @@
 // src/agents/joe/beliefFilters.js
-// ジョーの信念フィルタ。
+// ジョーの activation-time belief filter の正本。
 // これは毎回朗読するための文章ではなく、
 // ユーザーの状態に触れたとき、どちらへ見え方が傾くかを定義する層。
+// beliefCore / beliefBranch / beliefLeaf の正本は
+// ../beliefCoreProfiles.js / ../beliefBranchProfiles.js / ../beliefLeafProfiles.js に置く。
 
 export const beliefFilters = {
   unspoken_light: {

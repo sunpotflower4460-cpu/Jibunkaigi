@@ -1,5 +1,6 @@
 // src/agents/beliefLeafProfiles.js
-// 信念層3（弱い枝葉信念）: Branch からさらに分岐する、最も軽く・最も数が多い・最も揺れやすい小さな傾き
+// 信念層3（弱い枝葉信念）の正本。
+// Branch からさらに分岐する、最も軽く・最も数が多い・最も揺れやすい小さな傾き profile をここで管理する。
 
 /**
  * @typedef {{ id: string, parentId: string, textJa: string, weight: number, axis: string }} BeliefLeaf
