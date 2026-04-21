@@ -208,6 +208,7 @@ const renderPanel = (entry = sampleEntry) => renderToStaticMarkup(
 test('JoeDebugPanel mounts without crashing', () => {
   const html = renderPanel();
   assert.match(html, /Joe Debug Panel/);
+  assert.match(html, /dev-only \/ 表示専用 \/ Firestore保存なし \/ 本番 prompt 品質には影響しない/);
 });
 
 test('JoeDebugPanel handles null activated safely', () => {

@@ -23,7 +23,6 @@ import { checkResponse, cleanResponse } from '../postCheck.js';
 import { shouldRefresh, applyRefresh } from '../refreshPolicy.js';
 import { buildSurfaceDebugEntry } from '../surfaceDebug.js';
 import { buildJoeDebugEntry } from '../debug/buildJoeDebugEntry.js';
-import { isJoeDebugAvailable } from '../joeDebug.js';
 import { buildFullGenerationContext, getLatestUserText as extractLatestUserText } from './buildGenerationContext.js';
 import { persistAgentResponse } from './persistAgentResponse.js';
 
@@ -121,7 +120,7 @@ export const handleAgentResponse = async ({
   pushAgentDebugEvent,
   pushSurfaceDebugEntry,
   setJoeDebugEntry,
-  isJoeDebugPanelVisible,
+  devDebugRuntime,
   readSessionAfterglow,
   writeSessionAfterglowLocal,
   safeUpdateSession,
@@ -293,25 +292,27 @@ export const handleAgentResponse = async ({
         afterglowSeed && (afterglowSeed.previousMix || afterglowSeed.previousLatentState)
       );
 
-      pushSurfaceDebugEntry(buildSurfaceDebugEntry({
-        agentId: 'master',
-        isMirror: true,
-        selectedMode,
-        latestUserText,
-        continuityInternalOS,
-        surfaceFrame: mirrorParams.mirrorSurfaceFrame,
-        afterglowSeed,
-        agentQualityPreview: {
+      if (devDebugRuntime?.shouldBuildAgentDebugPreview) {
+        pushSurfaceDebugEntry(buildSurfaceDebugEntry({
           agentId: 'master',
-          builderUsed: 'mirror-specialized',
-          dominantAxes: [],
-          stateGuidePreview: mirrorParams.mirrorStateGuide ? mirrorParams.mirrorStateGuide.slice(0, 140) : '',
-          internalFramePreview: mirrorParams.mirrorInternalFrame ? mirrorParams.mirrorInternalFrame.slice(0, 140) : '',
-          surfaceGuidancePreview: mirrorParams.mirrorSurfaceGuidance ? mirrorParams.mirrorSurfaceGuidance.slice(0, 140) : '',
-          activatedBiasCount: 0,
-          usedAfterglow: mirrorUsedAfterglow,
-        },
-      }));
+          isMirror: true,
+          selectedMode,
+          latestUserText,
+          continuityInternalOS,
+          surfaceFrame: mirrorParams.mirrorSurfaceFrame,
+          afterglowSeed,
+          agentQualityPreview: {
+            agentId: 'master',
+            builderUsed: 'mirror-specialized',
+            dominantAxes: [],
+            stateGuidePreview: mirrorParams.mirrorStateGuide ? mirrorParams.mirrorStateGuide.slice(0, 140) : '',
+            internalFramePreview: mirrorParams.mirrorInternalFrame ? mirrorParams.mirrorInternalFrame.slice(0, 140) : '',
+            surfaceGuidancePreview: mirrorParams.mirrorSurfaceGuidance ? mirrorParams.mirrorSurfaceGuidance.slice(0, 140) : '',
+            activatedBiasCount: 0,
+            usedAfterglow: mirrorUsedAfterglow,
+          },
+        }));
+      }
 
       // Mirror path: emit milestones
       console.info("[ai-response:after-estimate-state]", _debugBase);
@@ -436,26 +437,29 @@ export const handleAgentResponse = async ({
       )
     );
 
-    const agentQualityPreview = buildAgentDebugPreview({
-      agentId,
-      activated,
-      userText: latestUserText,
-      stateGuide: agentStateGuide,
-      internalFrame: agentInternalFrame,
-      surfaceGuidance: agentSurfaceGuidance,
-      usedAfterglow: agentUsedAfterglow,
-    });
+    if (devDebugRuntime?.shouldBuildAgentDebugPreview) {
+      const agentQualityPreview = buildAgentDebugPreview({
+        enabled: true,
+        agentId,
+        activated,
+        userText: latestUserText,
+        stateGuide: agentStateGuide,
+        internalFrame: agentInternalFrame,
+        surfaceGuidance: agentSurfaceGuidance,
+        usedAfterglow: agentUsedAfterglow,
+      });
 
-    pushSurfaceDebugEntry(buildSurfaceDebugEntry({
-      agentId,
-      isMirror: false,
-      selectedMode,
-      latestUserText,
-      continuityInternalOS,
-      surfaceFrame,
-      afterglowSeed,
-      agentQualityPreview,
-    }));
+      pushSurfaceDebugEntry(buildSurfaceDebugEntry({
+        agentId,
+        isMirror: false,
+        selectedMode,
+        latestUserText,
+        continuityInternalOS,
+        surfaceFrame,
+        afterglowSeed,
+        agentQualityPreview,
+      }));
+    }
   }
 
   finishPromptBuild();
@@ -479,10 +483,7 @@ export const handleAgentResponse = async ({
     systemInstruction,
     promptText,
   }, {
-    isJoeDebugAvailable: isJoeDebugAvailable(),
-    isJoeDebugPanelVisible,
-    agentId,
-    isMaster,
+    enabled: !!(devDebugRuntime?.shouldBuildJoeDebugEntry && agentId === 'creative' && !isMaster),
   }));
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

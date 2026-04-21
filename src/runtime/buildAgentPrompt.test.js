@@ -243,3 +243,14 @@ test('buildAgentDebugPreview keeps joe-specialized label', () => {
   });
   assert.match(ray.builderUsed, /agent-dispatcher/);
 });
+
+test('buildAgentDebugPreview returns null when debug preview is disabled', () => {
+  const preview = buildAgentDebugPreview({
+    enabled: false,
+    agentId: 'creative',
+    activated: { debug: { state: {}, dominantAxes: [] } },
+    userText: 'テスト',
+  });
+
+  assert.equal(preview, null);
+});

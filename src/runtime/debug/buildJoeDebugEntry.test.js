@@ -124,3 +124,28 @@ test('buildJoeDebugEntry: returns null when guarded path is not allowed', () => 
 
   assert.equal(result, null);
 });
+
+test('buildJoeDebugEntry: drops non-serializable nested values from debug payload', () => {
+  const result = buildJoeDebugEntry({
+    estimateState: {
+      desire: 0.7,
+      bad: () => 'nope',
+    },
+    activated: {
+      activeBeliefs: [
+        { id: 'b1', score: 0.9, debugOnly: undefined },
+        Symbol('skip'),
+      ],
+    },
+    microSignalBias: {
+      summary: 'ok',
+      skip: new Map(),
+    },
+  });
+
+  assert.deepEqual(result.estimateState, { desire: 0.7 });
+  assert.deepEqual(result.activated, {
+    activeBeliefs: [{ id: 'b1', score: 0.9 }],
+  });
+  assert.deepEqual(result.microSignalBias, { summary: 'ok' });
+});

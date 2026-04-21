@@ -209,6 +209,7 @@ const BUILDER_USED_LABELS = {
 };
 
 export const buildAgentDebugPreview = ({
+  enabled = true,
   agentId = '',
   activated,
   userText = '',
@@ -217,12 +218,15 @@ export const buildAgentDebugPreview = ({
   surfaceGuidance,
   usedAfterglow = false,
 } = {}) => {
+  if (!enabled) return null;
+
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
 
   // ジョーは独自の専用ビルダーがあるため、その debug 経路に委譲する。
   if (agentId === 'creative') {
     const joePreview = buildJoeDebugPreview({
+      enabled,
       activated: safeActivated,
       userText,
       stateGuide,

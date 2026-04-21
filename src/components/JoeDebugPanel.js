@@ -428,6 +428,14 @@ const JoeDebugPanel = ({ entry = null, onClose }) => {
           h('div', { key: 'titles', className: 'space-y-1' }, [
             h('div', { key: 'title', className: 'text-xs font-mono font-bold tracking-wide text-orange-300' }, '🔥 Joe Debug Panel'),
             h('div', { key: 'subtitle', className: 'text-[10px] text-slate-400' }, 'ジョー選択時の内部状態を開発用に可視化'),
+            h(
+              'div',
+              {
+                key: 'boundary-note',
+                className: 'text-[10px] text-slate-500',
+              },
+              'dev-only / 表示専用 / Firestore保存なし / 本番 prompt 品質には影響しない',
+            ),
           ]),
           h('div', { key: 'actions', className: 'flex items-center gap-2' }, [
             entry?.timestamp

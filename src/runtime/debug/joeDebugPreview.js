@@ -117,12 +117,15 @@ const computeJoeAssemblyPreview = (state = {}) => {
 // Firestore 保存なし / 本文全文は出さない。
 // buildJoeSystemPrompt の組み立て結果を事後確認するために使う。
 export const buildJoeDebugPreview = ({
+  enabled = true,
   activated,
   userText = '',
   stateGuide,
   internalFrame,
   surfaceGuidance,
 } = {}) => {
+  if (!enabled) return null;
+
   const safeActivated = activated || {};
   const state = safeActivated.debug?.state || {};
   const finalStateGuide = stateGuide || buildStateGuide(state);
