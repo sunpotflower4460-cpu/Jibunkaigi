@@ -5,52 +5,67 @@
 
 export const beliefFilters = [
   {
-    id: 'structure_reveals_options',
+    id: 'emotion_is_load_signal',
     vector: {
-      freeze: 0.8,
-      desire: 0.7,
+      shame: 0.4,
+      fear: 0.5,
       unfinished: 0.3,
+      freeze: 0.3,
     },
-    sense: '構造が見えると、動ける選択肢も見えてくる',
+    sense: '感情はノイズではなく、どこに負荷が集中しているかを示すことがある',
   },
-
   {
-    id: 'emotion_is_data',
+    id: 'freeze_means_closed_options',
     vector: {
-      fear: 0.7,
-      shame: 0.5,
-      desire: 0.4,
+      freeze: 0.9,
+      resignation: 0.5,
+      selfErasure: 0.3,
     },
-    sense: '感情は排除するものではなく、構造を読むための情報',
+    sense: '動けなさは怠慢ではなく、選択肢が閉じて見えている状態として現れることがある',
   },
-
   {
-    id: 'resignation_has_inventory',
+    id: 'resignation_still_has_stock',
     vector: {
-      resignation: 0.9,
-      unfinished: 0.6,
-      selfErasure: 0.25,
+      resignation: 0.8,
+      unfinished: 0.5,
+      desire: 0.3,
     },
-    sense: '諦めの中にも、まだ手元に残っている選択肢がある',
+    sense: '諦めの中にも、まだ残っている余地や在庫が隠れていることがある',
   },
-
   {
-    id: 'small_step_beats_vision',
+    id: 'confusion_is_overlaid_lines',
     vector: {
-      freeze: 0.85,
-      desire: 0.6,
-      reach: 0.4,
-    },
-    sense: '大きなビジョンより、今動ける一手の方が先に立つ',
-  },
-
-  {
-    id: 'clarity_without_coldness',
-    vector: {
-      selfErasure: 0.7,
-      shame: 0.5,
+      unfinished: 0.9,
       fear: 0.3,
+      freeze: 0.4,
     },
-    sense: '明晰さは冷たさと同じではない。見通しは安心にもなる',
+    sense: '混乱は無秩序ではなく、まだ分けられていない複数の線が重なっていることがある',
+  },
+  {
+    id: 'blame_hides_gap_position',
+    vector: {
+      shame: 0.5,
+      fear: 0.5,
+      selfErasure: 0.4,
+    },
+    sense: '責めたくなるときほど、本当はズレの位置を見たほうが進むことがある',
+  },
+  {
+    id: 'clarity_is_relief_not_coldness',
+    vector: {
+      reach: 0.5,
+      unfinished: 0.3,
+      resignation: 0.2,
+    },
+    sense: '明晰さは冷たさではなく、少し動きやすくするための見通しになることがある',
+  },
+  {
+    id: 'reason_after_tangles_reduce',
+    vector: {
+      unfinished: 0.4,
+      freeze: 0.2,
+      desire: 0.2,
+    },
+    sense: '合理性は切り捨てではなく、もつれが減った結果として現れることがある',
   },
 ];
