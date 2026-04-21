@@ -282,6 +282,122 @@ export const renderActivatedParticles = (activated = {}) => {
   return lines.join('\n');
 };
 
+// --- Phase 4 (修正指示書 v3): 内部 hints の薄い前景化 ---
+// tonalHints / stanceHints / avoidHints は元々 LLM に渡さない内部プロパティだが、
+// それでは差分が途中で痩せて 5 人が似通うため、
+// 発話直前のみ「補正輪」として極薄に差し込む。長い説明文にはしない。
+
+const HINT_MAX_TONAL = 3;
+const HINT_MAX_STANCE = 3;
+const HINT_MAX_AVOID = 2;
+const HINT_SOURCE_DEPTH = 5;
+
+const dedupe = (arr) => Array.from(new Set(arr.filter((v) => typeof v === 'string' && v.trim().length)));
+
+// Particle と、selected / activated 構造の両方から hint を集める。
+// 集約は「上位 HINT_SOURCE_DEPTH 粒子分」に限定する。
+const collectHintsFromActivated = (activated = {}, key) => {
+  if (!activated || typeof activated !== 'object') return [];
+
+  const collected = [];
+  const push = (value) => {
+    if (Array.isArray(value)) {
+      value.forEach((v) => {
+        if (typeof v === 'string') collected.push(v);
+      });
+    }
+  };
+
+  // 1) activated.activatedThoughts.items (Phase 3 で hints を残した)
+  const thoughtItems = activated?.activatedThoughts?.items;
+  if (Array.isArray(thoughtItems)) {
+    thoughtItems.slice(0, HINT_SOURCE_DEPTH).forEach((item) => push(item?.[key]));
+  }
+
+  // 2) selectedThoughts / selectedMixedClusters から参照される thought の hints
+  //    clusterId 経由で辿るのは重いので、ここでは activatedThoughts.items で代用する。
+  //    （上位粒子から既に集めているので、substrate 側は省略）
+
+  // 3) 万一 activatedFeelings / activatedMoves が hints を持つ場合も拾う
+  const feelingItems = activated?.activatedFeelings?.items;
+  if (Array.isArray(feelingItems)) {
+    feelingItems.slice(0, HINT_SOURCE_DEPTH).forEach((item) => push(item?.[key]));
+  }
+  const moveItems = activated?.activatedMoves?.items;
+  if (Array.isArray(moveItems)) {
+    moveItems.slice(0, HINT_SOURCE_DEPTH).forEach((item) => push(item?.[key]));
+  }
+
+  return collected;
+};
+
+// latentState 側にも同じ構造が入っているので、そこからも拾う。
+const collectHintsFromLatent = (latentState, key) => {
+  if (!latentState || typeof latentState !== 'object') return [];
+  const collected = [];
+  const sources = [
+    latentState?.activatedThoughts?.items,
+    latentState?.activatedFeelings?.items,
+    latentState?.activatedMoves?.items,
+  ];
+  sources.forEach((items) => {
+    if (Array.isArray(items)) {
+      items.slice(0, HINT_SOURCE_DEPTH).forEach((item) => {
+        const value = item?.[key];
+        if (Array.isArray(value)) {
+          value.forEach((v) => {
+            if (typeof v === 'string') collected.push(v);
+          });
+        }
+      });
+    }
+  });
+  return collected;
+};
+
+/**
+ * tonalHints を 1 行に集約する（声の質感）。
+ * 例: 「声の質感: 静か、芯、ためらい」
+ * @returns {string} 空文字（材料が無い時）または 1 行
+ */
+export const renderTonalLine = (activated, latentState) => {
+  const hints = dedupe([
+    ...collectHintsFromActivated(activated, 'tonalHints'),
+    ...collectHintsFromLatent(latentState, 'tonalHints'),
+  ]).slice(0, HINT_MAX_TONAL);
+  if (!hints.length) return '';
+  return `声の質感: ${hints.join('、')}`;
+};
+
+/**
+ * stanceHints を 1 行に集約する（構えの向き）。
+ * 例: 「（急がず、結論に飛ばず、一点に触れる）」
+ * @returns {string}
+ */
+export const renderStanceLine = (activated, latentState) => {
+  const hints = dedupe([
+    ...collectHintsFromActivated(activated, 'stanceHints'),
+    ...collectHintsFromLatent(latentState, 'stanceHints'),
+  ]).slice(0, HINT_MAX_STANCE);
+  if (!hints.length) return '';
+  return `（${hints.join('、')}）`;
+};
+
+/**
+ * avoidHints を 2 個までの箇条書きで「場の余白」に薄く差し込む。
+ * 5 個 6 個も出して禁止文の森にしない。
+ * @returns {string} 空文字、または見出し + 最大 2 行の箇条書き
+ */
+export const renderAvoidBlock = (activated, latentState) => {
+  const hints = dedupe([
+    ...collectHintsFromActivated(activated, 'avoidHints'),
+    ...collectHintsFromLatent(latentState, 'avoidHints'),
+  ]).slice(0, HINT_MAX_AVOID);
+  if (!hints.length) return '';
+  const body = hints.map((h) => `- ${h}`).join('\n');
+  return `この場で自然に避けるもの:\n${body}`;
+};
+
 // --- 状態スナップショット ---
 
 export const renderStateSnapshot = (state = {}) => {

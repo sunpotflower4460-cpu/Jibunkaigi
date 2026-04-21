@@ -17,6 +17,7 @@
 
 import { getFeelingReservoir } from '../reservoir/loadReservoir.js';
 import { STATE_AXIS_WEIGHT, BODY_AFFINITY_WEIGHT_FEELING } from './config/scoringWeights.js';
+import { toCanonicalAgentId, CANONICAL_AGENT_IDS } from './agentIdentity.js';
 
 /**
  * Normalize string for matching (lowercase, trim)
@@ -419,9 +420,10 @@ export const activateFeelings = (input = {}) => {
     topN = 4,
   } = input;
 
+  const canonicalAgentId = toCanonicalAgentId(agentId);
+
   // Validate agentId
-  const validAgents = ['joe', 'ken', 'mina', 'ray', 'satou', 'mirror'];
-  if (!validAgents.includes(agentId)) {
+  if (!CANONICAL_AGENT_IDS.includes(canonicalAgentId)) {
     return {
       activatedFeelings: [],
       topFeelingIds: [],
@@ -434,7 +436,7 @@ export const activateFeelings = (input = {}) => {
   }
 
   // Load feeling reservoir (shared + agent)
-  const feelingNodes = getFeelingReservoir(agentId);
+  const feelingNodes = getFeelingReservoir(canonicalAgentId);
 
   if (!feelingNodes || feelingNodes.length === 0) {
     return {
@@ -450,7 +452,7 @@ export const activateFeelings = (input = {}) => {
 
   // Score all nodes
   const scoredNodes = feelingNodes.map((node) => {
-    const { score, reasons } = calculateActivationScore(node, agentId, {
+    const { score, reasons } = calculateActivationScore(node, canonicalAgentId, {
       userText,
       preconditionBias,
       beliefTension,
@@ -462,6 +464,9 @@ export const activateFeelings = (input = {}) => {
       nodeId: node.id,
       owner: node.owner,
       textSeed: node.textSeed,
+      tonalHints: Array.isArray(node.tonalHints) ? [...node.tonalHints] : [],
+      stanceHints: Array.isArray(node.stanceHints) ? [...node.stanceHints] : [],
+      avoidHints: Array.isArray(node.avoidHints) ? [...node.avoidHints] : [],
       score,
       reasons,
       dominantAxis: node.axis || [],

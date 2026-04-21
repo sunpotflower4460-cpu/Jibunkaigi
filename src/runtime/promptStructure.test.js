@@ -150,12 +150,14 @@ test('新プロンプト構造は7ブロックを含む', () => {
 });
 
 test('アンカーテキストが含まれる', () => {
+  // Phase 4-2 (修正指示書 v3): anchorLabel は「極薄で機能化」されており、
+  // 一行で「どこに触れるか」を示す。性格説明文にはしない。
   const agentMap = {
-    creative: '（ジョーとして。）',
-    soul: '（レイとして。）',
-    strategist: '（ケンとして。）',
-    empath: '（ミナとして。）',
-    critic: '（サトウとして。）',
+    creative: '（ジョーとして。まだ消えていない一点に触れるように。）',
+    soul: '（レイとして。まだ言葉になる前の気配に触れるように。）',
+    strategist: '（ケンとして。絡まりと隠れた前提を見るように。）',
+    empath: '（ミナとして。こぼれそうなものをそっと受け止めるように。）',
+    critic: '（サトウとして。避けているものに静かに目を向けるように。）',
   };
 
   for (const [agentId, anchor] of Object.entries(agentMap)) {
@@ -244,7 +246,7 @@ test('latentState なしでも正常動作する (後方互換)', () => {
   });
 
   // アンカーテキストは必ず含まれる
-  assert.ok(prompt.includes('（ジョーとして。）'), 'anchor should be present even without latentState');
+  assert.ok(prompt.includes('（ジョーとして。'), 'anchor should be present even without latentState');
 
   // モードガイドは場の余白に含まれる
   assert.ok(prompt.includes('触れたぶんだけで足りる'), 'mode guide should be present in margin section');

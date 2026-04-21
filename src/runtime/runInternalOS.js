@@ -29,6 +29,7 @@ import { buildConsciousIntent, formatConsciousIntentForDebug } from './buildCons
 import { buildLengthPlan, formatLengthPlanForDebug } from './buildLengthPlan.js';
 import { buildSurfacePlan, formatSurfacePlanForDebug } from './buildSurfacePlan.js';
 import { buildFinalDecisionSubstrate, formatFinalDecisionSubstrateForDebug } from './buildFinalDecisionSubstrate.js';
+import { toCanonicalAgentId, toUiAgentId } from './agentIdentity.js';
 import { estimateMicroSignals } from './estimateMicroSignals.js';
 import { estimateState } from './stateEstimate.js';
 import { buildFusedState } from './fusedState.js';
@@ -506,6 +507,11 @@ export function runInternalOS(input, options = {}) {
   const normalizedInput = typeof input === 'string' ? input : '';
   const normalizedOptions = options && typeof options === 'object' ? options : {};
   const agentId = typeof normalizedOptions.agentId === 'string' ? normalizedOptions.agentId : null;
+  // Phase 1: agentId 名前空間の統一
+  // - uiAgentId: UI 側での既存呼び出し互換 (creative / soul / strategist / empath / critic / master)
+  // - canonicalAgentId: reservoir / owner match / activate・bind・select など素材系で使う正規化 id (joe / ray / ken / mina / satou / mirror)
+  const uiAgentId = agentId;
+  const canonicalAgentId = agentId ? toCanonicalAgentId(agentId) : null;
   const othersField = Array.isArray(normalizedOptions.othersField) ? normalizedOptions.othersField : [];
   const lengthPreference = ['short', 'medium', 'long'].includes(normalizedOptions.lengthPreference)
     ? normalizedOptions.lengthPreference
@@ -870,7 +876,7 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const activatedThoughtsResult = activateThoughts({
-    agentId,
+    agentId: canonicalAgentId,
     userText: normalizedInput,
     preconditionBias,
     beliefTension,
@@ -905,7 +911,7 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const activatedFeelingsResult = activateFeelings({
-    agentId,
+    agentId: canonicalAgentId,
     userText: normalizedInput,
     preconditionBias,
     beliefTension,
@@ -932,7 +938,7 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const activatedMovesResult = activateMoves({
-    agentId,
+    agentId: canonicalAgentId,
     userText: normalizedInput,
     preconditionBias,
     beliefTension,
@@ -974,7 +980,7 @@ export function runInternalOS(input, options = {}) {
   // This is NOT final selection - just grouping related thoughts
   // ════════════════════════════════════════════════════════════════════
 
-  const nodeRelations = getNodeRelations(agentId);
+  const nodeRelations = getNodeRelations(canonicalAgentId);
   const boundThoughtsResult = bindThoughts({
     activatedThoughts: activatedThoughts.items,
     relations: nodeRelations,
@@ -1025,7 +1031,7 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const selectedThoughtsResult = selectThoughtClusters({
-    agentId,
+    agentId: canonicalAgentId,
     clusters: boundThoughts.clusters,
     preconditionBias,
     beliefTension,
@@ -1051,7 +1057,7 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const selectedMixedClustersResult = selectMixedClusters({
-    agentId,
+    agentId: canonicalAgentId,
     clusters: boundMixedNodes.clusters,
     preconditionBias,
     beliefTension,
@@ -1088,7 +1094,7 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const consciousIntent = buildConsciousIntent({
-    agentId,
+    agentId: canonicalAgentId,
     selectedMixedClusters,
     selectedThoughts,
     boundMixedNodes,
@@ -1133,7 +1139,7 @@ export function runInternalOS(input, options = {}) {
     beliefTension,
     preconditionBias,
     othersField,
-    isMirror: agentId === 'master',
+    isMirror: uiAgentId === 'master' || canonicalAgentId === 'mirror',
   });
   preconditionTrace.push('dynamic:after-surface-plan');
 
@@ -1146,7 +1152,7 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const finalDecisionSubstrate = buildFinalDecisionSubstrate({
-    agentId,
+    agentId: canonicalAgentId,
     lengthPreference,
     selectedMixedClusters,
     boundMixedNodes,
@@ -1429,6 +1435,25 @@ export function runInternalOS(input, options = {}) {
       surfacePlanPreview: formatSurfacePlanForDebug(latentState.surfacePlan ?? surfacePlan),
       // Final Decision Substrate preview (v0.1, dev-only)
       finalDecisionSubstratePreview: formatFinalDecisionSubstrateForDebug(latentState.finalDecisionSubstrate ?? finalDecisionSubstrate),
+      // Phase 2 (修正指示書 v3): agentId 空間の両方と、前景素材のカウントを一覧化する
+      // 「内部で立っている差分」と「最終 prompt に届いた差分」を見比べやすくする。
+      agentId: {
+        ui: uiAgentId ?? toUiAgentId(canonicalAgentId) ?? null,
+        canonical: canonicalAgentId ?? null,
+      },
+      materialCounts: {
+        activatedThoughtCount: activatedThoughts.items.length,
+        activatedFeelingCount: activatedFeelings.items.length,
+        activatedMoveCount: activatedMoves.items.length,
+        boundThoughtClusterCount: boundThoughts.clusters.length,
+        boundMixedClusterCount: boundMixedNodes.clusters.length,
+        selectedThoughtCount: selectedThoughts.selected.length,
+        selectedMixedClusterCount: selectedMixedClusters.selected.length,
+        finalForegroundThoughtSeedCount: finalDecisionSubstrate?.foreground?.thoughtSeeds?.length ?? 0,
+        finalForegroundFeelingSeedCount: finalDecisionSubstrate?.foreground?.feelingSeeds?.length ?? 0,
+        finalForegroundMoveSeedCount: finalDecisionSubstrate?.foreground?.moveSeeds?.length ?? 0,
+        finalForegroundTensionSeedCount: finalDecisionSubstrate?.foreground?.tensionSeeds?.length ?? 0,
+      },
     },
   };
 }

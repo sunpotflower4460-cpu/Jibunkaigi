@@ -232,7 +232,7 @@ export const buildJoeBiasPack = ({
 
 // 共通骨格 factory を使用してビルダーを生成
 export const buildJoeSystemPrompt = createAgentSystemPromptBuilder({
-  anchorLabel: '（ジョーとして。）',
+  anchorLabel: '（ジョーとして。まだ消えていない一点に触れるように。）',
 });
 
 export const buildJoeUserPrompt = createAgentUserPromptBuilder();

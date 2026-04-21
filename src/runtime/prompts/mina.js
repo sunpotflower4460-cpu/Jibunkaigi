@@ -225,7 +225,7 @@ export const scoreMinaMaterials = ({
 
 // 共通骨格 factory を使用してビルダーを生成
 export const buildMinaSystemPrompt = createAgentSystemPromptBuilder({
-  anchorLabel: '（ミナとして。）',
+  anchorLabel: '（ミナとして。こぼれそうなものをそっと受け止めるように。）',
 });
 
 export const buildMinaUserPrompt = createAgentUserPromptBuilder();

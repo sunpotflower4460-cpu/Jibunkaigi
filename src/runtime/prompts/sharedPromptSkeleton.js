@@ -19,6 +19,9 @@ import {
   normalizeContext,
   MODE_GUIDE,
   renderActivatedParticles,
+  renderTonalLine,
+  renderAvoidBlock,
+  renderStanceLine,
 } from '../buildPromptHelpers.js';
 import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
 import { buildFieldText } from '../textPipeline/buildFieldText.js';
@@ -57,6 +60,14 @@ export function createAgentSystemPromptBuilder({ anchorLabel }) {
     const normalizedCtx = normalizeContext(context);
     const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
     const activatedParticles = renderActivatedParticles(safeActivated);
+    // Phase 4 (修正指示書 v3): 内部 hints を prompt の前景に薄く差し込む。
+    //   - tonalHints: 1 行で声の質感
+    //   - stanceHints: 1 行で構えの向き
+    //   - avoidHints: 最大 2 個で「この場で自然に避けるもの」
+    // 人格説明書にはしない。補正輪としてだけ使う。
+    const tonalLine = renderTonalLine(safeActivated, effectiveLatentState);
+    const stanceLine = renderStanceLine(safeActivated, effectiveLatentState);
+    const avoidBlock = renderAvoidBlock(safeActivated, effectiveLatentState);
     const reentryText = typeof safeActivated.reentry === 'string'
       ? safeActivated.reentry
       : safeActivated.reentry?.text || '';
@@ -88,15 +99,20 @@ export function createAgentSystemPromptBuilder({ anchorLabel }) {
 
     // [場に浮かんでいるもの]
     if (activatedParticles) {
-      sections.push(activatedParticles);
+      // 薄い補正輪として tonal / stance 1行を同ブロック末尾に添える。
+      const extraLines = [tonalLine, stanceLine].filter(Boolean);
+      sections.push(
+        extraLines.length
+          ? `${activatedParticles}\n${extraLines.join('\n')}`
+          : activatedParticles
+      );
     }
 
     // [場の余白]
     // モード指示をここに吸収する
-    if (marginText) {
-      sections.push(`【場の余白】\n${marginText}\n\n${modeGuide}`);
-    } else if (modeGuide) {
-      sections.push(`【場の余白】\n${modeGuide}`);
+    const marginParts = [marginText, modeGuide, avoidBlock].filter(Boolean);
+    if (marginParts.length) {
+      sections.push(`【場の余白】\n${marginParts.join('\n\n')}`);
     }
 
     // [内的方向づけ（この回だけの構え）]
@@ -117,7 +133,11 @@ export function createAgentSystemPromptBuilder({ anchorLabel }) {
     // [相手の言葉] は user prompt に含まれるため、system prompt には含めない
 
     // 末尾の静かな開口部（モード指示は前段へ移動済み）
-    sections.push('何を言うかは、あなたが決めてください。');
+    // Phase 4-1 (修正指示書 v3): 汎用カウンセラーパターン（オウム返し）に収束しないよう、
+    // 最小限の「なぞらない」指示を薄く添える。
+    sections.push(
+      '何を言うかは、あなたが決めてください。\n相手の言葉をなぞるのではなく、今ここに浮かんでいるものから始めてください。'
+    );
 
     return sections.filter(Boolean).join('\n\n').trim();
   };

@@ -42,9 +42,9 @@ const activatedWithHints = {
     {
       id: 'joe-thought-001',
       textSeed: 'direction that remains',
-      tonalHints: ['短い', '密度'],
-      stanceHints: ['一点に触れる'],
-      avoidHints: ['励ましの上塗り'],
+      tonalHints: ['legacy-tonal-xyz-短い', 'legacy-tonal-xyz-密度'],
+      stanceHints: ['legacy-stance-xyz-一点'],
+      avoidHints: ['legacy-avoid-xyz-励まし'],
     },
   ],
 };
@@ -111,7 +111,7 @@ test('buildJoeSystemPrompt drops directives and bias sections', () => {
     },
   });
 
-  assert.ok(prompt.includes('（ジョーとして。）'));
+  assert.ok(prompt.includes('（ジョーとして。'));
   assertNoNaturalDirectives(prompt);
   assertNoLabelDirectives(prompt);
   assertNoBiasSections(prompt);
@@ -126,10 +126,10 @@ test('buildJoeSystemPrompt renders activated particles without leaking internal 
   });
 
   assert.ok(prompt.includes('direction that remains'));
-  assert.ok(!prompt.includes('短い'));
-  assert.ok(!prompt.includes('密度'));
-  assert.ok(!prompt.includes('一点に触れる'));
-  assert.ok(!prompt.includes('励ましの上塗り'));
+  assert.ok(!prompt.includes('legacy-tonal-xyz-短い'));
+  assert.ok(!prompt.includes('legacy-tonal-xyz-密度'));
+  assert.ok(!prompt.includes('legacy-stance-xyz-一点'));
+  assert.ok(!prompt.includes('legacy-avoid-xyz-励まし'));
 });
 
 test('buildJoeUserPrompt stays neutral', () => {

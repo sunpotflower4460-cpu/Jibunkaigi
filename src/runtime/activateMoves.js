@@ -17,6 +17,7 @@
 
 import { getMoveReservoir } from '../reservoir/loadReservoir.js';
 import { STATE_AXIS_WEIGHT, BODY_AFFINITY_WEIGHT_MOVE } from './config/scoringWeights.js';
+import { toCanonicalAgentId, CANONICAL_AGENT_IDS } from './agentIdentity.js';
 
 /**
  * Normalize string for matching (lowercase, trim)
@@ -408,9 +409,10 @@ export const activateMoves = (input = {}) => {
     topN = 4,
   } = input;
 
+  const canonicalAgentId = toCanonicalAgentId(agentId);
+
   // Validate agentId
-  const validAgents = ['joe', 'ken', 'mina', 'ray', 'satou', 'mirror'];
-  if (!validAgents.includes(agentId)) {
+  if (!CANONICAL_AGENT_IDS.includes(canonicalAgentId)) {
     return {
       activatedMoves: [],
       topMoveIds: [],
@@ -423,7 +425,7 @@ export const activateMoves = (input = {}) => {
   }
 
   // Load move reservoir (shared + agent)
-  const moveNodes = getMoveReservoir(agentId);
+  const moveNodes = getMoveReservoir(canonicalAgentId);
 
   if (!moveNodes || moveNodes.length === 0) {
     return {
@@ -439,7 +441,7 @@ export const activateMoves = (input = {}) => {
 
   // Score all nodes
   const scoredNodes = moveNodes.map((node) => {
-    const { score, reasons } = calculateActivationScore(node, agentId, {
+    const { score, reasons } = calculateActivationScore(node, canonicalAgentId, {
       userText,
       preconditionBias,
       beliefTension,
@@ -451,6 +453,9 @@ export const activateMoves = (input = {}) => {
       nodeId: node.id,
       owner: node.owner,
       textSeed: node.textSeed,
+      tonalHints: Array.isArray(node.tonalHints) ? [...node.tonalHints] : [],
+      stanceHints: Array.isArray(node.stanceHints) ? [...node.stanceHints] : [],
+      avoidHints: Array.isArray(node.avoidHints) ? [...node.avoidHints] : [],
       score,
       reasons,
       dominantAxis: node.axis || [],
