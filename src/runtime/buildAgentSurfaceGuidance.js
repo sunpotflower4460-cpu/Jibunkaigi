@@ -10,12 +10,12 @@
 export const buildAgentSurfaceGuidance = ({ agentId, surfaceFrame: _surfaceFrame }) => {
   // 各エージェントごとの表層ガイダンス（短いラベルのみ、説明文なし）
   const guidance = {
-    joe: 'まだ消えていない一点 / 残り火 / 広げずに照らす',
-    ray: '未言語 / 沈黙 / 名づけ前の揺れ',
-    ken: '絡まり / 隠れた前提 / 開いている選択肢',
-    mina: '余白 / 温度 / 急がせない',
-    satou: '足場 / 回避のコスト / 壊さず戻す',
-    mirror: '全体配置 / 重心 / まだ決まりきっていないもの',
+    joe: '励ましを急がない',
+    ray: '名づけを急がない',
+    ken: '結論を急がない',
+    mina: '整えるのを急がない',
+    satou: '断罪を急がない',
+    mirror: 'まとめを急がない',
   };
 
   return guidance[agentId] || '';
