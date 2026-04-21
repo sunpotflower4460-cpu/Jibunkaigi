@@ -28,43 +28,6 @@ import { buildFullGenerationContext, getLatestUserText as extractLatestUserText 
 import { persistAgentResponse } from './persistAgentResponse.js';
 
 /**
- * プロンプト構築パラメータを作成する（通常エージェント用）
- */
-const buildAgentPromptParams = ({
-  agentId,
-  estimatedState,
-  microSignals,
-  continuityInternalOS,
-  afterglowSeed,
-  othersFieldEntries,
-  context,
-  selectedMode,
-  latestUserText,
-  surfaceFrame,
-  userName,
-  messages,
-  agent,
-  activated,
-  agentStateGuide,
-  agentInternalFrame,
-  agentSurfaceGuidance,
-  othersFieldText,
-}) => {
-  return {
-    activated,
-    context,
-    mode: selectedMode,
-    userText: latestUserText,
-    internalOS: continuityInternalOS,
-    surfaceFrame,
-    stateGuide: agentStateGuide,
-    internalFrame: agentInternalFrame,
-    surfaceGuidance: agentSurfaceGuidance,
-    othersField: othersFieldText,
-  };
-};
-
-/**
  * Mirror 専用のプロンプト構築パラメータを作成する
  */
 const buildMirrorPromptParams = ({
@@ -74,7 +37,6 @@ const buildMirrorPromptParams = ({
   latestUserText,
   continuityInternalOS,
   afterglowSeed,
-  selectedMode,
   othersFieldText,
 }) => {
   const mirrorContext = {
@@ -152,7 +114,6 @@ export const handleAgentResponse = async ({
   // セッション状態
   activeSessionIdRef,
   lastSubmittedUserMessageRef,
-  afterglowBySessionRef,
 
   // コールバック・ヘルパー
   callGemini,
@@ -168,9 +129,7 @@ export const handleAgentResponse = async ({
   beginTimedPhase,
 
   // UI 更新コールバック
-  onStateUpdate,
   onOptimisticMessageAdd,
-  onError,
 }) => {
   const aiDebugState = {
     agentId,

@@ -26,35 +26,20 @@ import {
 } from 'lucide-react';
 
 // ★ 追加1：estimateState をインポート
-import { estimateState } from './runtime/stateEstimate';
 import { estimateMicroSignals } from './runtime/estimateMicroSignals.js';
-import { activateAgent } from './runtime/activateAgent';
-import { buildAgentSystemPrompt, buildAgentUserPrompt, buildAgentDebugPreview } from './runtime/buildAgentPrompt';
-import { buildPromptContext } from './runtime/context';
-import { buildMirrorSystemPrompt, buildMirrorUserPrompt, selectMirrorSignals } from './runtime/mirror';
-import { summarizeToOthersField, renderOthersFieldForPrompt, formatOthersFieldForDebug } from './runtime/othersField';
-import { buildAgentStateGuide } from './runtime/buildAgentStateGuide';
-import { buildAgentInternalFrame } from './runtime/buildAgentInternalFrame';
-import { buildAgentSurfaceGuidance } from './runtime/buildAgentSurfaceGuidance';
-import { buildMirrorStateGuide } from './runtime/buildMirrorStateGuide';
-import { buildMirrorInternalFrame } from './runtime/buildMirrorInternalFrame';
-import { buildMirrorSurfaceGuidance } from './runtime/buildMirrorSurfaceGuidance';
-import { runInternalOS } from './runtime/runInternalOS';
+import { summarizeToOthersField } from './runtime/othersField.js';
+import { runInternalOS } from './runtime/runInternalOS.js';
 import { buildBaselineSystemPrompt, buildBaselineUserPrompt } from './runtime/buildBaselinePrompt';
 import { buildOuterGuidePrompt } from './runtime/buildOuterGuidePrompt';
 import { buildCompareViewModel } from './runtime/buildCompareViewModel';
 import { readCompareModeFlag, shouldShowComparePanel } from './runtime/compareMode';
 import { readCompareLabelStore, toggleCompareRevisionLabel, writeCompareLabelStore } from './runtime/compareInsights';
-import { buildNextAfterglow, getAfterglowSeed } from './runtime/afterglow';
-import { checkResponse, cleanResponse } from './runtime/postCheck';
-import { shouldRefresh, applyRefresh } from './runtime/refreshPolicy';
+import { getAfterglowSeed } from './runtime/afterglow';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
 import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchAgent';
-import { buildSurfaceFrame } from './runtime/surfaceTranslator';
-import { isSurfaceDebugEnabled, buildSurfaceDebugEntry, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
+import { isSurfaceDebugEnabled, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
 import { getOthersVisibilityState, getOthersEmptyMessage, getOthersDebugLabel } from './runtime/getOthersVisibilityState';
 import { isJoeDebugAvailable, isJoeDebugEnabled, setJoeDebugEnabled, JOE_DEBUG_STORAGE_KEY } from './runtime/joeDebug';
-import { buildJoeDebugEntry } from './runtime/debug/buildJoeDebugEntry';
 import { handleAgentResponse as orchestrateAgentResponse } from './runtime/orchestrator/handleAgentResponse.js';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
 import JoeDebugPanel from './components/JoeDebugPanel';
@@ -1320,7 +1305,6 @@ const App = () => {
       setGeneratingAgent(null);
       setShowInput(true);
     }
-  };
   };
 
   const handleDeleteSession = async (sessionId) => {

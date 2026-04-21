@@ -139,7 +139,7 @@ export const buildFullGenerationContext = ({
   const context = buildContext({ messages, userName, agents });
 
   // B. others_field 生成
-  const { othersFieldEntries, othersFieldText, othersFieldDebug } = buildOthersField(messages, { pushAgentDebugEvent });
+  const { othersFieldEntries, othersFieldText } = buildOthersField(messages, { pushAgentDebugEvent });
 
   // C. afterglow の正規化
   const safePreviousMix =
