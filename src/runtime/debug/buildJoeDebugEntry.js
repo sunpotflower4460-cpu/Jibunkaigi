@@ -1,4 +1,8 @@
-const isPlainObject = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
+const isPlainObject = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+};
 
 const sanitizeDebugValue = (value) => {
   if (value === null) return null;
