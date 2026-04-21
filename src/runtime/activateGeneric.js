@@ -38,9 +38,23 @@ export const pickBeliefs = (state = {}, beliefFilters = [], max = 2) => {
     score: clamp01(dotScore(state, belief.vector || {})),
   }));
 
-  return sortByScoreDesc(scored)
+  const sorted = sortByScoreDesc(scored);
+  const selected = sorted
     .filter((b) => b.score > 0.08)
     .slice(0, max);
+
+  // Return all candidates with picked flag (top 5)
+  const allCandidates = sorted.slice(0, 5).map((b) => ({
+    id: b.id,
+    score: b.score,
+    vector: b.vector,
+    picked: selected.some((s) => s.id === b.id),
+  }));
+
+  return {
+    selected,
+    allCandidates,
+  };
 };
 
 export const pickMemories = (state = {}, memoryStore = [], max = 2) => {
@@ -49,9 +63,23 @@ export const pickMemories = (state = {}, memoryStore = [], max = 2) => {
     score: clamp01(dotScore(state, memory.vector || {}) * (memory.weight ?? 1)),
   }));
 
-  return sortByScoreDesc(scored)
+  const sorted = sortByScoreDesc(scored);
+  const selected = sorted
     .filter((m) => m.score > 0.08)
     .slice(0, max);
+
+  // Return all candidates with picked flag (top 5)
+  const allCandidates = sorted.slice(0, 5).map((m) => ({
+    id: m.id,
+    score: m.score,
+    tone: m.tone,
+    picked: selected.some((s) => s.id === m.id),
+  }));
+
+  return {
+    selected,
+    allCandidates,
+  };
 };
 
 export const pickFieldNodes = (
@@ -76,16 +104,27 @@ export const pickFieldNodes = (
     };
   });
 
-  const selected = sortByScoreDesc(scored)
+  const sorted = sortByScoreDesc(scored);
+  let selected = sorted
     .filter((n) => n.score > 0.06)
     .slice(0, max);
 
   // 何も取れない場合の保険
   if (selected.length === 0 && fieldNodes.length > 0) {
-    return fieldNodes.slice(0, 2);
+    selected = fieldNodes.slice(0, 2);
   }
 
-  return selected;
+  // Return all candidates with picked flag (top 5)
+  const allCandidates = sorted.slice(0, 5).map((f) => ({
+    id: f.id,
+    score: f.score,
+    picked: selected.some((s) => s.id === f.id),
+  }));
+
+  return {
+    selected,
+    allCandidates,
+  };
 };
 
 const buildResidueContext = (
@@ -124,14 +163,17 @@ export const activateGeneric = (agentId, state = {}, options = {}) => {
   const materials = AGENT_MATERIALS[agentId];
   if (!materials) return null;
 
-  const activeBeliefs = pickBeliefs(state, materials.beliefFilters, 2);
-  const activeMemories = pickMemories(state, materials.memoryStore, 2);
-  const activeField = pickFieldNodes(
+  const beliefsResult = pickBeliefs(state, materials.beliefFilters, 2);
+  const memoriesResult = pickMemories(state, materials.memoryStore, 2);
+  const activeBeliefs = beliefsResult.selected;
+  const activeMemories = memoriesResult.selected;
+  const fieldsResult = pickFieldNodes(
     state,
     materials.fieldNodes,
     activeBeliefs,
     2,
   );
+  const activeField = fieldsResult.selected;
 
   const residueContext = buildResidueContext(state, activeBeliefs, activeMemories);
   const activeResidue = materials.buildResidue(residueContext);
@@ -159,6 +201,10 @@ export const activateGeneric = (agentId, state = {}, options = {}) => {
       pickedFieldIds: activeField.map((f) => f.id),
       reentryCandidates: reentryPick.allCandidates,
       reentryComposition: reentryPick.selected?.composition ?? null,
+      // Add all candidates for V-3
+      allBeliefCandidates: beliefsResult.allCandidates,
+      allMemoryCandidates: memoriesResult.allCandidates,
+      allFieldCandidates: fieldsResult.allCandidates,
     },
   };
 };

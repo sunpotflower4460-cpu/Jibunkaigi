@@ -49,9 +49,23 @@ const pickBeliefs = (state = {}, max = 2) => {
     score: clamp01(dotScore(state, belief.vector || {})),
   }));
 
-  return sortByScoreDesc(scored)
+  const sorted = sortByScoreDesc(scored);
+  const selected = sorted
     .filter((b) => b.score > 0.08)
     .slice(0, max);
+
+  // Return all candidates with picked flag
+  const allCandidates = sorted.slice(0, 5).map((b) => ({
+    id: b.id,
+    score: b.score,
+    vector: b.vector,
+    picked: selected.some((s) => s.id === b.id),
+  }));
+
+  return {
+    selected,
+    allCandidates,
+  };
 };
 
 // memory を state との共鳴で選ぶ
@@ -61,9 +75,23 @@ const pickMemories = (state = {}, max = 2) => {
     score: clamp01(dotScore(state, memory.vector || {}) * (memory.weight ?? 1)),
   }));
 
-  return sortByScoreDesc(scored)
+  const sorted = sortByScoreDesc(scored);
+  const selected = sorted
     .filter((m) => m.score > 0.08)
     .slice(0, max);
+
+  // Return all candidates with picked flag
+  const allCandidates = sorted.slice(0, 5).map((m) => ({
+    id: m.id,
+    score: m.score,
+    tone: m.tone,
+    picked: selected.some((s) => s.id === m.id),
+  }));
+
+  return {
+    selected,
+    allCandidates,
+  };
 };
 
 // field は belief / state に近いものだけ選ぶ
@@ -83,16 +111,27 @@ const pickFieldNodes = (state = {}, activeBeliefs = [], max = 2) => {
     };
   });
 
-  const selected = sortByScoreDesc(scored)
+  const sorted = sortByScoreDesc(scored);
+  let selected = sorted
     .filter((n) => n.score > 0.06)
     .slice(0, max);
 
   // 何も取れない場合の保険
   if (selected.length === 0) {
-    return JOE_FIELD_NODES.slice(0, 2);
+    selected = JOE_FIELD_NODES.slice(0, 2);
   }
 
-  return selected;
+  // Return all candidates with picked flag
+  const allCandidates = sorted.slice(0, 5).map((f) => ({
+    id: f.id,
+    score: f.score,
+    picked: selected.some((s) => s.id === f.id),
+  }));
+
+  return {
+    selected,
+    allCandidates,
+  };
 };
 
 // residue は state / belief に応じて濃さを変えるための材料を作る
@@ -120,9 +159,12 @@ const buildMemoryTrace = (activeMemories = []) => {
 // --- main ---
 
 export const activateJoe = (state = {}, options = {}) => {
-  const activeBeliefs = pickBeliefs(state, 2);
-  const activeMemories = pickMemories(state, 2);
-  const activeField = pickFieldNodes(state, activeBeliefs, 2);
+  const beliefsResult = pickBeliefs(state, 2);
+  const memoriesResult = pickMemories(state, 2);
+  const activeBeliefs = beliefsResult.selected;
+  const activeMemories = memoriesResult.selected;
+  const fieldsResult = pickFieldNodes(state, activeBeliefs, 2);
+  const activeField = fieldsResult.selected;
 
   const residueContext = buildResidueContext(state, activeBeliefs, activeMemories);
   const activeResidue = buildJoeResidue(residueContext);
@@ -148,6 +190,10 @@ export const activateJoe = (state = {}, options = {}) => {
       pickedFieldIds: activeField.map((f) => f.id),
       reentryCandidates: reentryPick.allCandidates,
       reentryComposition: reentryPick.selected?.composition ?? null,
+      // Add all candidates for V-3
+      allBeliefCandidates: beliefsResult.allCandidates,
+      allMemoryCandidates: memoriesResult.allCandidates,
+      allFieldCandidates: fieldsResult.allCandidates,
     },
   };
 };
