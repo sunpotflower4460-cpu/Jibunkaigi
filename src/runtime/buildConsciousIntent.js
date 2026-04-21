@@ -85,6 +85,10 @@ const buildUserSense = (context) => {
  * Build selfFeeling labels
  * Short internal labels for what's happening inside
  *
+ * IMPORTANT: この関数は emergingField.bodySignals の FLAT VERSION を読む
+ * - bodySignals = { tension, softness, urgency, warmth, ... } (flat structure)
+ * - latentState.bodySignals (split version) は使用しない
+ *
  * @param {object} context - Build context
  * @returns {string[]} selfFeeling labels
  */
@@ -99,7 +103,7 @@ const buildSelfFeeling = (context) => {
 
   const labels = [];
 
-  // From bodySignals
+  // From bodySignals (flat version from emergingField)
   const tension = clamp01(bodySignals.tension ?? 0);
   const softness = clamp01(bodySignals.softness ?? 0);
   const urgency = clamp01(bodySignals.urgency ?? 0);

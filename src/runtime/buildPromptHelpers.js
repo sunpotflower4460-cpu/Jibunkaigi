@@ -243,7 +243,9 @@ export const renderActivatedParticles = (activated = {}) => {
       .map(item => ({ textSeed: item.textSeed }));
   }
 
-  // Priority 6: Legacy fallback
+  // Priority 6: Legacy fallback (kept for backward compatibility)
+  // WARNING: This fallback handles legacy shapes that may not have clear textSeed
+  // FUTURE: Consider removing once all code paths use new structures
   if (particles.length === 0) {
     const legacyParticles = activated?.selectedClusters
       || activated?.selected
@@ -251,11 +253,22 @@ export const renderActivatedParticles = (activated = {}) => {
       || [];
 
     if (Array.isArray(legacyParticles) && legacyParticles.length > 0) {
-      particles = legacyParticles;
+      // Normalize legacy structures to ensure we can extract text
+      particles = legacyParticles.map(p => {
+        // If it's already an object with textSeed/text, keep it
+        if (p && typeof p === 'object') return p;
+        // If it's a primitive, skip it
+        return null;
+      }).filter(Boolean);
     }
   }
 
   if (!Array.isArray(particles) || particles.length === 0) {
+    // DEBUG: If we reach here with activated data but no particles extracted,
+    // it suggests the input shape doesn't match any priority path
+    if (activated && typeof activated === 'object' && Object.keys(activated).length > 0) {
+      console.warn('[renderActivatedParticles] No particles extracted despite activated data present. Check input shape.');
+    }
     return '';
   }
 
@@ -298,6 +311,11 @@ export const selectTopScoredKeys = (scores = {}, limit = 2) =>
     .map(([key]) => key);
 
 // --- 内部フレーム構築（全エージェント共通） ---
+// LEGACY COMPATIBILITY LAYER
+// @deprecated This function is a legacy helper for old prompt structure
+// Production prompt path uses textPipeline (buildExistenceText, buildFieldText, buildMarginText)
+// This helper remains for backward compatibility / debugging only
+// DO NOT use in production prompt - prefer textPipeline descriptive path
 
 const normalizeInternalOS = ({ internalOS, latentState, surfaceWindow }) => ({
   latentState: internalOS?.latentState ?? latentState ?? {},
@@ -308,6 +326,12 @@ const normalizeInternalOS = ({ internalOS, latentState, surfaceWindow }) => ({
       : [],
 });
 
+/**
+ * @deprecated Legacy internal frame builder
+ * This function builds bullet-point instructions for LLM based on internal state
+ * Production prompt path uses textPipeline shared descriptive approach instead
+ * Keep for backward compatibility / debugging but do not use in production buildAgentPrompt
+ */
 export const buildInternalFrame = ({ internalOS, latentState, surfaceWindow }) => {
   const normalized = normalizeInternalOS({ internalOS, latentState, surfaceWindow });
   const field = normalized.latentState.field ?? {};
@@ -371,7 +395,18 @@ export const buildInternalFrame = ({ internalOS, latentState, surfaceWindow }) =
 };
 
 // --- 表層ガイダンス構築（全エージェント共通） ---
+// LEGACY COMPATIBILITY LAYER
+// @deprecated This function is a legacy helper for old prompt structure
+// Production prompt path uses textPipeline / shared descriptive builders
+// This helper remains for backward compatibility / debugging only
+// DO NOT use in production prompt - prefer textPipeline descriptive path
 
+/**
+ * @deprecated Legacy surface guidance builder
+ * This function builds directive-style hints for surface generation
+ * Production prompt path uses textPipeline shared descriptive approach instead
+ * Keep for backward compatibility / debugging but do not use in production buildAgentPrompt
+ */
 export const buildSurfaceGuidance = (surfaceFrame) => {
   if (!surfaceFrame) return '';
 

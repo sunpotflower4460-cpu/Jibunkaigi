@@ -75,8 +75,15 @@ function describeStanceGravity(stance = {}) {
 
 /**
  * body state の描写（第6章6-2: 外界と内面のズレ検出を含む）
+ *
+ * IMPORTANT: この関数は latentState.bodySignals の SPLIT VERSION を前提とする
+ * - bodySignals.external: 外界由来の身体感覚 (field から計算)
+ * - bodySignals.internal: 内面由来の身体感覚 (beliefTension, stance, reaction から計算)
+ *
+ * emergingField.bodySignals (flat version) は使用しない
+ *
  * @param {object} beliefCore - latentState.beliefCore
- * @param {object} bodySignals - latentState.bodySignals { external, internal }
+ * @param {object} bodySignals - latentState.bodySignals { external, internal } (SPLIT VERSION required)
  * @returns {string}
  */
 function describeBodyState(beliefCore = {}, bodySignals = {}) {
