@@ -1,6 +1,6 @@
 import { estimateField } from './fieldEstimator.js';
 import { createInitialInternalState } from './internalState.js';
-import { buildPreHomeInput, createHomeLayer, extractPermissionShape } from './homeLayer.js';
+import { createHomeLayer, extractPermissionShape } from './homeLayer.js';
 import { computeHomeNeutralizationState, applyHomeRetry, buildHomeNeutralizationPreview } from './homeNeutralizationCheck.js';
 import { generateReaction } from './reactionGenerator.js';
 import { mixLatentPatterns } from './routerMixer.js';
@@ -67,19 +67,24 @@ const mergeSignals = (base = {}, delta = {}) => {
 const getAxisReactionDelta = (axis) => {
   switch (axis) {
     case 'illumination':
-      return { touched: 0.04, curiosity: 0.06 };
+      return { touched: 0.12, curiosity: 0.15 };
     case 'structure':
-      return { clarify: 0.08, holdBackJudgment: 0.02 };
+      return { clarify: 0.2, holdBackJudgment: 0.05 };
     case 'holding':
     case 'presence':
-      return { protect: 0.06, holdBackJudgment: 0.05 };
+      return { protect: 0.16, holdBackJudgment: 0.15 };
+    case 'tenderness':
+      return { protect: 0.18, holdBackJudgment: 0.16 };
     case 'grounding':
-      return { protect: 0.05, touched: 0.03 };
+      return { protect: 0.14, touched: 0.08 };
     case 'reflection':
     case 'preverbal':
-      return { touched: 0.05, holdBackJudgment: 0.04 };
+    case 'resonance':
+      return { touched: 0.12, holdBackJudgment: 0.14 };
     case 'mission':
-      return { clarify: 0.04, curiosity: 0.04 };
+      return { clarify: 0.1, curiosity: 0.09 };
+    case 'realism':
+      return { clarify: 0.18, protect: 0.08 };
     default:
       return {};
   }
@@ -95,19 +100,51 @@ const getAxisReactionDelta = (axis) => {
 const getAxisStanceDelta = (axis) => {
   switch (axis) {
     case 'illumination':
-      return { illuminate: 0.1, nudge: 0.03 };
+      return { illuminate: 0.24, nudge: 0.08 };
     case 'structure':
-      return { structure: 0.1, guard: 0.03 };
+      return { structure: 0.22, guard: 0.06 };
     case 'holding':
     case 'presence':
-      return { receive: 0.08, guard: 0.08 };
+      return { receive: 0.18, guard: 0.16 };
+    case 'tenderness':
+      return { receive: 0.24, guard: 0.12 };
     case 'grounding':
-      return { guard: 0.08, structure: 0.04 };
+      return { guard: 0.18, structure: 0.1 };
     case 'reflection':
     case 'preverbal':
-      return { receive: 0.09, illuminate: 0.04 };
+    case 'resonance':
+      return { receive: 0.18, illuminate: 0.12 };
     case 'mission':
-      return { illuminate: 0.05, structure: 0.05 };
+      return { illuminate: 0.1, structure: 0.1 };
+    case 'realism':
+      return { structure: 0.2, guard: 0.08 };
+    default:
+      return {};
+  }
+};
+
+const getAxisFieldDelta = (axis) => {
+  switch (axis) {
+    case 'illumination':
+      return { softness: 0.05, depth: 0.09 };
+    case 'structure':
+      return { softness: -0.05, depth: 0.12 };
+    case 'holding':
+      return { softness: 0.11, fragility: 0.08 };
+    case 'presence':
+      return { softness: 0.08, depth: 0.06 };
+    case 'tenderness':
+      return { softness: 0.14, fragility: 0.09 };
+    case 'grounding':
+      return { softness: -0.02, depth: 0.08, urgency: 0.03 };
+    case 'reflection':
+    case 'preverbal':
+    case 'resonance':
+      return { softness: 0.06, depth: 0.08 };
+    case 'mission':
+      return { depth: 0.07, urgency: 0.04 };
+    case 'realism':
+      return { softness: -0.08, depth: 0.1, urgency: 0.05 };
     default:
       return {};
   }
@@ -233,42 +270,42 @@ const applyReactionBias = (reaction = {}, preconditionBias = {}, microSignals = 
 
   return mergeSignals(reaction, {
     touched:
-      (pacing.slowDown ?? 0) * 0.04 +
-      (pacing.returnBias ?? 0) * 0.05 +
-      identityPresenceBias * 0.05 +
-      (latentExistence1.selfPresence ?? 0) * 0.03 +
-      tensionStrength * 0.04 +
-      (identity.firstPersonSoftness ?? 0) * 0.03 +
+      (pacing.slowDown ?? 0) * 0.12 +
+      (pacing.returnBias ?? 0) * 0.12 +
+      identityPresenceBias * 0.1 +
+      (latentExistence1.selfPresence ?? 0) * 0.06 +
+      tensionStrength * 0.08 +
+      (identity.firstPersonSoftness ?? 0) * 0.06 +
       (microSignalDelta.touched ?? 0) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).touched ?? 0),
     protect:
-      (pacing.returnBias ?? 0) * 0.05 +
-      (identity.hereNowStability ?? 0) * 0.04 +
-      (identity.selfPresence ?? 0) * 0.03 +
-      (latentHome.kernel?.returnBeforeOutput ?? 0) * 0.03 +
-      tensionStrength * 0.03 +
+      (pacing.returnBias ?? 0) * 0.12 +
+      (identity.hereNowStability ?? 0) * 0.08 +
+      (identity.selfPresence ?? 0) * 0.06 +
+      (latentHome.kernel?.returnBeforeOutput ?? 0) * 0.06 +
+      tensionStrength * 0.05 +
       (microSignalDelta.protect ?? 0) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).protect ?? 0),
     clarify:
-      -((pacing.slowDown ?? 0) * 0.1) -
-      ((meaning.antiEarlySolution ?? 0) * 0.08) -
-      ((latentHome.outputLimits?.noEarlySolution ?? 0) * 0.05) -
-      ((meaning.antiEarlySummary ?? 0) * 0.03) +
+      -((pacing.slowDown ?? 0) * 0.08) -
+      ((meaning.antiEarlySolution ?? 0) * 0.06) -
+      ((latentHome.outputLimits?.noEarlySolution ?? 0) * 0.04) -
+      ((meaning.antiEarlySummary ?? 0) * 0.02) +
       (microSignalDelta.clarify ?? 0) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).clarify ?? 0),
     curiosity:
-      -((focus.oneThreadBias ?? 0) * 0.04) -
-      ((focus.antiOverExpansion ?? 0) * 0.05) +
+      -((focus.oneThreadBias ?? 0) * 0.03) -
+      ((focus.antiOverExpansion ?? 0) * 0.04) +
       ((latentBelief.activeLeafBeliefs?.length ?? 0) > 0 ? 0.02 : 0) +
       (microSignalDelta.curiosity ?? 0) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).curiosity ?? 0),
     holdBackJudgment:
-      (pacing.slowDown ?? 0) * 0.08 +
-      (pacing.returnBias ?? 0) * 0.08 +
-      (identity.unfinishedAllowed ?? 0) * 0.08 +
-      (latentExistence1.unfinishedAllowed ?? 0) * 0.05 +
-      (identity.firstPersonSoftness ?? 0) * 0.05 +
-      identityPresenceBias * 0.04 +
+      (pacing.slowDown ?? 0) * 0.2 +
+      (pacing.returnBias ?? 0) * 0.18 +
+      (identity.unfinishedAllowed ?? 0) * 0.16 +
+      (latentExistence1.unfinishedAllowed ?? 0) * 0.1 +
+      (identity.firstPersonSoftness ?? 0) * 0.1 +
+      identityPresenceBias * 0.08 +
       (microSignalDelta.holdBackJudgment ?? 0) +
       (getAxisReactionDelta(meaning.dominantBeliefAxis).holdBackJudgment ?? 0),
   });
@@ -302,33 +339,33 @@ const applyStanceBias = (stance = {}, preconditionBias = {}, microSignals = {}) 
 
   return mergeSignals(stance, {
     receive:
-      (pacing.slowDown ?? 0) * 0.08 +
-      (pacing.returnBias ?? 0) * 0.06 +
-      identityPresenceBias * 0.06 +
-      (latentExistence1.firstPersonSoftness ?? 0) * 0.04 +
+      (pacing.slowDown ?? 0) * 0.18 +
+      (pacing.returnBias ?? 0) * 0.14 +
+      identityPresenceBias * 0.12 +
+      (latentExistence1.firstPersonSoftness ?? 0) * 0.06 +
       (microSignalDelta.receive ?? 0) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).receive ?? 0),
     illuminate:
       (microSignalDelta.illuminate ?? 0) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).illuminate ?? 0) +
-      (identity.selfRememberingStrength ?? 0) * 0.03 +
-      tensionStrength * 0.03,
+      (identity.selfRememberingStrength ?? 0) * 0.06 +
+      tensionStrength * 0.06,
     structure:
-      -((pacing.slowDown ?? 0) * 0.08) -
-      ((meaning.antiEarlySummary ?? 0) * 0.08) -
-      ((latentHome.outputLimits?.noEarlySummary ?? 0) * 0.04) -
-      ((meaning.antiEarlySolution ?? 0) * 0.08) +
+      -((pacing.slowDown ?? 0) * 0.16) -
+      ((meaning.antiEarlySummary ?? 0) * 0.12) -
+      ((latentHome.outputLimits?.noEarlySummary ?? 0) * 0.06) -
+      ((meaning.antiEarlySolution ?? 0) * 0.12) +
       (microSignalDelta.structure ?? 0) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).structure ?? 0),
     guard:
-      (focus.antiOverExpansion ?? 0) * 0.05 +
-      identityPresenceBias * 0.05 +
-      tensionStrength * 0.04 +
+      (focus.antiOverExpansion ?? 0) * 0.1 +
+      identityPresenceBias * 0.08 +
+      tensionStrength * 0.08 +
       (microSignalDelta.guard ?? 0) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).guard ?? 0),
     nudge:
-      -((focus.oneThreadBias ?? 0) * 0.04) -
-      ((meaning.antiEarlySolution ?? 0) * 0.05) +
+      -((focus.oneThreadBias ?? 0) * 0.08) -
+      ((meaning.antiEarlySolution ?? 0) * 0.1) +
       (microSignalDelta.nudge ?? 0) +
       (getAxisStanceDelta(meaning.dominantBeliefAxis).nudge ?? 0),
   });
@@ -348,49 +385,56 @@ const applyFieldBias = (field = {}, {
   preconditionFilter = {},
   preconditionBias = {},
 } = {}, microSignals = {}) => {
+  const bias = preconditionBias?.preconditionBias ?? preconditionBias;
   const home = rawLatent?.home ?? {};
   const existence1 = rawLatent?.existence1 ?? {};
   const existence2 = rawLatent?.existence2 ?? {};
   const beliefTension = rawLatent?.beliefTension ?? {};
   const derived = preconditionFilter?.derived ?? {};
-  const biasIdentity = preconditionBias?.identity ?? {};
-  const biasFocus = preconditionBias?.focus ?? {};
-  const biasPacing = preconditionBias?.pacing ?? {};
+  const biasIdentity = bias?.identity ?? {};
+  const biasFocus = bias?.focus ?? {};
+  const biasPacing = bias?.pacing ?? {};
+  const biasMeaning = bias?.meaning ?? {};
   const tensionStrength = clamp01(beliefTension.totalTensionStrength ?? 0);
   const identityPlayfulnessBoost = getIdentityPlayfulnessBoost(existence2.agentIdentityKey);
   const microSignalDelta = buildMicroSignalLayerDelta('field', microSignals).delta;
+  const axisFieldDelta = getAxisFieldDelta(biasMeaning.dominantBeliefAxis);
 
   return {
     softness: clamp01(
       (field.softness ?? 0) +
-      (home.kernel?.slowDown ?? 0) * 0.06 +
-      (biasIdentity.firstPersonSoftness ?? 0) * 0.04 +
+      (home.kernel?.slowDown ?? 0) * 0.15 +
+      (biasIdentity.firstPersonSoftness ?? 0) * 0.08 +
+      (axisFieldDelta.softness ?? 0) +
       (microSignalDelta.softness ?? 0) +
       identityPlayfulnessBoost
     ),
     depth: clamp01(
       (field.depth ?? 0) +
-      (biasFocus.oneThreadBias ?? 0) * 0.05 +
-      (existence1.hereNowStability ?? 0) * 0.03 +
+      (biasFocus.oneThreadBias ?? 0) * 0.12 +
+      (existence1.hereNowStability ?? 0) * 0.06 +
+      (axisFieldDelta.depth ?? 0) +
       (microSignalDelta.depth ?? 0) +
-      tensionStrength * 0.04
+      tensionStrength * 0.06
     ),
     urgency: clamp01(
       (field.urgency ?? 0) -
-      (biasPacing.slowDown ?? 0) * 0.1 +
+      (biasPacing.slowDown ?? 0) * 0.18 +
+      (axisFieldDelta.urgency ?? 0) +
       (microSignalDelta.urgency ?? 0) +
-      tensionStrength * 0.04
+      tensionStrength * 0.05
     ),
     fragility: clamp01(
       (field.fragility ?? 0) +
-      (existence1.unfinishedAllowed ?? 0) * 0.04 +
-      (derived.returnBias ?? 0) * 0.03 +
+      (existence1.unfinishedAllowed ?? 0) * 0.08 +
+      (derived.returnBias ?? 0) * 0.06 +
+      (axisFieldDelta.fragility ?? 0) +
       (microSignalDelta.fragility ?? 0) +
-      tensionStrength * 0.06
+      tensionStrength * 0.08
     ),
     playfulness: clamp01(
       (field.playfulness ?? 0) -
-      (biasFocus.oneThreadBias ?? 0) * 0.05 +
+      (biasFocus.oneThreadBias ?? 0) * 0.08 +
       (microSignalDelta.playfulness ?? 0) +
       identityPlayfulnessBoost
     ),
@@ -506,6 +550,9 @@ export function runInternalOS(input, options = {}) {
     state: lexicalState,
     microSignals,
   });
+  const baseField = estimateField(normalizedInput, { microSignals });
+  const baseReactionForHome = generateReaction(normalizedInput, baseField);
+  const baseStanceForHome = selectStance(baseField, baseReactionForHome);
 
   const initialState = createInitialInternalState();
 
@@ -529,11 +576,20 @@ export function runInternalOS(input, options = {}) {
   }
 
   // Step 2: Home Layer
-  const preHomeInput = buildPreHomeInput(normalizedInput);
-  const baseHome = createHomeLayer({ makerSeed, preHomeInput });
+  const baseHome = createHomeLayer({
+    field: baseField,
+    reaction: baseReactionForHome,
+    stance: baseStanceForHome,
+    makerSeed,
+  });
   preconditionTrace.push('latent:after-home');
   if (trace) {
-    trace.push(TraceStage.LATENT_HOME, { baseHome, preHomeInput });
+    trace.push(TraceStage.LATENT_HOME, {
+      baseHome,
+      baseField,
+      baseReactionForHome,
+      baseStanceForHome,
+    });
   }
 
   // Step 2.5: Home Neutralization Check
@@ -562,7 +618,9 @@ export function runInternalOS(input, options = {}) {
   // Step 3: Existence Layer 1
   const existenceLayer1 = createExistenceLayer1({
     home: effectiveHome,
-    preHomeInput,
+    field: baseField,
+    reaction: baseReactionForHome,
+    stance: baseStanceForHome,
   });
   preconditionTrace.push('latent:after-existence1');
   if (trace) {
@@ -667,7 +725,6 @@ export function runInternalOS(input, options = {}) {
   };
 
   // Dynamic field: how the latent self perceives the current input
-  const baseField = estimateField(normalizedInput);
   const field = applyFieldBias(baseField, dynamicBiasContext, microSignals);
   preconditionTrace.push('dynamic:after-field');
   if (trace) {
@@ -698,7 +755,9 @@ export function runInternalOS(input, options = {}) {
     stance,
     microSignals,
   });
-  const permission = extractPermissionShape(effectiveHome);
+  const permission = extractPermissionShape(effectiveHome, {
+    dominantBeliefAxis: beliefCore.dominantBeliefAxis,
+  });
   if (trace) {
     trace.push(TraceStage.PERMISSION, { permission });
   }

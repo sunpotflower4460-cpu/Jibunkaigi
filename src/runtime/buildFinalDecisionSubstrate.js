@@ -20,7 +20,56 @@
  * Design doc: 次段階設計書 - Final Decision Substrate を厚くする v0.1
  */
 
+import { AXIS_DESCRIPTIONS, TENSION_DESCRIPTIONS } from './textPipeline/axisDescriptions.js';
+
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+const TENSION_SEED_TEXT = {
+  friction: TENSION_DESCRIPTIONS.friction?.feeling || '何かが引っかかっている',
+  violation: TENSION_DESCRIPTIONS.violation?.feeling || '踏み越えられた感覚がある',
+  pull: TENSION_DESCRIPTIONS.pull?.feeling || '引かれている',
+  protection: TENSION_DESCRIPTIONS.protection?.feeling || '守らなければならないものがある',
+};
+const ACTIVE_TENSION_PAIR_TEXT = {
+  'illumination|holding': '照らしたいけれど、壊れそうなものがある',
+  'holding|illumination': '照らしたいけれど、壊れそうなものがある',
+  'structure|holding': 'ほどきたいけれど、傷つけそうなものがある',
+  'holding|structure': 'ほどきたいけれど、傷つけそうなものがある',
+  'presence|structure': '静けさを保ちたいのに、形が迫ってくる',
+  'structure|presence': '静けさを保ちたいのに、形が迫ってくる',
+  'grounding|mission': '進みたいけれど、足場がまだ定まらない',
+  'mission|grounding': '進みたいけれど、足場がまだ定まらない',
+  'reach|freeze': '進みたいのに、身体が止まっている',
+  'freeze|reach': '進みたいのに、身体が止まっている',
+};
+const buildFallbackTensionPairText = (axis1, axis2) => (
+  `${localizeAxisLabel(axis1)}。でも、${localizeAxisLabel(axis2)}も消えていない`
+);
+
+const localizeAxisLabel = (axis) => (
+  TENSION_SEED_TEXT[axis] ||
+  TENSION_DESCRIPTIONS[axis]?.short ||
+  AXIS_DESCRIPTIONS[axis]?.short ||
+  axis
+);
+
+const describeActiveTension = (tension = {}) => {
+  if (typeof tension?.tensionType === 'string') {
+    return TENSION_SEED_TEXT[tension.tensionType] || localizeAxisLabel(tension.tensionType);
+  }
+
+  const axis1 = typeof tension?.axis1 === 'string' ? tension.axis1 : null;
+  const axis2 = typeof tension?.axis2 === 'string' ? tension.axis2 : null;
+  if (axis1 && axis2) {
+    return ACTIVE_TENSION_PAIR_TEXT[`${axis1}|${axis2}`]
+      || buildFallbackTensionPairText(axis1, axis2);
+  }
+
+  if (typeof tension?.axis === 'string') {
+    return localizeAxisLabel(tension.axis);
+  }
+
+  return null;
+};
 
 /**
  * Extract foreground thought seeds from selected mixed clusters
@@ -234,18 +283,17 @@ const extractForegroundTensionSeeds = (context) => {
     return seeds;
   }
 
-  // Extract dominant tension axis as a seed
-  const dominantAxis = beliefTension.dominantTensionAxis;
-  if (dominantAxis) {
-    seeds.push(dominantAxis);
-  }
-
-  // If we have active tensions, take the first one
   if (beliefTension.activeTensions && beliefTension.activeTensions.length > 0) {
     const firstTension = beliefTension.activeTensions[0];
-    if (firstTension.axis1 && firstTension.axis2) {
-      seeds.push(`${firstTension.axis1} ↔ ${firstTension.axis2}`);
+    const tensionSeed = describeActiveTension(firstTension);
+    if (tensionSeed) {
+      seeds.push(tensionSeed);
     }
+  }
+
+  const dominantAxis = beliefTension.dominantTensionAxis;
+  if (dominantAxis && seeds.length === 0) {
+    seeds.push(localizeAxisLabel(dominantAxis));
   }
 
   return seeds.slice(0, 1); // Maximum 1 tension seed

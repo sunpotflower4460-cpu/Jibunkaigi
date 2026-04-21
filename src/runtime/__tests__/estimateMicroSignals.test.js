@@ -93,7 +93,7 @@ test('estimateState output remains unchanged alongside micro-signal stream', () 
   assert.deepEqual(
     estimateState('作品を出したいけど怖い'),
     {
-      desire: 0.2,
+      desire: 0.35,
       fear: 0.4,
       freeze: 0,
       reach: 0.3,

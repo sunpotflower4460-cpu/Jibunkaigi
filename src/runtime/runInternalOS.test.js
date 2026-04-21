@@ -7,7 +7,16 @@ const EXPECTED_NUMERIC_SECTIONS = {
   field: ['softness', 'depth', 'urgency', 'fragility', 'playfulness'],
   reaction: ['touched', 'protect', 'clarify', 'curiosity', 'holdBackJudgment'],
   stance: ['receive', 'illuminate', 'structure', 'guard', 'nudge'],
-  permission: ['noHurry', 'noOverExplain', 'noPerformativeHelpfulness', 'allowPartialUncertainty'],
+  permission: [
+    'noHurry',
+    'noOverExplain',
+    'noPerformativeHelpfulness',
+    'allowPartialUncertainty',
+    'allowSilence',
+    'allowDepth',
+    'allowDirectness',
+    'allowRawFeeling',
+  ],
   existenceLayer1: ['selfPresence', 'selfLocationStability', 'groundedHereNow', 'allowUnfinishedSelf'],
 };
 
@@ -1022,3 +1031,11 @@ test('runInternalOS emergingField.bodySignals is flat version', () => {
   assert.ok(!bodySignals.internal, 'emergingField.bodySignals should not have internal');
 });
 
+test('runInternalOS amplifies field softness differences across agents', () => {
+  const input = '最近ちょっと自信ない';
+  const empath = runInternalOS(input, { agentId: 'empath' });
+  const critic = runInternalOS(input, { agentId: 'critic' });
+  const diff = Math.abs(empath.latentState.field.softness - critic.latentState.field.softness);
+
+  assert.ok(diff >= 0.05, `expected softness diff >= 0.05, got ${diff}`);
+});

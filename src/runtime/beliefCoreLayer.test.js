@@ -108,16 +108,18 @@ test('each agent profile has at least identity, mission, and one more axis', () 
   }
 });
 
-// ── dominantBeliefAxis is the axis of the highest-weight belief ───────────
+// ── dominantBeliefAxis prioritizes the strongest worldview belief ─────────
 
-test('dominantBeliefAxis corresponds to the highest-weight belief axis', () => {
+test('dominantBeliefAxis corresponds to the highest-weight non-identity, non-mission belief axis', () => {
   for (const agentId of ALL_AGENT_IDS) {
     const result = createBeliefCoreLayer({ agentId });
-    const sorted = [...result.activeCoreBeliefs].sort((a, b) => b.weight - a.weight);
+    const sorted = [...result.activeCoreBeliefs]
+      .filter((belief) => belief.axis !== 'identity' && belief.axis !== 'mission')
+      .sort((a, b) => b.weight - a.weight);
     assert.equal(
       result.dominantBeliefAxis,
       sorted[0].axis,
-      `${agentId}: dominantBeliefAxis should match top-weighted belief axis`
+      `${agentId}: dominantBeliefAxis should match top-weighted worldview belief axis`
     );
   }
 });

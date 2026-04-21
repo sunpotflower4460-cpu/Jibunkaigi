@@ -441,6 +441,11 @@ export const handleAgentResponse = async ({
                           continuityInternalOS?.latentState?.emergingField ??
                           null;
     const previousLatentState = afterglowSeed?.previousLatentState ?? null;
+    // TRANSITIONAL: activateAgent は reentry 取得のためだけに呼ばれている。
+    // 長期的には runInternalOS 内で reentry を生成し、この呼び出しを廃止する。
+    // 依存関係: activatedForPrompt.reentry ← activated.reentry ← activateAgent
+    // それ以外の activated のフィールド（beliefs, memories, field, residue）は
+    // activatedForPrompt で latentState 由来の値に上書きされるため使用されていない。
     activatedForPrompt = {
       ...(activated || {}),
       finalDecisionSubstrate: latentState?.finalDecisionSubstrate ?? activated?.finalDecisionSubstrate ?? null,

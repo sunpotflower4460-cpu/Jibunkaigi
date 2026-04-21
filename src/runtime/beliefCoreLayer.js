@@ -56,8 +56,16 @@ export function createBeliefCoreLayer({ agentId, existenceLayer2 } = {}) {
     )
   );
 
-  // dominantBeliefAxis: 最重みの信念の axis
-  const dominant = activeCoreBeliefs.reduce(
+  // dominantBeliefAxis: identity 以外の信念があればそちらを優先する
+  const worldviewCandidates = activeCoreBeliefs.filter(
+    (belief) => belief.axis !== 'identity' && belief.axis !== 'mission'
+  );
+  const dominantCandidates = worldviewCandidates.length > 0
+    ? worldviewCandidates
+    : activeCoreBeliefs.some((belief) => belief.axis !== 'identity')
+      ? activeCoreBeliefs.filter((belief) => belief.axis !== 'identity')
+      : activeCoreBeliefs;
+  const dominant = dominantCandidates.reduce(
     (best, b) => (b.weight > (best?.weight ?? -1) ? b : best),
     null
   );

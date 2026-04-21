@@ -14,6 +14,9 @@ test('buildMarginText: generates margin text from consciousIntent and permission
       noOverExplain: 0.6,
       allowPartialUncertainty: 0.7,
       allowSilence: 0.8,
+      allowDepth: 0.8,
+      allowDirectness: 0.8,
+      allowRawFeeling: 0.8,
     },
   };
 
@@ -26,6 +29,9 @@ test('buildMarginText: generates margin text from consciousIntent and permission
   assert.ok(result.includes('言い切らなくても崩れない'), 'should include noOverExplain');
   assert.ok(result.includes('ここでは少し曖昧なままでも大丈夫'), 'should include allowPartialUncertainty');
   assert.ok(result.includes('少し黙っていても途切れない'), 'should include allowSilence');
+  assert.ok(result.includes('深く入っても大丈夫'), 'should include allowDepth');
+  assert.ok(result.includes('そのまま言っても崩れない'), 'should include allowDirectness');
+  assert.ok(result.includes('感じたままに触れていい'), 'should include allowRawFeeling');
 });
 
 test('buildMarginText: respects threshold (0.5)', () => {

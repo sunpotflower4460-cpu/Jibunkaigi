@@ -52,13 +52,12 @@ export function buildExistenceText(latentState = {}, options = {}) {
     lines.push(existence2.identityFeelingText);
   }
 
-  // recalledSelfTraits: 思い出した自分の特徴
-  if (Array.isArray(existence2.recalledSelfTraits) && existence2.recalledSelfTraits.length > 0) {
-    const traits = existence2.recalledSelfTraits
-      .filter(t => typeof t === 'string' && t.trim())
-      .slice(0, 2); // 最大2つまで
-    if (traits.length > 0) {
-      lines.push(traits.join('。') + '。');
+  if (Array.isArray(beliefCore.activeCoreBeliefs)) {
+    const nonIdentityBelief = beliefCore.activeCoreBeliefs
+      .filter((belief) => belief?.axis !== 'identity' && typeof belief?.textJa === 'string' && belief.textJa.trim())
+      .sort((left, right) => (right?.weight ?? 0) - (left?.weight ?? 0))[0];
+    if (nonIdentityBelief && !lines.includes(nonIdentityBelief.textJa.trim())) {
+      lines.push(nonIdentityBelief.textJa.trim());
     }
   }
 
@@ -68,6 +67,16 @@ export function buildExistenceText(latentState = {}, options = {}) {
     const desc = AXIS_DESCRIPTIONS[dominantAxis];
     if (desc.feeling) {
       lines.push(desc.feeling);
+    }
+  }
+
+  // recalledSelfTraits: 思い出した自分の特徴
+  if (Array.isArray(existence2.recalledSelfTraits) && existence2.recalledSelfTraits.length > 0) {
+    const traits = existence2.recalledSelfTraits
+      .filter(t => typeof t === 'string' && t.trim())
+      .slice(0, 2); // 最大2つまで
+    if (traits.length > 0) {
+      lines.push(traits.join('。') + '。');
     }
   }
 

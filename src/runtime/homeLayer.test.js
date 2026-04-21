@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildPreHomeInput, createHomeLayer, extractPermissionShape } from './homeLayer.js';
+import { createHomeLayer, extractPermissionShape } from './homeLayer.js';
+import { estimateField } from './fieldEstimator.js';
 
 test('createHomeLayer returns valid structure with all required keys', () => {
   const home = createHomeLayer({
@@ -153,6 +154,9 @@ test('extractPermissionShape returns valid permission format', () => {
   assert.equal(typeof permission.noOverExplain, 'number');
   assert.equal(typeof permission.noPerformativeHelpfulness, 'number');
   assert.equal(typeof permission.allowPartialUncertainty, 'number');
+  assert.equal(typeof permission.allowDepth, 'number');
+  assert.equal(typeof permission.allowDirectness, 'number');
+  assert.equal(typeof permission.allowRawFeeling, 'number');
 
   // All values should be in [0, 1]
   for (const value of Object.values(permission)) {
@@ -174,6 +178,9 @@ test('extractPermissionShape handles null home gracefully', () => {
     assert.equal(typeof permission.noPerformativeHelpfulness, 'number');
     assert.equal(typeof permission.allowPartialUncertainty, 'number');
     assert.equal(typeof permission.allowSilence, 'number');
+    assert.equal(typeof permission.allowDepth, 'number');
+    assert.equal(typeof permission.allowDirectness, 'number');
+    assert.equal(typeof permission.allowRawFeeling, 'number');
   }
 });
 
@@ -282,20 +289,18 @@ test('createHomeLayer reason field is null-safe when called with no args', () =>
   assert.equal(typeof home.reason.homeReasonText, 'string');
 });
 
-test('buildPreHomeInput extracts lightweight signals from raw input', () => {
-  const preHomeInput = buildPreHomeInput('やりたいけど、ちょっと怖い');
+test('estimateField extracts lightweight signals from raw input', () => {
+  const field = estimateField('やりたいけど、ちょっと怖い');
 
-  assert.ok(preHomeInput.softness > 0);
-  assert.ok(preHomeInput.depth > 0);
-  assert.ok(preHomeInput.fragility > 0);
-  assert.ok(preHomeInput.hesitation > 0);
-  assert.ok(preHomeInput.vulnerability > 0);
+  assert.ok(field.softness > 0);
+  assert.ok(field.depth > 0);
+  assert.ok(field.fragility > 0);
 });
 
-test('createHomeLayer can stand up from preHomeInput without dynamic layers', () => {
+test('createHomeLayer can stand up from estimateField without buildPreHomeInput', () => {
   const home = createHomeLayer({
     makerSeed: { text: 'seed' },
-    preHomeInput: buildPreHomeInput('最近ちょっと自信ない'),
+    field: estimateField('最近ちょっと自信ない'),
   });
 
   assert.ok(home.kernel.slowDown > 0);

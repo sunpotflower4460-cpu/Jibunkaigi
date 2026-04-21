@@ -19,7 +19,11 @@ const clamp01 = (v) => Math.max(0, Math.min(1, typeof v === 'number' && Number.i
  */
 function dominantAxis(beliefs) {
   if (!Array.isArray(beliefs) || beliefs.length === 0) return null;
-  const best = beliefs.reduce(
+  const prioritized = beliefs.filter(
+    (belief) => belief?.axis !== 'identity' && belief?.axis !== 'mission'
+  );
+  const source = prioritized.length > 0 ? prioritized : beliefs;
+  const best = source.reduce(
     (acc, b) => {
       const w = typeof b.weight === 'number' && Number.isFinite(b.weight) ? b.weight : 0;
       return w > acc.weight ? { axis: b.axis ?? null, weight: w } : acc;
