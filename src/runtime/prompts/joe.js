@@ -216,6 +216,10 @@ export const buildJoeSystemPrompt = ({
   othersField,
   // latentState: runInternalOS の13層計算の出力
   latentState,
+  // emergingField: focusPoints / bodySignals など
+  emergingField,
+  // previousLatentState: afterglow 用
+  previousLatentState,
   // backward compatibility only — LLM には渡さない
   internalOS: _internalOS,
   surfaceWindow: _surfaceWindow,
@@ -234,8 +238,12 @@ export const buildJoeSystemPrompt = ({
     : safeActivated.reentry?.text || '';
 
   // 新構造: textPipeline からの描写
-  const existenceText = effectiveLatentState ? buildExistenceText(effectiveLatentState) : '';
-  const fieldText = effectiveLatentState ? buildFieldText(effectiveLatentState) : '';
+  const existenceText = effectiveLatentState
+    ? buildExistenceText(effectiveLatentState, { previousLatentState })
+    : '';
+  const fieldText = effectiveLatentState
+    ? buildFieldText(effectiveLatentState, { focusPoints: emergingField?.focusPoints })
+    : '';
   const marginText = effectiveLatentState ? buildMarginText(effectiveLatentState) : '';
 
   // 新構造の7ブロック
@@ -260,8 +268,11 @@ export const buildJoeSystemPrompt = ({
   }
 
   // [場の余白]
+  // モード指示をここに吸収する
   if (marginText) {
-    sections.push(`【場の余白】\n${marginText}`);
+    sections.push(`【場の余白】\n${marginText}\n\n${modeGuide}`);
+  } else if (modeGuide) {
+    sections.push(`【場の余白】\n${modeGuide}`);
   }
 
   // [内的方向づけ（この回だけの構え）]
@@ -281,8 +292,8 @@ export const buildJoeSystemPrompt = ({
 
   // [相手の言葉] は user prompt に含まれるため、system prompt には含めない
 
-  // 末尾の誘導文
-  sections.push(`【今回のモード】\n${modeGuide}\n\n何を言うかは、あなたが決めてください。`);
+  // 末尾の静かな開口部（モード指示は前段へ移動済み）
+  sections.push('何を言うかは、あなたが決めてください。');
 
   return sections.filter(Boolean).join('\n\n').trim();
 };

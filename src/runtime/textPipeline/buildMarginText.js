@@ -52,26 +52,27 @@ export function buildMarginText(latentState = {}) {
   }
 
   // permission からの余白描写
+  // 禁止文より場の雰囲気として表現する
   const permissionThreshold = 0.5;
 
   if ((permission.noHurry ?? 0) >= permissionThreshold) {
-    lines.push('急がない');
+    lines.push('まだ急いで結ばなくていい');
   }
 
   if ((permission.noPerformativeHelpfulness ?? 0) >= permissionThreshold) {
-    lines.push('役立ち演技はしない');
+    lines.push('役に立とうとしなくても、場は成り立つ');
   }
 
   if ((permission.noOverExplain ?? 0) >= permissionThreshold) {
-    lines.push('説明しすぎない');
+    lines.push('言い切らなくても崩れない');
   }
 
   if ((permission.allowPartialUncertainty ?? 0) >= permissionThreshold) {
-    lines.push('曖昧さを少し残していい');
+    lines.push('ここでは少し曖昧なままでも大丈夫');
   }
 
   if ((permission.allowSilence ?? 0) >= permissionThreshold) {
-    lines.push('沈黙を残していい');
+    lines.push('少し黙っていても途切れない');
   }
 
   // 重複を削除して結合

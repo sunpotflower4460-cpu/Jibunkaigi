@@ -431,6 +431,8 @@ export const handleAgentResponse = async ({
 
     // runInternalOS を正本とし、latentState 由来の素材を明示的に受け渡す
     latentState = continuityInternalOS?.latentState ?? null;
+    const emergingField = continuityInternalOS?.emergingField ?? null;
+    const previousLatentState = afterglowSeed?.previousLatentState ?? null;
     activatedForPrompt = {
       ...(activated || {}),
       finalDecisionSubstrate: latentState?.finalDecisionSubstrate ?? activated?.finalDecisionSubstrate ?? null,
@@ -448,6 +450,8 @@ export const handleAgentResponse = async ({
         mode: selectedMode,
         userText: latestUserText,
         latentState,
+        emergingField,
+        previousLatentState,
         internalOS: continuityInternalOS,
         surfaceFrame,
         stateGuide: agentStateGuide,

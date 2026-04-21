@@ -145,7 +145,8 @@ test('新プロンプト構造は7ブロックを含む', () => {
   assert.ok(prompt.includes('【場の余白】'), 'missing 場の余白 block');
   // 【内的方向づけ】は reentry が空なので出ない
   // 【ここまでの流れ】は context が空なので出ない
-  assert.ok(prompt.includes('【今回のモード】'), 'missing 今回のモード block');
+  // モード指示は【場の余白】に含まれる
+  assert.ok(prompt.includes('自然な長さでいい'), 'missing mode guide in margin block');
 });
 
 test('アンカーテキストが含まれる', () => {
@@ -230,10 +231,10 @@ test('buildMarginText が permission と consciousIntent.holdBack から動的�
   assert.ok(intensePrompt.includes('触れすぎない。そっと受ける'), 'intense should include holdBack text');
 
   // permission の反映確認 (noOverExplain: 0.7 なので閾値 0.5 を超える)
-  assert.ok(gentlePrompt.includes('説明しすぎない'), 'gentle should include permission text');
+  assert.ok(gentlePrompt.includes('言い切らなくても崩れない'), 'gentle should include permission text');
 
   // permission の反映確認 (allowSilence: 0.8 なので閾値 0.5 を超える)
-  assert.ok(intensePrompt.includes('沈黙を残していい'), 'intense should include allowSilence text');
+  assert.ok(intensePrompt.includes('少し黙っていても途切れない'), 'intense should include allowSilence text');
 });
 
 test('latentState なしでも正常動作する (後方互換)', () => {
@@ -245,8 +246,8 @@ test('latentState なしでも正常動作する (後方互換)', () => {
   // アンカーテキストは必ず含まれる
   assert.ok(prompt.includes('（ジョーとして。）'), 'anchor should be present even without latentState');
 
-  // モードガイドは常に含まれる
-  assert.ok(prompt.includes('【今回のモード】'), 'mode guide should be present');
+  // モードガイドは場の余白に含まれる
+  assert.ok(prompt.includes('自然な長さでいい'), 'mode guide should be present in margin section');
 });
 
 test('mirror プロンプトも7ブロック構造を持つ', () => {

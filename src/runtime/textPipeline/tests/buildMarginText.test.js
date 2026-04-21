@@ -21,11 +21,11 @@ test('buildMarginText: generates margin text from consciousIntent and permission
 
   assert.ok(typeof result === 'string', 'should return string');
   assert.ok(result.includes('答えを先に出さない'), 'should include holdBack');
-  assert.ok(result.includes('急がない'), 'should include noHurry');
-  assert.ok(result.includes('役立ち演技はしない'), 'should include noPerformativeHelpfulness');
-  assert.ok(result.includes('説明しすぎない'), 'should include noOverExplain');
-  assert.ok(result.includes('曖昧さを少し残していい'), 'should include allowPartialUncertainty');
-  assert.ok(result.includes('沈黙を残していい'), 'should include allowSilence');
+  assert.ok(result.includes('まだ急いで結ばなくていい'), 'should include noHurry');
+  assert.ok(result.includes('役に立とうとしなくても、場は成り立つ'), 'should include noPerformativeHelpfulness');
+  assert.ok(result.includes('言い切らなくても崩れない'), 'should include noOverExplain');
+  assert.ok(result.includes('ここでは少し曖昧なままでも大丈夫'), 'should include allowPartialUncertainty');
+  assert.ok(result.includes('少し黙っていても途切れない'), 'should include allowSilence');
 });
 
 test('buildMarginText: respects threshold (0.5)', () => {
@@ -41,15 +41,15 @@ test('buildMarginText: respects threshold (0.5)', () => {
   const result = buildMarginText(latentState);
 
   assert.ok(typeof result === 'string', 'should return string');
-  assert.ok(!result.includes('急がない'), 'should not include noHurry below threshold');
-  assert.ok(!result.includes('役立ち演技はしない'), 'should not include noPerformativeHelpfulness below threshold');
-  assert.ok(result.includes('説明しすぎない'), 'should include noOverExplain above threshold');
+  assert.ok(!result.includes('まだ急いで結ばなくていい'), 'should not include noHurry below threshold');
+  assert.ok(!result.includes('役に立とうとしなくても'), 'should not include noPerformativeHelpfulness below threshold');
+  assert.ok(result.includes('言い切らなくても崩れない'), 'should include noOverExplain above threshold');
 });
 
 test('buildMarginText: removes duplicates', () => {
   const latentState = {
     consciousIntent: {
-      holdBack: '急がない',
+      holdBack: 'まだ急いで結ばなくていい',
     },
     permission: {
       noHurry: 0.8,
@@ -59,8 +59,8 @@ test('buildMarginText: removes duplicates', () => {
   const result = buildMarginText(latentState);
 
   assert.ok(typeof result === 'string', 'should return string');
-  const urgencyCount = (result.match(/急がない/g) || []).length;
-  assert.strictEqual(urgencyCount, 1, 'should not duplicate "急がない"');
+  const urgencyCount = (result.match(/まだ急いで結ばなくていい/g) || []).length;
+  assert.strictEqual(urgencyCount, 1, 'should not duplicate "まだ急いで結ばなくていい"');
 });
 
 test('buildMarginText: handles empty latentState', () => {
