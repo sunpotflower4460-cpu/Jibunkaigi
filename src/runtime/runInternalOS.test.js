@@ -967,3 +967,58 @@ test('buildFieldText uses latentState.bodySignals external/internal shape', () =
   assert.ok(typeof internal.tension === 'number');
   assert.ok(typeof internal.hesitation === 'number');
 });
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// emergingField delivery path tests
+// Verify emergingField is always present at top level with focusPoints
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+test('runInternalOS returns emergingField at top level', () => {
+  const result = runInternalOS('最近ちょっと自信ない', { agentId: 'creative' });
+
+  // emergingField must exist at top level
+  assert.ok(result.emergingField, 'emergingField should exist at top level');
+
+  // emergingField must have expected keys
+  assert.ok(Array.isArray(result.emergingField.attentionTargets), 'attentionTargets should be array');
+  assert.ok(Array.isArray(result.emergingField.focusPoints), 'focusPoints should be array');
+  assert.ok(Array.isArray(result.emergingField.resonanceAxes), 'resonanceAxes should be array');
+  assert.ok(result.emergingField.bodySignals, 'bodySignals should exist');
+  assert.ok(Array.isArray(result.emergingField.atmosphere), 'atmosphere should be array');
+});
+
+test('runInternalOS emergingField.focusPoints has valid shape', () => {
+  const result = runInternalOS('最近ちょっと自信ない', { agentId: 'creative' });
+
+  const focusPoints = result.emergingField.focusPoints;
+  assert.ok(Array.isArray(focusPoints), 'focusPoints should be array');
+
+  // Each focusPoint should have expected shape from radialCondensation
+  for (const fp of focusPoints) {
+    assert.ok(typeof fp === 'object', 'focusPoint should be object');
+    assert.ok(typeof fp.signal === 'string', 'focusPoint.signal should be string');
+    assert.ok(typeof fp.intensity === 'number', 'focusPoint.intensity should be number');
+    assert.ok(fp.intensity >= 0 && fp.intensity <= 1, 'focusPoint.intensity should be in [0,1]');
+    assert.ok(Array.isArray(fp.sources), 'focusPoint.sources should be array');
+  }
+});
+
+test('runInternalOS emergingField.bodySignals is flat version', () => {
+  const result = runInternalOS('最近ちょっと自信ない', { agentId: 'creative' });
+
+  const bodySignals = result.emergingField.bodySignals;
+  assert.ok(bodySignals, 'emergingField.bodySignals should exist');
+
+  // This should be the FLAT version, not split
+  assert.ok(typeof bodySignals.tension === 'number');
+  assert.ok(typeof bodySignals.softness === 'number');
+  assert.ok(typeof bodySignals.hesitation === 'number');
+  assert.ok(typeof bodySignals.urgency === 'number');
+  assert.ok(typeof bodySignals.warmth === 'number');
+  assert.ok(typeof bodySignals.contraction === 'number');
+
+  // Should NOT have external/internal split
+  assert.ok(!bodySignals.external, 'emergingField.bodySignals should not have external');
+  assert.ok(!bodySignals.internal, 'emergingField.bodySignals should not have internal');
+});
+
