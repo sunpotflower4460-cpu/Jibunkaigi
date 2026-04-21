@@ -81,6 +81,7 @@ export const runInternalOSForAgent = ({
   safePreviousLatentState,
   othersFieldEntries,
   microSignals,
+  trace, // トレースオブジェクトを受け取る
 }) => {
   if (isMaster) {
     return null;
@@ -94,6 +95,7 @@ export const runInternalOSForAgent = ({
     othersField: othersFieldEntries,
     lengthPreference: 'medium',
     microSignals,
+    trace, // トレースを渡す
   });
 };
 
@@ -134,6 +136,7 @@ export const buildFullGenerationContext = ({
   latestUserText,
   microSignals,
   pushAgentDebugEvent,
+  trace, // トレースオブジェクトを受け取る
 }) => {
   // A. context 構築
   const context = buildContext({ messages, userName, agents });
@@ -162,6 +165,7 @@ export const buildFullGenerationContext = ({
     safePreviousLatentState,
     othersFieldEntries,
     microSignals,
+    trace, // トレースを渡す
   });
 
   // E. surfaceFrame
