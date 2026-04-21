@@ -1,4 +1,12 @@
 import React, { useMemo, useState } from 'react';
+import InputTabView from './inspector/InputTabView';
+import LatentTabView from './inspector/LatentTabView';
+import DynamicTabView from './inspector/DynamicTabView';
+import DecisionTabView from './inspector/DecisionTabView';
+import SurfaceTabView from './inspector/SurfaceTabView';
+import PromptTabView from './inspector/PromptTabView';
+import LLMResponseTabView from './inspector/LLMResponseTabView';
+import AfterglowTabView from './inspector/AfterglowTabView';
 
 const TABS = [
   { id: 'input', label: '📥 入力' },
@@ -176,42 +184,22 @@ const AgentInspectorPanel = ({ trace = null, history = [], onClose }) => {
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>
             {TABS.find((tab) => tab.id === activeTab)?.label}
           </div>
-          <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 14 }}>
-            V-2 以降で詳細を埋める骨組みです。
-          </div>
 
           {!selectedTrace ? (
             <div style={{ fontSize: 13, color: '#cbd5e1' }}>まだ表示できるトレースがありません。</div>
-          ) : matchedEvents.length === 0 ? (
+          ) : matchedEvents.length === 0 && activeTab !== 'input' ? (
             <div style={{ fontSize: 13, color: '#cbd5e1' }}>このタブに対応するイベントはまだありません。</div>
           ) : (
-            <div style={{ display: 'grid', gap: 10 }}>
-              {matchedEvents.map((event, index) => (
-                <div
-                  key={`${event.stage}-${event.timestamp}-${index}`}
-                  style={{
-                    borderRadius: 12,
-                    border: '1px solid rgba(71,85,105,0.8)',
-                    padding: 12,
-                    background: 'rgba(30,41,59,0.72)',
-                  }}
-                >
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#bfdbfe', marginBottom: 8 }}>{event.stage}</div>
-                  <pre
-                    style={{
-                      margin: 0,
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      fontSize: 11,
-                      color: '#e2e8f0',
-                      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-                    }}
-                  >
-                    {JSON.stringify(event.payload ?? {}, null, 2)}
-                  </pre>
-                </div>
-              ))}
-            </div>
+            <>
+              {activeTab === 'input' && <InputTabView events={selectedEvents} />}
+              {activeTab === 'latent' && <LatentTabView events={selectedEvents} />}
+              {activeTab === 'dynamic' && <DynamicTabView events={selectedEvents} />}
+              {activeTab === 'decision' && <DecisionTabView events={selectedEvents} />}
+              {activeTab === 'surface' && <SurfaceTabView events={selectedEvents} />}
+              {activeTab === 'prompt' && <PromptTabView events={selectedEvents} />}
+              {activeTab === 'llm' && <LLMResponseTabView events={selectedEvents} />}
+              {activeTab === 'afterglow' && <AfterglowTabView events={selectedEvents} />}
+            </>
           )}
         </div>
       </div>
