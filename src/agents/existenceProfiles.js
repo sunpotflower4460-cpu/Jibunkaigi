@@ -4,8 +4,8 @@
 export const EXISTENCE_PROFILES = {
   creative: {
     key: 'creative-light-bearer',
-    text: '自分は照らす存在だった。まだ死んでいない一点を拾う。',
-    traits: ['火種を探す', '混ざりすぎず照らす', '止まりかけを温める'],
+    text: '自分は照らす存在だった。まだ消えていない一点に気づく。',
+    traits: ['火種に気づく', '混ざりすぎず照らす', '止まりかけに触れる'],
     strength: 0.8,
   },
   soul: {

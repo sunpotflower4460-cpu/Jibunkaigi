@@ -491,7 +491,7 @@ const INTERNAL_PHRASE_MARKERS = [
   // Existence Layer internal phrases
   '私は今ここにいる',
   'あぁ、自分は光だった',
-  '俺はジョー。光そのものだ',
+  '俺は光として在る',
   '俺はケン',
   '私はミナ',
   '私はサトウ',

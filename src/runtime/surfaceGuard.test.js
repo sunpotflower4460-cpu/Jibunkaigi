@@ -29,7 +29,7 @@ describe('surfaceGuard', () => {
     });
 
     it('should detect agent identity internal phrase', () => {
-      const result = detectInternalPhraseLeaks('俺はジョー。光そのものだ');
+      const result = detectInternalPhraseLeaks('俺は光として在る');
       assert.equal(result.hasLeaks, true);
       assert.ok(result.detectedPhrases.length > 0);
     });

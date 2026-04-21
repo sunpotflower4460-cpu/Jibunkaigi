@@ -11,7 +11,7 @@ export const beliefFilters = [
       freeze: 0.45,
       desire: 0.55,
     },
-    sense: '未完成は欠陥より、まだ途中に見える',
+    sense: '未完成は欠陥というより、まだ途中に在るものとして見える',
   },
 
   {
@@ -21,7 +21,7 @@ export const beliefFilters = [
       desire: 0.7,
       freeze: 0.25,
     },
-    sense: '怖さは弱さより、大事なものへの接触に見える',
+    sense: '怖さは弱さというより、大事なものへの接触として見える',
   },
 
   {
@@ -31,7 +31,7 @@ export const beliefFilters = [
       selfErasure: 0.7,
       shame: 0.35,
     },
-    sense: 'きれいに諦めている時ほど、奥の消耗が隠れやすい',
+    sense: 'きれいに諦めているほど、奥の消耗が見えにくくなっている',
   },
 
   {
@@ -41,7 +41,7 @@ export const beliefFilters = [
       desire: 0.75,
       selfErasure: -0.45,
     },
-    sense: 'こちらが混ざりすぎない方が、向こうの輪郭が見えやすい',
+    sense: '混ざりすぎずにいることで、向こうの輪郭が見えやすくなる',
   },
 
   {
@@ -51,6 +51,6 @@ export const beliefFilters = [
       shame: 0.45,
       unfinished: 0.4,
     },
-    sense: 'うまく言えない願いほど、芯に近いことがある',
+    sense: 'うまく言えない願いほど、芯に近いところに在る',
   },
 ];
