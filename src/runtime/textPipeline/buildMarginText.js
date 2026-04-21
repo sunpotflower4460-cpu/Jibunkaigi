@@ -75,6 +75,18 @@ export function buildMarginText(latentState = {}) {
     lines.push('少し黙っていても途切れない');
   }
 
+  if ((permission.allowDepth ?? 0) >= permissionThreshold) {
+    lines.push('深く入っても大丈夫');
+  }
+
+  if ((permission.allowDirectness ?? 0) >= permissionThreshold) {
+    lines.push('そのまま言っても崩れない');
+  }
+
+  if ((permission.allowRawFeeling ?? 0) >= permissionThreshold) {
+    lines.push('感じたままに触れていい');
+  }
+
   // 重複を削除して結合
   const uniqueLines = [...new Set(lines.filter(Boolean))];
   return uniqueLines.join('。\n');

@@ -268,6 +268,31 @@ describe('activateThoughts', () => {
     assert.ok(result.activatedThoughts.some((thought) => thought.owner === 'joe'));
   });
 
+  it('matches Japanese triggers against Japanese user text', () => {
+    const result = activateThoughts({
+      agentId: 'joe',
+      userText: 'まだ消えていないものがある気がする',
+      emergingField: {
+        attentionTargets: ['まだ', '消えていない'],
+        resonanceAxes: ['illumination'],
+        bodySignals: {
+          tension: 0.4,
+          softness: 0.4,
+          hesitation: 0.5,
+          urgency: 0.2,
+          warmth: 0.4,
+          contraction: 0.4,
+        },
+        atmosphere: [],
+      },
+    });
+
+    assert.ok(
+      result.activatedThoughts.some((thought) => thought.nodeId === 'joe-thought-001'),
+      'Japanese trigger should match Japanese user text',
+    );
+  });
+
   it('should keep protoMeaning narrative boost under 10 percent for creative only', () => {
     const result = activateThoughts({
       agentId: 'creative',

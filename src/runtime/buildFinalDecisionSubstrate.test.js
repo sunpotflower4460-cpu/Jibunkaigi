@@ -177,7 +177,7 @@ describe('buildFinalDecisionSubstrate', () => {
       agentId: 'satou',
       beliefTension: {
         totalTensionStrength: 0.6,
-        dominantTensionAxis: 'structure-vs-holding',
+        dominantTensionAxis: 'friction',
         activeTensions: [
           { axis1: 'structure', axis2: 'holding', strength: 0.6 },
         ],
@@ -187,7 +187,7 @@ describe('buildFinalDecisionSubstrate', () => {
     const result = buildFinalDecisionSubstrate(input);
 
     assert.strictEqual(result.foreground.tensionSeeds.length, 1);
-    assert.ok(result.foreground.tensionSeeds[0].includes('structure'));
+    assert.ok(result.foreground.tensionSeeds[0].includes('ほどきたい'));
   });
 
   it('should not extract tension seeds when tension strength is low', () => {
@@ -195,7 +195,7 @@ describe('buildFinalDecisionSubstrate', () => {
       agentId: 'joe',
       beliefTension: {
         totalTensionStrength: 0.2,
-        dominantTensionAxis: 'structure-vs-holding',
+        dominantTensionAxis: 'friction',
       },
     };
 

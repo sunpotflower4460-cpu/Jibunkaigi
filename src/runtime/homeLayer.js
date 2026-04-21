@@ -72,6 +72,8 @@ const OUTPUT_LIMIT_KEYS = {
   keepOneThread: 'keepOneThread',
 };
 
+// DEPRECATED: runInternalOS では estimateField を Home 層の入力に使う。
+// 既存互換のため export は残し、旧テストや限定的な呼び出しだけを支える。
 export function buildPreHomeInput(input) {
   const text = typeof input === 'string' ? input.trim().toLowerCase() : '';
 
@@ -354,7 +356,11 @@ export function createHomeLayer({ field = {}, reaction = {}, stance = {}, preHom
  * 後方互換のため、permission 形式も返す
  * permissionLayer.js からの移行を支援する
  */
-export function extractPermissionShape(homeLayer) {
+export function extractPermissionShape(homeLayer, agentContext = {}) {
+  const dominantAxis = typeof agentContext?.dominantBeliefAxis === 'string'
+    ? agentContext.dominantBeliefAxis
+    : null;
+
   if (!homeLayer || !homeLayer.kernel || !homeLayer.outputLimits) {
     return {
       noHurry: 0.2,
@@ -362,6 +368,9 @@ export function extractPermissionShape(homeLayer) {
       noPerformativeHelpfulness: 0.2,
       allowPartialUncertainty: 0.18,
       allowSilence: 0.18,
+      allowDepth: 0.15,
+      allowDirectness: 0.1,
+      allowRawFeeling: 0.1,
     };
   }
 
@@ -377,5 +386,17 @@ export function extractPermissionShape(homeLayer) {
     noPerformativeHelpfulness: kernel.releaseHelpfulness ?? 0.2,
     allowPartialUncertainty: (kernel.releaseAccuracyPressure ?? 0.18) * 0.6 + (outputLimits.keepOneThread ?? 0.2) * 0.4,
     allowSilence: clamp01(allowSilenceRaw),
+    allowDepth:
+      dominantAxis === 'illumination' || dominantAxis === 'presence'
+        ? clamp01(0.3 + (kernel.allowOneLivingThread ?? 0) * 0.4)
+        : clamp01(0.15 + (kernel.allowOneLivingThread ?? 0) * 0.2),
+    allowDirectness:
+      dominantAxis === 'structure' || dominantAxis === 'realism'
+        ? clamp01(0.3 + (1 - (kernel.slowDown ?? 0.2)) * 0.3)
+        : 0.1,
+    allowRawFeeling:
+      dominantAxis === 'holding' || dominantAxis === 'tenderness'
+        ? clamp01(0.35 + (kernel.returnBeforeOutput ?? 0) * 0.3)
+        : 0.1,
   };
 }

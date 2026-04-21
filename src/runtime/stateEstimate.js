@@ -21,6 +21,8 @@ export const estimateState = (text) => {
   }
 
   const t = text.toLowerCase();
+  const desirePhrases = /(したい|なりたい|やりたい|出したい|届けたい|進みたい|意欲|やる気|気力)/.test(t);
+  const desireNegated = /(湧かない|わかない|出ない|なくなった|失った|消えた|なくしてしまった)/.test(t);
 
   let desire = 0;
   let fear = 0;
@@ -40,6 +42,9 @@ export const estimateState = (text) => {
   }
   if (t.includes('憧れ') || t.includes('夢')) {
     desire += 0.3;
+  }
+  if (desirePhrases) {
+    desire += 0.15;
   }
 
   // ==================== reach 側 ====================
@@ -84,6 +89,10 @@ export const estimateState = (text) => {
   }
   if (t.includes('どうせ') || t.includes('しょせん')) {
     resignation += 0.3;
+  }
+  if (desireNegated) {
+    resignation += 0.25;
+    freeze += 0.15;
   }
 
   // ==================== unfinished 側 ====================

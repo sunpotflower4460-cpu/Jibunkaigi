@@ -10,6 +10,10 @@ test('buildExistenceText: generates text from existence2', () => {
       recalledSelfTraits: ['静かに見る', '言葉を選ぶ'],
     },
     beliefCore: {
+      activeCoreBeliefs: [
+        { axis: 'identity', textJa: '私は観察する人だ', weight: 0.95 },
+        { axis: 'mission', textJa: 'まだ見えていないものが見えるようにする', weight: 0.9 },
+      ],
       dominantBeliefAxis: 'illumination',
     },
   };
@@ -18,7 +22,7 @@ test('buildExistenceText: generates text from existence2', () => {
 
   assert.ok(typeof result === 'string', 'should return string');
   assert.ok(result.includes('自分は観察する人'), 'should include identityFeelingText');
-  assert.ok(result.includes('静かに見る'), 'should include recalledSelfTraits');
+  assert.ok(result.includes('まだ見えていないものが見えるようにする'), 'should include beliefCore textJa');
   assert.ok(result.includes('光が届かない場所に目が向く'), 'should include axis feeling');
 });
 
