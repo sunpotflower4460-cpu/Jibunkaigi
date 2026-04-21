@@ -220,6 +220,16 @@ export const handleAgentResponse = async ({
   const afterglowSeed = getAfterglowSeed(readSessionAfterglow(sessionId));
   const microSignals = estimateMicroSignals(latestUserText);
 
+  // トレースにINPUT段階を記録
+  if (trace) {
+    trace.push(TraceStage.INPUT, {
+      userText: latestUserText,
+      selectedMode,
+      afterglowSeed,
+      microSignals,
+    });
+  }
+
   let context, othersFieldEntries, othersFieldText, continuityInternalOS, surfaceFrame;
 
   try {
@@ -342,6 +352,12 @@ export const handleAgentResponse = async ({
     // C. estimateState
     try {
       estimatedState = estimateState(latestUserText);
+      // トレースに記録
+      if (trace && estimatedState) {
+        trace.push(TraceStage.INPUT, {
+          estimateState: estimatedState,
+        });
+      }
     } catch (err) {
       handlePhaseError('estimate-state', err);
     }
@@ -356,6 +372,12 @@ export const handleAgentResponse = async ({
         afterglowSeed,
         othersField: othersFieldEntries,
       });
+      // トレースにACTIVATION段階を記録
+      if (trace && activated) {
+        trace.push(TraceStage.ACTIVATION, {
+          activated,
+        });
+      }
     } catch (err) {
       handlePhaseError('activate-agent', err);
     }
