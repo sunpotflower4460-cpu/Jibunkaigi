@@ -1,5 +1,30 @@
 // src/runtime/prompts/ken.js
-// ケン（strategist）用の system prompt / user prompt を組み立てる。
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ケン（strategist）用の system prompt / user prompt builder
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// ■ 責務：
+//   このファイルは、Ken 専用の prompt を構築するエージェント固有 builder である。
+//   P系（Phase P-1 以降）の prompt 構築において、以下の責務を持つ：
+//   1. latentState を textPipeline モジュールに渡し、7ブロック構造を組み立てる
+//   2. activated particles / reentry / context / othersField などを適切に配置する
+//   3. mode に応じた末尾誘導文を追加する
+//   4. Ken 固有の存在アンカー「（ケンとして。）」を含める
+//
+// ■ 7ブロック構造との対応：
+//   buildKenSystemPrompt は、docs/prompt-structure-v2.md の7ブロック構造に従う：
+//   1. 【存在の前提】  ← buildExistenceText(latentState)
+//   2. 【今の場の空気】  ← buildFieldText(latentState)
+//   3. 【場に浮かんでいるもの】  ← renderActivatedParticles(activated)
+//   4. 【場の余白】  ← buildMarginText(latentState)
+//   5. 【内的方向づけ（この回だけの構え）】  ← activated.reentry.text
+//   6. 【ここまでの流れ】  ← normalizeContext(context)
+//   7. 【場の残響】  ← othersField（オプション）
+//   8. 【今回のモード】  ← MODE_GUIDE[mode]
+//
+// ■ P系正本入口との関係：
+//   このファイルは、src/runtime/buildAgentPrompt.js の buildAgentSystemPrompt から
+//   呼び出されるエージェント固有 builder である。
 //
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // De-templating Pilot: Ken Zero-Instruction Architecture
