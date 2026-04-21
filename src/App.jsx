@@ -41,6 +41,7 @@ import { isSurfaceDebugEnabled, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surf
 import { getOthersVisibilityState, getOthersEmptyMessage, getOthersDebugLabel } from './runtime/getOthersVisibilityState';
 import { getJoeDebugRuntimeFlags, setJoeDebugEnabled, JOE_DEBUG_STORAGE_KEY } from './runtime/joeDebug';
 import { isInspectorEnabled, setInspectorEnabled, INSPECTOR_STORAGE_KEY } from './runtime/inspectorDebug';
+import { saveTraceToHistory, loadTraceHistory } from './runtime/trace/traceHistoryStore.js';
 import { handleAgentResponse as orchestrateAgentResponse } from './runtime/orchestrator/handleAgentResponse.js';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
 import JoeDebugPanel from './components/JoeDebugPanel';
@@ -257,7 +258,7 @@ const App = () => {
   const [isCompareCollapsed, setIsCompareCollapsed] = useState(false);
   const [compareLabelStore, setCompareLabelStore] = useState(() => readCompareLabelStore());
   const [isInspectorPanelVisible, setIsInspectorPanelVisible] = useState(() => isInspectorEnabled());
-  const [inspectorTraceHistory, setInspectorTraceHistory] = useState([]);
+  const [inspectorTraceHistory, setInspectorTraceHistory] = useState(() => loadTraceHistory());
   const errorTimeoutRef = useRef(null);
 
   const currentSessionIdRef = useRef(currentSessionId);
@@ -1258,9 +1259,13 @@ const App = () => {
       }
 
       if (result.trace) {
+        // localStorage に保存（開発モードのみ）
+        saveTraceToHistory(result.trace);
+
+        // メモリ内の履歴も更新
         setInspectorTraceHistory((prev) => {
           const next = [result.trace, ...prev.filter((entry) => entry?.turnId !== result.trace.turnId)];
-          return next.slice(0, 3);
+          return next.slice(0, 10); // メモリ上は最大10件
         });
       }
 
