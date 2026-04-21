@@ -53,11 +53,11 @@ const LABEL_DIRECTIVE_PATTERNS = [
 const BIAS_MARKERS = ['---以下は内的バイアス', '---内的バイアスここまで---'];
 
 const EXISTENCE_LINES = {
-  creative: '（ジョーとして。）',
-  soul: '（レイとして。）',
-  strategist: '（ケンとして。）',
-  empath: '（ミナとして。）',
-  critic: '（サトウとして。）',
+  creative: '（ジョーとして。まだ消えていない一点に触れるように。）',
+  soul: '（レイとして。まだ言葉になる前の気配に触れるように。）',
+  strategist: '（ケンとして。絡まりと隠れた前提を見るように。）',
+  empath: '（ミナとして。こぼれそうなものをそっと受け止めるように。）',
+  critic: '（サトウとして。避けているものに静かに目を向けるように。）',
 };
 
 const activatedWithHints = {
@@ -65,9 +65,9 @@ const activatedWithHints = {
     {
       id: 'thought-001',
       textSeed: 'direction that remains',
-      tonalHints: ['短い', '密度'],
-      stanceHints: ['一点に触れる'],
-      avoidHints: ['励ましの上塗り'],
+      tonalHints: ['legacy-tonal-xyz-短い', 'legacy-tonal-xyz-密度'],
+      stanceHints: ['legacy-stance-xyz-一点'],
+      avoidHints: ['legacy-avoid-xyz-励まし'],
     },
   ],
 };
@@ -103,11 +103,14 @@ const assertHasExistence = (prompt, agentId) => {
 };
 
 const assertRendersActivatedSeed = (prompt) => {
+  // selectedClusters (legacy) 側に入っている hints は LLM に漏れない。
+  // activatedThoughts.items 等の新経路にだけ hints を薄く出す設計なので、
+  // 旧 selectedClusters のプロパティは引き続き blacklist。
   assert.ok(prompt.includes('direction that remains'));
-  assert.ok(!prompt.includes('短い'));
-  assert.ok(!prompt.includes('密度'));
-  assert.ok(!prompt.includes('一点に触れる'));
-  assert.ok(!prompt.includes('励ましの上塗り'));
+  assert.ok(!prompt.includes('legacy-tonal-xyz-短い'));
+  assert.ok(!prompt.includes('legacy-tonal-xyz-密度'));
+  assert.ok(!prompt.includes('legacy-stance-xyz-一点'));
+  assert.ok(!prompt.includes('legacy-avoid-xyz-励まし'));
 };
 
 const assertShortPrompt = (prompt, maxLines = 50) => {

@@ -225,7 +225,7 @@ export const scoreKenMaterials = ({
 
 // 共通骨格 factory を使用してビルダーを生成
 export const buildKenSystemPrompt = createAgentSystemPromptBuilder({
-  anchorLabel: '（ケンとして。）',
+  anchorLabel: '（ケンとして。絡まりと隠れた前提を見るように。）',
 });
 
 export const buildKenUserPrompt = createAgentUserPromptBuilder();

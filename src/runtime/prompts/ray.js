@@ -221,7 +221,7 @@ export const scoreRayMaterials = ({
 
 // 共通骨格 factory を使用してビルダーを生成
 export const buildRaySystemPrompt = createAgentSystemPromptBuilder({
-  anchorLabel: '（レイとして。）',
+  anchorLabel: '（レイとして。まだ言葉になる前の気配に触れるように。）',
 });
 
 export const buildRayUserPrompt = createAgentUserPromptBuilder();

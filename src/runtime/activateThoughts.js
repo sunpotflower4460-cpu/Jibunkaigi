@@ -18,10 +18,8 @@
 
 import { getThoughtReservoir } from '../reservoir/loadReservoir.js';
 import { STATE_AXIS_WEIGHT } from './config/scoringWeights.js';
+import { toCanonicalAgentId, CANONICAL_AGENT_IDS } from './agentIdentity.js';
 
-const AGENT_ALIAS_MAP = {
-  creative: 'joe',
-};
 const PROTO_MEANING_BOOST_FACTOR = 0.08;
 
 /**
@@ -33,7 +31,7 @@ const normalizeText = (text) => {
   return String(text || '').toLowerCase().trim();
 };
 
-const canonicalizeAgentId = (agentId) => AGENT_ALIAS_MAP[normalizeText(agentId)] || normalizeText(agentId);
+const canonicalizeAgentId = (agentId) => toCanonicalAgentId(agentId);
 
 const extractNarrativeTokens = (protoMeaning = {}) => {
   if (!Array.isArray(protoMeaning?.narrative)) return [];
@@ -482,8 +480,7 @@ export const activateThoughts = (input = {}) => {
   const isJoe = canonicalAgentId === 'joe';
 
   // Validate agentId
-  const validAgents = ['joe', 'ken', 'mina', 'ray', 'satou', 'mirror'];
-  if (!validAgents.includes(canonicalAgentId)) {
+  if (!CANONICAL_AGENT_IDS.includes(canonicalAgentId)) {
     return {
       activatedThoughts: [],
       topThoughtIds: [],
@@ -530,6 +527,9 @@ export const activateThoughts = (input = {}) => {
       nodeId: node.id,
       owner: node.owner,
       textSeed: node.textSeed,
+      tonalHints: Array.isArray(node.tonalHints) ? [...node.tonalHints] : [],
+      stanceHints: Array.isArray(node.stanceHints) ? [...node.stanceHints] : [],
+      avoidHints: Array.isArray(node.avoidHints) ? [...node.avoidHints] : [],
       score: score + protoMeaningBoost,
       baseScore: score,
       reasons,

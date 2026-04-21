@@ -221,7 +221,7 @@ export const scoreSatouMaterials = ({
 
 // 共通骨格 factory を使用してビルダーを生成
 export const buildSatouSystemPrompt = createAgentSystemPromptBuilder({
-  anchorLabel: '（サトウとして。）',
+  anchorLabel: '（サトウとして。避けているものに静かに目を向けるように。）',
 });
 
 export const buildSatouUserPrompt = createAgentUserPromptBuilder();

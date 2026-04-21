@@ -85,6 +85,61 @@ describe('activateThoughts', () => {
     assert.ok(owners.size > 0, 'should have thoughts from at least one owner');
   });
 
+  // 修正指示書 v3 Phase 3: activate 結果に内部 hints を残す
+  it('should carry tonal/stance/avoid hints through activated items', () => {
+    const result = activateThoughts({
+      agentId: 'joe',
+      userText: 'やりたいのに動けない',
+      emergingField: {
+        attentionTargets: ['freeze'],
+        resonanceAxes: ['illumination'],
+        bodySignals: {
+          tension: 0.5, softness: 0.5, hesitation: 0.5,
+          urgency: 0.5, warmth: 0.5, contraction: 0.5,
+        },
+        atmosphere: [],
+      },
+    });
+    assert.ok(result.activatedThoughts.length > 0);
+    for (const item of result.activatedThoughts) {
+      assert.ok(Array.isArray(item.tonalHints), 'tonalHints must be array');
+      assert.ok(Array.isArray(item.stanceHints), 'stanceHints must be array');
+      assert.ok(Array.isArray(item.avoidHints), 'avoidHints must be array');
+    }
+  });
+
+  // 修正指示書 v3 Phase 1: UI id もそのまま受け付けて canonical と同じ結果になる
+  it('should canonicalize UI agent ids (creative -> joe, soul -> ray, etc.)', () => {
+    const params = {
+      userText: 'test',
+      emergingField: {
+        attentionTargets: [],
+        resonanceAxes: [],
+        bodySignals: {
+          tension: 0.5, softness: 0.5, hesitation: 0.5,
+          urgency: 0.5, warmth: 0.5, contraction: 0.5,
+        },
+        atmosphere: [],
+      },
+    };
+    for (const [ui, canonical] of [
+      ['creative', 'joe'],
+      ['soul', 'ray'],
+      ['strategist', 'ken'],
+      ['empath', 'mina'],
+      ['critic', 'satou'],
+    ]) {
+      const uiResult = activateThoughts({ ...params, agentId: ui });
+      const canonicalResult = activateThoughts({ ...params, agentId: canonical });
+      assert.equal(
+        uiResult.activationMeta.totalCandidates,
+        canonicalResult.activationMeta.totalCandidates,
+        `${ui} and ${canonical} should see the same reservoir`
+      );
+      assert.ok(uiResult.activatedThoughts.length > 0, `${ui} should produce thoughts`);
+    }
+  });
+
   it('should boost agent-owned thoughts slightly', () => {
     const result = activateThoughts({
       agentId: 'joe',
