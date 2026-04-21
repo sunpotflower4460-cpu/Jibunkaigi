@@ -4,6 +4,49 @@
 
 テキストパイプラインは、runInternalOS が計算した latentState から、設計用語を含まない日本語の情景描写を生成する独立モジュールです。
 
+## P系 prompt 構築における位置づけ
+
+textPipeline は、P系（Phase P-1 以降）の prompt 構築における **中核コンポーネント** であり、以下の役割を果たします：
+
+```
+┌─────────────────────────────────────────────────┐
+│  runInternalOS (13層計算)                       │
+│  ↓                                              │
+│  latentState の生成                             │
+└─────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────┐
+│  buildAgentPrompt.js                           │
+│  【P系正本入口】                                 │
+│  ↓                                              │
+│  buildAgentSystemPrompt(agentId, params)       │
+│  ├─ params に latentState を含む               │
+│  └─ エージェント固有 builder を呼び出す         │
+└─────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────┐
+│  prompts/{joe|ray|ken|mina|satou}.js            │
+│  【エージェント固有 builder】                    │
+│  ↓                                              │
+│  latentState を textPipeline に渡す:           │
+│  - buildExistenceText(latentState)             │
+│  - buildFieldText(latentState)                 │
+│  - buildMarginText(latentState)                │
+└─────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────┐
+│  textPipeline/                                 │
+│  【設計用語を含まない日本語描写生成】            │
+│  ↓                                              │
+│  7ブロック構造の一部を生成:                      │
+│  1. 【存在の前提】  ← buildExistenceText        │
+│  2. 【今の場の空気】← buildFieldText            │
+│  4. 【場の余白】    ← buildMarginText           │
+└─────────────────────────────────────────────────┘
+```
+
+textPipeline は、**数値パイプライン（runInternalOS）とは独立** しており、latentState の不変スナップショットのみを入力として受け取ります。これにより、テスト可能性と保守性が向上しています。
+
 ## 設計原則
 
 1. **数値パイプライン非依存**: runInternalOS を呼ばず、latentState の不変スナップショットのみを入力とする
@@ -174,8 +217,35 @@ const freshLatentState = {
 - **カスタマイズ**: エージェントごとの描写スタイルテーブル
 - **描写品質向上**: 文脈を考慮した接続詞・語尾の自動選択
 
+---
+
+## P系 prompt 構築の全体像
+
+### 正本入口
+
+- **src/runtime/buildAgentPrompt.js** — P系正本ディスパッチャ（唯一の入口）
+  - `buildAgentSystemPrompt(agentId, params)` を通じて各エージェント builder を呼び出す
+
+### エージェント固有 builder
+
+- `src/runtime/prompts/joe.js` — Joe 専用 builder
+- `src/runtime/prompts/ray.js` — Ray 専用 builder
+- `src/runtime/prompts/ken.js` — Ken 専用 builder
+- `src/runtime/prompts/mina.js` — Mina 専用 builder
+- `src/runtime/prompts/satou.js` — Satou 専用 builder
+
+各 builder は、latentState を textPipeline に渡し、7ブロック構造を組み立てます。
+
+### 互換レイヤー
+
+- `src/runtime/buildPrompt.js` — 旧 API からの薄い委譲レイヤー
+  - **非推奨**: 新規コードでは `buildAgentPrompt.js` を直接使用
+
+---
+
 ## 参考
 
 - 設計書v2 第6章: 身体感覚の分離
 - 設計書v2 第10章: フェーズ6（textPipeline 独立）
+- **docs/prompt-structure-v2.md**: P-1 の7ブロック構造定義
 - Issue #6: P-6 実装タスク

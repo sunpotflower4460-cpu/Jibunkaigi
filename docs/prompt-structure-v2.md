@@ -414,19 +414,93 @@ Phase P-1 の完了により、以下が可能になりました:
 
 ## 関連ファイル
 
+### textPipeline モジュール
+
 - `src/runtime/textPipeline/axisDescriptions.js` — 軸・緊張・姿勢の描写テーブル
 - `src/runtime/textPipeline/buildExistenceText.js` — 存在層の情景描写生成
 - `src/runtime/textPipeline/buildFieldText.js` — 場の空気の情景描写生成
 - `src/runtime/textPipeline/buildMarginText.js` — 余白の情景描写生成
-- `src/runtime/prompts/joe.js` — ジョー用プロンプトビルダー
-- `src/runtime/prompts/ray.js` — レイ用プロンプトビルダー
-- `src/runtime/prompts/ken.js` — ケン用プロンプトビルダー
-- `src/runtime/prompts/mina.js` — ミナ用プロンプトビルダー
-- `src/runtime/prompts/satou.js` — サトウ用プロンプトビルダー
+
+### P系 prompt 構築の正本入口
+
+- `src/runtime/buildAgentPrompt.js` — **P系正本ディスパッチャ（唯一の入口）**
+  - `buildAgentSystemPrompt(agentId, params)` — エージェント別 system prompt 構築
+  - `buildAgentUserPrompt(agentId, params)` — エージェント別 user prompt 構築
+  - `buildAgentDebugPreview(...)` — 開発者観察用プレビュー（本番 prompt 正本とは完全分離）
+
+### エージェント固有 builder
+
+- `src/runtime/prompts/joe.js` — ジョー（creative）用プロンプトビルダー
+- `src/runtime/prompts/ray.js` — レイ（soul）用プロンプトビルダー
+- `src/runtime/prompts/ken.js` — ケン（strategist）用プロンプトビルダー
+- `src/runtime/prompts/mina.js` — ミナ（empath）用プロンプトビルダー
+- `src/runtime/prompts/satou.js` — サトウ（critic）用プロンプトビルダー
+
+各 builder は、以下の責務を持つ：
+1. latentState を textPipeline モジュールに渡し、7ブロック構造を組み立てる
+2. activated particles / reentry / context / othersField などを適切に配置する
+3. mode に応じた末尾誘導文を追加する
+4. エージェント固有の存在アンカー（例: 「（ジョーとして。）」）を含める
+
+### 互換レイヤー
+
+- `src/runtime/buildPrompt.js` — 旧 API からの薄い委譲レイヤー（export proxy）
+  - **非推奨**: 後方互換のみ。新規コードでは `buildAgentPrompt.js` を直接使用。
+
+### debug preview（補助観測）
+
+- `src/runtime/debug/joeDebugPreview.js` — Joe 専用の開発者観察用プレビュー
+  - **本番 prompt 正本とは完全分離**: LLM には渡されない
+  - 開発者が事後確認のために使う観測用データ
+
+### テスト
+
 - `src/runtime/promptStructure.test.js` — Phase P-1 検証テスト
+
+### 存在層
+
 - `src/runtime/existenceLayer2.js` — 存在層2（identityFeelingText 追加）
 
 ---
+
+## P系 prompt 構築の導線
+
+```
+┌─────────────────────────────────────────────────┐
+│  src/runtime/buildAgentPrompt.js               │
+│  【P系正本入口】                                 │
+│  ↓                                              │
+│  buildAgentSystemPrompt(agentId, params)       │
+│  ├─ case 'creative'  → buildJoeSystemPrompt   │
+│  ├─ case 'soul'      → buildRaySystemPrompt   │
+│  ├─ case 'strategist'→ buildKenSystemPrompt   │
+│  ├─ case 'empath'    → buildMinaSystemPrompt  │
+│  └─ case 'critic'    → buildSatouSystemPrompt │
+└─────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────┐
+│  src/runtime/prompts/{joe|ray|ken|mina|satou}.js│
+│  【エージェント固有 builder】                    │
+│  ↓                                              │
+│  1. latentState から textPipeline を呼び出す:  │
+│     - buildExistenceText(latentState)          │
+│     - buildFieldText(latentState)              │
+│     - buildMarginText(latentState)             │
+│  2. activated particles を renderActivatedParticles│
+│  3. context を normalizeContext                 │
+│  4. 7ブロック構造を組み立てる                   │
+└─────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────┐
+│  src/runtime/textPipeline/                     │
+│  【設計用語を含まない日本語描写生成】            │
+│  - buildExistenceText: 存在層の前提             │
+│  - buildFieldText: 場の空気・姿勢・身体状態      │
+│  - buildMarginText: 何をしないか                │
+└─────────────────────────────────────────────────┘
+```
+
+
 
 **実装完了日**: 2026-04-20
 **テスト状況**: All pass (644 tests)
