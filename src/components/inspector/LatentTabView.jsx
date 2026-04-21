@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const LatentTabView = ({ events }) => {
+const LatentTabView = ({ events, showExplanation: _showExplanation = false }) => {
   const [expanded, setExpanded] = useState({});
 
   const toggleExpanded = (key) => {

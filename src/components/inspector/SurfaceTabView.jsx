@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const SurfaceTabView = ({ events }) => {
+const SurfaceTabView = ({ events, showExplanation: _showExplanation = false }) => {
   const [showRawJson, setShowRawJson] = useState(false);
 
   // RESIDUE/REENTRY段階のイベントを探す

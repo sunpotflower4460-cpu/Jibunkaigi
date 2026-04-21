@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const PromptTabView = ({ events }) => {
+const PromptTabView = ({ events, showExplanation: _showExplanation = false }) => {
   const [copiedSystem, setCopiedSystem] = useState(false);
   const [copiedUser, setCopiedUser] = useState(false);
 

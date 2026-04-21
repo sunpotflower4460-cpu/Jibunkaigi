@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const LLMResponseTabView = ({ events }) => {
+const LLMResponseTabView = ({ events, showExplanation: _showExplanation = false }) => {
   const [showRawJson, setShowRawJson] = useState(false);
 
   // LLM_REQUEST/LLM_RESPONSE段階のイベントを探す
