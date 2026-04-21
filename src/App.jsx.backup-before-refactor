@@ -1165,100 +1165,595 @@ const App = () => {
       console.info("[agent-click:finally]", { agentId, effectiveSessionId });
     }
   };
+
   const handleAiResponse = async (agentId, isMaster, sessionId, sourceMessageId, messagesAtClick, traceId) => {
-    // Agent definition
+    const aiDebugState = {
+      agentId,
+      sessionId,
+      hasDb: !!db,
+      hasUser: !!user,
+      hasSessionId: !!sessionId,
+      activeSessionMatches: activeSessionIdRef.current === sessionId,
+      isMaster,
+    };
+    console.info("[ai-response:start]", aiDebugState);
+    pushAgentDebugEvent({ tag: 'ai-response:start', agentId, sessionId, hasDb: !!db, hasUser: !!user, hasSessionId: !!sessionId });
+
+    if (!db || !user || !sessionId) {
+      const missing = {
+        db: !db,
+        user: !user,
+        sessionId: !sessionId,
+      };
+      const missingKeys = Object.keys(missing).filter(k => missing[k]);
+      const reason = `missing:${missingKeys.join(',')}`;
+      console.warn("[ai-response:early-return]", { reason, ...aiDebugState });
+      pushAgentDebugEvent({ tag: 'ai-response:early-return', reason, agentId, sessionId, missing });
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      const detailMsg = isAgentDebugEnabled() ? ` (${reason})` : '';
+      setErrorWithAutoDismiss(`応答を開始できませんでした。時間を置いて再度お試しください。${detailMsg}`);
+      return;
+    }
     const agent = isMaster
       ? { name: '心の鏡', title: '総括の鏡', prompt: `あなたは「心の鏡」。ここまでの会話を静かに振り返り、相手自身が気づいていないパターンや感情を、押しつけがましくなく短くまとめる。最後に一つだけ、次の一歩を考えるための問いかけをする。` }
       : AGENTS.find(a => a.id === agentId);
 
+    const pending = lastSubmittedUserMessageRef.current;
+    const baseMessages = [...messagesAtClick];
+
+    const hasPendingUserInThisSession =
+      pending &&
+      pending.sessionId === sessionId &&
+      pending.messageId === sourceMessageId &&
+      !baseMessages.some(m => m.id === pending.messageId);
+
+    if (hasPendingUserInThisSession) {
+      baseMessages.push({ id: pending.messageId, role: 'user', content: pending.text, clientCreatedAt: Date.now() });
+    }
+
+    const finishPromptBuild = beginTimedPhase(traceId, 'prompt build');
+
+    // ── phase helper: エラー時に共通処理 ──────────────────────────────────
+    const handlePhaseError = (phase, err) => {
+      const reason = err instanceof Error ? err.message : String(err);
+      console.error(`[ai-response:error] phase=${phase}`, err);
+      pushAgentDebugEvent({ tag: 'ai-response:error', phase, reason, agentId, sessionId, currentSessionId: activeSessionIdRef.current, activeSessionMatches: activeSessionIdRef.current === sessionId });
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      const phaseSuffix = isAgentDebugEnabled() ? `（phase=${phase}）` : '';
+      if (phase === 'system-prompt' || phase === 'user-prompt') {
+        setErrorWithAutoDismiss(`AIプロンプトの構築に失敗しました。${phaseSuffix}`);
+      } else if (phase === 'activate-agent') {
+        setErrorWithAutoDismiss(`「委ねる」の処理中にエラーが発生しました。${phaseSuffix}`);
+      } else {
+        setErrorWithAutoDismiss(`応答の準備中にエラーが発生しました。${phaseSuffix}`);
+      }
+    };
+
+    // A. context 構築
+    let context;
     try {
-      const result = await orchestrateAgentResponse({
-        // 基本情報
-        agentId,
-        isMaster,
-        sessionId,
-        sourceMessageId,
-        messagesAtClick,
-        traceId,
-
-        // エージェント定義
-        agent,
-        AGENTS,
-
-        // ユーザー情報
+      context = buildPromptContext({
+        messages: baseMessages,
         userName,
-
-        // DB/Firebase
-        db,
-        user,
-        appId,
-
-        // 設定・モード
-        selectedMode,
-
-        // セッション状態
-        activeSessionIdRef,
-        lastSubmittedUserMessageRef,
-        afterglowBySessionRef,
-
-        // コールバック・ヘルパー
-        callGemini,
-        makeId,
-        pushAgentDebugEvent,
-        pushSurfaceDebugEntry,
-        setJoeDebugEntry,
-        isJoeDebugPanelVisible,
-        readSessionAfterglow,
-        writeSessionAfterglowLocal,
-        safeUpdateSession,
-        measureFirestoreWrite,
-        beginTimedPhase,
-
-        // UI 更新コールバック
-        onStateUpdate: ({ isGenerating: gen, generatingAgent: genAgent, showInput }) => {
-          if (gen !== undefined) setIsGenerating(gen);
-          if (genAgent !== undefined) setGeneratingAgent(genAgent);
-          if (showInput !== undefined) setShowInput(showInput);
-        },
-        onOptimisticMessageAdd: (optimisticMessage, aiMsgId, trace) => {
-          responseTimingRef.current = {
-            ...responseTimingRef.current,
-            traceId: trace,
-            aiMessageId: aiMsgId,
-            awaitingResponseRender: true,
-          };
-          setMessages(prev => [...prev, optimisticMessage]);
-        },
-        onError: (errorMessage) => {
-          setErrorWithAutoDismiss(errorMessage);
-        },
+        agents: AGENTS,
+        maxMessages: 6,
+        maxCharsPerMessage: 180,
       });
+    } catch (err) {
+      handlePhaseError('context-build', err);
+      return;
+    }
 
-      if (result.aborted) {
+    let systemInstruction = '';
+    let promptText = `${userName}に言葉を。`;
+    const latestUserText = getLatestUserText(sessionId, baseMessages);
+    const afterglowSeed = getAfterglowSeedForSession(sessionId);
+
+    const currentSessionId = activeSessionIdRef.current;
+    const activeSessionMatches = currentSessionId === sessionId;
+
+    const _debugBase = { agentId, sessionId, currentSessionId, activeSessionMatches };
+
+    console.info("[ai-response:after-context]", _debugBase);
+    pushAgentDebugEvent({ tag: 'ai-response:after-context', ..._debugBase, messagesAtClickCount: messagesAtClick.length, mode: selectedMode });
+
+    // Normalize afterglowSeed before passing to runInternalOS
+    const safePreviousMix =
+      afterglowSeed?.previousMix && typeof afterglowSeed.previousMix === 'object'
+        ? afterglowSeed.previousMix
+        : null;
+
+    const safePreviousLatentState =
+      afterglowSeed?.previousLatentState && typeof afterglowSeed.previousLatentState === 'object'
+        ? afterglowSeed.previousLatentState
+        : null;
+
+    // Add before-internal-os debug event
+    console.info("[ai-response:before-internal-os]", {
+      ..._debugBase,
+      hasPreviousMix: !!safePreviousMix,
+      previousMixType: safePreviousMix === null ? 'null' : typeof safePreviousMix,
+      previousMixHasSelected:
+        !!safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix,
+      previousMixSelectedType:
+        safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix
+          ? typeof safePreviousMix.selected
+          : 'none',
+      hasPreviousLatentState: !!safePreviousLatentState,
+    });
+    pushAgentDebugEvent({
+      tag: 'ai-response:before-internal-os',
+      ..._debugBase,
+      hasPreviousMix: !!safePreviousMix,
+      previousMixType: safePreviousMix === null ? 'null' : typeof safePreviousMix,
+      previousMixHasSelected:
+        !!safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix,
+      previousMixSelectedType:
+        safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix
+          ? typeof safePreviousMix.selected
+          : 'none',
+      hasPreviousLatentState: !!safePreviousLatentState,
+    });
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // others_field の生成 (顕在層 v0.1)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 先行エージェントの発話から OthersField を生成し、
+    // 後続エージェントが「場の残響」として読めるようにする
+    const othersFieldEntries = [];
+    for (const msg of baseMessages) {
+      if (msg?.role === 'ai' && msg.agentId && msg.content) {
+        const entry = summarizeToOthersField(msg.agentId, msg.content);
+        if (entry) {
+          othersFieldEntries.push(entry);
+        }
+      }
+    }
+    const othersFieldText = renderOthersFieldForPrompt(othersFieldEntries, false);
+    const othersFieldDebug = formatOthersFieldForDebug(othersFieldEntries);
+    if (othersFieldDebug) {
+      console.info("[others_field]", othersFieldDebug);
+      pushAgentDebugEvent({ tag: 'others_field', count: othersFieldEntries.length, preview: othersFieldDebug });
+    }
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    // B. runInternalOS
+    let continuityInternalOS;
+    const { microSignals } = buildMicroSignalInput(latestUserText);
+    try {
+      continuityInternalOS = !isMaster
+        ? runInternalOS(latestUserText, {
+          agentId,
+          mode: selectedMode,
+          previousMix: safePreviousMix,
+          previousLatentState: safePreviousLatentState,
+          othersField: othersFieldEntries,
+          lengthPreference: 'medium', // TODO: wire up UI selector when available
+          microSignals,
+        })
+        : null;
+    } catch (err) {
+      // Enhanced error reporting for internal-os phase
+      const previousMixSelectedType =
+        safePreviousMix &&
+        typeof safePreviousMix === 'object' &&
+        'selected' in safePreviousMix
+          ? typeof safePreviousMix.selected
+          : 'none';
+
+      const reason = err instanceof Error ? err.message : String(err);
+      console.error('[ai-response:error] phase=internal-os', err);
+      pushAgentDebugEvent({
+        tag: 'ai-response:error',
+        phase: 'internal-os',
+        reason,
+        previousMixSelectedType,
+        hasPreviousMix: !!safePreviousMix,
+        agentId,
+        sessionId,
+        currentSessionId: activeSessionIdRef.current,
+        activeSessionMatches: activeSessionIdRef.current === sessionId,
+      });
+      setIsGenerating(false);
+      setGeneratingAgent(null);
+      setShowInput(true);
+      const phaseSuffix = isAgentDebugEnabled() ? '（phase=internal-os）' : '';
+      setErrorWithAutoDismiss(`内部処理でエラーが発生しました。${phaseSuffix}`);
+      return;
+    }
+
+    const existencePreview = continuityInternalOS?.latentState?.existence ?? {};
+    const beliefPreview = continuityInternalOS?.latentState?.belief ?? {};
+    const beliefLensKeys = [
+      beliefPreview.layer1?.[0]?.id,
+      beliefPreview.layer2?.[0]?.id,
+      beliefPreview.layer3?.[0]?.id,
+    ].filter(Boolean);
+
+    console.info("[ai-response:after-internal-os]", {
+      ..._debugBase,
+      hasInternalOS: !!continuityInternalOS,
+      existenceHintKey: existencePreview.layer1?.existenceHintKey ?? null,
+      agentIdentityKey: existencePreview.layer2?.agentIdentityKey ?? null,
+      beliefLensKeys,
+    });
+    pushAgentDebugEvent({
+      tag: 'ai-response:after-internal-os',
+      ..._debugBase,
+      hasInternalOS: !!continuityInternalOS,
+      existenceHintKey: existencePreview.layer1?.existenceHintKey ?? null,
+      agentIdentityKey: existencePreview.layer2?.agentIdentityKey ?? null,
+      beliefLensKeys,
+    });
+
+    const surfaceFrame = continuityInternalOS
+      ? buildSurfaceFrame({
+          latentState: continuityInternalOS.latentState,
+          patternMix: continuityInternalOS.patternMix,
+          surfaceWindow: continuityInternalOS.surfaceWindow,
+          afterglowSeed,
+          agentId,
+          isMirror: false,
+        })
+      : null;
+    let aiMsgId = null;
+    let aiPersistenceState = 'not-created';
+
+    let estimatedState = null;
+    let activated = null;
+    if (isMaster) {
+      const mirrorContext = buildPromptContext({
+        messages: baseMessages,
+        userName,
+        agents: AGENTS,
+        maxMessages: 4,
+        maxCharsPerMessage: 150,
+      });
+      const signals = selectMirrorSignals({
+        messages: baseMessages,
+        agents: AGENTS,
+        latestUserText,
+      });
+      const mirrorSurfaceFrame = continuityInternalOS
+        ? buildSurfaceFrame({
+            latentState: continuityInternalOS.latentState,
+            patternMix: continuityInternalOS.patternMix,
+            surfaceWindow: continuityInternalOS.surfaceWindow,
+            afterglowSeed,
+            agentId: 'master',
+            isMirror: true,
+          })
+        : null;
+      // Mirror 専用の深いパイプライン
+      const mirrorStateGuide = buildMirrorStateGuide(signals);
+      const mirrorInternalFrame = continuityInternalOS ? buildMirrorInternalFrame({
+        internalOS: continuityInternalOS,
+      }) : '';
+      const mirrorSurfaceGuidance = mirrorSurfaceFrame ? buildMirrorSurfaceGuidance(mirrorSurfaceFrame) : '';
+
+      systemInstruction = buildMirrorSystemPrompt({
+        context: mirrorContext,
+        mode: selectedMode,
+        signals,
+        surfaceFrame: mirrorSurfaceFrame,
+        stateGuide: mirrorStateGuide,
+        internalFrame: mirrorInternalFrame,
+        surfaceGuidance: mirrorSurfaceGuidance,
+        othersField: othersFieldText,
+      });
+      promptText = buildMirrorUserPrompt({ userName, userText: latestUserText });
+      const mirrorUsedAfterglow = !!(
+        afterglowSeed && (afterglowSeed.previousMix || afterglowSeed.previousLatentState)
+      );
+      pushSurfaceDebugEntry(buildSurfaceDebugEntry({
+        agentId: 'master',
+        isMirror: true,
+        selectedMode,
+        latestUserText,
+        continuityInternalOS,
+        surfaceFrame: mirrorSurfaceFrame,
+        afterglowSeed,
+        agentQualityPreview: {
+          agentId: 'master',
+          builderUsed: 'mirror-specialized',
+          dominantAxes: [],
+          stateGuidePreview: mirrorStateGuide ? mirrorStateGuide.slice(0, 140) : '',
+          internalFramePreview: mirrorInternalFrame ? mirrorInternalFrame.slice(0, 140) : '',
+          surfaceGuidancePreview: mirrorSurfaceGuidance ? mirrorSurfaceGuidance.slice(0, 140) : '',
+          activatedBiasCount: 0,
+          usedAfterglow: mirrorUsedAfterglow,
+        },
+      }));
+
+      // Mirror path: emit milestones after key steps
+      console.info("[ai-response:after-estimate-state]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-estimate-state', ..._debugBase });
+      console.info("[ai-response:after-activate-agent]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-activate-agent', ..._debugBase });
+      console.info("[ai-response:after-state-guide]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-state-guide', ..._debugBase });
+      console.info("[ai-response:after-internal-frame]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-internal-frame', ..._debugBase });
+      console.info("[ai-response:after-surface-guidance]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-surface-guidance', ..._debugBase });
+      console.info("[ai-response:after-system-prompt]", { ..._debugBase, systemInstructionLength: systemInstruction.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-system-prompt', ..._debugBase, systemInstructionLength: systemInstruction.length });
+      console.info("[ai-response:after-user-prompt]", { ..._debugBase, promptLength: promptText.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-user-prompt', ..._debugBase, promptLength: promptText.length });
+    } else {
+      // 全エージェント統一パイプライン
+
+      // C. estimateState
+      try {
+        estimatedState = estimateState(latestUserText);
+      } catch (err) {
+        handlePhaseError('estimate-state', err);
+        return;
+      }
+      console.info("[ai-response:after-estimate-state]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-estimate-state', ..._debugBase });
+
+      // D. activateAgent
+      try {
+        activated = activateAgent(agentId, estimatedState, {
+          microSignals,
+          beliefTension: continuityInternalOS?.latentState?.beliefTension ?? null,
+          afterglowSeed,
+          othersField: othersFieldEntries,
+        });
+      } catch (err) {
+        handlePhaseError('activate-agent', err);
+        return;
+      }
+      console.info("[ai-response:after-activate-agent]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-activate-agent', ..._debugBase });
+
+      // E. buildAgentStateGuide
+      let agentStateGuide;
+      try {
+        agentStateGuide = buildAgentStateGuide(agentId, estimatedState);
+      } catch (err) {
+        handlePhaseError('state-guide', err);
+        return;
+      }
+      console.info("[ai-response:after-state-guide]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-state-guide', ..._debugBase });
+
+      // F. buildAgentInternalFrame
+      let agentInternalFrame;
+      try {
+        agentInternalFrame = continuityInternalOS ? buildAgentInternalFrame({
+          agentId,
+          internalOS: continuityInternalOS,
+          estimatedState,
+        }) : '';
+      } catch (err) {
+        handlePhaseError('internal-frame', err);
+        return;
+      }
+      console.info("[ai-response:after-internal-frame]", _debugBase);
+      pushAgentDebugEvent({ tag: 'ai-response:after-internal-frame', ..._debugBase });
+
+      // G. buildAgentSurfaceGuidance
+      let agentSurfaceGuidance;
+      try {
+        agentSurfaceGuidance = surfaceFrame ? buildAgentSurfaceGuidance({
+          agentId,
+          surfaceFrame,
+        }) : '';
+      } catch (err) {
+        handlePhaseError('surface-guidance', err);
+        return;
+      }
+      console.info("[ai-response:after-surface-guidance]", { ..._debugBase, hasSurfaceFrame: !!surfaceFrame });
+      pushAgentDebugEvent({ tag: 'ai-response:after-surface-guidance', ..._debugBase, hasSurfaceFrame: !!surfaceFrame });
+
+      // H. buildAgentSystemPrompt
+      try {
+        systemInstruction = buildAgentSystemPrompt(agentId, {
+          activated,
+          context,
+          mode: selectedMode,
+          userText: latestUserText,
+          internalOS: continuityInternalOS,
+          surfaceFrame,
+          stateGuide: agentStateGuide,
+          internalFrame: agentInternalFrame,
+          surfaceGuidance: agentSurfaceGuidance,
+          othersField: othersFieldText,
+        });
+      } catch (err) {
+        handlePhaseError('system-prompt', err);
+        return;
+      }
+      console.info("[ai-response:after-system-prompt]", { ..._debugBase, systemInstructionLength: systemInstruction.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-system-prompt', ..._debugBase, systemInstructionLength: systemInstruction.length });
+
+      // I. buildAgentUserPrompt
+      try {
+        promptText = buildAgentUserPrompt(agentId, { userName, userText: latestUserText });
+      } catch (err) {
+        handlePhaseError('user-prompt', err);
+        return;
+      }
+      console.info("[ai-response:after-user-prompt]", { ..._debugBase, promptLength: promptText.length });
+      pushAgentDebugEvent({ tag: 'ai-response:after-user-prompt', ..._debugBase, promptLength: promptText.length });
+
+      const hasSelectedAfterglowMix = (mix) => {
+        if (!mix || !mix.selected) return false;
+        if (Array.isArray(mix.selected)) return mix.selected.length > 0;
+        if (typeof mix.selected === 'object') return Object.keys(mix.selected).length > 0;
+        return Boolean(mix.selected);
+      };
+      const agentUsedAfterglow = !!(
+        afterglowSeed && (
+          hasSelectedAfterglowMix(afterglowSeed.previousMix) ||
+          afterglowSeed.previousLatentState
+        )
+      );
+      const agentQualityPreview = buildAgentDebugPreview({
+        agentId,
+        activated,
+        userText: latestUserText,
+        stateGuide: agentStateGuide,
+        internalFrame: agentInternalFrame,
+        surfaceGuidance: agentSurfaceGuidance,
+        usedAfterglow: agentUsedAfterglow,
+      });
+      pushSurfaceDebugEntry(buildSurfaceDebugEntry({
+        agentId,
+        isMirror: false,
+        selectedMode,
+        latestUserText,
+        continuityInternalOS,
+        surfaceFrame,
+        afterglowSeed,
+        agentQualityPreview,
+      }));
+    }
+    finishPromptBuild();
+
+    // Apply drift-prevention refresh when the agent has responded many times.
+    // Use a short anchor reminder instead of re-inserting large persona blocks
+    // that are already included in systemInstruction.
+    if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
+      const refreshText = `あなたは${agent.name}として、上記の設定・活性状態・口調を維持し、一貫した応答を続けてください。`;
+      systemInstruction = applyRefresh(systemInstruction, refreshText);
+    }
+
+    setJoeDebugEntry(buildJoeDebugEntry({
+      timestamp: Date.now(),
+      userText: latestUserText,
+      estimateState: estimatedState,
+      microSignals,
+      microSignalBias: continuityInternalOS?.debugInfo?.microSignalBias ?? null,
+      fusedState: continuityInternalOS?.latentState?.fusedState ?? null,
+      protoMeaning: continuityInternalOS?.latentState?.protoMeaning ?? null,
+      activated,
+      systemInstruction,
+      promptText,
+    }, {
+      isJoeDebugAvailable: isJoeDebugAvailable(),
+      isJoeDebugPanelVisible,
+      agentId,
+      isMaster,
+    }));
+
+    try {
+      const clickStartedAt = responseTimingRef.current?.clickStartedAt ?? performance.now();
+      console.info(
+        `[timing][${traceId}] fetch start: ${(performance.now() - clickStartedAt).toFixed(1)}ms from click`,
+      );
+      console.info("[ai-response:before-gemini]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:before-gemini', agentId, sessionId });
+      const finishFetch = beginTimedPhase(traceId, 'fetch');
+      let response = '';
+      try {
+        response = await callGemini({
+          prompt: promptText,
+          systemInstruction,
+          model: GEMINI_CHAT_MODEL
+        });
+      } finally {
+        finishFetch();
+      }
+
+      const responseCheck = checkResponse(response);
+      if (!responseCheck.ok) {
+        throw new Error(`response_check:${responseCheck.reason}`);
+      }
+      const cleanedResponse = cleanResponse(response);
+      console.info("[ai-response:after-gemini]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:after-gemini', agentId, sessionId, responseLength: cleanedResponse.length });
+
+      // セッション切り替えチェック（早期中断）
+      if (activeSessionIdRef.current !== sessionId) {
+        console.info(`[handleAiResponse] Session switched from ${sessionId} to ${activeSessionIdRef.current}, aborting`);
         return;
       }
 
-      // Compare mode のキャプチャ
+      aiMsgId = makeId();
+      const optimisticAiMessage = {
+        id: aiMsgId,
+        role: 'ai',
+        content: cleanedResponse,
+        agentId: isMaster ? 'master' : agentId,
+        reactions: null,
+        clientCreatedAt: Date.now(),
+      };
+      const { id: _optimisticAiMessageId, ...optimisticAiMessageForStorage } = optimisticAiMessage;
+
+      responseTimingRef.current = {
+        ...responseTimingRef.current,
+        traceId,
+        aiMessageId: aiMsgId,
+        awaitingResponseRender: true,
+      };
+
+      setMessages(prev => {
+        aiPersistenceState = 'optimistic';
+        return [...prev, optimisticAiMessage];
+      });
+
+      console.info("[ai-response:before-save]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:before-save', agentId, sessionId });
+      await measureFirestoreWrite(traceId, 'AI response save', () =>
+        setDoc(
+          doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
+          { ...optimisticAiMessageForStorage, createdAt: serverTimestamp() }
+        )
+      );
+      aiPersistenceState = 'persisted';
+      console.info("[ai-response:after-save]", aiDebugState);
+      pushAgentDebugEvent({ tag: 'ai-response:after-save', agentId, sessionId });
+
+      // セッション切り替えチェック（afterglow更新前）
+      if (activeSessionIdRef.current !== sessionId) {
+        console.info(`[handleAiResponse] Session switched before afterglow, aborting`);
+        return;
+      }
+
+      const nextAfterglow = buildNextAfterglow({
+        previousAfterglow: readSessionAfterglow(sessionId),
+        latentState: continuityInternalOS?.latentState,
+        patternMix: continuityInternalOS?.patternMix,
+        respondingAgentId: isMaster ? 'master' : agentId,
+        isMaster,
+      });
+
+      writeSessionAfterglowLocal(sessionId, nextAfterglow);
+      await safeUpdateSession(sessionId, { afterglow: nextAfterglow, updatedAt: serverTimestamp() });
+
       void runCompareModeCapture({
         agentId: isMaster ? 'master' : agentId,
-        userText: result.latestUserText,
-        currentReply: result.cleanedResponse,
-        context: result.context,
+        userText: latestUserText,
+        currentReply: cleanedResponse,
+        context,
         sessionId,
-        messageId: result.aiMsgId,
-        usedInternalOS: !!result.continuityInternalOS,
-        internalOS: result.continuityInternalOS,
+        messageId: aiMsgId,
+        usedInternalOS: !!continuityInternalOS,
+        internalOS: continuityInternalOS,
       });
 
       playSound('receive');
       setIsGenerating(false);
       setGeneratingAgent(null);
 
-      // reactions の事前読み込み
-      const pending = lastSubmittedUserMessageRef.current;
       if (!isMaster && sourceMessageId && pending?.text) {
-        setAutoExpandReactions({ msgId: result.aiMsgId, isLoading: true });
-        void preloadReactions(pending.text, sessionId, sourceMessageId, agentId, result.cleanedResponse).then(async () => {
+        setAutoExpandReactions({ msgId: aiMsgId, isLoading: true });
+        void preloadReactions(pending.text, sessionId, sourceMessageId, agentId, cleanedResponse).then(async () => {
           // 反応読み込み完了時にセッション切り替えチェック
           if (activeSessionIdRef.current !== sessionId) {
             setAutoExpandReactions(null);
@@ -1275,13 +1770,13 @@ const App = () => {
           try {
             await measureFirestoreWrite(traceId, 'reaction save', () =>
               updateDoc(
-                doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', result.aiMsgId),
+                doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', sessionId, 'messages', aiMsgId),
                 { reactions: cached.data }
               )
             );
             // 反応保存後もセッション切り替えチェック
             if (activeSessionIdRef.current === sessionId) {
-              setAutoExpandReactions({ msgId: result.aiMsgId, isLoading: false });
+              setAutoExpandReactions({ msgId: aiMsgId, isLoading: false });
             } else {
               setAutoExpandReactions(null);
             }
@@ -1294,13 +1789,21 @@ const App = () => {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[ai-response:error]", { msg, agentId, sessionId });
-      pushAgentDebugEvent({ tag: 'ai-response:error', reason: msg, agentId, sessionId });
-
-      // エラーメッセージを表示
+      const errPhase = aiPersistenceState === 'persisted' ? 'save' : aiPersistenceState === 'optimistic' ? 'save' : 'gemini';
+      console.error("[ai-response:error]", { msg, phase: errPhase, ...aiDebugState });
+      pushAgentDebugEvent({ tag: 'ai-response:error', phase: errPhase, reason: msg, agentId, sessionId, persistenceState: aiPersistenceState });
+      // セッションが一致する場合のみ UI を復帰
       const currentlyActiveSession = currentSessionIdRef.current === sessionId;
+
+      // Firestore 保存前のみ optimistic message を削除
+      if (aiMsgId && aiPersistenceState === 'optimistic') {
+        setMessages(prev => prev.filter(message => message.id !== aiMsgId));
+      }
+
+      // 現在アクティブなセッションでのエラーのみユーザーに表示
       if (currentlyActiveSession) {
-        const debugSuffix = isAgentDebugEnabled() ? ` (msg-preview)` : '';
+        const phaseSuffix = isAgentDebugEnabled() ? `（phase=${errPhase}）` : '';
+        const debugSuffix = isAgentDebugEnabled() ? ` (${msg.slice(0, 30)})` : '';
         if (msg.includes("API key is missing")) {
           setErrorWithAutoDismiss("Gemini APIキーが未設定です。", 10000);
         } else if (msg.includes("timeout")) {
@@ -1309,18 +1812,19 @@ const App = () => {
           setErrorWithAutoDismiss(`AIの応答が空でした。もう一度お試しください。${debugSuffix}`);
         } else if (msg.includes("response_check:json_leak")) {
           setErrorWithAutoDismiss(`AIの応答が不正な形式でした（JSONが返されました）。もう一度お試しください。${debugSuffix}`);
+        } else if (errPhase === 'save') {
+          setErrorWithAutoDismiss(`応答の保存に失敗しました。${phaseSuffix}`);
         } else {
-          setErrorWithAutoDismiss(`AIとの通信に失敗しました。${debugSuffix}`);
+          setErrorWithAutoDismiss(`AIとの通信に失敗しました。${phaseSuffix}${debugSuffix}`);
         }
       }
     } finally {
-      console.info("[ai-response:finally]", { agentId, sessionId });
+      console.info("[ai-response:finally]", aiDebugState);
       // 無条件で state を復帰（stale closure や条件分岐で state が残るのを防ぐ）
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
     }
-  };
   };
 
   const handleDeleteSession = async (sessionId) => {
