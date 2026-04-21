@@ -1,5 +1,6 @@
 // src/agents/beliefBranchProfiles.js
-// 信念層2（中程度の枝信念）: Core から分岐する前提フィルタ
+// 信念層2（中程度の枝信念）の正本。
+// Core から分岐する前提フィルタ profile をここで管理する。
 
 /**
  * @typedef {{ id: string, parentId: string, textJa: string, weight: number, axis: string }} BeliefBranch

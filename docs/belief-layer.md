@@ -17,6 +17,16 @@
 
 ## 基本原則
 
+### 実装上の source-of-truth 境界
+
+| 対象 | source of truth | 補足 |
+| --- | --- | --- |
+| Belief Core Layer（信念層1） | `src/agents/beliefCoreProfiles.js` | runtime 組み立ては `src/runtime/beliefCoreLayer.js` |
+| Belief Branch Layer（信念層2） | `src/agents/beliefBranchProfiles.js` | runtime 組み立ては `src/runtime/beliefBranchLayer.js` |
+| Belief Leaf Layer（信念層3） | `src/agents/beliefLeafProfiles.js` | runtime 組み立ては `src/runtime/beliefLeafLayer.js` |
+| Joe activation-time belief filters | `src/agents/joe/beliefFilters.js` | `activateGeneric` / `activate.js` 用。belief layer profile の正本とは分ける |
+| `latentState.belief.layer1/2/3` preview | `src/runtime/beliefLayers.js` | compare/debug の helper preview。layer 正本ではない |
+
 ### 1. 信念層1は「前提層」であり「フィルタ」
 
 信念層1は、返答文を直接組み立てる層ではない。
@@ -602,4 +612,3 @@ vm.beliefBranchPreview = {
 preconditionFilter / preconditionBias と並んで後段が読める位置に置かれる。
 返答にそのまま出さない。後段の反応・焦点・意味づけを少し変えるための内的 state。
 ```
-

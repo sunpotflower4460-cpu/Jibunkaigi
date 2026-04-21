@@ -1,5 +1,8 @@
 // src/runtime/beliefLayers.js
-// 信念層1/2/3 を組み立てる
+// Compare/debug preview 用の legacy belief helper。
+// beliefCore / beliefBranch / beliefLeaf の本番 layer 正本ではない。
+// layer 正本は beliefCoreLayer.js / beliefBranchLayer.js / beliefLeafLayer.js と
+// 各 ../agents/belief*Profiles.js に置く。
 
 import { AGENT_MATERIALS } from '../agents/registry.js';
 import { BELIEF_CORE, DEFAULT_BELIEF_CORE } from '../agents/beliefCore.js';
