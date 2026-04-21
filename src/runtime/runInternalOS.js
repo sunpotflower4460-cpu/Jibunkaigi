@@ -42,6 +42,7 @@ import {
   MICRO_SIGNAL_TUNING_DEBUG_CONFIG,
 } from './config/microSignalBias.js';
 import { getNodeRelations } from '../reservoir/loadReservoir.js';
+import { TraceStage } from './trace/agentTraceBuilder.js';
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 const clampSignedDelta = (value) => Math.max(
@@ -463,6 +464,19 @@ export function runInternalOS(input, options = {}) {
     ? normalizedOptions.lengthPreference
     : 'medium';
 
+  // trace オブジェクトを options から取得（オプショナル）
+  const trace = normalizedOptions.trace ?? null;
+
+  // INPUT段階をトレースに記録
+  if (trace) {
+    trace.push(TraceStage.INPUT, {
+      input: normalizedInput,
+      agentId,
+      lengthPreference,
+      hasAfterglowSeed: !!(normalizedOptions.previousMix || normalizedOptions.previousLatentState),
+    });
+  }
+
   // Double defense: normalize previousMix and previousLatentState
   const safePreviousMix =
     normalizedOptions.previousMix && typeof normalizedOptions.previousMix === 'object'
@@ -478,6 +492,11 @@ export function runInternalOS(input, options = {}) {
       ? normalizedOptions.microSignals
       : estimateMicroSignals(normalizedInput);
   const lexicalState = estimateState(normalizedInput);
+
+  // MICRO_SIGNAL段階をトレースに記録
+  if (trace) {
+    trace.push(TraceStage.MICRO_SIGNAL, { microSignals, lexicalState });
+  }
   // D-stream derived layers stay observational/supportive.
   // They inform later dynamic layers but do not replace the main field/reaction/stance path.
   const fusedState = buildFusedState({
@@ -502,11 +521,17 @@ export function runInternalOS(input, options = {}) {
   // Step 1: Maker Seed
   const makerSeed = createMakerSeed();
   preconditionTrace.push('latent:after-maker-seed');
+  if (trace) {
+    trace.push(TraceStage.LATENT_MAKER_SEED, { makerSeed });
+  }
 
   // Step 2: Home Layer
   const preHomeInput = buildPreHomeInput(normalizedInput);
   const baseHome = createHomeLayer({ makerSeed, preHomeInput });
   preconditionTrace.push('latent:after-home');
+  if (trace) {
+    trace.push(TraceStage.LATENT_HOME, { baseHome, preHomeInput });
+  }
 
   // Step 2.5: Home Neutralization Check
   const neutralizationCheck = computeHomeNeutralizationState(baseHome);
@@ -527,6 +552,9 @@ export function runInternalOS(input, options = {}) {
     retryCount: homeRetryCount,
   };
   preconditionTrace.push('latent:after-home-check');
+  if (trace) {
+    trace.push(TraceStage.LATENT_HOME_CHECK, { homeNeutralization, effectiveHome });
+  }
 
   // Step 3: Existence Layer 1
   const existenceLayer1 = createExistenceLayer1({
@@ -534,22 +562,37 @@ export function runInternalOS(input, options = {}) {
     preHomeInput,
   });
   preconditionTrace.push('latent:after-existence1');
+  if (trace) {
+    trace.push(TraceStage.LATENT_EXISTENCE, { existenceLayer1 });
+  }
 
   // Step 4: Existence Layer 2
   const existenceLayer2 = createExistenceLayer2({ agentId });
   preconditionTrace.push('latent:after-existence2');
+  if (trace) {
+    trace.push(TraceStage.LATENT_EXISTENCE_2, { existenceLayer2 });
+  }
 
   // Step 5: Belief Core Layer
   const beliefCore = createBeliefCoreLayer({ agentId, existenceLayer2 });
   preconditionTrace.push('latent:after-belief-core');
+  if (trace) {
+    trace.push(TraceStage.LATENT_BELIEF_CORE, { beliefCore });
+  }
 
   // Step 6: Belief Branch Layer
   const beliefBranch = createBeliefBranchLayer({ agentId, beliefCore, existenceLayer2 });
   preconditionTrace.push('latent:after-belief-branch');
+  if (trace) {
+    trace.push(TraceStage.LATENT_BELIEF_BRANCH, { beliefBranch });
+  }
 
   // Step 7: Belief Leaf Layer
   const beliefLeaf = createBeliefLeafLayer({ agentId, beliefBranch, existenceLayer2 });
   preconditionTrace.push('latent:after-belief-leaf');
+  if (trace) {
+    trace.push(TraceStage.LATENT_BELIEF_LEAF, { beliefLeaf });
+  }
 
   // Step 8: Belief Tension Layer
   const beliefTension = createBeliefTensionLayer({
@@ -559,6 +602,9 @@ export function runInternalOS(input, options = {}) {
     activeLeafBeliefs: beliefLeaf.activeLeafBeliefs ?? [],
   });
   preconditionTrace.push('latent:after-belief-tension');
+  if (trace) {
+    trace.push(TraceStage.LATENT_BELIEF_TENSION, { beliefTension });
+  }
 
   const belief = createBeliefLayers({ agentId, existenceLayer1, existenceLayer2 });
 
@@ -576,6 +622,9 @@ export function runInternalOS(input, options = {}) {
     beliefLeaf,
   });
   preconditionTrace.push('latent:after-precondition-filter');
+  if (trace) {
+    trace.push(TraceStage.PRECONDITION_FILTER, { preconditionFilter });
+  }
 
   // ════════════════════════════════════════════════════════════════════
   // POST-PRECONDITION DYNAMIC LAYERS (後段動的層)
@@ -585,6 +634,9 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const preconditionBias = buildPreconditionBias(preconditionFilter);
+  if (trace) {
+    trace.push(TraceStage.PRECONDITION_BIAS, { preconditionBias });
+  }
   // ProtoMeaning remains an assistive observation layer over the main latent pipeline.
   const protoMeaning = buildProtoMeaning(fusedState, {
     agentId,
@@ -615,16 +667,25 @@ export function runInternalOS(input, options = {}) {
   const baseField = estimateField(normalizedInput);
   const field = applyFieldBias(baseField, dynamicBiasContext, microSignals);
   preconditionTrace.push('dynamic:after-field');
+  if (trace) {
+    trace.push(TraceStage.DYNAMIC_FIELD, { field, baseField });
+  }
 
   // Dynamic reaction: how the latent self reacts to this field, biased by precondition
   const baseReaction = generateReaction(normalizedInput, field);
   const reaction = applyReactionBias(baseReaction, dynamicBiasContext, microSignals);
   preconditionTrace.push('dynamic:after-reaction');
+  if (trace) {
+    trace.push(TraceStage.DYNAMIC_REACTION, { reaction, baseReaction });
+  }
 
   // Dynamic stance: how the latent self stands in this moment, biased by precondition
   const baseStance = selectStance(field, reaction);
   const stance = applyStanceBias(baseStance, dynamicBiasContext, microSignals);
   preconditionTrace.push('dynamic:after-stance');
+  if (trace) {
+    trace.push(TraceStage.DYNAMIC_STANCE, { stance, baseStance });
+  }
   const microSignalBiasDebug = buildMicroSignalBiasDebug({
     baseField,
     field,
@@ -635,6 +696,9 @@ export function runInternalOS(input, options = {}) {
     microSignals,
   });
   const permission = extractPermissionShape(effectiveHome);
+  if (trace) {
+    trace.push(TraceStage.PERMISSION, { permission });
+  }
 
   const decision = createDecisionLayer({
     preconditionFilter,
@@ -644,6 +708,9 @@ export function runInternalOS(input, options = {}) {
     stance,
   });
   preconditionTrace.push('dynamic:after-decision');
+  if (trace) {
+    trace.push(TraceStage.DECISION, { decision });
+  }
 
   // ════════════════════════════════════════════════════════════════════
   // EMERGING FIELD (emergingField)
@@ -748,6 +815,13 @@ export function runInternalOS(input, options = {}) {
     },
   };
   preconditionTrace.push('dynamic:after-activate-thoughts');
+  if (trace) {
+    trace.push(TraceStage.ACTIVATION, {
+      activatedThoughts,
+      activatedFeelings: null, // まだこの時点では未処理
+      activatedMoves: null,
+    });
+  }
 
   // ════════════════════════════════════════════════════════════════════
   // ACTIVATE FEELINGS (L2 Phase)
@@ -802,6 +876,22 @@ export function runInternalOS(input, options = {}) {
     },
   };
   preconditionTrace.push('dynamic:after-activate-moves');
+  // ACTIVATION段階の完全版を更新（thoughts/feelings/moves全て揃った時点で）
+  if (trace) {
+    // 前のACTIVATIONイベントを完全版で上書き
+    const lastActivationIndex = trace.events.findLastIndex(e => e.stage === TraceStage.ACTIVATION);
+    if (lastActivationIndex >= 0) {
+      trace.events[lastActivationIndex] = {
+        stage: TraceStage.ACTIVATION,
+        timestamp: Date.now(),
+        payload: {
+          activatedThoughts,
+          activatedFeelings,
+          activatedMoves,
+        },
+      };
+    }
+  }
 
   // ════════════════════════════════════════════════════════════════════
   // BIND THOUGHTS (Phase 5)
@@ -903,6 +993,18 @@ export function runInternalOS(input, options = {}) {
     },
   };
   preconditionTrace.push('dynamic:after-select-mixed-clusters');
+  // MATERIAL_PICK段階（activation, bind, select の完全版）
+  if (trace) {
+    trace.push(TraceStage.MATERIAL_PICK, {
+      activatedThoughts,
+      activatedFeelings,
+      activatedMoves,
+      boundThoughts,
+      boundMixedNodes,
+      selectedThoughts,
+      selectedMixedClusters,
+    });
+  }
 
   // ════════════════════════════════════════════════════════════════════
   // BUILD CONSCIOUS INTENT (Phase 7)
@@ -1114,6 +1216,14 @@ export function runInternalOS(input, options = {}) {
   });
 
   const surfaceWindow = buildSurfaceWindow(latentState);
+
+  // RESIDUE段階（patternMix と surfaceWindow の生成）
+  if (trace) {
+    trace.push(TraceStage.RESIDUE, {
+      patternMix,
+      surfaceWindow,
+    });
+  }
 
   return {
     latentState,
