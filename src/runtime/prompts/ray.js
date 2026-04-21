@@ -63,6 +63,10 @@ import {
 import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
 import { buildFieldText } from '../textPipeline/buildFieldText.js';
 import { buildMarginText } from '../textPipeline/buildMarginText.js';
+import {
+  createAgentSystemPromptBuilder,
+  createAgentUserPromptBuilder,
+} from './sharedPromptSkeleton.js';
 
 // --- スコアリング ---
 
@@ -197,80 +201,9 @@ export const scoreRayMaterials = ({
 
 // --- メイン ---
 
-export const buildRaySystemPrompt = ({
-  activated,
-  context = '',
-  mode = 'medium',
-  userText: _userText = '',
-  othersField,
-  latentState,
-  emergingField,
-  previousLatentState,
-  internalOS: _internalOS,
-  stateGuide: _stateGuide,
-  internalFrame: _internalFrame,
-  surfaceGuidance: _surfaceGuidance,
-}) => {
-  const safeActivated = activated || {};
-  const effectiveLatentState = latentState ?? _internalOS?.latentState ?? null;
-  const normalizedCtx = normalizeContext(context);
-  const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
-  const activatedParticles = renderActivatedParticles(safeActivated);
-  const reentryText = typeof safeActivated.reentry === 'string'
-    ? safeActivated.reentry
-    : safeActivated.reentry?.text || '';
+// 共通骨格 factory を使用してビルダーを生成
+export const buildRaySystemPrompt = createAgentSystemPromptBuilder({
+  anchorLabel: '（レイとして。）',
+});
 
-  const existenceText = effectiveLatentState
-    ? buildExistenceText(effectiveLatentState, { previousLatentState })
-    : '';
-  const fieldText = effectiveLatentState
-    ? buildFieldText(effectiveLatentState, { focusPoints: emergingField?.focusPoints })
-    : '';
-  const marginText = effectiveLatentState ? buildMarginText(effectiveLatentState) : '';
-
-  const sections = [];
-
-  if (existenceText) {
-    sections.push(`【存在の前提】\n（レイとして。）\n${existenceText}`);
-  } else {
-    sections.push('（レイとして。）');
-  }
-
-  if (fieldText) {
-    sections.push(`【今の場の空気】\n${fieldText}`);
-  }
-
-  if (activatedParticles) {
-    sections.push(activatedParticles);
-  }
-
-  if (marginText) {
-    sections.push(`【場の余白】\n${marginText}\n\n${modeGuide}`);
-  } else if (modeGuide) {
-    sections.push(`【場の余白】\n${modeGuide}`);
-  }
-
-  if (reentryText) {
-    sections.push(`【内的方向づけ（この回だけの構え）】\n${reentryText}`);
-  }
-
-  if (normalizedCtx) {
-    sections.push(`【ここまでの流れ】\n${normalizedCtx}`);
-  }
-
-  if (othersField) {
-    sections.push(`【場の残響】\n${othersField}`);
-  }
-
-  sections.push('何を言うかは、あなたが決めてください。');
-
-  return sections.filter(Boolean).join('\n\n').trim();
-};
-
-export const buildRayUserPrompt = ({
-  userName = 'あなた',
-  userText = '',
-}) => {
-  return `${userName}の今の言葉:
-${userText}`;
-};
+export const buildRayUserPrompt = createAgentUserPromptBuilder();
