@@ -13,13 +13,16 @@
   - [Joe reentry composition](./joe-reentry-composition.md) — D-4 runtime reentry 正本
   - [Dual Stream Manual Review](./dual-stream-manual-review.md) — D-5 の確認記録
   - [Jibunkaigi Compass](./jibunkaigi-compass.md) — Compass 上の接続と読み順
+- 主な調整入口:
+  - `src/runtime/config/microSignalBias.js` — micro-signal bias / fusedState / protoMeaning の主要 weight・threshold
 
 この文書は D-5 の正本であり、`fusedState` / `protoMeaning` をどの phase で追加し、どこに保存し、どの下流へ渡すかを対応づけます。
 
 ## 位置づけ
 
 Dual Stream Architecture は、既存の `runInternalOS` を置き換えずに並行運用する観測層です。  
-この Phase では、Lexical Stream と Micro-Signal Stream を `FusedState` で合流させ、そこから `ProtoMeaning` を生成します。
+この Phase では、Lexical Stream と Micro-Signal Stream を `FusedState` で合流させ、そこから `ProtoMeaning` を生成します。  
+`field / reaction / stance / decision` の主経路はそのまま残し、D 系の値は「どう寄っているか」を観察する補助入力としてだけ扱います。
 
 ## 4つの層
 
@@ -71,6 +74,7 @@ Dual Stream Architecture は、既存の `runInternalOS` を置き換えずに�
 - `fusedState` と `protoMeaning` は `latentState` に追加保存する
 - field / reaction / stance / decision の主経路は置き換えない
 - afterglow 正規化でも保持し、並行観測を継続できるようにする
+- `src/runtime/config/microSignalBias.js` に fused / protoMeaning の重みを集約し、調整点を 1 箇所からレビューできるようにする
 
 ## 下流への反映
 
@@ -90,6 +94,7 @@ Joe Debug Panel では次を観測できます。
 - `fusedState.fused` の統合メトリクス
 - `protoMeaning.sensory`
 - `protoMeaning.narrative`
+- `debugInfo.microSignalTuning` に出ている bias / weight / threshold の設定スナップショット
 
 `sensory` / `narrative` は別カードに分け、文章化前の感触と物語化前の向きを見分けやすくしています。
 

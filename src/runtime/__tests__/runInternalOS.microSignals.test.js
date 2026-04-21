@@ -119,3 +119,15 @@ test('micro-signal debug deltas stay within 0.15 for all layers', () => {
     });
   });
 });
+
+test('micro-signal debug includes tuning config snapshots for review', () => {
+  const result = runWithSignals(buildSignals({ punctuation: { hesitation: 1 } }));
+
+  assert.equal(result.debugInfo.microSignalBias.config.maxDelta, 0.15);
+  assert.equal(result.debugInfo.microSignalTuning.bias.layerBiases.hesitation.layers.field.fragility, 0.15);
+  assert.equal(result.debugInfo.microSignalTuning.fusedState.metricWeights.hesitation.signal.hesitation, 0.6);
+  assert.equal(
+    result.debugInfo.microSignalTuning.protoMeaning.blendWeights.expressiveHesitation.fused.ember,
+    0.55,
+  );
+});

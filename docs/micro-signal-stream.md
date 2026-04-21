@@ -17,7 +17,8 @@
 
 Micro-Signal は、ユーザー文面の句読点・言いよどみ・距離化のような微小な残り方を数値化し、内部 OS の dynamic layer にだけ薄く注入するための信号です。
 
-この Phase では `runInternalOS` の `field / reaction / stance` に bias delta を足し、Joe の reentry 選択にも入力します。文字列をそのまま LLM に埋め込むのではなく、数値の補正として扱います。
+この Phase では `runInternalOS` の `field / reaction / stance` に bias delta を足し、Joe の reentry 選択にも入力します。文字列をそのまま LLM に埋め込むのではなく、数値の補正として扱います。  
+ただし D 系はあくまで観測・補助の層であり、主経路の `field / reaction / stance / decision` を差し替えるための仕組みではありません。
 
 ## 6カテゴリの定義
 
@@ -51,7 +52,8 @@ Micro-Signal は、ユーザー文面の句読点・言いよどみ・距離化�
 | burstiness | `sentenceLength.burstiness` | `field.urgency` | `+0.15` |
 | distancing | `quotation.distancing` | `reaction.holdBackJudgment` | `+0.10` |
 
-設定値は `src/runtime/config/microSignalBias.js` に定数化されています。
+設定値は `src/runtime/config/microSignalBias.js` に定数化されています。  
+同じ設定モジュールに `FusedState` と `ProtoMeaning` の統合 weight / threshold も集約し、micro-signal の調整点をコード本文から分離しています。
 
 ## delta 量の設計根拠
 
@@ -59,6 +61,13 @@ Micro-Signal は、ユーザー文面の句読点・言いよどみ・距離化�
 - 同じ軸に複数 signal が重なっても、最終 delta は軸ごとに `±0.15` で clamp する
 - 反応を決め打ちにしないため、最大値でも「方向を寄せる」程度の薄い差分に留める
 - `field` への補正は場の質感、`reaction` は受け取り方、`stance` は構えの向きだけを少し変える
+
+## 調整ポイント
+
+- `MICRO_SIGNAL_BIAS_MAP` — micro-signal → `field / reaction / stance` bias
+- `FUSED_STATE_METRIC_WEIGHTS` — lexical / micro-signal → `fusedState.fused`
+- `PROTO_MEANING_THRESHOLDS` / `PROTO_MEANING_BLEND_WEIGHTS` — `protoMeaning` の補助反映 weight
+- `MICRO_SIGNAL_TUNING_DEBUG_CONFIG` — debug 出力へ載せる設定スナップショット
 
 ## reentry への入力
 
