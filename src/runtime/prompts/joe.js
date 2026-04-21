@@ -1,5 +1,43 @@
 // src/runtime/prompts/joe.js
-// ジョー用の独立 system prompt / user prompt
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ジョー（creative）用の独立 system prompt / user prompt builder
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// ■ 責務：
+//   このファイルは、Joe 専用の prompt を構築するエージェント固有 builder である。
+//   P系（Phase P-1 以降）の prompt 構築において、以下の責務を持つ：
+//   1. latentState を textPipeline モジュールに渡し、7ブロック構造を組み立てる
+//   2. activated particles / reentry / context / othersField などを適切に配置する
+//   3. mode に応じた末尾誘導文を追加する
+//   4. Joe 固有の存在アンカー「（ジョーとして。）」を含める
+//
+// ■ 7ブロック構造との対応：
+//   buildJoeSystemPrompt は、docs/prompt-structure-v2.md の7ブロック構造に従う：
+//   1. 【存在の前提】  ← buildExistenceText(latentState)
+//   2. 【今の場の空気】  ← buildFieldText(latentState)
+//   3. 【場に浮かんでいるもの】  ← renderActivatedParticles(activated)
+//   4. 【場の余白】  ← buildMarginText(latentState)
+//   5. 【内的方向づけ（この回だけの構え）】  ← activated.reentry.text
+//   6. 【ここまでの流れ】  ← normalizeContext(context)
+//   7. 【場の残響】  ← othersField（オプション）
+//   8. 【今回のモード】  ← MODE_GUIDE[mode]
+//
+// ■ 入力パラメータ：
+//   - activated: activate phase の出力（粒子・reentry・debug など）
+//   - context: 過去のやりとり履歴
+//   - mode: 応答の長さ感（'short' / 'medium' / 'long'）
+//   - userText: ユーザーの今回の入力テキスト
+//   - latentState: runInternalOS の13層計算の出力（P-1以降の正本入力）
+//   - othersField: 他エージェントの残響（オプション）
+//
+// ■ 後方互換パラメータ（非推奨）：
+//   - internalOS / surfaceWindow / surfaceFrame / stateGuide / internalFrame / surfaceGuidance
+//     → これらは P-1 以前の旧構造。新規コードでは latentState を使用。
+//
+// ■ P系正本入口との関係：
+//   このファイルは、src/runtime/buildAgentPrompt.js の buildAgentSystemPrompt から
+//   呼び出されるエージェント固有 builder である。
+//
 // buildPrompt.js から完全分離した独立プロンプト
 
 import { existence } from '../../agents/joe/existence.js';

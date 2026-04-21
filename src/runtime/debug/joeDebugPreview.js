@@ -1,6 +1,28 @@
 // src/runtime/debug/joeDebugPreview.js
-// Joe 専用の debug preview 機能
-// buildPrompt.js から分離し、runtime 主系から完全隔離
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Joe 専用の debug preview 機能（dev-only / 本番 prompt 正本とは完全分離）
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// ■ 役割：
+//   Joe が「どの素材でその返答を組み立てたか」を後で観察するための
+//   **開発者専用プレビュー**。
+//
+// ■ 本番 prompt 正本との分離：
+//   - このファイルは **本番 prompt 正本とは完全に分離** されている
+//   - LLM には一切渡されない（Firestore 保存なし）
+//   - 開発者が事後確認のために使う観測用データのみを生成
+//   - 本文全文は出さず、先頭 140 字のみのプレビュー
+//
+// ■ 補助観測であることの明示：
+//   debug preview は「本番 prompt が正しく組み立てられたか」を
+//   事後検証するための **補助観測機構** であり、
+//   prompt 構築の主系には影響しない。
+//
+// ■ P系正本入口との関係：
+//   本番 prompt の正本入口は src/runtime/buildAgentPrompt.js であり、
+//   このファイルはその「観測窓」として機能する。
+//
+// buildPrompt.js から完全分離し、runtime 主系から完全隔離
 
 import { buildJoeBiasPack } from '../buildPrompt.js';
 
