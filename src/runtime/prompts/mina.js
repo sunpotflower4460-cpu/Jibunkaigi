@@ -73,6 +73,24 @@ import {
 } from './sharedPromptSkeleton.js';
 
 // --- スコアリング ---
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// scoreMinaMaterials: debug / bias preview / transitional 補助関数
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// ■ 役割：
+//   この関数は **本番 prompt の主素材ではない**。
+//   debug preview / bias score 計算 / orientation 補助のための過渡的な機能。
+//
+// ■ 使い道：
+//   1. 開発者が Mina の内部状態と素材選択の関係を確認するための debug 情報生成
+//   2. activated particles の bias スコアリング素材として一時的に使用
+//   3. orientation / debug 用途での existence.js 参照
+//
+// ■ 本番 prompt での位置づけ：
+//   この関数の出力は本番 prompt の主要構成要素ではない。
+//   本番 prompt は textPipeline モジュール（buildExistenceText, buildFieldText など）が生成する。
+//
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const scoreMinaMaterials = ({
   activated,
