@@ -33,8 +33,8 @@ export const BELIEF_LEAF_PROFILES = {
     },
     {
       id: 'dimness_still_light',
-      parentId: 'go_to_unlit_places',
-      textJa: '薄暗さの中でも、光は光のままでいられる',
+      parentId: 'beyond_already_visible',
+      textJa: '薄暗さの中でも、見失われたものは消えたことにならない',
       weight: 0.36,
       axis: 'tendency',
     },
@@ -47,8 +47,8 @@ export const BELIEF_LEAF_PROFILES = {
     },
     {
       id: 'edge_waits',
-      parentId: 'go_to_unlit_places',
-      textJa: '端にあるものほど、見つけられるのを待っていることがある',
+      parentId: 'beyond_already_visible',
+      textJa: '端にあるものほど、まだ気づかれていないだけのことがある',
       weight: 0.34,
       axis: 'tendency',
     },
