@@ -132,7 +132,7 @@ export const sharedMoveNodes = [
     id: 'shared-move-009',
     owner: NodeOwners.SHARED,
     category: NodeCategories.MOVE,
-    textSeed: 'まだ名のないものに耳を澄ます',
+    textSeed: 'まだ名のないものへ耳を澄ませる',
     tags: ['listening', 'nameless', 'edge'],
     axis: ['illumination', 'presence'],
     triggers: ['うまく言え', '名前がない', 'なんとなく', 'まだ'],

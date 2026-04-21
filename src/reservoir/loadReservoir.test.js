@@ -203,10 +203,10 @@ describe('Reservoir Loader', () => {
     const kenNodes = getAgentThoughtNodes('ken');
     const hasBodyAntiTriggers = kenNodes.some(node =>
       node.antiTriggers && (
-        node.antiTriggers.includes('body-foregrounded') ||
-        node.antiTriggers.includes('raw-feeling-dominant') ||
-        node.antiTriggers.includes('somatic-intensity') ||
-        node.antiTriggers.includes('body-overwhelm')
+        node.antiTriggers.includes('身体') ||
+        node.antiTriggers.includes('感じる') ||
+        node.antiTriggers.includes('震え') ||
+        node.antiTriggers.includes('感覚だけ')
       )
     );
     assert.ok(hasBodyAntiTriggers, 'Ken should have anti-triggers for body-foregrounded scenarios');
@@ -216,10 +216,10 @@ describe('Reservoir Loader', () => {
     const minaNodes = getAgentThoughtNodes('mina');
     const hasSolutionAntiTriggers = minaNodes.some(node =>
       node.antiTriggers && (
-        node.antiTriggers.includes('fixing-pressure') ||
-        node.antiTriggers.includes('solution-demand') ||
-        node.antiTriggers.includes('rebuild-pressure') ||
-        node.antiTriggers.includes('should-pressure')
+        node.antiTriggers.includes('解決') ||
+        node.antiTriggers.includes('直そう') ||
+        node.antiTriggers.includes('立て直そう') ||
+        node.antiTriggers.includes('ちゃんとしろ')
       )
     );
     assert.ok(hasSolutionAntiTriggers, 'Mina should have anti-triggers for solution-pressure scenarios');
@@ -229,9 +229,9 @@ describe('Reservoir Loader', () => {
     const satouNodes = getAgentThoughtNodes('satou');
     const hasAcceptanceAntiTriggers = satouNodes.some(node =>
       node.antiTriggers && (
-        node.antiTriggers.includes('sweet-acceptance-only') ||
-        node.antiTriggers.includes('bypass') ||
-        node.antiTriggers.includes('gentle-avoidance')
+        node.antiTriggers.includes('きれいごと') ||
+        node.antiTriggers.includes('いい話') ||
+        node.antiTriggers.includes('優しく避ける')
       )
     );
     assert.ok(hasAcceptanceAntiTriggers, 'Satou should have anti-triggers for sweet-acceptance scenarios');

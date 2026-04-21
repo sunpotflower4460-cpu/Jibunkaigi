@@ -385,15 +385,16 @@ const applyFieldBias = (field = {}, {
   preconditionFilter = {},
   preconditionBias = {},
 } = {}, microSignals = {}) => {
+  const bias = preconditionBias?.preconditionBias ?? preconditionBias;
   const home = rawLatent?.home ?? {};
   const existence1 = rawLatent?.existence1 ?? {};
   const existence2 = rawLatent?.existence2 ?? {};
   const beliefTension = rawLatent?.beliefTension ?? {};
   const derived = preconditionFilter?.derived ?? {};
-  const biasIdentity = preconditionBias?.identity ?? {};
-  const biasFocus = preconditionBias?.focus ?? {};
-  const biasPacing = preconditionBias?.pacing ?? {};
-  const biasMeaning = preconditionBias?.meaning ?? {};
+  const biasIdentity = bias?.identity ?? {};
+  const biasFocus = bias?.focus ?? {};
+  const biasPacing = bias?.pacing ?? {};
+  const biasMeaning = bias?.meaning ?? {};
   const tensionStrength = clamp01(beliefTension.totalTensionStrength ?? 0);
   const identityPlayfulnessBoost = getIdentityPlayfulnessBoost(existence2.agentIdentityKey);
   const microSignalDelta = buildMicroSignalLayerDelta('field', microSignals).delta;
