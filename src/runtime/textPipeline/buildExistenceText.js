@@ -5,14 +5,45 @@
 import { AXIS_DESCRIPTIONS, TENSION_DESCRIPTIONS } from './axisDescriptions.js';
 
 /**
+ * previousLatentState から前ターンの余韻を薄く取得する
+ * 説明にはせず、立ち上がり方のニュアンスを少し変えるだけ
+ * @param {object} previousLatentState - 前ターンの latentState
+ * @returns {string} 余韻のにじみ（なければ空文字）
+ */
+function extractAfterglowNuance(previousLatentState = {}) {
+  const prevStance = previousLatentState?.stance || {};
+  const prevPermission = previousLatentState?.permission || {};
+
+  // 前ターンの receive が高い → 受け止め寄りのニュアンス
+  if ((prevStance.receive ?? 0) > 0.6) {
+    return '受け止める姿勢が残っている';
+  }
+
+  // 前ターンの guard が高い → 慎重寄りのニュアンス
+  if ((prevStance.guard ?? 0) > 0.6) {
+    return '少し、慎重になっている';
+  }
+
+  // 前ターンの allowSilence が高い → 静かなニュアンス
+  if ((prevPermission.allowSilence ?? 0) > 0.6) {
+    return '静けさが、まだ続いている';
+  }
+
+  return '';
+}
+
+/**
  * 存在層からの描写を生成する
  * @param {object} latentState - runInternalOS の出力
+ * @param {object} options - オプション
+ * @param {object} options.previousLatentState - 前ターンの latentState（afterglow用）
  * @returns {string} 日本語の情景描写（空の場合は空文字）
  */
-export function buildExistenceText(latentState = {}) {
+export function buildExistenceText(latentState = {}, options = {}) {
   const existence2 = latentState?.existence2 || {};
   const beliefCore = latentState?.beliefCore || {};
   const beliefTension = latentState?.beliefTension || {};
+  const previousLatentState = options.previousLatentState || {};
 
   const lines = [];
 
@@ -50,5 +81,12 @@ export function buildExistenceText(latentState = {}) {
     }
   }
 
-  return lines.filter(Boolean).join('\n');
+  // afterglow: 前ターンの余韻を薄く反映（説明ではなく、にじみとして）
+  const afterglowNuance = extractAfterglowNuance(previousLatentState);
+  if (afterglowNuance && lines.length < 3) {
+    lines.push(afterglowNuance);
+  }
+
+  // 最大3行まで
+  return lines.filter(Boolean).slice(0, 3).join('\n');
 }

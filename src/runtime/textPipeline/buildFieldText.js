@@ -115,15 +115,42 @@ function describeBodyState(beliefCore = {}, bodySignals = {}) {
 }
 
 /**
+ * focusPoints から注意の凝集を薄く描写する
+ * 強いときだけ出す。説明ではなく場の表情として
+ * @param {Array} focusPoints - emergingField.focusPoints
+ * @returns {string}
+ */
+function describeAttentionCondensation(focusPoints = []) {
+  if (!Array.isArray(focusPoints) || focusPoints.length === 0) {
+    return '';
+  }
+
+  // 最も強い focusPoint の intensity を取得
+  const maxIntensity = Math.max(...focusPoints.map(fp => fp.intensity || 0));
+
+  // 強度が高い時だけ描写を追加（閾値: 0.6）
+  if (maxIntensity > 0.6) {
+    return '何かがまだ沈みきっていない';
+  } else if (maxIntensity > 0.45) {
+    return 'ひとつだけ少し引っかかるものがある';
+  }
+
+  return '';
+}
+
+/**
  * field / stance / body の状態から「場の空気」を生成
  * @param {object} latentState - runInternalOS の出力
+ * @param {object} options - オプション
+ * @param {Array} options.focusPoints - emergingField.focusPoints（注意の凝集）
  * @returns {string} 日本語の情景描写
  */
-export function buildFieldText(latentState = {}) {
+export function buildFieldText(latentState = {}, options = {}) {
   const field = latentState?.field || {};
   const stance = latentState?.stance || {};
   const beliefCore = latentState?.beliefCore || {};
   const bodySignals = latentState?.bodySignals || {};
+  const focusPoints = options.focusPoints || [];
 
   const lines = [];
 
@@ -140,6 +167,12 @@ export function buildFieldText(latentState = {}) {
   const body = describeBodyState(beliefCore, bodySignals);
   if (body) {
     lines.push(body);
+  }
+
+  // 注意の凝集を薄く追加（強いときだけ）
+  const condensation = describeAttentionCondensation(focusPoints);
+  if (condensation) {
+    lines.push(condensation);
   }
 
   return lines.filter(Boolean).join('。\n');

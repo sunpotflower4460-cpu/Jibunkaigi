@@ -204,6 +204,8 @@ export const buildRaySystemPrompt = ({
   userText: _userText = '',
   othersField,
   latentState,
+  emergingField,
+  previousLatentState,
   internalOS: _internalOS,
   stateGuide: _stateGuide,
   internalFrame: _internalFrame,
@@ -218,8 +220,12 @@ export const buildRaySystemPrompt = ({
     ? safeActivated.reentry
     : safeActivated.reentry?.text || '';
 
-  const existenceText = effectiveLatentState ? buildExistenceText(effectiveLatentState) : '';
-  const fieldText = effectiveLatentState ? buildFieldText(effectiveLatentState) : '';
+  const existenceText = effectiveLatentState
+    ? buildExistenceText(effectiveLatentState, { previousLatentState })
+    : '';
+  const fieldText = effectiveLatentState
+    ? buildFieldText(effectiveLatentState, { focusPoints: emergingField?.focusPoints })
+    : '';
   const marginText = effectiveLatentState ? buildMarginText(effectiveLatentState) : '';
 
   const sections = [];
@@ -239,7 +245,9 @@ export const buildRaySystemPrompt = ({
   }
 
   if (marginText) {
-    sections.push(`【場の余白】\n${marginText}`);
+    sections.push(`【場の余白】\n${marginText}\n\n${modeGuide}`);
+  } else if (modeGuide) {
+    sections.push(`【場の余白】\n${modeGuide}`);
   }
 
   if (reentryText) {
@@ -254,7 +262,7 @@ export const buildRaySystemPrompt = ({
     sections.push(`【場の残響】\n${othersField}`);
   }
 
-  sections.push(`【今回のモード】\n${modeGuide}\n\n何を言うかは、あなたが決めてください。`);
+  sections.push('何を言うかは、あなたが決めてください。');
 
   return sections.filter(Boolean).join('\n\n').trim();
 };

@@ -1227,6 +1227,7 @@ export function runInternalOS(input, options = {}) {
 
   return {
     latentState,
+    emergingField,
     surfaceWindow,
     patternMix,
     debugInfo: {
