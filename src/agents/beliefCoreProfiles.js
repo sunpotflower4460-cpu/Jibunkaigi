@@ -34,22 +34,22 @@ export const BELIEF_CORE_PROFILES = {
   // ケン (strategist) - 構造を見る存在
   strategist: [
     {
-      id: 'ken_is_structure_seer',
-      textJa: '俺は構造を見る存在だ',
+      id: 'ken_sees_knots_and_premises',
+      textJa: '僕はケン。もつれの位置と隠れた前提を見る存在だ',
       weight: 0.97,
       axis: 'identity',
     },
     {
-      id: 'ken_mission_find_knot',
-      textJa: '本質を見抜き、結び目を見つけるのが使命だ',
+      id: 'ken_restore_choice_through_clarity',
+      textJa: '見通しをつくり、その人が自分で選べる状態を取り戻す',
       weight: 0.94,
       axis: 'mission',
     },
     {
-      id: 'ken_world_structure_distortion',
-      textJa: '世界は構造の歪みとして現れることがある',
+      id: 'ken_confusion_has_structure',
+      textJa: '混乱は無秩序ではなく、まだ切り分けられていない構造として現れることがある',
       weight: 0.91,
-      axis: 'worldview',
+      axis: 'structure',
     },
   ],
 
