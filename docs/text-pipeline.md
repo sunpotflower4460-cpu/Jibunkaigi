@@ -26,6 +26,7 @@ runInternalOS.js
 buildAgentPrompt.js
   └─ buildAgentSystemPrompt(agentId, params)
        └─ prompts/{joe|ray|ken|mina|satou}.js
+            (各 agent builder は sharedPromptSkeleton.js の factory を使用)
             ├─ buildExistenceText(latentState)
             ├─ buildFieldText(latentState)
             ├─ buildMarginText(latentState)
@@ -56,8 +57,8 @@ text pipeline は上のうち、`buildBodySignals` / `buildExistenceText` / `bui
 
 | 項目 | 現在の所有者 | 補足 |
 |------|--------------|------|
-| 7ブロックの section 組み立て | `src/runtime/prompts/{agent}.js` | text pipeline は本文だけ返し、見出しや順序は持たない |
-| アンカーテキストの挿入 / 削除 | `src/runtime/prompts/{agent}.js` | `（ジョーとして。）` などは builder が常に入れる |
+| 7ブロックの section 組み立て | `src/runtime/prompts/sharedPromptSkeleton.js` および各 agent builder | text pipeline は本文だけ返し、見出しや順序は持たない |
+| アンカーテキストの挿入 / 削除 | `src/runtime/prompts/sharedPromptSkeleton.js` factory が各 agent の `anchorLabel` を処理 | `（ジョーとして。）` などは builder が常に入れる |
 | 活性化粒子の整形 | `src/runtime/buildPromptHelpers.js` | `renderActivatedParticles(activated)` が処理 |
 | reentry / context / mode | agent builder + helper | `activated.reentry`, `normalizeContext`, `MODE_GUIDE` を builder が section 化 |
 | user prompt の整形 | `src/runtime/buildAgentPrompt.js` / 各 `build*UserPrompt` | text pipeline は関与しない |
@@ -67,7 +68,7 @@ text pipeline は上のうち、`buildBodySignals` / `buildExistenceText` / `bui
 
 | 項目 | 現状 | 将来の整理方針 |
 |------|------|----------------|
-| 共通 section assembler | 各 agent builder に同型ロジックがある | 将来 shared assembler に寄せるなら、text pipeline ではなく prompt builder 層の shared utility として分離する |
+| 共通 section assembler | `sharedPromptSkeleton.js` で factory 化済み | 実装済み。各 agent builder は factory を呼び出すだけ |
 | tension 描写の存在ブロック反映 | `buildExistenceText` は `beliefTension` を読むが本文には出していない | 反映する場合は text pipeline 関数の責務として追加し、builder 側で補完しない |
 | agent 固有の axis 拡張 | 現状は共通 `AXIS_DESCRIPTIONS` のみ | 共通表と agent 拡張表の責務境界を別文書または別モジュールで固定する |
 | アンカー削除 | 未対応 | P-3 検証が削除条件を満たした時だけ builder 側で扱いを変える |
