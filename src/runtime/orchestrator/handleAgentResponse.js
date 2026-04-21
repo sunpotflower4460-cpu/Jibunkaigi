@@ -9,7 +9,7 @@
 
 import { estimateState } from '../stateEstimate.js';
 import { estimateMicroSignals } from '../estimateMicroSignals.js';
-import { activateAgent } from '../activateAgent.js';
+import { activateAgent } from '../activateAgent.js'; // TRANSITIONAL: 過渡期の補助機能、長期的には runInternalOS へ統合予定
 import { buildAgentSystemPrompt, buildAgentUserPrompt, buildAgentDebugPreview } from '../buildAgentPrompt.js';
 import { buildAgentStateGuide } from '../buildAgentStateGuide.js';
 import { buildAgentInternalFrame } from '../buildAgentInternalFrame.js';
@@ -430,8 +430,16 @@ export const handleAgentResponse = async ({
     pushAgentDebugEvent({ tag: 'ai-response:after-surface-guidance', ..._debugBase, hasSurfaceFrame: !!surfaceFrame });
 
     // runInternalOS を正本とし、latentState 由来の素材を明示的に受け渡す
+    // DESIGN DECISION: emergingField delivery path guarantee
+    // - emergingField は runInternalOS の返り値に必ずトップレベルで存在する
+    // - handleAgentResponse は防御的に複数経路から取得する
+    //   1. continuityInternalOS.emergingField (primary path)
+    //   2. continuityInternalOS.latentState.emergingField (legacy fallback)
+    // - この二重読み込みにより、runInternalOS の shape 変更時も focusPoints が静かに消えることを防ぐ
     latentState = continuityInternalOS?.latentState ?? null;
-    const emergingField = continuityInternalOS?.emergingField ?? null;
+    const emergingField = continuityInternalOS?.emergingField ??
+                          continuityInternalOS?.latentState?.emergingField ??
+                          null;
     const previousLatentState = afterglowSeed?.previousLatentState ?? null;
     activatedForPrompt = {
       ...(activated || {}),

@@ -724,7 +724,11 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   // Extract attention targets from user text and belief tension
-  // NOTE: Kept for backward compatibility, but focusPoints is now primary
+  // LEGACY BACKWARD COMPATIBILITY: attentionTargets は旧経路
+  // - focusPoints が primary attention mechanism (Japanese-first, radial condensation)
+  // - attentionTargets は weak support / backward compatibility のみ
+  // - attentionTargets は英語向けの split ベースであり、日本語に不向き
+  // TODO: 将来的に削除候補 (条件: focusPoints 系の安定とテスト充実)
   const attentionTargets = [];
   if (normalizedInput) {
     // Simple keyword extraction (in future, this could be more sophisticated)
@@ -738,6 +742,7 @@ export function runInternalOS(input, options = {}) {
   }
 
   // P-4: Extract focusPoints via radial condensation (3 channels)
+  // PRIMARY ATTENTION MECHANISM: focusPoints を優先使用すること
   const focusPoints = radialCondensation({
     userText: normalizedInput,
     afterglowSeed: safePreviousMix,
@@ -759,6 +764,13 @@ export function runInternalOS(input, options = {}) {
   }
 
   // P-6: Build bodySignals with external/internal separation
+  // DESIGN DECISION: Two bodySignals structures serve different purposes
+  // 1. latentState.bodySignals = { external, internal } (SPLIT VERSION)
+  //    - Used by buildFieldText() for detecting internal/external mismatch
+  //    - Example: "場は静かだが、内側に緊張が残る" (field is calm but internal tension remains)
+  // 2. emergingField.bodySignals = { tension, softness, ... } (FLAT VERSION)
+  //    - Used by buildConsciousIntent() for simple body state reading
+  //    - Provides direct access for quick reference without split complexity
   const bodySignalsSnapshot = buildBodySignals({
     field,
     beliefTension,
@@ -766,6 +778,7 @@ export function runInternalOS(input, options = {}) {
   });
 
   // Flatten for emergingField (backward compatibility)
+  // This flat version is intentionally kept for buildConsciousIntent() which doesn't need split view
   const bodySignals = {
     tension: clamp01(field.urgency * 0.7 + field.fragility * 0.3),
     softness: clamp01(field.softness),
@@ -784,8 +797,8 @@ export function runInternalOS(input, options = {}) {
   if (reaction.holdBackJudgment > 0.5) atmosphere.push('open');
 
   const emergingField = {
-    attentionTargets, // Kept for backward compatibility
-    focusPoints, // P-4: Primary attention mechanism (Japanese-first)
+    attentionTargets, // LEGACY: Kept for backward compatibility only, focusPoints is primary
+    focusPoints, // P-4: Primary attention mechanism (Japanese-first, radial condensation)
     resonanceAxes,
     bodySignals,
     atmosphere,
