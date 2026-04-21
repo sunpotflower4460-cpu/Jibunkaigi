@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 const TABS = [
   { id: 'input', label: '📥 入力' },
@@ -45,22 +45,12 @@ const matchesTab = (stage, tabId) => {
 const AgentInspectorPanel = ({ trace = null, history = [], onClose }) => {
   const [activeTab, setActiveTab] = useState(TABS[0].id);
   const [selectedTurnIndex, setSelectedTurnIndex] = useState(0);
-  const [isEntered, setIsEntered] = useState(false);
 
   const turns = useMemo(() => buildTurns(trace, history), [trace, history]);
-  const selectedTrace = turns[selectedTurnIndex] ?? null;
+  const safeSelectedTurnIndex = selectedTurnIndex < turns.length ? selectedTurnIndex : 0;
+  const selectedTrace = turns[safeSelectedTurnIndex] ?? null;
   const selectedEvents = Array.isArray(selectedTrace?.events) ? selectedTrace.events : [];
   const matchedEvents = selectedEvents.filter((event) => matchesTab(event?.stage || '', activeTab));
-
-  useEffect(() => {
-    setIsEntered(true);
-  }, []);
-
-  useEffect(() => {
-    if (selectedTurnIndex >= turns.length) {
-      setSelectedTurnIndex(0);
-    }
-  }, [selectedTurnIndex, turns.length]);
 
   return (
     <aside
@@ -81,11 +71,11 @@ const AgentInspectorPanel = ({ trace = null, history = [], onClose }) => {
         boxShadow: '0 24px 80px rgba(15,23,42,0.42)',
         color: '#e2e8f0',
         overflow: 'hidden',
-        transform: isEntered ? 'translateX(0)' : 'translateX(110%)',
-        transition: 'transform 220ms ease',
+        animation: 'agentInspectorSlideIn 220ms ease',
         pointerEvents: 'auto',
       }}
     >
+      <style>{'@keyframes agentInspectorSlideIn { from { transform: translateX(110%); } to { transform: translateX(0); } }'}</style>
       <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid rgba(148,163,184,0.16)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
@@ -112,7 +102,7 @@ const AgentInspectorPanel = ({ trace = null, history = [], onClose }) => {
         <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
           {TURN_LABELS.map((label, index) => {
             const enabled = !!turns[index];
-            const selected = selectedTurnIndex === index;
+            const selected = safeSelectedTurnIndex === index;
             return (
               <button
                 key={label}
