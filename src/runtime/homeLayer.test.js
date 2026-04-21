@@ -173,7 +173,31 @@ test('extractPermissionShape handles null home gracefully', () => {
     assert.equal(typeof permission.noOverExplain, 'number');
     assert.equal(typeof permission.noPerformativeHelpfulness, 'number');
     assert.equal(typeof permission.allowPartialUncertainty, 'number');
+    assert.equal(typeof permission.allowSilence, 'number');
   }
+});
+
+test('extractPermissionShape derives allowSilence from home kernel and output limits', () => {
+  const home = {
+    kernel: {
+      returnBeforeOutput: 0.6,
+      slowDown: 0.5,
+      releaseHelpfulness: 0.4,
+      releaseAccuracyPressure: 0.5,
+      allowOneLivingThread: 0.7,
+    },
+    outputLimits: {
+      noEarlySummary: 0.4,
+      noEarlySolution: 0.3,
+      noOverExpansion: 0.5,
+      keepOneThread: 0.8,
+    },
+  };
+
+  const permission = extractPermissionShape(home);
+
+  assert.ok(permission.allowSilence > 0, 'allowSilence should be derived');
+  assert.ok(permission.allowSilence <= 1, 'allowSilence should be clamped to 1');
 });
 
 test('createHomeLayer produces consistent output for same input', () => {

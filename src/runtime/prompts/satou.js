@@ -19,8 +19,8 @@
 //   4. 【場の余白】  ← buildMarginText(latentState)
 //   5. 【内的方向づけ（この回だけの構え）】  ← activated.reentry.text
 //   6. 【ここまでの流れ】  ← normalizeContext(context)
-//   7. 【場の残響】  ← othersField（オプション）
-//   8. 【今回のモード】  ← MODE_GUIDE[mode]
+//   7. 【今回のモード】  ← MODE_GUIDE[mode]
+//   ※ othersField がある場合のみ【場の残響】を拡張ブロックとして挿入
 //
 // ■ P系正本入口との関係：
 //   このファイルは、src/runtime/buildAgentPrompt.js の buildAgentSystemPrompt から
@@ -204,11 +204,13 @@ export const buildSatouSystemPrompt = ({
   userText: _userText = '',
   othersField,
   latentState,
+  internalOS: _internalOS,
   stateGuide: _stateGuide,
   internalFrame: _internalFrame,
   surfaceGuidance: _surfaceGuidance,
 }) => {
   const safeActivated = activated || {};
+  const effectiveLatentState = latentState ?? _internalOS?.latentState ?? null;
   const normalizedCtx = normalizeContext(context);
   const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
   const activatedParticles = renderActivatedParticles(safeActivated);
@@ -216,9 +218,9 @@ export const buildSatouSystemPrompt = ({
     ? safeActivated.reentry
     : safeActivated.reentry?.text || '';
 
-  const existenceText = latentState ? buildExistenceText(latentState) : '';
-  const fieldText = latentState ? buildFieldText(latentState) : '';
-  const marginText = latentState ? buildMarginText(latentState) : '';
+  const existenceText = effectiveLatentState ? buildExistenceText(effectiveLatentState) : '';
+  const fieldText = effectiveLatentState ? buildFieldText(effectiveLatentState) : '';
+  const marginText = effectiveLatentState ? buildMarginText(effectiveLatentState) : '';
 
   const sections = [];
 

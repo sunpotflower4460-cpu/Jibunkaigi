@@ -955,12 +955,15 @@ const App = () => {
       // （Firestore snapshot のメッセージには sessionId フィールドがないため、
       //   フィルタリングは不要）
       const othersFieldEntries = [];
-      for (const msg of messages) {
-        if (msg?.role === 'ai' && msg.agentId && msg.content) {
-          const entry = summarizeToOthersField(msg.agentId, msg.content);
-          if (entry) {
-            othersFieldEntries.push(entry);
-          }
+      const seenAgents = new Set();
+      for (let i = messages.length - 1; i >= 0 && othersFieldEntries.length < 3; i -= 1) {
+        const msg = messages[i];
+        if (msg?.role !== 'ai' || !msg.agentId || !msg.content) continue;
+        if (seenAgents.has(msg.agentId)) continue;
+        const entry = summarizeToOthersField(msg.agentId, msg.content);
+        if (entry) {
+          othersFieldEntries.push(entry);
+          seenAgents.add(msg.agentId);
         }
       }
 
@@ -970,7 +973,7 @@ const App = () => {
         previousMix: safePreviousMix,
         previousLatentState: safePreviousLatentState,
         othersField: othersFieldEntries,
-        lengthPreference: 'medium', // TODO: wire up UI selector when available
+        lengthPreference: selectedMode,
         microSignals,
       });
       const agentId = pickContextualAgent(AGENTS, {

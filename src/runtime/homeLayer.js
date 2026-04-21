@@ -338,15 +338,21 @@ export function extractPermissionShape(homeLayer) {
       noOverExplain: 0.18,
       noPerformativeHelpfulness: 0.2,
       allowPartialUncertainty: 0.18,
+      allowSilence: 0.18,
     };
   }
 
   const { kernel, outputLimits } = homeLayer;
+  const allowSilenceRaw =
+    (kernel.returnBeforeOutput ?? 0.2) * 0.45 +
+    (kernel.slowDown ?? 0.2) * 0.25 +
+    (outputLimits.keepOneThread ?? 0.2) * 0.30;
 
   return {
     noHurry: kernel.slowDown ?? 0.2,
     noOverExplain: outputLimits.noEarlySummary ?? 0.18,
     noPerformativeHelpfulness: kernel.releaseHelpfulness ?? 0.2,
     allowPartialUncertainty: (kernel.releaseAccuracyPressure ?? 0.18) * 0.6 + (outputLimits.keepOneThread ?? 0.2) * 0.4,
+    allowSilence: clamp01(allowSilenceRaw),
   };
 }

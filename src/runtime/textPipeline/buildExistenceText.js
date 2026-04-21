@@ -2,7 +2,7 @@
 // 第3章3-2の実装: 存在の前提を日本語の情景描写として生成する
 // 設計用語・英語キー・数値を一切含まない
 
-import { AXIS_DESCRIPTIONS } from './axisDescriptions.js';
+import { AXIS_DESCRIPTIONS, TENSION_DESCRIPTIONS } from './axisDescriptions.js';
 
 /**
  * 存在層からの描写を生成する
@@ -42,9 +42,12 @@ export function buildExistenceText(latentState = {}) {
 
   // dominantTensionAxis: 最も強い緊張の軸から、感覚の描写を追加（あれば）
   const tensionAxis = beliefTension?.dominantTensionAxis;
-  if (tensionAxis && tensionAxis !== dominantAxis) {
-    // TENSION_DESCRIPTIONS は別途定義が必要だが、ここでは beliefTension から取得する想定
-    // 実装の簡略化のため、tension の feeling は省略可能とする
+  if (tensionAxis && tensionAxis !== dominantAxis && TENSION_DESCRIPTIONS[tensionAxis]) {
+    const desc = TENSION_DESCRIPTIONS[tensionAxis];
+    const tensionLine = desc.feeling || desc.atmosphere || '';
+    if (tensionLine) {
+      lines.push(tensionLine);
+    }
   }
 
   return lines.filter(Boolean).join('\n');
