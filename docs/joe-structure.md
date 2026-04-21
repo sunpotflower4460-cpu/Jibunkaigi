@@ -140,7 +140,7 @@
 
 ## `buildJoeDebugPreview` について
 
-dev-only のプレビュー関数。Firestore 保存なし / 本文全文は出さない。
+dev-only のプレビュー関数。表示専用であり、Firestore 保存なし / 本文全文は出さない / 本番 prompt 品質には影響しない。
 
 返却フィールド:
 
@@ -152,6 +152,14 @@ dev-only のプレビュー関数。Firestore 保存なし / 本文全文は出�
 | `joeActivatedBiasCount` | 注入されたバイアス素材の数 |
 | `joeDominantAxes` | 優勢軸のリスト（activateJoe.debug 由来） |
 | `joeBuilderUsed` | 常に `"joe-specialized"` |
+
+### debug / preview 境界の確認手順
+
+1. 開発環境で `joeDebug=1` または `debugSurface=1` を有効化し、従来どおり panel / preview が見えることを確認する
+2. 本番相当設定では Joe debug panel と agent preview が生成・表示されないことを確認する
+3. Firestore の session / message 保存内容に debug 専用フィールドが含まれないことを確認する
+4. prompt 正本 (`systemInstruction` / `promptText`) が debug preview の有無で変化しないことを確認する
+5. dev-only 判定は `src/runtime/joeDebug.js` の runtime flags を入口に確認する
 
 ---
 

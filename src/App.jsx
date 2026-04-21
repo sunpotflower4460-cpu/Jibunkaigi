@@ -39,7 +39,7 @@ import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionDat
 import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 import { isSurfaceDebugEnabled, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
 import { getOthersVisibilityState, getOthersEmptyMessage, getOthersDebugLabel } from './runtime/getOthersVisibilityState';
-import { isJoeDebugAvailable, isJoeDebugEnabled, setJoeDebugEnabled, JOE_DEBUG_STORAGE_KEY } from './runtime/joeDebug';
+import { getJoeDebugRuntimeFlags, setJoeDebugEnabled, JOE_DEBUG_STORAGE_KEY } from './runtime/joeDebug';
 import { handleAgentResponse as orchestrateAgentResponse } from './runtime/orchestrator/handleAgentResponse.js';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
 import JoeDebugPanel from './components/JoeDebugPanel';
@@ -247,7 +247,7 @@ const App = () => {
   const [autoExpandReactions, setAutoExpandReactions] = useState(null);
   const [surfaceDebugEntries, setSurfaceDebugEntries] = useState([]);
   const [joeDebugEntry, setJoeDebugEntry] = useState(null);
-  const [isJoeDebugPanelVisible, setIsJoeDebugPanelVisible] = useState(() => isJoeDebugEnabled());
+  const [isJoeDebugPanelVisible, setIsJoeDebugPanelVisible] = useState(() => getJoeDebugRuntimeFlags().joePanelEnabled);
   const [optimisticSessionTitles, setOptimisticSessionTitles] = useState({});
   const [agentDebugEvents, setAgentDebugEvents] = useState([]);
   const [isCompareModeEnabled, setIsCompareModeEnabled] = useState(() => readCompareModeFlag());
@@ -268,6 +268,11 @@ const App = () => {
   const timeoutIdsRef = useRef(new Set());
   const responseTimingRef = useRef(null);
   const compareLabelStoreRef = useRef(compareLabelStore);
+  const surfaceDebugEnabled = isSurfaceDebugEnabled();
+  const devDebugRuntime = getJoeDebugRuntimeFlags({
+    joePanelVisible: isJoeDebugPanelVisible,
+    surfacePreviewEnabled: surfaceDebugEnabled,
+  });
 
   // エラーメッセージを設定して自動で消す
   const setErrorWithAutoDismiss = (message, duration = 5000) => {
@@ -354,11 +359,12 @@ const App = () => {
   const getAfterglowSeedForSession = (sessionId) => getAfterglowSeed(readSessionAfterglow(sessionId));
 
   const pushSurfaceDebugEntry = (entry) => {
-    if (!isSurfaceDebugEnabled()) return;
+    if (!devDebugRuntime.shouldBuildAgentDebugPreview || !entry) return;
     setSurfaceDebugEntries((prev) => [entry, ...prev].slice(0, SURFACE_DEBUG_MAX_ENTRIES));
   };
   const clearSurfaceDebugEntries = () => setSurfaceDebugEntries([]);
   const handleJoeDebugVisibilityChange = (nextVisible) => {
+    if (!devDebugRuntime.available) return;
     setJoeDebugEnabled(nextVisible);
     setIsJoeDebugPanelVisible(nextVisible);
   };
@@ -386,10 +392,10 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (!isJoeDebugAvailable()) return undefined;
-    if (typeof window === 'undefined') return undefined;
+    const joeRuntime = getJoeDebugRuntimeFlags();
+    if (!joeRuntime.shouldAttachBrowserControls) return undefined;
 
-    const syncJoeDebug = () => setIsJoeDebugPanelVisible(isJoeDebugEnabled());
+    const syncJoeDebug = () => setIsJoeDebugPanelVisible(getJoeDebugRuntimeFlags().joePanelEnabled);
     const handleStorage = (event) => {
       if (!event || event.key === null || event.key === JOE_DEBUG_STORAGE_KEY) {
         syncJoeDebug();
@@ -1192,7 +1198,7 @@ const App = () => {
         pushAgentDebugEvent,
         pushSurfaceDebugEntry,
         setJoeDebugEntry,
-        isJoeDebugPanelVisible,
+        devDebugRuntime,
         readSessionAfterglow,
         writeSessionAfterglowLocal,
         safeUpdateSession,
@@ -1889,14 +1895,14 @@ const App = () => {
         agents={AGENTS}
       />
 
-      {isSurfaceDebugEnabled() && (
+      {devDebugRuntime.shouldBuildAgentDebugPreview && (
         <SurfaceDebugPanel
           entries={surfaceDebugEntries}
           onClear={clearSurfaceDebugEntries}
         />
       )}
 
-      {isJoeDebugPanelVisible && joeDebugEntry && (
+      {devDebugRuntime.shouldRenderJoeDebugPanel && joeDebugEntry && (
         <JoeDebugPanel
           entry={joeDebugEntry}
           onClose={() => handleJoeDebugVisibilityChange(false)}

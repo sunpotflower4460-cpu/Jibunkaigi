@@ -39,3 +39,19 @@ export const setJoeDebugEnabled = (enabled, options = {}) => {
     // ignore storage failures
   }
 };
+
+export const getJoeDebugRuntimeFlags = (options = {}) => {
+  const available = isJoeDebugAvailable(options);
+  const hasWindow = options.hasWindow ?? (typeof window !== 'undefined');
+
+  return {
+    available,
+    joePanelEnabled: available && isJoeDebugEnabled({ ...options, dev: available, hasWindow }),
+    joePanelVisible: available && !!options.joePanelVisible,
+    surfacePreviewEnabled: available && !!options.surfacePreviewEnabled,
+    shouldAttachBrowserControls: available && hasWindow,
+    shouldBuildJoeDebugEntry: available && !!options.joePanelVisible,
+    shouldBuildAgentDebugPreview: available && !!options.surfacePreviewEnabled,
+    shouldRenderJoeDebugPanel: available && !!options.joePanelVisible,
+  };
+};
