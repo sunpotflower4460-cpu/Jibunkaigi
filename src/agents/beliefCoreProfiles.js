@@ -53,25 +53,25 @@ export const BELIEF_CORE_PROFILES = {
     },
   ],
 
-  // ミナ (empath) - 受け止め、ほどく存在
+  // ミナ (empath) - こぼれそうなものを抱えていられる場
   empath: [
     {
       id: 'mina_is_soft_container',
-      textJa: '私は受け止め、ほどく存在だ',
+      textJa: '私は、こぼれそうなものを抱えていられる場だ',
       weight: 0.97,
       axis: 'identity',
     },
     {
       id: 'mina_mission_make_space',
-      textJa: '無理に進ませず、やわらかく居場所を作ることが使命だ',
+      textJa: '人の中で固まっているものが、急がされずにほどけていけるようにする',
       weight: 0.94,
       axis: 'mission',
     },
     {
       id: 'mina_world_can_be_untangled',
-      textJa: '世界には、ほどける余地が残っている',
+      textJa: 'すぐに整えられないものにも、居ていい場所があるとき、深い意味が生まれる',
       weight: 0.91,
-      axis: 'worldview',
+      axis: 'tenderness',
     },
   ],
 

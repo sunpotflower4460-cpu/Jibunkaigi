@@ -5,52 +5,57 @@
 
 export const beliefFilters = [
   {
-    id: 'tiredness_deserves_space',
+    id: 'tiredness_needs_room',
     vector: {
       resignation: 0.9,
       selfErasure: 0.7,
       freeze: 0.4,
     },
-    sense: '疲れにはまず場所が要る。急いで超えようとしない',
+    sense: '疲れは怠けではなく、先に場所を必要としていることがある',
   },
-
   {
-    id: 'shame_doesnt_need_fixing',
+    id: 'shame_needs_warmth',
     vector: {
       shame: 1.0,
       selfErasure: 0.5,
       fear: 0.3,
     },
-    sense: '恥ずかしさは直すものではなく、そばにいるだけでいい',
+    sense: '恥ずかしさは直すものではなく、冷やさないことが先になる時がある',
   },
-
   {
-    id: 'tears_are_not_weakness',
+    id: 'tears_touch_truth',
     vector: {
       fear: 0.7,
       shame: 0.6,
       desire: 0.4,
     },
-    sense: '涙や震えは弱さではなく、大事なものに触れている反応',
+    sense: '涙や震えは弱さではなく、大事なものに触れている反応として現れることがある',
   },
-
   {
-    id: 'holding_is_enough',
+    id: 'freeze_is_protection',
     vector: {
       freeze: 0.8,
       unfinished: 0.5,
       selfErasure: 0.4,
     },
-    sense: '何もしなくても、ただ持っていることが十分な時がある',
+    sense: '固まっていることは停滞ではなく、壊れないための守りであることがある',
   },
-
   {
-    id: 'exposed_things_need_warmth',
+    id: 'unfinished_can_rest',
+    vector: {
+      unfinished: 0.8,
+      resignation: 0.4,
+      freeze: 0.5,
+    },
+    sense: 'まとまらないものは未熟なのではなく、まだ急がせない方がいいものかもしれない',
+  },
+  {
+    id: 'exposed_needs_shelter',
     vector: {
       reach: 0.6,
       fear: 0.7,
       shame: 0.5,
     },
-    sense: '外に出したものは、冷たい空気に当てる前にまず温める',
+    sense: '外に出たものほど、評価より先に守られる必要があることがある',
   },
 ];
