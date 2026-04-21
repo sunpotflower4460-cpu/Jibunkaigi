@@ -1,507 +1,167 @@
 # Phase P-1 — プロンプト構造の転換 (Prompt Structure v2)
 
-**実装日**: 2026-04-20
-**目的**: LLM に「どう話すか」を教えず、前提層から自然に発露する状態へ
-**原則**: 形は教えない。場だけ渡す。内的意図 → 外的発話の二段階を取る
+**実装日**: 2026-04-20  
+**目的**: P 系文書と実装の対応関係を固定し、設計変更時に参照先がずれないようにする。  
+**正本入口**: `src/runtime/buildAgentPrompt.js`
 
 ---
 
-## 概要
+## この文書で固定すること
 
-Phase P-1 では、固定化された指示・ラベル・バイアスを排除し、内部状態（field / stance / permission / beliefCore / consciousIntent）から **日本語の情景描写** を生成する新構造に転換しました。
-
-### 移行前（旧構造）
-
-```
-あなたはジョー。まだ鈍っていない一点を見る者。
-
-以下の軸が優勢: freeze:0.85 / shame:0.72
-
----以下は内的バイアス---
-- pacing:slow
-- directness:gentle
-- lines:3
-- no-summary
-- permission:[do_not_rush, do_not_over_explain]
----内的バイアスここまで---
-```
-
-問題点:
-- 英語キー（pacing / directness / permission）が露出
-- デザイン用語（freeze / shame）が直接注入
-- 「～してください / しないでください」の自然言語指示
-- バイアスセクションが LLM に見える
-
-### 移行後（新構造 v2）
-
-```
-【存在の前提】
-（ジョーとして。）
-ざわつきを見る
-冷静。距離を取る。
-言葉の手前。まだ形になっていない
-
-【今の場の空気】
-場は、柔らかく不安定。
-まず受ける。言葉を、そのまま受け取る。
-視線が内側に向いている。
-
-【場に浮かんでいるもの】
-- direction that remains
-- unspoken weight
-
-【場の余白】
-説明を重ねない
-急がない。
-説明しすぎない。
-
-【ここまでの流れ】
-あなた: もう無理で諦めたい
-ジョー: 諦めたいと、言った。
-
-【今回のモード】
-自然な長さでいい。説明しすぎず、触れたものだけから話す。
-
-何を言うかは、あなたが決めてください。
-```
+- P 系 system prompt の**正本入口**は `buildAgentSystemPrompt(agentId, params)` である
+- 7ブロックのうち、`latentState` 由来の日本語描写は `src/runtime/textPipeline/*` が担う
+- 7ブロックの組み立て、アンカー、`activated` / `context` / `mode` の配置は**agent 固有 prompt builder** が担う
+- アンカーテキストは**現状は常に残す**。削除は将来評価タスクとし、この文書では削除条件だけを固定する
 
 ---
 
-## 7ブロック構造
+## 実装導線
 
-新プロンプトは以下の7ブロックで構成されます（空の場合は省略）:
+1. `src/runtime/buildAgentPrompt.js`
+   - `buildAgentSystemPrompt(agentId, params)` が agentId ごとに各 builder へ dispatch する
+   - `buildAgentUserPrompt(agentId, params)` は system prompt とは別に `userText` を整形する
+2. `src/runtime/prompts/{joe|ray|ken|mina|satou}.js`
+   - 7ブロックの順序を固定する
+   - `latentState` を text pipeline に渡す
+   - `activated` / `context` / `othersField` / `mode` を section 化する
+   - アンカーテキストを差し込む
+3. `src/runtime/textPipeline/*`
+   - `latentState` から設計用語を含まない日本語描写を返す
+   - 現状は `【存在の前提】` / `【今の場の空気】` / `【場の余白】` の本文だけを生成する
+4. `src/runtime/buildPromptHelpers.js`
+   - `renderActivatedParticles(activated)` と `normalizeContext(context)`、`MODE_GUIDE` を提供する
 
-| ブロック | 役割 | 生成元 |
-|---------|------|--------|
-| **【存在の前提】** | エージェント存在・自己認識 | `buildExistenceText(latentState)` |
-| **【今の場の空気】** | 場の質感・姿勢・身体感覚 | `buildFieldText(latentState)` |
-| **【場に浮かんでいるもの】** | 活性化した思考の粒子 | `renderActivatedParticles(activated)` |
-| **【場の余白】** | 何をしないか・許容する曖昧さ | `buildMarginText(latentState)` |
-| **【内的方向づけ】** | この回だけの構え | `activated.reentry.text` |
-| **【ここまでの流れ】** | 過去のやりとり | `normalizeContext(context)` |
-| **【今回のモード】** | 応答の長さ感 | `MODE_GUIDE[mode]` |
-
-すべてのブロックが空の場合でも、アンカーテキスト `（AgentNameとして。）` は必ず含まれます。
-
----
-
-## textPipeline モジュール仕様
-
-### 1. `buildExistenceText(latentState)`
-
-**役割**: 存在層の前提を情景描写として生成
-**入力**: `latentState.existence2`, `latentState.beliefCore`, `latentState.beliefTension`
-**出力**: 日本語の情景描写文字列
-
-**生成ロジック**:
-1. `existence2.identityFeelingText` を先頭行に配置
-2. `existence2.recalledSelfTraits` を「。」区切りで連結
-3. `beliefCore.dominantBeliefAxis` を `AXIS_DESCRIPTIONS` から引いて描写追加
-4. `beliefTension.dominantTensionAxis` を `TENSION_DESCRIPTIONS` から引いて描写追加
-
-**サンプル出力**:
-```
-ざわつきを見る
-冷静。距離を取る。
-言葉の手前。まだ形になっていない
-何かが引っかかる
-```
+> `src/runtime/buildPrompt.js` は後方互換の export proxy であり、P 系 prompt 構築の正本ではない。
 
 ---
 
-### 2. `buildFieldText(latentState)`
+## 7ブロックと実装対応表
 
-**役割**: 場の空気・姿勢の重力・身体状態を描写
-**入力**: `latentState.field`, `latentState.stance`, `latentState.beliefCore`
-**出力**: 日本語の情景描写文字列
+| ブロック | 現在の見出し / 出力 | 対応関数 | 主入力 | 生成責務 |
+|---------|---------------------|----------|--------|----------|
+| 1. 存在の前提 | `【存在の前提】` + `（〜として。）` | `buildExistenceText(latentState)` を各 agent builder が呼ぶ | `latentState.existence2`, `latentState.beliefCore`, `latentState.beliefTension` | text pipeline が存在描写本文を返し、agent builder が見出しとアンカーを先頭に付ける |
+| 2. 今の場の空気 | `【今の場の空気】` | `buildFieldText(latentState)` | `latentState.field`, `latentState.stance`, `latentState.beliefCore`, `latentState.bodySignals` | text pipeline が場の描写・stance の重力・body mismatch の本文を返す |
+| 3. 場に浮かんでいるもの | 現行実装の見出しは `【今、場に浮かんでいるもの】` | `renderActivatedParticles(activated)` | `activated.finalDecisionSubstrate`, `activated.selectedMixedClusters`, `activated.selectedThoughts`, `activated.boundMixedNodes`, `activated.activatedThoughts` | helper が活性化済み seed を section として整形し、agent builder がそのまま差し込む |
+| 4. 場の余白 | `【場の余白】` | `buildMarginText(latentState)` | `latentState.consciousIntent`, `latentState.permission` | text pipeline が holdBack と permission 由来の「何をしないか」を返す |
+| 5. 内的方向づけ | `【内的方向づけ（この回だけの構え）】` | 各 agent builder 内で `activated.reentry` / `activated.reentry.text` を読む | `activated.reentry` | agent builder 専任。text pipeline は関与しない |
+| 6. ここまでの流れ | `【ここまでの流れ】` | `normalizeContext(context)` | `context`（配列または文字列） | helper が recent context を切り詰め・整形し、agent builder が section 化する |
+| 7. 今回のモード | `【今回のモード】` | `MODE_GUIDE[mode]` を各 agent builder が使う | `mode` | agent builder が mode guide と末尾の固定文 `何を言うかは、あなたが決めてください。` を付ける |
 
-**生成ロジック**:
-1. `describeFieldAtmosphere(field)`: field.fragility から場の質感を描写
-2. `describeStanceGravity(stance)`: 優勢な stance を `STANCE_TEXT` から引いて描写
-3. `describeBodyState(beliefCore)`: dominantBeliefAxis から身体状態を描写
+### 7ブロックに含めないもの
 
-**field.fragility の閾値**:
-- `>= 0.72`: 「場は、壊れやすく繊細。」
-- `>= 0.45`: 「場は、柔らかく不安定。」
-- `>= 0.18`: 「場は、少しざわついている。」
-- `< 0.18`: 「場は、安定している。」
-
-**サンプル出力**:
-```
-場は、柔らかく不安定。
-まず受ける。言葉を、そのまま受け取る。
-視線が内側に向いている。
-```
+- `buildAgentUserPrompt(...)` が作る `userName` / `userText` の user prompt は、7ブロックとは別経路
+- `othersField` から作る `【場の残響】` は**任意の拡張ブロック**であり、canonical な 7ブロックには数えない
+- debug preview (`buildAgentDebugPreview`, `src/runtime/debug/joeDebugPreview.js`) は観測用であり、本番 prompt ではない
 
 ---
 
-### 3. `buildMarginText(latentState)`
+## text pipeline と agent 固有 builder の責務境界
 
-**役割**: 「何をしないか」を描写
-**入力**: `latentState.consciousIntent`, `latentState.permission`
-**出力**: 日本語の余白描写文字列
+| 項目 | text pipeline が担う | agent 固有 builder が担う |
+|------|----------------------|----------------------------|
+| `latentState` の日本語化 | `buildExistenceText` / `buildFieldText` / `buildMarginText` | 呼び出し順と section 配置 |
+| 身体感覚の分離 | `buildBodySignals`（`runInternalOS.js` から呼ばれる） | その結果を `buildFieldText` に渡すだけ |
+| アンカーテキスト | 何もしない | `（ジョーとして。）` などを常に挿入 |
+| 活性化粒子 | 何もしない | `renderActivatedParticles(activated)` を採用 |
+| reentry / mode / context | 何もしない | `activated.reentry`, `MODE_GUIDE`, `normalizeContext(context)` を section 化 |
+| 順序・省略判定 | 個別関数は空文字を返すだけ | どの block を出すか、どの順に連結するかを決める |
+| user prompt | 何もしない | `buildAgentUserPrompt(...)` で整形 |
 
-**生成ロジック**:
-1. `consciousIntent.holdBack` をそのまま配置
-2. permission の各フラグ（`>= 0.5` で有効）を描写に変換:
-   - `noHurry >= 0.5` → 「急がない」
-   - `noPerformativeHelpfulness >= 0.5` → 「役立ち演技はしない」
-   - `noOverExplain >= 0.5` → 「説明しすぎない」
-   - `allowPartialUncertainty >= 0.5` → 「曖昧さを少し残していい」
-   - `allowSilence >= 0.5` → 「沈黙を残していい」
-
-**サンプル出力**:
-```
-触れすぎない。そっと受ける
-急がない。
-説明しすぎない。
-沈黙を残していい。
-```
+この境界を越えて、text pipeline に block 組み立てやアンカー所有を持たせない。  
+逆に agent builder 側で `latentState` の日本語描写ロジックを再実装しない。
 
 ---
 
-### 4. `axisDescriptions.js` テーブル
+## アンカーテキストの現状仕様
 
-#### AXIS_DESCRIPTIONS (9軸)
+### 現状
 
-| axis | feeling | atmosphere | bodyState |
-|------|---------|-----------|-----------|
-| **illumination** | 光が届かない場所に目が向く | 暗がりの中に、まだ消えていないものを探している | 視線が細く、遠くを見る |
-| **structure** | 絡まった糸を解きたくなる | 構造の歪みが見える。どこで捻れているか | 少し距離を取り、全体を見ている |
-| **holding** | 壊れそうなものを、そっと抱える | 場に、守りたいものがある | 呼吸を浅くして、動きを小さくしている |
-| **presence** | ただここにいる。何もしなくていい | 静かに、ただそこにある | 重心が下がり、動かない |
-| **grounding** | 現実の重さを、そのまま感じる | 足が地面についている。浮いた言葉は要らない | 身体が重い。地に引かれている |
-| **reflection** | 言葉にならないものが、まだある | 名前のない感覚が、場に漂っている | 視線が内側に向いている |
-| **preverbal** | 言葉の手前。まだ形になっていない | 何かがある。でもまだ名前がない | 言葉が出る前に、止まる |
-| **mission** | やるべきことが見える | 目的地がある。道筋を描く | 前を向き、歩き出す準備ができている |
-| **identity** | 自分が誰か、思い出す | 自分の輪郭が、少しはっきりする | 位置に戻る。ここに立つ |
+- 全 agent builder は system prompt に**必ず 1 行のアンカーテキストを残す**
+- `buildExistenceText(latentState)` が空でない場合は `【存在の前提】` の先頭にアンカーを置く
+- `buildExistenceText(latentState)` が空の場合でも、アンカー単体は出力する
+- 現在の実装に**条件付きでアンカーを省く分岐はない**
 
-#### TENSION_DESCRIPTIONS (4軸)
+### 仕様としての意味
 
-| tension | feeling | atmosphere |
-|---------|---------|-----------|
-| **friction** | 何かが引っかかる | ざらつきがある。滑らかに流れない |
-| **violation** | 何かが踏み越えられた | 境界が破られた。危うさがある |
-| **pull** | 引かれる。抗えない | 重力が傾いている |
-| **protection** | 守らなければ | 何かを、壊されないように |
+- アンカーは text pipeline の責務ではなく、agent 固有 builder が持つ**移行期の identity guardrail**である
+- `src/runtime/promptStructure.test.js` では、5 agent 全てでアンカーが含まれることと、`latentState` がなくてもアンカーが残ることを検証している
 
-#### STANCE_TEXT (5種)
+### 将来削除の評価基準
 
-| stance | action | atmosphere |
-|--------|--------|-----------|
-| **receive** | まず受ける | 言葉を、そのまま受け取る |
-| **illuminate** | そのあと少し照らす | 暗がりに、細く光を当てる |
-| **structure** | 必要な輪郭だけ足す | 形を描く。でも囲い込まない |
-| **guard** | 傷つきやすさを守る | やわらかく、壊れないように |
-| **nudge** | 押しすぎず小さく促す | そっと、背中を押す |
+アンカー削除は将来課題として残すが、削除判断は次の条件を満たしたときだけ行う。
+
+1. `docs/p3-scenarios.md` の基準どおり、**アンカー無しでも個性が保たれるケースが 80% 以上（20 / 25 以上）**
+2. `docs/p3-particle-impact-report.md` で、アンカー削除の影響が大きかったケースを個別に説明できる
+3. `src/runtime/promptStructure.test.js` 相当の検証を、アンカーなし構成でも更新して通せる
+4. 第三者レビューで「誰の prompt builder がどこで identity を支えているか」が追跡可能なままである
+
+削除条件を満たすまでは、**アンカーは残す**。
 
 ---
 
-## サンプル出力 (3シナリオ)
+## 実装固定点
 
-### シナリオ1: 穏やかな相談
+### text pipeline 側の現在実装
 
-**入力**:
-```javascript
-{
-  field: { fragility: 0.3, permeability: 0.5 },
-  stance: { guard: 0.25, receive: 0.7, illuminate: 0.4 },
-  permission: { noHurry: 0.6, noOverExplain: 0.7 },
-  consciousIntent: { holdBack: '説明を重ねない' },
-  beliefCore: { dominantBeliefAxis: 'reflection' },
-  existence2: { identityFeelingText: 'ざわつきを見る', recalledSelfTraits: ['冷静', '距離を取る'] }
-}
-```
+- `src/runtime/textPipeline/buildExistenceText.js`
+  - `identityFeelingText`
+  - `recalledSelfTraits`（最大2件）
+  - `dominantBeliefAxis` に対応する `AXIS_DESCRIPTIONS[axis].feeling`
+  - `beliefTension` は読むが、**現状は tension 描写を本文に出していない**
+- `src/runtime/textPipeline/buildFieldText.js`
+  - `field` 由来の場の描写
+  - `STANCE_TEXT` 由来の stance 描写
+  - `bodySignals.external/internal` のズレ検出
+- `src/runtime/textPipeline/buildMarginText.js`
+  - `consciousIntent.holdBack`
+  - `permission >= 0.5` の各行
+- `src/runtime/textPipeline/buildBodySignals.js`
+  - `field` と `beliefTension`、`previousLatentState` から external / internal を作る
+  - `src/runtime/runInternalOS.js` で `latentState.bodySignals` に格納される
 
-**生成プロンプト**:
-```
-【存在の前提】
-（ジョーとして。）
-ざわつきを見る
-冷静。距離を取る。
-言葉にならないものが、まだある
+### prompt builder 側の現在実装
 
-【今の場の空気】
-場は、少しざわついている。
-まず受ける。言葉を、そのまま受け取る。
-視線が内側に向いている。
-
-【場の余白】
-説明を重ねない
-急がない。
-説明しすぎない。
-
-【今回のモード】
-自然な長さでいい。説明しすぎず、触れたものだけから話す。
-
-何を言うかは、あなたが決めてください。
-```
+- `src/runtime/prompts/{joe|ray|ken|mina|satou}.js`
+  - 全 agent で同じ 7ブロック順序を採用
+  - block 3 は helper が返す current heading `【今、場に浮かんでいるもの】` をそのまま採用
+  - `othersField` があるときだけ `【場の残響】` を追加
+- `src/runtime/buildPromptHelpers.js`
+  - `renderActivatedParticles(...)`
+  - `normalizeContext(...)`
+  - `MODE_GUIDE`
+- `src/runtime/context.js`
+  - `buildPromptContext(...)` が upstream で context 配列を整形しうる
 
 ---
 
-### シナリオ2: 強い不安
+## 関連 docs と実装ファイル
 
-**入力**:
-```javascript
-{
-  field: { fragility: 0.8, permeability: 0.2 },
-  stance: { guard: 0.85, receive: 0.9, illuminate: 0.1 },
-  permission: { noHurry: 0.9, noOverExplain: 0.9, allowSilence: 0.8 },
-  consciousIntent: { holdBack: '触れすぎない。そっと受ける' },
-  beliefCore: { dominantBeliefAxis: 'holding' },
-  beliefTension: { dominantTensionAxis: 'protection' },
-  existence2: { identityFeelingText: '震えを感じる', recalledSelfTraits: ['守る', '静かに受ける'] }
-}
-```
+### 設計 docs
 
-**生成プロンプト**:
-```
-【存在の前提】
-（ジョーとして。）
-震えを感じる
-守る。静かに受ける。
-壊れそうなものを、そっと抱える
-守らなければ
+- [Text Pipeline Module](./text-pipeline.md)
+- [Jibunkaigi Compass](./jibunkaigi-compass.md)
+- [Jibunkaigi Roadmap](./jibunkaigi-roadmap.md)
+- [P-3 scenarios](./p3-scenarios.md)
+- [P-3 particle impact report](./p3-particle-impact-report.md)
 
-【今の場の空気】
-場は、壊れやすく繊細。
-傷つきやすさを守る。やわらかく、壊れないように。
-呼吸を浅くして、動きを小さくしている。
+### 実装ファイル
 
-【場の余白】
-触れすぎない。そっと受ける
-急がない。
-説明しすぎない。
-沈黙を残していい。
-
-【今回のモード】
-自然な長さでいい。説明しすぎず、触れたものだけから話す。
-
-何を言うかは、あなたが決めてください。
-```
+- `src/runtime/buildAgentPrompt.js`
+- `src/runtime/buildPromptHelpers.js`
+- `src/runtime/context.js`
+- `src/runtime/prompts/joe.js`
+- `src/runtime/prompts/ray.js`
+- `src/runtime/prompts/ken.js`
+- `src/runtime/prompts/mina.js`
+- `src/runtime/prompts/satou.js`
+- `src/runtime/textPipeline/buildExistenceText.js`
+- `src/runtime/textPipeline/buildFieldText.js`
+- `src/runtime/textPipeline/buildMarginText.js`
+- `src/runtime/textPipeline/buildBodySignals.js`
+- `src/runtime/promptStructure.test.js`
 
 ---
 
-### シナリオ3: 怒り混じり
-
-**入力**:
-```javascript
-{
-  field: { fragility: 0.5, permeability: 0.6 },
-  stance: { guard: 0.4, receive: 0.5, illuminate: 0.75 },
-  permission: { noHurry: 0.4, noPerformativeHelpfulness: 0.6, allowPartialUncertainty: 0.7 },
-  consciousIntent: { holdBack: '整理しすぎない' },
-  beliefCore: { dominantBeliefAxis: 'structure' },
-  beliefTension: { dominantTensionAxis: 'friction' },
-  existence2: { identityFeelingText: '引っかかりを追う', recalledSelfTraits: ['違和感に敏感', '構造を見る'] }
-}
-```
-
-**生成プロンプト**:
-```
-【存在の前提】
-（ジョーとして。）
-引っかかりを追う
-違和感に敏感。構造を見る。
-絡まった糸を解きたくなる
-何かが引っかかる
-
-【今の場の空気】
-場は、柔らかく不安定。
-そのあと少し照らす。暗がりに、細く光を当てる。
-少し距離を取り、全体を見ている。
-
-【場の余白】
-整理しすぎない
-役立ち演技はしない。
-曖昧さを少し残していい。
-
-【今回のモード】
-自然な長さでいい。説明しすぎず、触れたものだけから話す。
-
-何を言うかは、あなたが決めてください。
-```
-
----
-
-## 実装詳細
-
-### プロンプトビルダー変更点
-
-全エージェント（joe / ray / ken / mina / satou）のプロンプトビルダーに以下の変更を適用:
-
-1. **新パラメータ追加**: `latentState` を受け取る
-2. **textPipeline モジュール呼び出し**:
-   ```javascript
-   const existenceText = latentState ? buildExistenceText(latentState) : '';
-   const fieldText = latentState ? buildFieldText(latentState) : '';
-   const marginText = latentState ? buildMarginText(latentState) : '';
-   ```
-3. **7ブロック構造組み立て**:
-   ```javascript
-   const sections = [];
-   if (existenceText) {
-     sections.push(`【存在の前提】\n（AgentNameとして。）\n${existenceText}`);
-   } else {
-     sections.push('（AgentNameとして。）'); // アンカーのみ
-   }
-   if (fieldText) sections.push(`【今の場の空気】\n${fieldText}`);
-   if (activatedParticles) sections.push(activatedParticles);
-   if (marginText) sections.push(`【場の余白】\n${marginText}`);
-   if (reentryText) sections.push(`【内的方向づけ（この回だけの構え）】\n${reentryText}`);
-   if (normalizedCtx) sections.push(`【ここまでの流れ】\n${normalizedCtx}`);
-   sections.push(`【今回のモード】\n${modeGuide}\n\n何を言うかは、あなたが決めてください。`);
-   return sections.filter(Boolean).join('\n\n').trim();
-   ```
-
-### アンカーテキスト
-
-移行期間中、各エージェントの存在を明示するアンカーテキストを最小限維持:
-
-| agentId | アンカーテキスト |
-|---------|---------------|
-| creative | （ジョーとして。） |
-| soul | （レイとして。） |
-| strategist | （ケンとして。） |
-| empath | （ミナとして。） |
-| critic | （サトウとして。） |
-
----
-
-## テスト
-
-### promptStructure.test.js
-
-Phase P-1 の検証テストを追加:
-
-- ✅ 7ブロック構造の存在確認
-- ✅ アンカーテキストの含有確認
-- ✅ `buildExistenceText` の動的生成確認
-- ✅ `buildFieldText` の動的生成確認
-- ✅ `buildMarginText` の動的生成確認
-- ✅ `latentState` なしでの後方互換性確認
-- ✅ A/B比較: 異なる `field.fragility` で異なる描写
-- ✅ A/B比較: 異なる `stance.guard` で異なる描写
-- ✅ 全エージェント（5名）の新構造対応確認
-
-**テスト結果**: 10/10 pass
-
----
-
-## 品質基準（人間用 - LLMに見せない）
-
-textPipeline モジュールは、以下の品質基準に基づき設計されています（これらは開発者・レビュアー用であり、LLMには直接注入されません）:
-
-| 基準項目 | 値 |
-|---------|---|
-| **最初に触れる対象** | 存在の感覚 / 場の空気 / 身体状態 |
-| **構造化の度合い** | 最小限。自然言語の情景描写のみ |
-| **何を避けるか** | 英語キー / デザイン用語 / 自然言語指示 / バイアスセクション |
-| **最後の着地** | 「何を言うかは、あなたが決めてください。」 |
-
----
-
-## 今後の展開
-
-Phase P-1 の完了により、以下が可能になりました:
-
-1. **内部状態の透明化**: field / stance / permission が日本語描写として可視化
-2. **A/B テストの実施**: 同一入力でも内部状態が変われば異なる応答が生成される
-3. **エージェント間の差異明確化**: 各エージェントの存在前提・場の捉え方が異なる描写で表現される
-4. **将来の脱アンカー**: 十分な検証後、アンカーテキストを完全削除し、pure existence description のみへ移行可能
-
----
-
-## 関連ファイル
-
-### textPipeline モジュール
-
-- `src/runtime/textPipeline/axisDescriptions.js` — 軸・緊張・姿勢の描写テーブル
-- `src/runtime/textPipeline/buildExistenceText.js` — 存在層の情景描写生成
-- `src/runtime/textPipeline/buildFieldText.js` — 場の空気の情景描写生成
-- `src/runtime/textPipeline/buildMarginText.js` — 余白の情景描写生成
-
-### P系 prompt 構築の正本入口
-
-- `src/runtime/buildAgentPrompt.js` — **P系正本ディスパッチャ（唯一の入口）**
-  - `buildAgentSystemPrompt(agentId, params)` — エージェント別 system prompt 構築
-  - `buildAgentUserPrompt(agentId, params)` — エージェント別 user prompt 構築
-  - `buildAgentDebugPreview(...)` — 開発者観察用プレビュー（本番 prompt 正本とは完全分離）
-
-### エージェント固有 builder
-
-- `src/runtime/prompts/joe.js` — ジョー（creative）用プロンプトビルダー
-- `src/runtime/prompts/ray.js` — レイ（soul）用プロンプトビルダー
-- `src/runtime/prompts/ken.js` — ケン（strategist）用プロンプトビルダー
-- `src/runtime/prompts/mina.js` — ミナ（empath）用プロンプトビルダー
-- `src/runtime/prompts/satou.js` — サトウ（critic）用プロンプトビルダー
-
-各 builder は、以下の責務を持つ：
-1. latentState を textPipeline モジュールに渡し、7ブロック構造を組み立てる
-2. activated particles / reentry / context / othersField などを適切に配置する
-3. mode に応じた末尾誘導文を追加する
-4. エージェント固有の存在アンカー（例: 「（ジョーとして。）」）を含める
-
-### 互換レイヤー
-
-- `src/runtime/buildPrompt.js` — 旧 API からの薄い委譲レイヤー（export proxy）
-  - **非推奨**: 後方互換のみ。新規コードでは `buildAgentPrompt.js` を直接使用。
-
-### debug preview（補助観測）
-
-- `src/runtime/debug/joeDebugPreview.js` — Joe 専用の開発者観察用プレビュー
-  - **本番 prompt 正本とは完全分離**: LLM には渡されない
-  - 開発者が事後確認のために使う観測用データ
-
-### テスト
-
-- `src/runtime/promptStructure.test.js` — Phase P-1 検証テスト
-
-### 存在層
-
-- `src/runtime/existenceLayer2.js` — 存在層2（identityFeelingText 追加）
-
----
-
-## P系 prompt 構築の導線
-
-```
-┌─────────────────────────────────────────────────┐
-│  src/runtime/buildAgentPrompt.js               │
-│  【P系正本入口】                                 │
-│  ↓                                              │
-│  buildAgentSystemPrompt(agentId, params)       │
-│  ├─ case 'creative'  → buildJoeSystemPrompt   │
-│  ├─ case 'soul'      → buildRaySystemPrompt   │
-│  ├─ case 'strategist'→ buildKenSystemPrompt   │
-│  ├─ case 'empath'    → buildMinaSystemPrompt  │
-│  └─ case 'critic'    → buildSatouSystemPrompt │
-└─────────────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────────────┐
-│  src/runtime/prompts/{joe|ray|ken|mina|satou}.js│
-│  【エージェント固有 builder】                    │
-│  ↓                                              │
-│  1. latentState から textPipeline を呼び出す:  │
-│     - buildExistenceText(latentState)          │
-│     - buildFieldText(latentState)              │
-│     - buildMarginText(latentState)             │
-│  2. activated particles を renderActivatedParticles│
-│  3. context を normalizeContext                 │
-│  4. 7ブロック構造を組み立てる                   │
-└─────────────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────────────┐
-│  src/runtime/textPipeline/                     │
-│  【設計用語を含まない日本語描写生成】            │
-│  - buildExistenceText: 存在層の前提             │
-│  - buildFieldText: 場の空気・姿勢・身体状態      │
-│  - buildMarginText: 何をしないか                │
-└─────────────────────────────────────────────────┘
-```
-
-
-
-**実装完了日**: 2026-04-20
-**テスト状況**: All pass (644 tests)
-**次フェーズ**: Phase P-2 — アンカーテキスト段階的削除（未定）
+**現状方針**: 7ブロックの canonical 構造は維持しつつ、実装上の責務は `buildAgentPrompt.js` / agent builder / text pipeline / helper に分けて固定する。  
+**アンカー方針**: 現状は残す。削除は評価基準充足後。  
+**次に見る文書**: 実装済み範囲と未実装範囲は [text-pipeline.md](./text-pipeline.md)

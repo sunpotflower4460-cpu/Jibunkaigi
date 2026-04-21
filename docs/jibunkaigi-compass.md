@@ -118,6 +118,14 @@ Lexical Stream が意味側の傾き、Micro-Signal Stream が言葉になる前
 したがって Dual Stream は、固定人格の演出を強めるためではなく、  
 **内的傾向の凝集がどのように立ち上がるかを、より壊さず観測するための下地**として扱います。
 
+## P 系 docs の辿り方
+
+- P-1 の 7ブロック構造と実装対応表は [Prompt Structure v2](./prompt-structure-v2.md)
+- P-6 の text pipeline と builder 境界は [Text Pipeline Module](./text-pipeline.md)
+- アンカー削除の評価基準は [P-3 scenarios](./p3-scenarios.md)
+- アンカー有無のレビュー記録は [P-3 particle impact report](./p3-particle-impact-report.md)
+- 実装入口は `src/runtime/buildAgentPrompt.js`、text pipeline 実装は `src/runtime/textPipeline/*`
+
 ### D 系 docs の辿り方
 
 - D closeout: D 系の到達点・非目的・残制約・E/M への引き渡しは [D Series Closeout](./d-series-closeout.md)

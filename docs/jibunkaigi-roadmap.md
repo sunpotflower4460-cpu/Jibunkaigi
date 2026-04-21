@@ -12,6 +12,14 @@
 **表面の機能追加より、内部力学の確定を先に行う**  
 という順番で進める。
 
+## P 系 docs の入口
+
+- P-1 の prompt 構造と実装対応は [Prompt Structure v2](./prompt-structure-v2.md)
+- P-6 の text pipeline / builder 境界は [Text Pipeline Module](./text-pipeline.md)
+- アンカー削除の評価基準は [P-3 scenarios](./p3-scenarios.md)
+- アンカー影響の確認記録は [P-3 particle impact report](./p3-particle-impact-report.md)
+- 実装を見るときの入口は `src/runtime/buildAgentPrompt.js` と `src/runtime/textPipeline/*`
+
 ---
 
 ## Phase 0 — 席を定義する
