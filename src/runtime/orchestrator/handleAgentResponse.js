@@ -601,8 +601,9 @@ export const handleAgentResponse = async ({
   }
 
   // トレースを凍結してwindowに保存（開発者専用）
+  let finalizedTrace = null;
   if (trace) {
-    const finalizedTrace = trace.finalize();
+    finalizedTrace = trace.finalize();
     if (typeof window !== 'undefined') {
       window.JIBUN_LAST_TRACE = finalizedTrace;
       console.info('[agentTrace] Trace finalized and saved to window.JIBUN_LAST_TRACE', {
@@ -618,6 +619,7 @@ export const handleAgentResponse = async ({
     context,
     continuityInternalOS,
     latestUserText,
+    trace: finalizedTrace,
     aborted: false,
   };
 };
