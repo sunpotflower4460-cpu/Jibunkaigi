@@ -39,6 +39,7 @@ import {
   getMicroSignalValue,
   MICRO_SIGNAL_BIAS_MAP,
   MICRO_SIGNAL_BIAS_MAX_DELTA,
+  MICRO_SIGNAL_TUNING_DEBUG_CONFIG,
 } from './config/microSignalBias.js';
 import { getNodeRelations } from '../reservoir/loadReservoir.js';
 
@@ -169,6 +170,7 @@ const buildMicroSignalBiasDebug = ({
 
   return {
     maxDelta: MICRO_SIGNAL_BIAS_MAX_DELTA,
+    config: MICRO_SIGNAL_TUNING_DEBUG_CONFIG.bias,
     field: {
       ...buildMicroSignalBiasDebugLayer(
         ['softness', 'depth', 'urgency', 'fragility', 'playfulness'],
@@ -476,6 +478,8 @@ export function runInternalOS(input, options = {}) {
       ? normalizedOptions.microSignals
       : estimateMicroSignals(normalizedInput);
   const lexicalState = estimateState(normalizedInput);
+  // D-stream derived layers stay observational/supportive.
+  // They inform later dynamic layers but do not replace the main field/reaction/stance path.
   const fusedState = buildFusedState({
     state: lexicalState,
     microSignals,
@@ -581,6 +585,7 @@ export function runInternalOS(input, options = {}) {
   // ════════════════════════════════════════════════════════════════════
 
   const preconditionBias = buildPreconditionBias(preconditionFilter);
+  // ProtoMeaning remains an assistive observation layer over the main latent pipeline.
   const protoMeaning = buildProtoMeaning(fusedState, {
     agentId,
     userText: normalizedInput,
@@ -1195,6 +1200,7 @@ export function runInternalOS(input, options = {}) {
       identityBiasApplied,
       microSignals,
       microSignalBias: microSignalBiasDebug,
+      microSignalTuning: MICRO_SIGNAL_TUNING_DEBUG_CONFIG,
       // Precondition chain trace — dev/debug only, not exposed to UX
       preconditionTrace,
       existence1Present: Boolean(latentState.existence1),

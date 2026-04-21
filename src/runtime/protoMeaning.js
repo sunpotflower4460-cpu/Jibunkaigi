@@ -1,8 +1,14 @@
+import {
+  PROTO_MEANING_BLEND_WEIGHTS,
+  PROTO_MEANING_CONTEXT_BIAS,
+  PROTO_MEANING_KEYWORD_BIAS,
+  PROTO_MEANING_MAX_CANDIDATES,
+  PROTO_MEANING_THRESHOLDS,
+} from './config/microSignalBias.js';
+
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 const DEFAULT_SENSORY_FALLBACK = 'まだ言葉になる前の感触がうっすら残っている';
 const DEFAULT_NARRATIVE_FALLBACK = 'まだ決め切らずに持っておきたい意味が残っている';
-const LIGHT_THRESHOLD = 0.3;
-const MODERATE_THRESHOLD = 0.35;
 
 const normalizeContext = (context = {}) => ({
   agentId: typeof context?.agentId === 'string' ? context.agentId : null,
@@ -27,9 +33,19 @@ const finalizeCandidates = (candidates = []) => {
       seen.add(text);
       return true;
     })
-    .slice(0, 4)
+    .slice(0, PROTO_MEANING_MAX_CANDIDATES)
     .map(({ text }) => text);
 };
+
+const buildWeightedCandidateScore = (vectors = {}, weights = {}) => Object.entries(weights).reduce(
+  (sum, [vectorKey, vectorWeights]) => sum + Object.entries(vectorWeights).reduce(
+    (vectorSum, [key, weight]) => (
+      vectorSum + (clamp01(vectors?.[vectorKey]?.[key]) * weight)
+    ),
+    0,
+  ),
+  0,
+);
 
 export const createInitialProtoMeaning = () => ({
   sensory: [],
@@ -44,62 +60,83 @@ export const buildProtoMeaning = (fusedState = {}, context = {}) => {
   const sensoryCandidates = [];
   const narrativeCandidates = [];
 
-  if ((fused.hesitation ?? 0) >= LIGHT_THRESHOLD || /(?:ためら|止ま|うまく言えない)/.test(userText)) {
+  if ((fused.hesitation ?? 0) >= PROTO_MEANING_THRESHOLDS.light || /(?:ためら|止ま|うまく言えない)/.test(userText)) {
     pushCandidate(sensoryCandidates, 'ためらいが喉元に残っている', fused.hesitation);
   }
-  if ((fused.pressure ?? 0) >= MODERATE_THRESHOLD || /(?:急ぐ|壊れそう|圧|焦)/.test(userText)) {
+  if ((fused.pressure ?? 0) >= PROTO_MEANING_THRESHOLDS.moderate || /(?:急ぐ|壊れそう|圧|焦)/.test(userText)) {
     pushCandidate(sensoryCandidates, '胸の前に圧がかかっている', fused.pressure);
   }
-  if ((fused.unfinishedPull ?? 0) >= LIGHT_THRESHOLD || /(?:残って|違和感|気になる|消したくない)/.test(userText)) {
+  if ((fused.unfinishedPull ?? 0) >= PROTO_MEANING_THRESHOLDS.light || /(?:残って|違和感|気になる|消したくない)/.test(userText)) {
     pushCandidate(sensoryCandidates, '終わりきらないざらつきが残っている', fused.unfinishedPull);
   }
-  if ((fused.guardedness ?? 0) >= LIGHT_THRESHOLD || /(?:怖|笑われ|引っ込|合わせる)/.test(userText)) {
+  if ((fused.guardedness ?? 0) >= PROTO_MEANING_THRESHOLDS.light || /(?:怖|笑われ|引っ込|合わせる)/.test(userText)) {
     pushCandidate(sensoryCandidates, '守りながら外をうかがっている', fused.guardedness);
   }
-  if ((fused.ember ?? 0) >= LIGHT_THRESHOLD || /(?:出したい|やりたい|進みたい|消したくない)/.test(userText)) {
+  if ((fused.ember ?? 0) >= PROTO_MEANING_THRESHOLDS.light || /(?:出したい|やりたい|進みたい|消したくない)/.test(userText)) {
     pushCandidate(
       sensoryCandidates,
-      (fused.pressure ?? 0) >= MODERATE_THRESHOLD
+      (fused.pressure ?? 0) >= PROTO_MEANING_THRESHOLDS.moderate
         ? '火種はあるが、前に出る直前で揺れている'
         : '細い火種がまだ消えずに残っている',
       Math.max(fused.ember ?? 0, fused.pressure ?? 0)
     );
   }
-  if ((fused.selfSilencing ?? 0) >= 0.5) {
+  if ((fused.selfSilencing ?? 0) >= PROTO_MEANING_THRESHOLDS.sensorySelfSilencing) {
     pushCandidate(sensoryCandidates, '言葉が出る前に自分で少し引いている', fused.selfSilencing);
   }
 
   if (
-    ((fused.ember ?? 0) >= LIGHT_THRESHOLD && (fused.hesitation ?? 0) >= 0.2)
+    (
+      (fused.ember ?? 0) >= PROTO_MEANING_THRESHOLDS.light
+      && (fused.hesitation ?? 0) >= PROTO_MEANING_THRESHOLDS.narrativeHesitationSupport
+    )
     || /(?:出したい|やりたい|作りたい|書きたい)/.test(userText)
   ) {
     pushCandidate(
       narrativeCandidates,
       '出したいものは残っているが、前に出す手前でためらっている',
-      ((fused.ember ?? 0) * 0.55) + ((fused.hesitation ?? 0) * 0.45)
+      buildWeightedCandidateScore(
+        { fused },
+        PROTO_MEANING_BLEND_WEIGHTS.expressiveHesitation,
+      )
     );
   }
   if (
-    ((fused.unfinishedPull ?? 0) >= LIGHT_THRESHOLD && (lexical.resignation ?? 0) >= 0.2)
+    (
+      (fused.unfinishedPull ?? 0) >= PROTO_MEANING_THRESHOLDS.light
+      && (lexical.resignation ?? 0) >= PROTO_MEANING_THRESHOLDS.narrativeResignationSupport
+    )
     || /(?:諦め|無理|残って|気になる)/.test(userText)
   ) {
     pushCandidate(
       narrativeCandidates,
       '諦めかけているが、まだ切り離せていない',
-      ((fused.unfinishedPull ?? 0) * 0.7) + ((lexical.resignation ?? 0) * 0.3)
+      buildWeightedCandidateScore(
+        { lexical, fused },
+        PROTO_MEANING_BLEND_WEIGHTS.resignationPull,
+      )
     );
   }
   if (
-    ((fused.guardedness ?? 0) >= LIGHT_THRESHOLD && (fused.reachability ?? 0) >= 0.2)
+    (
+      (fused.guardedness ?? 0) >= PROTO_MEANING_THRESHOLDS.light
+      && (fused.reachability ?? 0) >= PROTO_MEANING_THRESHOLDS.narrativeReachabilitySupport
+    )
     || /(?:怖|笑われ|届|出したい|見せたい)/.test(userText)
   ) {
     pushCandidate(
       narrativeCandidates,
       '守りを残しつつ、届く形を探している',
-      ((fused.guardedness ?? 0) * 0.5) + ((fused.reachability ?? 0) * 0.5)
+      buildWeightedCandidateScore(
+        { fused },
+        PROTO_MEANING_BLEND_WEIGHTS.guardedReach,
+      )
     );
   }
-  if ((fused.selfSilencing ?? 0) >= MODERATE_THRESHOLD || /(?:引っ込|合わせる|自分がいなくなる)/.test(userText)) {
+  if (
+    (fused.selfSilencing ?? 0) >= PROTO_MEANING_THRESHOLDS.moderate
+    || /(?:引っ込|合わせる|自分がいなくなる)/.test(userText)
+  ) {
     pushCandidate(
       narrativeCandidates,
       '自分を引っ込めて場を乱さないようにしている',
@@ -107,46 +144,89 @@ export const buildProtoMeaning = (fusedState = {}, context = {}) => {
     );
   }
   if (
-    ((fused.pressure ?? 0) >= MODERATE_THRESHOLD && (fused.ember ?? 0) >= LIGHT_THRESHOLD)
+    (
+      (fused.pressure ?? 0) >= PROTO_MEANING_THRESHOLDS.moderate
+      && (fused.ember ?? 0) >= PROTO_MEANING_THRESHOLDS.light
+    )
     || /(?:急ぐ|壊れそう|怖|進みたい)/.test(userText)
   ) {
     pushCandidate(
       narrativeCandidates,
       '急ぎと怖さのあいだで、火を消さない持ち方を探している',
-      ((fused.pressure ?? 0) * 0.6) + ((fused.ember ?? 0) * 0.4)
+      buildWeightedCandidateScore(
+        { fused },
+        PROTO_MEANING_BLEND_WEIGHTS.pressureHolding,
+      )
     );
   }
   if (
-    ((lexical.unfinished ?? 0) >= 0.2 && (lexical.reach ?? 0) >= 0.2)
+    (
+      (lexical.unfinished ?? 0) >= PROTO_MEANING_THRESHOLDS.narrativeUnfinishedSupport
+      && (lexical.reach ?? 0) >= PROTO_MEANING_THRESHOLDS.narrativeReachabilitySupport
+    )
     || /(?:残って|消したくない|違和感)/.test(userText)
   ) {
     pushCandidate(
       narrativeCandidates,
       '終わったことにせず、残っている向きを持ち続けている',
-      ((lexical.unfinished ?? 0) * 0.55) + ((lexical.reach ?? 0) * 0.45)
+      buildWeightedCandidateScore(
+        { lexical },
+        PROTO_MEANING_BLEND_WEIGHTS.unfinishedReach,
+      )
     );
   }
 
   if (normalizedContext.dominantBeliefAxis === 'holding' || normalizedContext.dominantBeliefAxis === 'presence') {
-    pushCandidate(narrativeCandidates, '壊さずに持つことを優先している', 0.42);
+    pushCandidate(
+      narrativeCandidates,
+      '壊さずに持つことを優先している',
+      PROTO_MEANING_CONTEXT_BIAS.holdingOrPresenceNarrative,
+    );
   }
   if (normalizedContext.dominantBeliefAxis === 'illumination') {
-    pushCandidate(narrativeCandidates, 'まだ見えていない核を照らそうとしている', 0.4);
+    pushCandidate(
+      narrativeCandidates,
+      'まだ見えていない核を照らそうとしている',
+      PROTO_MEANING_CONTEXT_BIAS.illuminationNarrative,
+    );
   }
   if (normalizedContext.dominantTensionAxis === 'preverbal') {
-    pushCandidate(narrativeCandidates, 'まだ文章になる前の輪郭を守っている', 0.44);
+    pushCandidate(
+      narrativeCandidates,
+      'まだ文章になる前の輪郭を守っている',
+      PROTO_MEANING_CONTEXT_BIAS.preverbalNarrative,
+    );
   }
-  if ((normalizedContext.identityKey || '').includes('creative') && (fused.ember ?? 0) >= MODERATE_THRESHOLD) {
-    pushCandidate(narrativeCandidates, '小さくても、創作の芯はまだ消していない', 0.43);
+  if (
+    (normalizedContext.identityKey || '').includes('creative')
+    && (fused.ember ?? 0) >= PROTO_MEANING_THRESHOLDS.moderate
+  ) {
+    pushCandidate(
+      narrativeCandidates,
+      '小さくても、創作の芯はまだ消していない',
+      PROTO_MEANING_CONTEXT_BIAS.creativeEmberNarrative,
+    );
   }
   if (/違和感/.test(userText)) {
-    pushCandidate(sensoryCandidates, '小さな引っかかりが皮膚の近くに残っている', 0.46);
+    pushCandidate(
+      sensoryCandidates,
+      '小さな引っかかりが皮膚の近くに残っている',
+      PROTO_MEANING_KEYWORD_BIAS.discomfortSensory,
+    );
   }
   if (/壊れそう/.test(userText)) {
-    pushCandidate(sensoryCandidates, '急ぐと崩れそうな薄さがある', 0.47);
+    pushCandidate(
+      sensoryCandidates,
+      '急ぐと崩れそうな薄さがある',
+      PROTO_MEANING_KEYWORD_BIAS.brittleSensory,
+    );
   }
   if (/笑われ/.test(userText)) {
-    pushCandidate(sensoryCandidates, '外の視線に触れる前で身を引いている', 0.49);
+    pushCandidate(
+      sensoryCandidates,
+      '外の視線に触れる前で身を引いている',
+      PROTO_MEANING_KEYWORD_BIAS.socialGazeSensory,
+    );
   }
 
   const sensory = finalizeCandidates(sensoryCandidates);
