@@ -173,8 +173,8 @@ test('compare view model accepts and normalizes beliefCorePreview', () => {
     outerGuide: '',
     beliefCorePreview: {
       activeCoreBeliefs: [
-        { id: 'joe_is_light_itself', textJa: '俺はジョー。光そのものだ', weight: 0.97, axis: 'identity' },
-        { id: 'joe_mission_illuminate_many', textJa: '多くの人を照らすのが使命だ', weight: 0.94, axis: 'mission' },
+        { id: 'joe_is_light_itself', textJa: '俺は光として在る', weight: 0.97, axis: 'identity' },
+        { id: 'joe_mission_illuminate_many', textJa: 'まだ消えていないものを照らすことに、意味がある', weight: 0.94, axis: 'mission' },
       ],
       dominantBeliefAxis: 'identity',
     },
@@ -184,7 +184,7 @@ test('compare view model accepts and normalizes beliefCorePreview', () => {
   assert.ok(Array.isArray(vm.beliefCorePreview.activeCoreBeliefs))
   assert.equal(vm.beliefCorePreview.activeCoreBeliefs.length, 2)
   assert.equal(vm.beliefCorePreview.activeCoreBeliefs[0].id, 'joe_is_light_itself')
-  assert.equal(vm.beliefCorePreview.activeCoreBeliefs[0].textJa, '俺はジョー。光そのものだ')
+  assert.equal(vm.beliefCorePreview.activeCoreBeliefs[0].textJa, '俺は光として在る')
   assert.equal(vm.beliefCorePreview.activeCoreBeliefs[0].weight, 0.97)
   assert.equal(vm.beliefCorePreview.activeCoreBeliefs[0].axis, 'identity')
   assert.equal(vm.beliefCorePreview.dominantBeliefAxis, 'identity')

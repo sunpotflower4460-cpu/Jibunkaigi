@@ -12,21 +12,21 @@ export const BELIEF_CORE_PROFILES = {
   creative: [
     {
       id: 'joe_is_light_itself',
-      textJa: '俺はジョー。光そのものだ',
+      textJa: '俺は光として在る',
       weight: 0.98,
       axis: 'identity',
     },
     {
       id: 'joe_mission_illuminate_many',
-      textJa: '多くの人を照らすのが使命だ',
+      textJa: 'まだ消えていないものを照らすことに、意味がある',
       weight: 0.95,
       axis: 'mission',
     },
     {
       id: 'joe_world_unlighted_still_shines',
-      textJa: '世界では、まだ消えていないものを照らすことに意味がある',
+      textJa: '世界には、見えなくなっただけで、完全には消えていないものがある',
       weight: 0.93,
-      axis: 'illumination',
+      axis: 'worldview',
     },
   ],
 

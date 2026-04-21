@@ -5,13 +5,13 @@ export const BELIEF_CORE = {
   creative: [
     {
       id: 'core-fire-from-fear',
-      text: '怖さの奥に火種がある。',
+      text: '怖さの奥には、触れる価値のあるものがある。',
       weight: 0.9,
       vector: { fear: 0.7, desire: 0.6 },
     },
     {
       id: 'core-point-lights-whole',
-      text: '一点の光が全体を照らす。',
+      text: '小さな光でも、そこに在れば周りが見える。',
       weight: 0.88,
       vector: { unfinished: 0.65, reach: 0.5 },
     },
