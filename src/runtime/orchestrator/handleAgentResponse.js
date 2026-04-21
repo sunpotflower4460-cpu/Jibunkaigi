@@ -25,6 +25,7 @@ import { buildSurfaceDebugEntry } from '../surfaceDebug.js';
 import { buildJoeDebugEntry } from '../debug/buildJoeDebugEntry.js';
 import { buildFullGenerationContext, getLatestUserText as extractLatestUserText } from './buildGenerationContext.js';
 import { persistAgentResponse } from './persistAgentResponse.js';
+import { createTrace, TraceStage } from '../trace/agentTraceBuilder.js';
 
 /**
  * Mirror 専用のプロンプト構築パラメータを作成する
@@ -209,6 +210,9 @@ export const handleAgentResponse = async ({
 
   const finishPromptBuild = beginTimedPhase(traceId, 'prompt build');
 
+  // トレース作成（開発者専用デバッグ）
+  const trace = createTrace(sessionId, agentId, traceId);
+
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // Phase 1: コンテキスト構築
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -230,6 +234,7 @@ export const handleAgentResponse = async ({
       latestUserText,
       microSignals,
       pushAgentDebugEvent,
+      trace, // トレースを渡す
     });
 
     context = generationContext.context;
@@ -413,6 +418,13 @@ export const handleAgentResponse = async ({
     }
     console.info("[ai-response:after-system-prompt]", { ..._debugBase, systemInstructionLength: systemInstruction.length });
     pushAgentDebugEvent({ tag: 'ai-response:after-system-prompt', ..._debugBase, systemInstructionLength: systemInstruction.length });
+    // トレースにPROMPT_SYSTEM段階を記録
+    if (trace) {
+      trace.push(TraceStage.PROMPT_SYSTEM, {
+        systemInstruction: systemInstruction.slice(0, 500), // 最初の500文字のみ
+        length: systemInstruction.length,
+      });
+    }
 
     // I. buildAgentUserPrompt
     try {
@@ -422,6 +434,13 @@ export const handleAgentResponse = async ({
     }
     console.info("[ai-response:after-user-prompt]", { ..._debugBase, promptLength: promptText.length });
     pushAgentDebugEvent({ tag: 'ai-response:after-user-prompt', ..._debugBase, promptLength: promptText.length });
+    // トレースにPROMPT_USER段階を記録
+    if (trace) {
+      trace.push(TraceStage.PROMPT_USER, {
+        promptText,
+        length: promptText.length,
+      });
+    }
 
     const hasSelectedAfterglowMix = (mix) => {
       if (!mix || !mix.selected) return false;
@@ -492,6 +511,15 @@ export const handleAgentResponse = async ({
   console.info("[ai-response:before-gemini]", aiDebugState);
   pushAgentDebugEvent({ tag: 'ai-response:before-gemini', agentId, sessionId });
 
+  // トレースにLLM_REQUEST段階を記録
+  if (trace) {
+    trace.push(TraceStage.LLM_REQUEST, {
+      model: 'gemini-2.5-flash',
+      promptLength: promptText.length,
+      systemInstructionLength: systemInstruction.length,
+    });
+  }
+
   const finishFetch = beginTimedPhase(traceId, 'fetch');
   let response = '';
 
@@ -513,6 +541,14 @@ export const handleAgentResponse = async ({
   const cleanedResponse = cleanResponse(response);
   console.info("[ai-response:after-gemini]", aiDebugState);
   pushAgentDebugEvent({ tag: 'ai-response:after-gemini', agentId, sessionId, responseLength: cleanedResponse.length });
+
+  // トレースにLLM_RESPONSE段階を記録
+  if (trace) {
+    trace.push(TraceStage.LLM_RESPONSE, {
+      response: cleanedResponse.slice(0, 500), // 最初の500文字のみ
+      length: cleanedResponse.length,
+    });
+  }
 
   // セッション切り替えチェック（早期中断）
   if (activeSessionIdRef.current !== sessionId) {
@@ -562,6 +598,18 @@ export const handleAgentResponse = async ({
   if (activeSessionIdRef.current !== sessionId) {
     console.info(`[handleAgentResponse] Session switched before completion, aborting`);
     return { aborted: true };
+  }
+
+  // トレースを凍結してwindowに保存（開発者専用）
+  if (trace) {
+    const finalizedTrace = trace.finalize();
+    if (typeof window !== 'undefined') {
+      window.JIBUN_LAST_TRACE = finalizedTrace;
+      console.info('[agentTrace] Trace finalized and saved to window.JIBUN_LAST_TRACE', {
+        eventCount: finalizedTrace.events.length,
+        duration: finalizedTrace.duration,
+      });
+    }
   }
 
   return {
