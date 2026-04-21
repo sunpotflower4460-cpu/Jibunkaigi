@@ -7,9 +7,9 @@ import { truncatePromptText } from './context.js';
 // --- 定数 ---
 
 export const MODE_GUIDE = {
-  short: '短くていい。一言でも、触れていれば十分。',
-  medium: '自然な長さでいい。説明しすぎず、触れたものだけから話す。',
-  long: '少し深く入っていい。ただし、説教や整理に逃げない。',
+  short: '場は静かで、多くの言葉を必要としていない。',
+  medium: '触れたぶんだけで足りる。',
+  long: '少し奥まで見ていても、急がなくていい。',
 };
 
 export const MAX_AGENT_CONTEXT_MESSAGES = 6;

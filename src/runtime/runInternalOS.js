@@ -420,7 +420,10 @@ const buildNormalizedExistence1 = (existenceLayer1 = {}) => ({
 
 const buildNormalizedExistence2 = (existenceLayer2 = {}) => ({
   agentIdentityKey: existenceLayer2.agentIdentityKey ?? null,
-  identityFeelingText: existenceLayer2.agentIdentityText ?? null,
+  identityFeelingText:
+    existenceLayer2.identityFeelingText ??
+    existenceLayer2.agentIdentityText ??
+    null,
   recalledSelfTraits: Array.isArray(existenceLayer2.recalledSelfTraits)
     ? existenceLayer2.recalledSelfTraits
     : [],

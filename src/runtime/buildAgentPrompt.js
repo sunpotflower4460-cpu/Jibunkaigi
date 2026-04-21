@@ -236,11 +236,11 @@ export const buildAgentDebugPreview = ({
     return {
       agentId,
       builderUsed: BUILDER_USED_LABELS.creative,
-      dominantAxes: joePreview.joeDominantAxes,
-      stateGuidePreview: joePreview.joeStateGuidePreview,
-      internalFramePreview: joePreview.joeInternalFramePreview,
-      surfaceGuidancePreview: joePreview.joeSurfaceGuidancePreview,
-      activatedBiasCount: joePreview.joeActivatedBiasCount,
+      dominantAxes: joePreview?.joeDominantAxes ?? [],
+      stateGuidePreview: joePreview?.joeStateGuidePreview ?? '',
+      internalFramePreview: joePreview?.joeInternalFramePreview ?? '',
+      surfaceGuidancePreview: joePreview?.joeSurfaceGuidancePreview ?? '',
+      activatedBiasCount: joePreview?.joeActivatedBiasCount ?? 0,
       usedAfterglow,
     };
   }

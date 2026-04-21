@@ -27,10 +27,12 @@ function calculateExternalSignals(field = {}) {
  * beliefTension / stance.guard / reaction.holdBackJudgment から、
  * 「内側でどう感じているか」を数値化する
  *
- * @param {object} latentState - runInternalOS の出力（beliefTension, previousLatentState を含む）
+ * @param {object} input - latentState または必要キーを持つ object
  * @returns {object} internal body signals
  */
-function calculateInternalSignals(latentState = {}) {
+function calculateInternalSignals(input = {}) {
+  // latentState 全体が渡される場合と、必要キーだけのオブジェクトが渡される場合の両方に対応
+  const latentState = input.latentState ?? input;
   const beliefTension = latentState.beliefTension || {};
   const previousLatentState = latentState.previousLatentState || {};
   const previousStance = previousLatentState.stance || {};
@@ -54,7 +56,12 @@ function calculateInternalSignals(latentState = {}) {
 
 /**
  * bodySignals を external と internal に分離計算する
- * @param {object} latentState - runInternalOS の出力
+ *
+ * この関数は latentState 全体または必要なキーを持つ partial object を受け取る。
+ * 呼び出し側は latentState 全体を渡すことを推奨するが、
+ * { field, beliefTension, previousLatentState } だけを持つ object でも動作する。
+ *
+ * @param {object} latentState - runInternalOS の出力、または必要キーを持つ object
  * @returns {object} { external, internal }
  */
 export function buildBodySignals(latentState = {}) {
