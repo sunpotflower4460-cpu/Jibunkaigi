@@ -7,12 +7,14 @@ import SurfaceTabView from './inspector/SurfaceTabView';
 import PromptTabView from './inspector/PromptTabView';
 import LLMResponseTabView from './inspector/LLMResponseTabView';
 import AfterglowTabView from './inspector/AfterglowTabView';
+import MaterialTabView from './inspector/MaterialTabView';
 
 const TABS = [
   { id: 'input', label: '📥 入力' },
   { id: 'latent', label: '🧠 潜在層' },
   { id: 'dynamic', label: '⚡ 動的層' },
   { id: 'decision', label: '🎯 決定' },
+  { id: 'material', label: '🎒 素材' },
   { id: 'surface', label: '🪞 表層' },
   { id: 'prompt', label: '📝 プロンプト' },
   { id: 'llm', label: '🤖 LLM応答' },
@@ -24,6 +26,7 @@ const TAB_STAGE_PREFIX = {
   latent: ['LATENT_', 'PRECONDITION_'],
   dynamic: ['DYNAMIC_', 'PERMISSION'],
   decision: ['DECISION', 'ACTIVATION', 'MATERIAL_PICK'],
+  material: ['ACTIVATION'],
   surface: ['RESIDUE', 'REENTRY'],
   prompt: ['PROMPT_'],
   llm: ['LLM_'],
@@ -195,6 +198,7 @@ const AgentInspectorPanel = ({ trace = null, history = [], onClose }) => {
               {activeTab === 'latent' && <LatentTabView events={selectedEvents} />}
               {activeTab === 'dynamic' && <DynamicTabView events={selectedEvents} />}
               {activeTab === 'decision' && <DecisionTabView events={selectedEvents} />}
+              {activeTab === 'material' && <MaterialTabView events={selectedEvents} />}
               {activeTab === 'surface' && <SurfaceTabView events={selectedEvents} />}
               {activeTab === 'prompt' && <PromptTabView events={selectedEvents} />}
               {activeTab === 'llm' && <LLMResponseTabView events={selectedEvents} />}
