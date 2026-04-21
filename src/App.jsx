@@ -40,9 +40,11 @@ import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchA
 import { isSurfaceDebugEnabled, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
 import { getOthersVisibilityState, getOthersEmptyMessage, getOthersDebugLabel } from './runtime/getOthersVisibilityState';
 import { getJoeDebugRuntimeFlags, setJoeDebugEnabled, JOE_DEBUG_STORAGE_KEY } from './runtime/joeDebug';
+import { isInspectorEnabled, setInspectorEnabled, INSPECTOR_STORAGE_KEY } from './runtime/inspectorDebug';
 import { handleAgentResponse as orchestrateAgentResponse } from './runtime/orchestrator/handleAgentResponse.js';
 import SurfaceDebugPanel from './components/SurfaceDebugPanel';
 import JoeDebugPanel from './components/JoeDebugPanel';
+import AgentInspectorPanel from './components/AgentInspectorPanel';
 import AgentGateDebugPanel, { isAgentDebugEnabled } from './components/AgentGateDebugPanel';
 import CompareModePanel from './components/CompareModePanel';
 import FloatingAgentBar from './components/FloatingAgentBar';
@@ -254,6 +256,8 @@ const App = () => {
   const [compareEntries, setCompareEntries] = useState([]);
   const [isCompareCollapsed, setIsCompareCollapsed] = useState(false);
   const [compareLabelStore, setCompareLabelStore] = useState(() => readCompareLabelStore());
+  const [isInspectorPanelVisible, setIsInspectorPanelVisible] = useState(() => isInspectorEnabled());
+  const [inspectorTraceHistory, setInspectorTraceHistory] = useState([]);
   const errorTimeoutRef = useRef(null);
 
   const currentSessionIdRef = useRef(currentSessionId);
@@ -413,6 +417,37 @@ const App = () => {
     };
 
     syncJoeDebug();
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const syncInspector = () => {
+      setIsInspectorPanelVisible(isInspectorEnabled());
+    };
+    const handleStorage = (event) => {
+      if (!event || event.key === null || event.key === INSPECTOR_STORAGE_KEY) {
+        syncInspector();
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      if (String(event.key || '').toLowerCase() !== 'i') return;
+      event.preventDefault();
+      setIsInspectorPanelVisible((prev) => {
+        const next = !prev;
+        setInspectorEnabled(next);
+        return next;
+      });
+    };
+
+    syncInspector();
     window.addEventListener('storage', handleStorage);
     window.addEventListener('keydown', handleKeyDown);
     return () => {
@@ -1229,6 +1264,13 @@ const App = () => {
         return;
       }
 
+      if (result.trace) {
+        setInspectorTraceHistory((prev) => {
+          const next = [result.trace, ...prev.filter((entry) => entry?.turnId !== result.trace.turnId)];
+          return next.slice(0, 3);
+        });
+      }
+
       // Compare mode のキャプチャ
       void runCompareModeCapture({
         agentId: isMaster ? 'master' : agentId,
@@ -1926,6 +1968,17 @@ const App = () => {
           agentDebugEvents={agentDebugEvents}
           isMessagesLoading={isMessagesLoading}
           compareModeEnabled={isCompareModeEnabled}
+        />
+      )}
+
+      {isInspectorPanelVisible && (
+        <AgentInspectorPanel
+          trace={inspectorTraceHistory[0] ?? null}
+          history={inspectorTraceHistory}
+          onClose={() => {
+            setInspectorEnabled(false);
+            setIsInspectorPanelVisible(false);
+          }}
         />
       )}
     </div>
