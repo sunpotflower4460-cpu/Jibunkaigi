@@ -41,6 +41,9 @@ const ACTIVE_TENSION_PAIR_TEXT = {
   'reach|freeze': '進みたいのに、身体が止まっている',
   'freeze|reach': '進みたいのに、身体が止まっている',
 };
+const buildFallbackTensionPairText = (axis1, axis2) => (
+  `${localizeAxisLabel(axis1)}。でも、${localizeAxisLabel(axis2)}も消えていない`
+);
 
 const localizeAxisLabel = (axis) => (
   TENSION_SEED_TEXT[axis] ||
@@ -58,7 +61,7 @@ const describeActiveTension = (tension = {}) => {
   const axis2 = typeof tension?.axis2 === 'string' ? tension.axis2 : null;
   if (axis1 && axis2) {
     return ACTIVE_TENSION_PAIR_TEXT[`${axis1}|${axis2}`]
-      || `${localizeAxisLabel(axis1)}。でも、${localizeAxisLabel(axis2)}も消えていない`;
+      || buildFallbackTensionPairText(axis1, axis2);
   }
 
   if (typeof tension?.axis === 'string') {

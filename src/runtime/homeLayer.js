@@ -72,7 +72,7 @@ const OUTPUT_LIMIT_KEYS = {
   keepOneThread: 'keepOneThread',
 };
 
-// DEPRECATED: runInternalOS では estimateField を Home 層の入力に使う。
+// DEPRECATED: Use estimateField() instead; targeted for removal in v2.0.
 // 既存互換のため export は残し、旧テストや限定的な呼び出しだけを支える。
 export function buildPreHomeInput(input) {
   const text = typeof input === 'string' ? input.trim().toLowerCase() : '';
@@ -357,6 +357,15 @@ export function createHomeLayer({ field = {}, reaction = {}, stance = {}, preHom
  * permissionLayer.js からの移行を支援する
  */
 export function extractPermissionShape(homeLayer, agentContext = {}) {
+  const DEFAULT_POSITIVE_PERMISSION = 0.1;
+  const DEPTH_BASE = 0.15;
+  const DEPTH_EMPHASIS_BASE = 0.3;
+  const DEPTH_WEIGHT = 0.2;
+  const DEPTH_EMPHASIS_WEIGHT = 0.4;
+  const DIRECTNESS_BASE = 0.3;
+  const DIRECTNESS_WEIGHT = 0.3;
+  const RAW_FEELING_BASE = 0.35;
+  const RAW_FEELING_WEIGHT = 0.3;
   const dominantAxis = typeof agentContext?.dominantBeliefAxis === 'string'
     ? agentContext.dominantBeliefAxis
     : null;
@@ -368,9 +377,9 @@ export function extractPermissionShape(homeLayer, agentContext = {}) {
       noPerformativeHelpfulness: 0.2,
       allowPartialUncertainty: 0.18,
       allowSilence: 0.18,
-      allowDepth: 0.15,
-      allowDirectness: 0.1,
-      allowRawFeeling: 0.1,
+      allowDepth: DEPTH_BASE,
+      allowDirectness: DEFAULT_POSITIVE_PERMISSION,
+      allowRawFeeling: DEFAULT_POSITIVE_PERMISSION,
     };
   }
 
@@ -388,15 +397,15 @@ export function extractPermissionShape(homeLayer, agentContext = {}) {
     allowSilence: clamp01(allowSilenceRaw),
     allowDepth:
       dominantAxis === 'illumination' || dominantAxis === 'presence'
-        ? clamp01(0.3 + (kernel.allowOneLivingThread ?? 0) * 0.4)
-        : clamp01(0.15 + (kernel.allowOneLivingThread ?? 0) * 0.2),
+        ? clamp01(DEPTH_EMPHASIS_BASE + (kernel.allowOneLivingThread ?? 0) * DEPTH_EMPHASIS_WEIGHT)
+        : clamp01(DEPTH_BASE + (kernel.allowOneLivingThread ?? 0) * DEPTH_WEIGHT),
     allowDirectness:
       dominantAxis === 'structure' || dominantAxis === 'realism'
-        ? clamp01(0.3 + (1 - (kernel.slowDown ?? 0.2)) * 0.3)
-        : 0.1,
+        ? clamp01(DIRECTNESS_BASE + (1 - (kernel.slowDown ?? 0.2)) * DIRECTNESS_WEIGHT)
+        : DEFAULT_POSITIVE_PERMISSION,
     allowRawFeeling:
       dominantAxis === 'holding' || dominantAxis === 'tenderness'
-        ? clamp01(0.35 + (kernel.returnBeforeOutput ?? 0) * 0.3)
-        : 0.1,
+        ? clamp01(RAW_FEELING_BASE + (kernel.returnBeforeOutput ?? 0) * RAW_FEELING_WEIGHT)
+        : DEFAULT_POSITIVE_PERMISSION,
   };
 }

@@ -24,7 +24,14 @@ export function estimateField(input, options = {}) {
   const playfulnessHits = countMatches(text, ['笑', 'w', '冗談', '遊び', 'ふざけ', 'おもしろ']);
   const softnessHitsExtra = countMatches(text, ['アドバイス', '教えて', 'いただけ', 'もらえ', 'ですか']);
 
-  const softnessBase = clamp01(0.2 + softnessHits * 0.12 + softnessHitsExtra * 0.06 - urgencyHits * 0.04 + (text.includes('...') || text.includes('…') ? 0.08 : 0));
+  const ellipsisBonus = text.includes('...') || text.includes('…') ? 0.08 : 0;
+  const softnessBase = clamp01(
+    0.2 +
+    softnessHits * 0.12 +
+    softnessHitsExtra * 0.06 -
+    urgencyHits * 0.04 +
+    ellipsisBonus
+  );
   const depthBase = clamp01(0.15 + depthHits * 0.15 + depthHitsExtra * 0.1 + Math.min(text.length / 120, 0.2));
   const urgency = clamp01(urgencyHits * 0.22 + (text.includes('!') || text.includes('！') ? 0.08 : 0));
   const fragilityBase = clamp01(0.1 + fragilityHits * 0.16 + fragilityHitsExtra * 0.08 + (text.includes('ない') ? 0.06 : 0));

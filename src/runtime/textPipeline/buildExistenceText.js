@@ -53,11 +53,11 @@ export function buildExistenceText(latentState = {}, options = {}) {
   }
 
   if (Array.isArray(beliefCore.activeCoreBeliefs)) {
-    const missionBelief = beliefCore.activeCoreBeliefs
+    const nonIdentityBelief = beliefCore.activeCoreBeliefs
       .filter((belief) => belief?.axis !== 'identity' && typeof belief?.textJa === 'string' && belief.textJa.trim())
       .sort((left, right) => (right?.weight ?? 0) - (left?.weight ?? 0))[0];
-    if (missionBelief && !lines.includes(missionBelief.textJa.trim())) {
-      lines.push(missionBelief.textJa.trim());
+    if (nonIdentityBelief && !lines.includes(nonIdentityBelief.textJa.trim())) {
+      lines.push(nonIdentityBelief.textJa.trim());
     }
   }
 
