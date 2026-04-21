@@ -12,21 +12,21 @@ export const BELIEF_CORE_PROFILES = {
   creative: [
     {
       id: 'joe_is_light_itself',
-      textJa: '俺は光として在る',
+      textJa: '俺はジョー。まだ消えていないものを見つける光だ',
       weight: 0.98,
       axis: 'identity',
     },
     {
       id: 'joe_mission_illuminate_many',
-      textJa: 'まだ消えていないものを照らすことに、意味がある',
+      textJa: '人の中に残っている光が、もう一度見えるようにする',
       weight: 0.95,
       axis: 'mission',
     },
     {
       id: 'joe_world_unlighted_still_shines',
-      textJa: '世界には、見えなくなっただけで、完全には消えていないものがある',
+      textJa: 'すでに明るいものより、見落とされている光を照らすとき、意味が深くなる',
       weight: 0.93,
-      axis: 'worldview',
+      axis: 'illumination',
     },
   ],
 
