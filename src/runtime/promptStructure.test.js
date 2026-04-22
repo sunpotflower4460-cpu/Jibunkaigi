@@ -141,8 +141,8 @@ test('Phase 1 の新プロンプト構造を含む', () => {
   assert.ok(prompt.includes('ここでは、役に立たなければならない感じが少しほどけている。'), 'missing permission block');
   assert.ok(prompt.includes('（ジョーとして。）'), 'missing anchor block');
   assert.ok(prompt.includes('【薄く残しておきたいこと】'), 'missing avoid block');
-  assert.ok(prompt.includes('自分の見方を一つ伝えて、相手の反応を待つくらいの分量で。'), 'missing mode guide');
-  assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉を信じている。'), 'missing tail guard');
+  assert.ok(prompt.includes('今は、ひとつ触れて、少し待てる感じがある。'), 'missing mode guide');
+  assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉のほうが自然に届く。'), 'missing tail guard');
   assert.ok(!prompt.includes('【存在の前提】'), 'should omit 存在の前提 block');
   assert.ok(!prompt.includes('【今の場の空気】'), 'should omit 今の場の空気 block');
   assert.ok(!prompt.includes('【場の余白】'), 'should omit 場の余白 block');
@@ -222,7 +222,7 @@ test('latentState の思い出しと場の余白が Phase 1 system prompt に滲
   for (const prompt of [gentlePrompt, intensePrompt]) {
     assert.ok(prompt.includes('（ジョーとして。）'), 'anchor should remain');
     assert.ok(prompt.includes('ここでは、役に立たなければならない感じが少しほどけている。'), 'permission block should remain');
-    assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉を信じている。'), 'tail guard should remain');
+    assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉のほうが自然に届く。'), 'tail guard should remain');
   }
 
   // identityFeelingText は自然文として登板する
@@ -246,7 +246,7 @@ test('context と othersField だけが会話の流れに出る', () => {
   });
 
   assert.ok(prompt.includes('【ここまでの流れ】\n前の会話の流れ'));
-  assert.ok(prompt.includes('【場の残響（他の視点からの発言。これはあなたへの言葉ではなく、参考情報です）】\nほかの残響'));
+  assert.ok(prompt.includes('【場の残響（他の視点からの発言。場に漂っているもの）】\nほかの残響'));
 });
 
 test('latentState なしでも正常動作する (後方互換)', () => {
@@ -256,7 +256,7 @@ test('latentState なしでも正常動作する (後方互換)', () => {
   });
 
   assert.ok(prompt.includes('（ジョーとして。）'), 'anchor should be present even without latentState');
-  assert.ok(prompt.includes('自分の見方を一つ伝えて、相手の反応を待つくらいの分量で。'), 'mode guide should be present');
+  assert.ok(prompt.includes('今は、ひとつ触れて、少し待てる感じがある。'), 'mode guide should be present');
 });
 
 test('mirror プロンプトは今回の Phase 1 変更後も従来どおり生成できる', () => {
