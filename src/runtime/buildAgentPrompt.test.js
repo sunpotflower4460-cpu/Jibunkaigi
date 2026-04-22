@@ -146,7 +146,7 @@ test('system prompts keep existence declarations', () => {
   }
 
   const mirror = buildMirrorSystemPrompt({ context: '', signals: {}, activated: {} });
-  assert.ok(mirror.includes('あなたは「心の鏡」。'));
+  assert.ok(mirror.includes('「心の鏡」という感じが、この場に立っている。'));
 });
 
 test('system prompts render activated particles without leaking internal hints', () => {

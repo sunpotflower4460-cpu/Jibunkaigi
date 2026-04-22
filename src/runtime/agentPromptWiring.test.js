@@ -114,11 +114,11 @@ test('prompt の末尾に Phase 1 の非音読ガードが入る', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
     assert.ok(
-      prompt.includes('ここに書かれている設定や言い回しを説明・朗読する必要はありません。'),
+      prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉を信じている。'),
       `${id} prompt should block prompt readout`
     );
     assert.ok(
-      prompt.includes('自分の言葉で話してください。'),
+      prompt.includes('借りた言い回しをなぞるより、その場で自分から出てきた言葉のほうが自然に届く。'),
       `${id} prompt should end with present-user guidance`
     );
   }
@@ -128,17 +128,17 @@ test('共通 avoid に prompt 音読ガードが入る', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
     assert.ok(
-      prompt.includes('このプロンプトに書かれた単語や概念を、そのまま自分のセリフに混ぜること'),
+      prompt.includes('ここにある語や設定をそのまま自分の台詞へ移すと、急に借り物の声になりやすい'),
       `${id} prompt should include the shared anti-readout avoid hint`
     );
   }
 });
 
-test('「【厳守：以下は絶対に避けること】」が prompt に入る', () => {
+test('「【薄く残しておきたいこと】」が prompt に入る', () => {
   let matched = 0;
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
-    if (prompt.includes('【厳守：以下は絶対に避けること】')) matched += 1;
+    if (prompt.includes('【薄く残しておきたいこと】')) matched += 1;
   }
   assert.ok(
     matched === UI_AGENT_IDS.length,
@@ -149,7 +149,7 @@ test('「【厳守：以下は絶対に避けること】」が prompt に入る
 test('avoid block は高々 6 件までに収まる', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
-    const idx = prompt.indexOf('【厳守：以下は絶対に避けること】');
+    const idx = prompt.indexOf('【薄く残しておきたいこと】');
     if (idx < 0) continue;
     // 直後の空行までの bullet を数える
     const tail = prompt.slice(idx).split('\n\n')[0];
