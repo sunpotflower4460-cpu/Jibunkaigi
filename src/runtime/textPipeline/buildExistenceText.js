@@ -1,11 +1,16 @@
 // src/runtime/textPipeline/buildExistenceText.js
 // 第3章3-2の実装: 存在の前提を日本語の情景描写として生成する
 // 設計用語・英語キー・数値を一切含まない
-// ■ 注意：
-//   この関数の出力は本番 system prompt には含めない。
-//   identityFeelingText や beliefCore の語彙をそのまま LLM に見せると、
-//   エージェント内部の設定語が応答に音読されやすくなる。
-//   この関数は開発観察・デバッグ・内部確認用途として保持する。
+// ■ 方針（2026-04 更新）：
+//   この関数の出力は「設定の朗読」ではなく「自然な思い出し」として
+//   system prompt の anchor 直後に薄く置く。
+//   identityFeelingText / beliefCore の textJa / recalledSelfTraits は
+//   もともと日本語の自然文（設計語彙を含まない）として作られているため、
+//   LLM に自己説明として読み上げられないよう、末尾ガードで朗読を禁じる。
+//   かつては本番 prompt には含めない方針だったが、
+//   それだと 5 人が "ニュートラル" まで溶けて差が失われるため、
+//   「温めてほどいて、もう一度自然に丸くする」流れの "思い出し" 段として
+//   再登板させている。
 
 import { AXIS_DESCRIPTIONS, TENSION_DESCRIPTIONS } from './axisDescriptions.js';
 
