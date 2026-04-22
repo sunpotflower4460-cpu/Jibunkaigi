@@ -16,12 +16,14 @@
  */
 
 import { getMoveReservoir } from '../reservoir/loadReservoir.js';
-import { STATE_AXIS_WEIGHT, BODY_AFFINITY_WEIGHT_MOVE } from './config/scoringWeights.js';
+import {
+  STATE_AXIS_WEIGHT,
+  BODY_AFFINITY_WEIGHT_MOVE,
+  SHARED_AGENT_AFFINITY,
+  OWN_AGENT_AFFINITY,
+  OTHER_AGENT_AFFINITY,
+} from './config/scoringWeights.js';
 import { toCanonicalAgentId, CANONICAL_AGENT_IDS } from './agentIdentity.js';
-
-const SHARED_AGENT_AFFINITY = 0.05;
-const OWN_AGENT_AFFINITY = 0.50;
-const OTHER_AGENT_AFFINITY = -0.30;
 
 /**
  * Normalize string for matching (lowercase, trim)

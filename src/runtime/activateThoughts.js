@@ -17,13 +17,15 @@
  */
 
 import { getThoughtReservoir } from '../reservoir/loadReservoir.js';
-import { STATE_AXIS_WEIGHT } from './config/scoringWeights.js';
+import {
+  STATE_AXIS_WEIGHT,
+  SHARED_AGENT_AFFINITY,
+  OWN_AGENT_AFFINITY,
+  OTHER_AGENT_AFFINITY,
+} from './config/scoringWeights.js';
 import { toCanonicalAgentId, CANONICAL_AGENT_IDS } from './agentIdentity.js';
 
 const PROTO_MEANING_BOOST_FACTOR = 0.08;
-const SHARED_AGENT_AFFINITY = 0.05;
-const OWN_AGENT_AFFINITY = 0.50;
-const OTHER_AGENT_AFFINITY = -0.30;
 
 /**
  * Normalize string for matching (lowercase, trim)
