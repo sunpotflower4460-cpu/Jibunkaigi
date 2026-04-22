@@ -31,3 +31,17 @@ test('shared prompt skeleton falls back to the first voice sample when no echo e
 
   assert.match(prompt, /自分はこういう入り方をする:\n「最初のサンプル。」/);
 });
+
+test('shared prompt skeleton sanitizes echoed quotes and control whitespace before interpolation', () => {
+  const buildPrompt = createAgentSystemPromptBuilder({
+    anchorLabel: '（ジョーとして。）',
+    voiceSamples: ['最初のサンプル。'],
+  });
+
+  const prompt = buildPrompt({
+    activated: {},
+    previousResponseEcho: '「前回の残響。」\n\t次の文。',
+  });
+
+  assert.match(prompt, /前回、自分はこう話した:\n「『前回の残響。』 次の文。」/);
+});

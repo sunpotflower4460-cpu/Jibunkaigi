@@ -24,7 +24,7 @@ test('updateAfterglow stores previousResponseEcho alongside existing afterglow c
     },
     agentId: 'creative',
     isMaster: false,
-    cleanedResponse: '大丈夫、まだここから見ていける。急いで決めなくていい。',
+    cleanedResponse: '大丈夫、まだここから見ていける。急いで決めなくていい。その先は今決めなくていい。',
     readSessionAfterglow: () => null,
     writeSessionAfterglowLocal: (_sessionId, afterglow) => {
       localWrite = afterglow;

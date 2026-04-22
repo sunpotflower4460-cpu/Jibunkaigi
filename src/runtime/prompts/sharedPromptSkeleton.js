@@ -23,6 +23,17 @@ import {
   renderStanceLine,
 } from '../buildPromptHelpers.js';
 
+const formatEchoForPrompt = (echo = '') => {
+  if (typeof echo !== 'string') return '';
+
+  return echo
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replaceAll('「', '『')
+    .replaceAll('」', '』')
+    .trim();
+};
+
 /**
  * 共通の system prompt builder を生成する factory
  *
@@ -57,6 +68,7 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     const activatedParticles = renderActivatedParticles(safeActivated);
     const stanceLine = renderStanceLine(safeActivated);
     const avoidBlock = renderAvoidBlock(safeActivated);
+    const safePreviousResponseEcho = formatEchoForPrompt(previousResponseEcho);
     const sections = [];
 
     sections.push(
@@ -67,8 +79,8 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     );
     sections.push(anchorLabel);
 
-    if (previousResponseEcho) {
-      sections.push(`前回、自分はこう話した:\n「${previousResponseEcho}」`);
+    if (safePreviousResponseEcho) {
+      sections.push(`前回、自分はこう話した:\n「${safePreviousResponseEcho}」`);
     } else if (voiceSamples.length > 0) {
       sections.push(`自分はこういう入り方をする:\n「${voiceSamples[0]}」`);
     }
