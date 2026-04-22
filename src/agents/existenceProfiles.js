@@ -1,5 +1,10 @@
 // src/agents/existenceProfiles.js
 // エージェント固有の「思い出す存在」プロフィール
+// ■ 注意：
+//   text は存在感の内部計算用であり、本番 prompt に直接渡さない。
+//   LLM に直接見せると自己説明として音読されやすい。
+//   エージェントの存在感は、text そのものではなく
+//   それが影響する知覚の偏り・seed選択・残響の方向性として表に出す。
 
 export const EXISTENCE_PROFILES = {
   creative: {

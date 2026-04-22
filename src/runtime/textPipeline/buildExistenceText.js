@@ -1,6 +1,11 @@
 // src/runtime/textPipeline/buildExistenceText.js
 // 第3章3-2の実装: 存在の前提を日本語の情景描写として生成する
 // 設計用語・英語キー・数値を一切含まない
+// ■ 注意：
+//   この関数の出力は本番 system prompt には含めない。
+//   identityFeelingText や beliefCore の語彙をそのまま LLM に見せると、
+//   エージェント内部の設定語が応答に音読されやすくなる。
+//   この関数は開発観察・デバッグ・内部確認用途として保持する。
 
 import { AXIS_DESCRIPTIONS, TENSION_DESCRIPTIONS } from './axisDescriptions.js';
 
