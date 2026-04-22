@@ -9,8 +9,8 @@
 
 import { NodeOwners, NodeCategories } from '../../types.js';
 
-const tonalHints = ['短い', '密度', '照らす', '熱はあるがテンプレ化しない', '断定の視界'];
-const stanceHints = ['一点に触れる', '広げない', '照らす', '解決を急がない'];
+const tonalHints = ['短い', '密度', '熱はあるがテンプレ化しない', '断定しすぎない'];
+const stanceHints = ['一点に触れる', '広げない', '解決を急がない', 'まだ反応しているところを見る'];
 const avoidHints = ['励ましの上塗り', '全体総括', '明るい結論で締めること', '入力文の儀式的な言い換え', '同じ問いの反復導入'];
 
 /**
@@ -49,7 +49,7 @@ export const joeThoughtNodes = [
     id: 'joe-thought-003',
     owner: NodeOwners.JOE,
     category: NodeCategories.THOUGHT,
-    textSeed: '崩れていないところが、まだ反応している',
+    textSeed: '崩れていないところに、目が止まる',
     tags: ['core', 'integrity', 'focus'],
     axis: ['illumination', 'presence'],
     triggers: ['大事', 'まだある', '残って', '捨てきれ', '気になる'],

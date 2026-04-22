@@ -140,7 +140,7 @@ test('Phase 1 の新プロンプト構造を含む', () => {
 
   assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'), 'missing permission block');
   assert.ok(prompt.includes('（ジョーとして。）'), 'missing anchor block');
-  assert.ok(prompt.includes('【この場では自然に避けるもの】'), 'missing avoid block');
+  assert.ok(prompt.includes('この場で自然に避けるもの:'), 'missing avoid block');
   assert.ok(prompt.includes('触れたぶんだけで足りる'), 'missing mode guide');
   assert.ok(prompt.includes('ここに書かれている設定を説明する必要はありません。'), 'missing tail guard');
   assert.ok(!prompt.includes('【存在の前提】'), 'should omit 存在の前提 block');
@@ -275,6 +275,6 @@ test('全エージェントが新構造でプロンプト生成できる', () =>
 
     assert.equal(typeof prompt, 'string');
     assert.ok(prompt.length > 10, `${agentId} prompt should not be empty`);
-    assert.ok(prompt.includes('【'), `${agentId} prompt should contain block markers`);
+    assert.ok(prompt.includes('この場で自然に避けるもの:'), `${agentId} prompt should contain avoid block`);
   }
 });
