@@ -147,7 +147,7 @@ test('shared prompt skeleton remains usable without latentState (backward compat
   const prompt = buildPrompt({ activated: {} });
   assert.ok(prompt.includes('（ジョーとして。）'));
   assert.ok(prompt.includes('ここでは、役に立たなければならない感じが少しほどけている。'));
-  assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉を信じている。'));
+  assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉のほうが自然に届く。'));
 });
 
 test('shared prompt skeleton adds permission framing and omits prescriptive reply template / antiDrift stylesheet', () => {
@@ -167,7 +167,7 @@ test('shared prompt skeleton adds permission framing and omits prescriptive repl
   assert.ok(prompt.includes('ここでは、役に立たなければならない感じが少しほどけている。'));
   assert.ok(prompt.includes('うまく整った返答より、まだ揺れているままの手ざわりのほうが信じられている'));
   assert.ok(prompt.includes('無難な言い回しに戻らなくても、この場は崩れない'));
-  assert.ok(prompt.includes('借りた言い回しをなぞるより、その場で自分から出てきた言葉のほうが自然に届く'));
+  assert.ok(prompt.includes('借りた言い回しをなぞるより、その場で自分から出てきた言葉のほうが近い'));
 
   // 外した counter-directive は入らない
   assert.ok(!prompt.includes('短すぎず、相手が受け取れる分量で話す'));
@@ -182,6 +182,6 @@ test('shared prompt skeleton adds permission framing and omits prescriptive repl
   assert.ok(!prompt.includes('まだ反応しているものを見る'));
 
   // 末尾ガードは残る（設定朗読の禁止 + 自分の言葉で話す）
-  assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉を信じている。'));
-  assert.ok(prompt.includes('借りた言い回しをなぞるより、その場で自分から出てきた言葉のほうが自然に届く'));
+  assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉のほうが自然に届く。'));
+  assert.ok(prompt.includes('借りた言い回しをなぞるより、その場で自分から出てきた言葉のほうが近い'));
 });

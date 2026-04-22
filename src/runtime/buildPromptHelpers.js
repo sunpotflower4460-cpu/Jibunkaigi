@@ -7,9 +7,9 @@ import { truncatePromptText } from './context.js';
 // --- 定数 ---
 
 export const MODE_GUIDE = {
-  short: '短く、核心だけ。',
-  medium: '自分の見方を一つ伝えて、相手の反応を待つくらいの分量で。',
-  long: '丁寧に。複数の角度から見てもいい。',
+  short: '今は、短い言葉が合う感じがある。',
+  medium: '今は、ひとつ触れて、少し待てる感じがある。',
+  long: '今は、複数の角度からゆっくり入っていける感じがある。',
 };
 
 export const MAX_AGENT_CONTEXT_MESSAGES = 6;

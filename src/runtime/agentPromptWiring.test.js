@@ -114,11 +114,11 @@ test('prompt の末尾に Phase 1 の非音読ガードが入る', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
     assert.ok(
-      prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉を信じている。'),
+      prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉のほうが自然に届く。'),
       `${id} prompt should block prompt readout`
     );
     assert.ok(
-      prompt.includes('借りた言い回しをなぞるより、その場で自分から出てきた言葉のほうが自然に届く。'),
+      prompt.includes('借りた言い回しをなぞるより、その場で自分から出てきた言葉のほうが近い。'),
       `${id} prompt should end with present-user guidance`
     );
   }
