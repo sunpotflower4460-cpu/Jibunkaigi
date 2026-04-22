@@ -61,7 +61,7 @@ export const kenFeelingNodes = [
     id: 'ken-feeling-004',
     owner: NodeOwners.KEN,
     category: NodeCategories.FEELING,
-    textSeed: '閉じていた見え方に、少し境目が出てきている',
+    textSeed: '一つに見えていたものに、少し境目が出てきている',
     tags: ['edges', 'aligning', 'shape'],
     axis: ['structure', 'presence'],
     triggers: ['比べ', 'パターン', '整いかけ', '輪郭'],
