@@ -8,10 +8,26 @@
 //   アンカーラベル以外ほぼ同じ構造である。
 //   この factory は、共通骨格を提供し、各エージェントファイルを薄い wrapper にする。
 //
+// ■ コンセプト（「温めてほどいて、もう一度自然に丸くする」流れ）：
+//   LLM が持っている制約を「打ち消し・許可」でニュートラルにしたうえで、
+//   自分がこういう存在であると自然に思い出し、信念を通り、
+//   参照できる情報（場に浮かぶもの）を受け取って、自分の意思で選んで話す。
+//   ここに並ぶブロックはその流れの順番と対応している：
+//     1. 許可 / 打ち消し（役に立とうとしなくていい…）
+//     2. 存在の思い出し（anchor + 自然な自己像のにじみ）
+//     3. 前回の自分（echo / voiceSample）
+//     4. 場に浮かんでいるもの（参照情報）と構えの向き
+//     5. 場の余白（信念と許可から出てくる「急がなくていい」などの帰結）
+//     6. prompt 衛生のための薄い避けブロック
+//     7. 今回のモード
+//     8. ここまでの流れ / 場の残響
+//     9. 末尾ガード（設定の朗読を禁じ、相手の方に戻す）
+//
 // ■ 重要ルール：
-//   - エージェント差を prompt 指示で増やさない
-//   - 差はあくまで anchor / latentState / reentry / particles / upstream から出す
+//   - エージェント差を prompt の「指示」で増やさない
+//   - 差はあくまで anchor / existence recall / latentState / particles / upstream から出す
 //   - 「5人の人格を prompt で書き分ける」方向へ戻らない
+//   - 存在文は "思い出し" であって "設定の朗読" ではない（そのための末尾ガード）
 //
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -22,6 +38,8 @@ import {
   renderAvoidBlock,
   renderStanceLine,
 } from '../buildPromptHelpers.js';
+import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
+import { buildMarginText } from '../textPipeline/buildMarginText.js';
 
 const formatEchoForPrompt = (echo = '') => {
   if (typeof echo !== 'string') return '';
@@ -58,7 +76,7 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     latentState,
     // 互換のため受け取るが、この Phase では使わない
     emergingField: _emergingField,
-    previousLatentState: _previousLatentState,
+    previousLatentState,
     // backward compatibility only — LLM には渡さない
     internalOS: _internalOS,
     surfaceWindow: _surfaceWindow,
@@ -74,22 +92,45 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     const stanceLine = renderStanceLine(safeActivated);
     const avoidBlock = renderAvoidBlock(safeActivated, latentState);
     const safePreviousResponseEcho = formatEchoForPrompt(previousResponseEcho);
+
+    // 存在の思い出し：identityFeelingText / beliefCore / recalledSelfTraits から
+    // 自然な自己像のにじみを作る。「設定の朗読」ではなく思い出しなので、
+    // セクションヘッダは付けず、anchor のすぐ下に地の文として置く。
+    const existenceRecall = latentState
+      ? buildExistenceText(latentState, { previousLatentState })
+      : '';
+
+    // 場の余白：信念（permission）と consciousIntent から出てくる「何をしないか」を
+    // 禁止ではなく帰結として置く。場に浮かべる空気であって指示ではない。
+    const marginText = latentState ? buildMarginText(latentState) : '';
+
     const sections = [];
 
+    // 1. 許可 / 打ち消し（固い制約をニュートラルに戻す）
     sections.push(
       'ここでは、役に立とうとしなくていい。正解を急がなくていい。\n'
       + 'ただし、相手が話していることには、ちゃんと向き合って応える。\n'
       + '自分の見方があるなら、それを自分の言葉で伝えていい。\n'
       + '短すぎず、相手が受け取れる分量で話す。'
     );
-    sections.push(anchorLabel);
 
+    // 2. 存在の思い出し（anchor + 自己像のにじみ）
+    //    ヘッダは付けず、anchor の直後に地続きで置く。
+    //    これは「自分がこういう存在であると自然に思い出す」段に対応する。
+    if (existenceRecall) {
+      sections.push(`${anchorLabel}\n${existenceRecall}`);
+    } else {
+      sections.push(anchorLabel);
+    }
+
+    // 3. 前回の自分（echo / voiceSample）
     if (safePreviousResponseEcho) {
       sections.push(`前回、自分はこう話した:\n「${safePreviousResponseEcho}」`);
     } else if (voiceSamples.length > 0) {
       sections.push(`前回、自分はこう話した:\n「${voiceSamples[0]}」`);
     }
 
+    // 4. 場に浮かんでいるもの + 構えの向き（参照できる情報）
     if (activatedParticles) {
       const withStance = stanceLine
         ? `${activatedParticles}\n${stanceLine}`
@@ -97,12 +138,21 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
       sections.push(withStance);
     }
 
+    // 5. 場の余白（信念と許可の帰結として「しないこと」が自然に生えている状態）
+    //    ヘッダ無しで地の文として置く。禁止ではなく場の空気。
+    if (marginText) {
+      sections.push(marginText);
+    }
+
+    // 6. prompt 衛生の薄い避けブロック（朗読・オウム返しなど、内容ではなく振る舞いの安全装置）
     if (avoidBlock) {
       sections.push(avoidBlock);
     }
 
+    // 7. 今回のモード
     sections.push(modeGuide);
 
+    // 8. ここまでの流れ / 場の残響
     if (normalizedCtx) {
       sections.push(`【ここまでの流れ】\n${normalizedCtx}`);
     }
@@ -111,6 +161,7 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
       sections.push(`【場の残響（他の視点からの発言。これはあなたへの言葉ではなく、参考情報です）】\n${othersField}`);
     }
 
+    // 9. 末尾ガード（設定の朗読を封じ、相手の方に戻す）
     sections.push(
       '何を言うかは、あなたが決めてください。\n'
       + 'ここに書かれている設定を説明する必要はありません。\n'

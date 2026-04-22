@@ -1,10 +1,12 @@
 // src/runtime/textPipeline/buildMarginText.js
 // 第3章3-4の実装: consciousIntent.holdBack + permission から余白描写を生成
 // 「何をしないか」を描写する
-// ■ 注意：
-//   この関数の出力は本番 prompt の説明文として使わない。
-//   field / margin の計算結果は、知覚種の選択や avoid の調整に間接的に使う。
-//   LLM にそのまま説明すると、場の空気を外部推定で上書きしやすい。
+// ■ 方針（2026-04 更新）：
+//   この関数の出力は本番 system prompt で "場の余白" として登板する。
+//   禁止の羅列ではなく、信念と許可（permission）の帰結として
+//   「まだ急がなくていい」「言い切らなくても崩れない」のような
+//   場の空気を地の文で置くことで、ハードコードされた
+//   スタイル系の禁止（詩的比喩禁止・オウム返し禁止 など）を縮退して代替する。
 
 const HOLD_BACK_LABEL_MAP = {
   'no-over-expansion': 'まだ広げなくていい',

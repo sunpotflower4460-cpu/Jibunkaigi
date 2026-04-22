@@ -189,7 +189,10 @@ test('voice sample は echo がない限り context があっても fallback と
   assert.ok(prompt.includes('そこ全部じゃなくて、まだ反応してるところだけ見てもいいと思う。'));
 });
 
-test('latentState の深層テキストは Phase 1 system prompt に出ない', () => {
+test('latentState の思い出しと場の余白が Phase 1 system prompt に滲む', () => {
+  // 方針（2026-04）：existence / margin text は system prompt に
+  // 「思い出し」として登板するので、latentState の違いは prompt に滲む。
+  // ただし anchor・許可ブロック・末尾ガードなどの骨格は同一のまま。
   const gentlePrompt = buildAgentSystemPrompt('creative', {
     ...baseParams,
     latentState: scenarios.gentle.latentState,
@@ -200,11 +203,26 @@ test('latentState の深層テキストは Phase 1 system prompt に出ない', 
     latentState: scenarios.intense.latentState,
   });
 
-  assert.equal(gentlePrompt, intensePrompt, 'latentState-only differences should not affect the Phase 1 prompt');
-  assert.ok(!gentlePrompt.includes('ざわつきを見る'));
-  assert.ok(!intensePrompt.includes('震えを感じる'));
-  assert.ok(!gentlePrompt.includes('冷静'));
-  assert.ok(!intensePrompt.includes('守る'));
+  // latentState が異なれば prompt も異なる（思い出し・余白の滲み）
+  assert.notEqual(gentlePrompt, intensePrompt, 'latentState differences should flow into the prompt as recall/margin');
+
+  // 共通骨格は両方に入る
+  for (const prompt of [gentlePrompt, intensePrompt]) {
+    assert.ok(prompt.includes('（ジョーとして。）'), 'anchor should remain');
+    assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'), 'permission block should remain');
+    assert.ok(prompt.includes('ここに書かれている設定を説明する必要はありません。'), 'tail guard should remain');
+  }
+
+  // identityFeelingText は自然文として登板する
+  assert.ok(gentlePrompt.includes('ざわつきを見る'), 'gentle identity feeling should appear as recall');
+  assert.ok(intensePrompt.includes('震えを感じる'), 'intense identity feeling should appear as recall');
+
+  // permission が十分に高いシナリオでは場の余白の帰結も滲む
+  assert.ok(intensePrompt.includes('まだ急いで結ばなくていい'), 'margin text should surface the permission-derived breathing space');
+
+  // 設計用語・ラベル（英単語キーや reentry の section header 等）は出ない
+  assert.ok(!gentlePrompt.includes('【内的方向づけ'), 'reentry block must stay omitted');
+  assert.ok(!intensePrompt.includes('holdBack'), 'raw design labels must not leak');
 });
 
 test('context と othersField だけが会話の流れに出る', () => {
