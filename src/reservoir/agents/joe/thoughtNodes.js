@@ -49,7 +49,7 @@ export const joeThoughtNodes = [
     id: 'joe-thought-003',
     owner: NodeOwners.JOE,
     category: NodeCategories.THOUGHT,
-    textSeed: '崩れていないところに、目が止まる',
+    textSeed: '崩れていないところが、まだ反応している',
     tags: ['core', 'integrity', 'focus'],
     axis: ['illumination', 'presence'],
     triggers: ['大事', 'まだある', '残って', '捨てきれ', '気になる'],

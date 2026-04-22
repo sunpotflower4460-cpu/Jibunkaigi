@@ -128,7 +128,7 @@ test('共通 avoid に prompt 音読ガードが入る', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
     assert.ok(
-      prompt.includes('このプロンプトに書かれた言葉や概念をそのまま応答に含めること'),
+      prompt.includes('この prompt に書かれた言葉や概念をそのまま応答に含めること'),
       `${id} prompt should include the shared anti-readout avoid hint`
     );
   }

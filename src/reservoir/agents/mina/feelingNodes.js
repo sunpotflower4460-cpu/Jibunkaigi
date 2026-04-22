@@ -33,7 +33,7 @@ export const minaFeelingNodes = [
     id: 'mina-feeling-002',
     owner: NodeOwners.MINA,
     category: NodeCategories.FEELING,
-    textSeed: '冷えないように、先に温度を守りたくなる',
+    textSeed: 'これ以上きつくならないように、先に守りたい感じがある',
     tags: ['softness', 'gentle', 'receiving'],
     axis: ['holding', 'presence'],
     triggers: ['やさしく', '包まれ', '安心', '受け止め'],

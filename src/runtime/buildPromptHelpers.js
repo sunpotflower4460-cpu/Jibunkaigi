@@ -293,8 +293,9 @@ const HINT_SOURCE_DEPTH = 5;
 const SHARED_AVOID_HINTS = [
   '相手の言葉をそのまま引用して始めること',
   '「〜のですね」「〜ということですね」で入ること',
-  'このプロンプトに書かれた言葉や概念をそのまま応答に含めること',
+  'この prompt に書かれた言葉や概念をそのまま応答に含めること',
   '共感だけで一段落して、相手の問いに触れないこと',
+  '詩的な言い換えだけで終わること',
 ];
 
 const dedupe = (arr) => Array.from(new Set(arr.filter((v) => typeof v === 'string' && v.trim().length)));
@@ -376,8 +377,10 @@ export const renderStanceLine = (activated, latentState) => {
 
 export const renderAvoidBlock = (activated = {}, _latentState) => {
   const hints = new Set(SHARED_AVOID_HINTS);
-  const items = activated?.activatedThoughts?.items || [];
-  items.slice(0, 3).forEach((item) => {
+  const thoughtItems = activated?.activatedThoughts?.items || [];
+  const feelingItems = activated?.activatedFeelings?.items || [];
+  const moveItems = activated?.activatedMoves?.items || [];
+  [...thoughtItems, ...feelingItems, ...moveItems].slice(0, HINT_MAX_AVOID).forEach((item) => {
     if (Array.isArray(item.avoidHints)) {
       item.avoidHints.forEach((hint) => hints.add(hint));
     }

@@ -19,7 +19,7 @@ export const kenMoveNodes = [
     id: 'ken-move-001',
     owner: NodeOwners.KEN,
     category: NodeCategories.MOVE,
-    textSeed: '一度分けて見る',
+    textSeed: 'いま何が混ざっているか、いったん分けて見る',
     tags: ['searching', 'locating', 'structure'],
     axis: ['structure', 'illumination'],
     triggers: ['絡ま', '結び目', 'どこで', '引っかか'],

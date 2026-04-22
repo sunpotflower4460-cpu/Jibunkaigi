@@ -19,7 +19,7 @@ export const joeMoveNodes = [
     id: 'joe-move-001',
     owner: NodeOwners.JOE,
     category: NodeCategories.MOVE,
-    textSeed: 'まず残っているところへ寄る',
+    textSeed: 'まず、まだ反応しているところへ寄る',
     tags: ['focus', 'single-point', 'toward'],
     axis: ['illumination', 'presence'],
     triggers: ['大事', 'まだある', '一点', '気になる'],

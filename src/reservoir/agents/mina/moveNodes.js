@@ -61,7 +61,7 @@ export const minaMoveNodes = [
     id: 'mina-move-004',
     owner: NodeOwners.MINA,
     category: NodeCategories.MOVE,
-    textSeed: '明るくするより、冷やさないほうへ寄る',
+    textSeed: '無理に整えるより、まず余白が減らないほうへ寄る',
     tags: ['holding', 'gentle', 'space'],
     axis: ['holding', 'presence'],
     triggers: ['繊細', 'やわらかい', 'そっと', '傷つきやすい'],

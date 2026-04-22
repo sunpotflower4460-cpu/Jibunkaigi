@@ -62,7 +62,7 @@ export const satouThoughtNodes = [
     id: 'satou-thought-004',
     owner: NodeOwners.SATOU,
     category: NodeCategories.THOUGHT,
-    textSeed: '守りたいのに、現実を出す角度がきつくなりすぎている',
+    textSeed: '守りたいのに、言い方がきつくなりすぎている',
     tags: ['friction', 'protection', 'harshness', 'care'],
     axis: ['structure', 'holding'],
     triggers: ['きつく聞こえる', '正論', 'でも守りたい', '厳しい'],

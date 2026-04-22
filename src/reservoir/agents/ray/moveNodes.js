@@ -61,7 +61,7 @@ export const rayMoveNodes = [
     id: 'ray-move-004',
     owner: NodeOwners.RAY,
     category: NodeCategories.MOVE,
-    textSeed: '沈黙を埋めずに、そのまま持つ',
+    textSeed: 'まだ言い切れないままのものを、そのまま持つ',
     tags: ['gap', 'quiet', 'holding'],
     axis: ['presence', 'holding'],
     triggers: ['余白', '間', '静けさ', 'ノイズ'],
