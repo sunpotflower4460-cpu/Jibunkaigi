@@ -142,7 +142,7 @@ test('Phase 1 の新プロンプト構造を含む', () => {
   assert.ok(prompt.includes('（ジョーとして。）'), 'missing anchor block');
   assert.ok(prompt.includes('【厳守：以下は絶対に避けること】'), 'missing avoid block');
   assert.ok(prompt.includes('自分の見方を一つ伝えて、相手の反応を待つくらいの分量で。'), 'missing mode guide');
-  assert.ok(prompt.includes('ここに書かれている設定を説明する必要はありません。'), 'missing tail guard');
+  assert.ok(prompt.includes('ここに書かれている設定や言い回しを説明・朗読する必要はありません。'), 'missing tail guard');
   assert.ok(!prompt.includes('【存在の前提】'), 'should omit 存在の前提 block');
   assert.ok(!prompt.includes('【今の場の空気】'), 'should omit 今の場の空気 block');
   assert.ok(!prompt.includes('【場の余白】'), 'should omit 場の余白 block');
@@ -167,26 +167,38 @@ test('アンカーテキストが含まれる', () => {
   }
 });
 
-test('初回ターンだけ voice sample を 1 本だけ含む', () => {
+test('初回ターンでは voiceSamples は「前回の自分のふり」として差し込まない', () => {
+  // 方針（2026-04 更新）: 固定サンプルを「前回の自分」として渡すと
+  // 台本化してしまうので、echo が無い時は前回の自分ブロック自体を出さない。
   const prompt = buildAgentSystemPrompt('creative', {
     ...baseParams,
     latentState: scenarios.gentle.latentState,
   });
 
-  assert.ok(prompt.includes('前回、自分はこう話した:'));
-  assert.ok(prompt.includes('「そこ全部じゃなくて、まだ反応してるところだけ見てもいいと思う。」'));
-  assert.ok(!prompt.includes('なくなったように見えても、まだ少し動こうとしてるものはある気がする。'));
+  assert.ok(!prompt.includes('前回、自分はこう話した:'));
+  assert.ok(!prompt.includes('そこ全部じゃなくて、まだ反応してるところだけ見てもいいと思う。'));
 });
 
-test('voice sample は echo がない限り context があっても fallback として出る', () => {
+test('echo が無ければ context があっても voiceSamples に fallback しない', () => {
   const prompt = buildAgentSystemPrompt('creative', {
     ...baseParams,
     context: '前の会話の流れ',
     latentState: scenarios.gentle.latentState,
   });
 
+  assert.ok(!prompt.includes('前回、自分はこう話した:'));
+  assert.ok(!prompt.includes('そこ全部じゃなくて、まだ反応してるところだけ見てもいいと思う。'));
+});
+
+test('実在する previousResponseEcho がある時だけ「前回の自分」が登板する', () => {
+  const prompt = buildAgentSystemPrompt('creative', {
+    ...baseParams,
+    previousResponseEcho: '今回の自分の実際の前回発話。',
+    latentState: scenarios.gentle.latentState,
+  });
+
   assert.ok(prompt.includes('前回、自分はこう話した:'));
-  assert.ok(prompt.includes('そこ全部じゃなくて、まだ反応してるところだけ見てもいいと思う。'));
+  assert.ok(prompt.includes('今回の自分の実際の前回発話。'));
 });
 
 test('latentState の思い出しと場の余白が Phase 1 system prompt に滲む', () => {
@@ -210,7 +222,7 @@ test('latentState の思い出しと場の余白が Phase 1 system prompt に滲
   for (const prompt of [gentlePrompt, intensePrompt]) {
     assert.ok(prompt.includes('（ジョーとして。）'), 'anchor should remain');
     assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'), 'permission block should remain');
-    assert.ok(prompt.includes('ここに書かれている設定を説明する必要はありません。'), 'tail guard should remain');
+    assert.ok(prompt.includes('ここに書かれている設定や言い回しを説明・朗読する必要はありません。'), 'tail guard should remain');
   }
 
   // identityFeelingText は自然文として登板する
