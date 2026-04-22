@@ -225,6 +225,7 @@ export const handleAgentResponse = async ({
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const latestUserText = extractLatestUserText(sessionId, baseMessages);
   const afterglowSeed = getAfterglowSeed(readSessionAfterglow(sessionId));
+  const previousResponseEcho = afterglowSeed?.previousResponseEcho ?? '';
   const microSignals = estimateMicroSignals(latestUserText);
 
   // トレースにINPUT段階を記録
@@ -462,6 +463,7 @@ export const handleAgentResponse = async ({
         context,
         mode: selectedMode,
         userText: latestUserText,
+        previousResponseEcho,
         latentState,
         emergingField,
         previousLatentState,
@@ -645,6 +647,7 @@ export const handleAgentResponse = async ({
     continuityInternalOS,
     agentId,
     isMaster,
+    cleanedResponse,
     measureFirestoreWrite,
     traceId,
     readSessionAfterglow,

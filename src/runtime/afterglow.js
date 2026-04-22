@@ -407,10 +407,14 @@ const getAfterglowSeed = (afterglow) => {
   const hasAfterglow = afterglow && typeof afterglow === 'object';
   const previousMix = hasAfterglow ? normalizePatternMix(afterglow.lastPatternMix) : null;
   const previousLatentState = hasAfterglow ? normalizeLatentState(afterglow.lastLatentState) : null;
+  const previousResponseEcho = hasAfterglow && typeof afterglow.previousResponseEcho === 'string'
+    ? afterglow.previousResponseEcho
+    : '';
 
   return {
     previousMix,
     previousLatentState,
+    previousResponseEcho,
   };
 };
 

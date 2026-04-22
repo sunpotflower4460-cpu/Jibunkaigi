@@ -38,6 +38,7 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     mode = 'medium',
     userText: _userText = '',
     othersField,
+    previousResponseEcho = '',
     // 互換のため受け取るが、この Phase では使わない
     latentState: _latentState,
     emergingField: _emergingField,
@@ -66,7 +67,9 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     );
     sections.push(anchorLabel);
 
-    if (!normalizedCtx && voiceSamples.length > 0) {
+    if (previousResponseEcho) {
+      sections.push(`前回、自分はこう話した:\n「${previousResponseEcho}」`);
+    } else if (voiceSamples.length > 0) {
       sections.push(`自分はこういう入り方をする:\n「${voiceSamples[0]}」`);
     }
 
