@@ -140,7 +140,7 @@ test('Phase 1 の新プロンプト構造を含む', () => {
 
   assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'), 'missing permission block');
   assert.ok(prompt.includes('（ジョーとして。）'), 'missing anchor block');
-  assert.ok(prompt.includes('この場で自然に避けるもの:'), 'missing avoid block');
+  assert.ok(prompt.includes('【厳守：以下は絶対に避けること】'), 'missing avoid block');
   assert.ok(prompt.includes('触れたぶんだけで足りる'), 'missing mode guide');
   assert.ok(prompt.includes('ここに書かれている設定を説明する必要はありません。'), 'missing tail guard');
   assert.ok(!prompt.includes('【存在の前提】'), 'should omit 存在の前提 block');
@@ -173,7 +173,7 @@ test('初回ターンだけ voice sample を 1 本だけ含む', () => {
     latentState: scenarios.gentle.latentState,
   });
 
-  assert.ok(prompt.includes('自分はこういう入り方をする:'));
+  assert.ok(prompt.includes('前回、自分はこう話した:'));
   assert.ok(prompt.includes('「そこ全部じゃなくて、まだ反応してるところだけ見てもいいと思う。」'));
   assert.ok(!prompt.includes('なくなったように見えても、まだ少し動こうとしてるものはある気がする。'));
 });
@@ -185,7 +185,7 @@ test('voice sample は echo がない限り context があっても fallback と
     latentState: scenarios.gentle.latentState,
   });
 
-  assert.ok(prompt.includes('自分はこういう入り方をする:'));
+  assert.ok(prompt.includes('前回、自分はこう話した:'));
   assert.ok(prompt.includes('そこ全部じゃなくて、まだ反応してるところだけ見てもいいと思う。'));
 });
 
@@ -275,6 +275,6 @@ test('全エージェントが新構造でプロンプト生成できる', () =>
 
     assert.equal(typeof prompt, 'string');
     assert.ok(prompt.length > 10, `${agentId} prompt should not be empty`);
-    assert.ok(prompt.includes('この場で自然に避けるもの:'), `${agentId} prompt should contain avoid block`);
+    assert.ok(prompt.includes('【厳守：以下は絶対に避けること】'), `${agentId} prompt should contain avoid block`);
   }
 });

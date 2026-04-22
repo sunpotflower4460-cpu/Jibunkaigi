@@ -87,7 +87,7 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     if (safePreviousResponseEcho) {
       sections.push(`前回、自分はこう話した:\n「${safePreviousResponseEcho}」`);
     } else if (voiceSamples.length > 0) {
-      sections.push(`自分はこういう入り方をする:\n「${voiceSamples[0]}」`);
+      sections.push(`前回、自分はこう話した:\n「${voiceSamples[0]}」`);
     }
 
     if (activatedParticles) {

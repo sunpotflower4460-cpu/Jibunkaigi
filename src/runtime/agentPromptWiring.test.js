@@ -128,17 +128,17 @@ test('共通 avoid に prompt 音読ガードが入る', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
     assert.ok(
-      prompt.includes('この prompt に書かれた言葉や概念をそのまま応答に含めること'),
+      prompt.includes('このプロンプトに書かれた単語や概念を、そのまま自分のセリフに混ぜること'),
       `${id} prompt should include the shared anti-readout avoid hint`
     );
   }
 });
 
-test('「この場で自然に避けるもの」が prompt に入る', () => {
+test('「【厳守：以下は絶対に避けること】」が prompt に入る', () => {
   let matched = 0;
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
-    if (prompt.includes('この場で自然に避けるもの:')) matched += 1;
+    if (prompt.includes('【厳守：以下は絶対に避けること】')) matched += 1;
   }
   assert.ok(
     matched === UI_AGENT_IDS.length,
@@ -149,7 +149,7 @@ test('「この場で自然に避けるもの」が prompt に入る', () => {
 test('avoid block は高々 6 件までに収まる', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
-    const idx = prompt.indexOf('この場で自然に避けるもの:');
+    const idx = prompt.indexOf('【厳守：以下は絶対に避けること】');
     if (idx < 0) continue;
     // 直後の空行までの bullet を数える
     const tail = prompt.slice(idx).split('\n\n')[0];
