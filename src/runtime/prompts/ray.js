@@ -48,7 +48,6 @@
 
 import { existence } from '../../agents/ray/existence.js';
 import {
-  normalizeContext,
   renderField,
   renderMemoryTrace,
   renderResidue,
@@ -57,12 +56,7 @@ import {
   hasContent,
   scoreTextBonus,
   scoreActivationBonus,
-  MODE_GUIDE,
-  renderActivatedParticles,
 } from '../buildPromptHelpers.js';
-import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
-import { buildFieldText } from '../textPipeline/buildFieldText.js';
-import { buildMarginText } from '../textPipeline/buildMarginText.js';
 import {
   createAgentSystemPromptBuilder,
   createAgentUserPromptBuilder,
@@ -221,7 +215,7 @@ export const scoreRayMaterials = ({
 
 // 共通骨格 factory を使用してビルダーを生成
 export const buildRaySystemPrompt = createAgentSystemPromptBuilder({
-  anchorLabel: '（レイとして。まだ言葉になる前の気配に触れるように。）',
+  anchorLabel: '（レイとして。）',
 });
 
 export const buildRayUserPrompt = createAgentUserPromptBuilder();

@@ -289,7 +289,7 @@ export const renderActivatedParticles = (activated = {}) => {
 
 const HINT_MAX_TONAL = 3;
 const HINT_MAX_STANCE = 3;
-const HINT_MAX_AVOID = 2;
+const HINT_MAX_AVOID = 6;
 const HINT_SOURCE_DEPTH = 5;
 
 const dedupe = (arr) => Array.from(new Set(arr.filter((v) => typeof v === 'string' && v.trim().length)));
@@ -383,19 +383,21 @@ export const renderStanceLine = (activated, latentState) => {
   return `（${hints.join('、')}）`;
 };
 
-/**
- * avoidHints を 2 個までの箇条書きで「場の余白」に薄く差し込む。
- * 5 個 6 個も出して禁止文の森にしない。
- * @returns {string} 空文字、または見出し + 最大 2 行の箇条書き
- */
-export const renderAvoidBlock = (activated, latentState) => {
-  const hints = dedupe([
-    ...collectHintsFromActivated(activated, 'avoidHints'),
-    ...collectHintsFromLatent(latentState, 'avoidHints'),
-  ]).slice(0, HINT_MAX_AVOID);
-  if (!hints.length) return '';
-  const body = hints.map((h) => `- ${h}`).join('\n');
-  return `この場で自然に避けるもの:\n${body}`;
+export const renderAvoidBlock = (activated = {}) => {
+  const hints = new Set();
+  const items = activated?.activatedThoughts?.items || [];
+  items.slice(0, 3).forEach((item) => {
+    if (Array.isArray(item.avoidHints)) {
+      item.avoidHints.forEach((hint) => hints.add(hint));
+    }
+  });
+  hints.add('相手の言葉をそのまま引用して始めること');
+  hints.add('「〜のですね」「〜ということですね」で入ること');
+  hints.add('このプロンプトに書かれた言葉や概念をそのまま応答に含めること');
+  hints.add('共感だけで一段落して、相手の問いに触れないこと');
+  const list = [...hints].slice(0, HINT_MAX_AVOID);
+  if (list.length === 0) return '';
+  return `【この場では自然に避けるもの】\n${list.map((hint) => `- ${hint}`).join('\n')}`;
 };
 
 // --- 状態スナップショット ---

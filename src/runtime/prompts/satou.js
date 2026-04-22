@@ -48,7 +48,6 @@
 
 import { existence } from '../../agents/satou/existence.js';
 import {
-  normalizeContext,
   renderField,
   renderMemoryTrace,
   renderResidue,
@@ -57,12 +56,7 @@ import {
   hasContent,
   scoreTextBonus,
   scoreActivationBonus,
-  MODE_GUIDE,
-  renderActivatedParticles,
 } from '../buildPromptHelpers.js';
-import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
-import { buildFieldText } from '../textPipeline/buildFieldText.js';
-import { buildMarginText } from '../textPipeline/buildMarginText.js';
 import {
   createAgentSystemPromptBuilder,
   createAgentUserPromptBuilder,
@@ -221,7 +215,7 @@ export const scoreSatouMaterials = ({
 
 // 共通骨格 factory を使用してビルダーを生成
 export const buildSatouSystemPrompt = createAgentSystemPromptBuilder({
-  anchorLabel: '（サトウとして。避けているものに静かに目を向けるように。）',
+  anchorLabel: '（サトウとして。）',
 });
 
 export const buildSatouUserPrompt = createAgentUserPromptBuilder();
