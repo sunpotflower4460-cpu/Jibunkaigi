@@ -21,6 +21,9 @@ import { STATE_AXIS_WEIGHT } from './config/scoringWeights.js';
 import { toCanonicalAgentId, CANONICAL_AGENT_IDS } from './agentIdentity.js';
 
 const PROTO_MEANING_BOOST_FACTOR = 0.08;
+const SHARED_AGENT_AFFINITY = 0.05;
+const OWN_AGENT_AFFINITY = 0.50;
+const OTHER_AGENT_AFFINITY = -0.30;
 
 /**
  * Normalize string for matching (lowercase, trim)
@@ -133,17 +136,18 @@ const calculateTriggerMatch = (triggers = [], context = {}) => {
 
 /**
  * Calculate agent affinity score
- * shared: neutral (0.10)
- * owner matches agentId: higher (0.20)
+ * shared: slight boost (0.05)
+ * owner matches agentId: strong boost (0.50)
+ * other agents: suppress (-0.30)
  *
  * @param {string} nodeOwner - Node owner
  * @param {string} agentId - Current agent ID
  * @returns {number} Affinity score
  */
 const calculateAgentAffinity = (nodeOwner, agentId) => {
-  if (nodeOwner === 'shared') return 0.05;
-  if (nodeOwner === agentId) return 0.50;
-  return -0.30; // Other agents' nodes are strongly suppressed
+  if (nodeOwner === 'shared') return SHARED_AGENT_AFFINITY;
+  if (nodeOwner === agentId) return OWN_AGENT_AFFINITY;
+  return OTHER_AGENT_AFFINITY;
 };
 
 /**
