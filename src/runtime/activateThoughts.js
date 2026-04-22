@@ -141,9 +141,9 @@ const calculateTriggerMatch = (triggers = [], context = {}) => {
  * @returns {number} Affinity score
  */
 const calculateAgentAffinity = (nodeOwner, agentId) => {
-  if (nodeOwner === 'shared') return 0.10;
-  if (nodeOwner === agentId) return 0.20;
-  return 0.05; // Other agents' nodes get small boost
+  if (nodeOwner === 'shared') return 0.05;
+  if (nodeOwner === agentId) return 0.50;
+  return -0.30; // Other agents' nodes are strongly suppressed
 };
 
 /**
