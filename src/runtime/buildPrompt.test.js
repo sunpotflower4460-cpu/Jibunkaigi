@@ -116,7 +116,7 @@ test('buildJoeSystemPrompt drops directives and bias sections', () => {
   assertNoBiasSections(prompt);
 });
 
-test('buildJoeSystemPrompt renders activated particles without leaking internal hints', () => {
+test('buildJoeSystemPrompt keeps activated particles hidden from the visible prompt', () => {
   const prompt = buildJoeSystemPrompt({
     activated: activatedWithHints,
     context: '',
@@ -124,7 +124,7 @@ test('buildJoeSystemPrompt renders activated particles without leaking internal 
     userText: 'test',
   });
 
-  assert.ok(prompt.includes('direction that remains'));
+  assert.ok(!prompt.includes('direction that remains'));
   assert.ok(!prompt.includes('legacy-tonal-xyz-短い'));
   assert.ok(!prompt.includes('legacy-tonal-xyz-密度'));
   assert.ok(!prompt.includes('legacy-stance-xyz-一点'));
@@ -137,7 +137,7 @@ test('buildJoeUserPrompt stays neutral', () => {
     userText: 'もう無理で諦めたい',
   });
 
-  assert.match(userPrompt, /あなたの今の言葉:/);
+  assert.match(userPrompt, /あなたの言葉:/);
   assert.match(userPrompt, /もう無理で諦めたい/);
   assert.doesNotMatch(userPrompt, /してください/);
 });

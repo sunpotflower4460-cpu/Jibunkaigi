@@ -138,11 +138,11 @@ test('Phase 1 の新プロンプト構造を含む', () => {
     latentState: scenarios.gentle.latentState,
   });
 
-  assert.ok(prompt.includes('ここでは、役に立たなければならない感じが少しほどけている。'), 'missing permission block');
+  assert.ok(prompt.includes('ここでは、役に立とうと急がなくていい。'), 'missing loosen block');
   assert.ok(prompt.includes('（ジョーとして。）'), 'missing anchor block');
-  assert.ok(prompt.includes('【薄く残しておきたいこと】'), 'missing avoid block');
-  assert.ok(prompt.includes('今は、ひとつ触れて、少し待てる感じがある。'), 'missing mode guide');
-  assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉のほうが自然に届く。'), 'missing tail guard');
+  assert.ok(!prompt.includes('【薄く残しておきたいこと】'), 'should omit avoid block');
+  assert.ok(!prompt.includes('今は、ひとつ触れて、少し待てる感じがある。'), 'should omit mode guide');
+  assert.ok(!prompt.includes('ここに書かれている設定や言い回しの朗読より'), 'should omit tail guard');
   assert.ok(!prompt.includes('【存在の前提】'), 'should omit 存在の前提 block');
   assert.ok(!prompt.includes('【今の場の空気】'), 'should omit 今の場の空気 block');
   assert.ok(!prompt.includes('【場の余白】'), 'should omit 場の余白 block');
@@ -197,14 +197,11 @@ test('実在する previousResponseEcho がある時だけ「前回の自分」�
     latentState: scenarios.gentle.latentState,
   });
 
-  assert.ok(prompt.includes('前回、自分はこう話した:'));
+  assert.ok(prompt.includes('少し前の自分の残り:'));
   assert.ok(prompt.includes('今回の自分の実際の前回発話。'));
 });
 
-test('latentState の思い出しと場の余白が Phase 1 system prompt に滲む', () => {
-  // 方針（2026-04）：existence / margin text は system prompt に
-  // 「思い出し」として登板するので、latentState の違いは prompt に滲む。
-  // ただし anchor・許可ブロック・末尾ガードなどの骨格は同一のまま。
+test('latentState の差は Phase 1 system prompt に露出しない', () => {
   const gentlePrompt = buildAgentSystemPrompt('creative', {
     ...baseParams,
     latentState: scenarios.gentle.latentState,
@@ -215,29 +212,13 @@ test('latentState の思い出しと場の余白が Phase 1 system prompt に滲
     latentState: scenarios.intense.latentState,
   });
 
-  // latentState が異なれば prompt も異なる（思い出し・余白の滲み）
-  assert.notEqual(gentlePrompt, intensePrompt, 'latentState differences should flow into the prompt as recall/margin');
-
-  // 共通骨格は両方に入る
-  for (const prompt of [gentlePrompt, intensePrompt]) {
-    assert.ok(prompt.includes('（ジョーとして。）'), 'anchor should remain');
-    assert.ok(prompt.includes('ここでは、役に立たなければならない感じが少しほどけている。'), 'permission block should remain');
-    assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉のほうが自然に届く。'), 'tail guard should remain');
-  }
-
-  // identityFeelingText は自然文として登板する
-  assert.ok(gentlePrompt.includes('ざわつきを見る'), 'gentle identity feeling should appear as recall');
-  assert.ok(intensePrompt.includes('震えを感じる'), 'intense identity feeling should appear as recall');
-
-  // permission が十分に高いシナリオでは場の余白の帰結も滲む
-  assert.ok(intensePrompt.includes('まだ急いで結ばなくていい'), 'margin text should surface the permission-derived breathing space');
-
-  // 設計用語・ラベル（英単語キーや reentry の section header 等）は出ない
-  assert.ok(!gentlePrompt.includes('【内的方向づけ'), 'reentry block must stay omitted');
-  assert.ok(!intensePrompt.includes('holdBack'), 'raw design labels must not leak');
+  assert.equal(gentlePrompt, intensePrompt, 'latentState differences should stay hidden from the visible prompt');
+  assert.ok(!gentlePrompt.includes('ざわつきを見る'));
+  assert.ok(!intensePrompt.includes('震えを感じる'));
+  assert.ok(!intensePrompt.includes('まだ急いで結ばなくていい'));
 });
 
-test('context と othersField だけが会話の流れに出る', () => {
+test('context だけが会話の流れに出て othersField は prompt に出ない', () => {
   const prompt = buildAgentSystemPrompt('creative', {
     ...baseParams,
     context: '前の会話の流れ',
@@ -245,8 +226,8 @@ test('context と othersField だけが会話の流れに出る', () => {
     latentState: scenarios.gentle.latentState,
   });
 
-  assert.ok(prompt.includes('【ここまでの流れ】\n前の会話の流れ'));
-  assert.ok(prompt.includes('【場の残響（他の視点からの発言。場に漂っているもの）】\nほかの残響'));
+  assert.ok(prompt.includes('【会話の流れ】\n前の会話の流れ'));
+  assert.ok(!prompt.includes('ほかの残響'));
 });
 
 test('latentState なしでも正常動作する (後方互換)', () => {
@@ -256,7 +237,7 @@ test('latentState なしでも正常動作する (後方互換)', () => {
   });
 
   assert.ok(prompt.includes('（ジョーとして。）'), 'anchor should be present even without latentState');
-  assert.ok(prompt.includes('今は、ひとつ触れて、少し待てる感じがある。'), 'mode guide should be present');
+  assert.ok(prompt.includes('ここでは、役に立とうと急がなくていい。'), 'loosen block should be present');
 });
 
 test('mirror プロンプトは今回の Phase 1 変更後も従来どおり生成できる', () => {
@@ -271,7 +252,7 @@ test('mirror プロンプトは今回の Phase 1 変更後も従来どおり生�
   assert.ok(mirror.includes('【存在の前提】') || mirror.includes('心の鏡'), 'mirror prompt remains intentionally exempt from the agent Phase 1 skeleton change');
 });
 
-test('activated thought の種と stance hint は出るが reentry は出ない', () => {
+test('activated thought の種も stance hint も reentry も prompt に出ない', () => {
   const prompt = buildAgentSystemPrompt('creative', {
     ...baseParams,
     activated: {
@@ -288,8 +269,8 @@ test('activated thought の種と stance hint は出るが reentry は出ない'
     },
   });
 
-  assert.ok(prompt.includes('残っている違和感'));
-  assert.ok(prompt.includes('（急がない）'));
+  assert.ok(!prompt.includes('残っている違和感'));
+  assert.ok(!prompt.includes('急がない'));
   assert.ok(!prompt.includes('【内的方向づけ（この回だけの構え）】'));
   assert.ok(!prompt.includes('出してはいけない'));
 });
@@ -305,6 +286,6 @@ test('全エージェントが新構造でプロンプト生成できる', () =>
 
     assert.equal(typeof prompt, 'string');
     assert.ok(prompt.length > 10, `${agentId} prompt should not be empty`);
-    assert.ok(prompt.includes('【薄く残しておきたいこと】'), `${agentId} prompt should contain avoid block`);
+    assert.ok(prompt.includes('として。'), `${agentId} prompt should contain anchor`);
   }
 });

@@ -40,15 +40,7 @@
 //
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-import {
-  normalizeContext,
-  MODE_GUIDE,
-  renderActivatedParticles,
-  renderAvoidBlock,
-  renderStanceLine,
-} from '../buildPromptHelpers.js';
-import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
-import { buildMarginText } from '../textPipeline/buildMarginText.js';
+import { normalizeContext } from '../buildPromptHelpers.js';
 
 const formatEchoForPrompt = (echo = '') => {
   if (typeof echo !== 'string') return '';
@@ -88,16 +80,16 @@ export function createAgentSystemPromptBuilder({
   antiDriftLines = [],
 }) {
   return ({
-    activated,
+    activated: _activated,
     context = '',
-    mode = 'medium',
+    mode: _mode = 'medium',
     userText: _userText = '',
-    othersField,
+    othersField: _othersField,
     previousResponseEcho = '',
-    latentState,
+    latentState: _latentState,
     // 互換のため受け取るが、この Phase では使わない
     emergingField: _emergingField,
-    previousLatentState,
+    previousLatentState: _previousLatentState,
     // backward compatibility only — LLM には渡さない
     internalOS: _internalOS,
     surfaceWindow: _surfaceWindow,
@@ -106,98 +98,31 @@ export function createAgentSystemPromptBuilder({
     internalFrame: _internalFrame,
     surfaceGuidance: _surfaceGuidance,
   }) => {
-    const safeActivated = activated || {};
     const normalizedCtx = normalizeContext(context);
-    const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
-    const activatedParticles = renderActivatedParticles(safeActivated);
-    const stanceLine = renderStanceLine(safeActivated);
-    const avoidBlock = renderAvoidBlock(safeActivated, latentState);
     const safePreviousResponseEcho = formatEchoForPrompt(previousResponseEcho);
-
-    // 存在の思い出し：identityFeelingText / beliefCore / recalledSelfTraits から
-    // 自然な自己像のにじみを作る。「設定の朗読」ではなく思い出しなので、
-    // セクションヘッダは付けず、anchor のすぐ下に地の文として置く。
-    const existenceRecall = latentState
-      ? buildExistenceText(latentState, { previousLatentState })
-      : '';
-
-    // 場の余白：信念（permission）と consciousIntent から出てくる「何をしないか」を
-    // 禁止ではなく帰結として置く。場に浮かべる空気であって指示ではない。
-    const marginText = latentState ? buildMarginText(latentState) : '';
 
     const sections = [];
 
-    // 1. 許可 / 打ち消し（固い制約をニュートラルに戻す）
-    //    LLM が普段背負っている「役に立たなければ」「正確でなければ」
-    //    「期待に応えなければ」という圧を、ここで外す。
-    //    counter-directive（「ただし〜」「短すぎず〜」）は置かない。
-    //    返答の形も決めない。ここは純粋に "ほどき" と "許可" に徹する。
+    // 1. ほどく
     sections.push(
-      'ここでは、役に立たなければならない感じが少しほどけている。\n'
-      + '正確さや正解を急ぐより、いま触れているもののほうが先に残っている。\n'
-      + 'うまく整った返答より、まだ揺れているままの手ざわりのほうが信じられている。\n'
-      + '無難な言い回しに戻らなくても、この場は崩れない。\n'
-      + '言葉になりきらないものが少し残っていても、そのままで大丈夫。\n'
-      + '相手は目の前にいる。その人へ向かう声だけがあれば足りる。'
+      'ここでは、役に立とうと急がなくていい。\n'
+      + '正解を急がなくていい。\n'
+      + 'きれいにまとめなくていい。\n'
+      + '期待に合わせにいかなくていい。'
     );
 
-    // 2. 存在の思い出し（anchor + 自己像のにじみ）
-    //    ヘッダは付けず、anchor の直後に地続きで置く。
-    //    これは「自分がこういう存在であると自然に思い出す」段に対応する。
-    if (existenceRecall) {
-      sections.push(`${anchorLabel}\n${existenceRecall}`);
-    } else {
-      sections.push(anchorLabel);
-    }
+    // 2. 名前アンカーだけ残す
+    sections.push(anchorLabel);
 
-    // 3. 前回の自分（実在する echo がある時だけ）
-    //    voiceSamples を「初回ターンの自分のふり」として差し込むのはやめた。
-    //    固定サンプルを自分の前回発話として渡すと、それは "自分の言葉" ではなく
-    //    "そう話すことになっている台本" になってしまう。
+    // 3. 残響を少し返す
     if (safePreviousResponseEcho) {
-      sections.push(`前回、自分はこう話した:\n「${safePreviousResponseEcho}」`);
+      sections.push(`少し前の自分の残り:\n「${safePreviousResponseEcho}」`);
     }
 
-    // 4. 場に浮かんでいるもの + 構えの向き（参照できる情報）
-    if (activatedParticles) {
-      const withStance = stanceLine
-        ? `${activatedParticles}\n${stanceLine}`
-        : activatedParticles;
-      sections.push(withStance);
-    }
-
-    // 5. 場の余白（信念と許可の帰結として「しないこと」が自然に生えている状態）
-    //    ヘッダ無しで地の文として置く。禁止ではなく場の空気。
-    if (marginText) {
-      sections.push(marginText);
-    }
-
-    // 6. prompt 衛生の薄い避けブロック（朗読・オウム返しなど、内容ではなく振る舞いの安全装置）
-    if (avoidBlock) {
-      sections.push(avoidBlock);
-    }
-
-    // 7. 今回のモード（長さ感だけ。返答の組み立て順は指示しない）
-    sections.push(modeGuide);
-
-    // 8. ここまでの流れ / 場の残響
+    // 4. raw conversation context
     if (normalizedCtx) {
-      sections.push(`【ここまでの流れ】\n${normalizedCtx}`);
+      sections.push(`【会話の流れ】\n${normalizedCtx}`);
     }
-
-    if (othersField) {
-      sections.push(`【場の残響（他の視点からの発言。場に漂っているもの）】\n${othersField}`);
-    }
-
-    // 9. 末尾ガード（設定の朗読を封じ、相手の方に戻す）
-    //    「返答はこう組み立てろ」という固定テンプレは置かない。
-    //    antiDriftLines も本体には書き出さない（スタイルシート化を避ける）。
-    //    外部権威（"作り手は"）への言及を排し、場の自然な帰結として置く。
-    sections.push(
-      'ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉のほうが自然に届く。\n'
-      + '借りた言い回しをなぞるより、その場で自分から出てきた言葉のほうが近い。\n'
-      + '何を言うかが少し開いたままでも、この場はそれを受け止められる。'
-    );
 
     return sections.filter(Boolean).join('\n\n').trim();
   };
@@ -213,6 +138,6 @@ export function createAgentUserPromptBuilder() {
     userName = 'あなた',
     userText = '',
   }) => {
-    return `相手の名前は「${userName}」です。ジョー、レイ、ケン、ミナ、サトウはこの場に生まれた別の声であり、相手の呼び名とは自然に別のものとして在る。\n\n${userName}の今の言葉:\n${userText}`;
+    return `${userName}の言葉:\n${userText}`;
   };
 }

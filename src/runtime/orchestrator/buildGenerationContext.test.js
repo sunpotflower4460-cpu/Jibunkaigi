@@ -37,6 +37,22 @@ test('buildContext can scope agent prompts to recent user-only messages', () => 
   assert.equal(context, 'あなた: 最初の相談\nあなた: 追加の相談');
 });
 
+test('buildContext can include previous AI utterances as raw conversation', () => {
+  const context = buildContext({
+    messages: [
+      { role: 'user', content: '最初の相談' },
+      { role: 'ai', agentId: 'creative', content: 'AIの返答' },
+      { role: 'user', content: '追加の相談' },
+    ],
+    userName: 'あなた',
+    agents: [{ id: 'creative', name: 'ジョー' }],
+    maxMessages: 3,
+    userOnly: false,
+  });
+
+  assert.equal(context, 'あなた: 最初の相談\nジョー: AIの返答\nあなた: 追加の相談');
+});
+
 test('buildOthersField can weaken to thin prompt context or turn off entirely', () => {
   const messages = [
     { role: 'ai', agentId: 'creative', content: 'まだ残っているものがある' },

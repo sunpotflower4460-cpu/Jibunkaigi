@@ -84,7 +84,7 @@ test('debugInfo に agentId.ui / agentId.canonical と materialCounts が含ま�
 });
 
 // ─────────────────────────────────────────────────────────────
-// Phase 4: prompt 構造 — anchor 差、tonal line、avoid block、末尾文
+// Phase 4: prompt 構造 — anchor 差と最小骨格
 // ─────────────────────────────────────────────────────────────
 
 const buildPromptForAgent = (agentId) => {
@@ -110,55 +110,35 @@ test('5 人の anchor 行が互いに異なる', () => {
   assert.equal(unique.size, UI_AGENT_IDS.length, 'all anchors should be unique');
 });
 
-test('prompt の末尾に Phase 1 の非音読ガードが入る', () => {
+test('prompt から Phase 1 の visible guidance が外れている', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
     assert.ok(
-      prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉のほうが自然に届く。'),
-      `${id} prompt should block prompt readout`
+      !prompt.includes('ここに書かれている設定や言い回しの朗読より'),
+      `${id} prompt should omit tail guidance`
     );
     assert.ok(
-      prompt.includes('借りた言い回しをなぞるより、その場で自分から出てきた言葉のほうが近い。'),
-      `${id} prompt should end with present-user guidance`
-    );
-  }
-});
-
-test('共通 avoid に prompt 音読ガードが入る', () => {
-  for (const id of UI_AGENT_IDS) {
-    const prompt = buildPromptForAgent(id);
-    assert.ok(
-      prompt.includes('ここにある語や設定をそのまま自分の台詞へ移すと、急に借り物の声になりやすい'),
-      `${id} prompt should include the shared anti-readout avoid hint`
+      !prompt.includes('【薄く残しておきたいこと】'),
+      `${id} prompt should omit avoid block`
     );
   }
 });
 
-test('「【薄く残しておきたいこと】」が prompt に入る', () => {
-  let matched = 0;
+test('prompt から activated 粒子や mode guide も visible には出ない', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
-    if (prompt.includes('【薄く残しておきたいこと】')) matched += 1;
-  }
-  assert.ok(
-    matched === UI_AGENT_IDS.length,
-    `all prompts should carry avoid block (got ${matched})`
-  );
-});
-
-test('avoid block は高々 6 件までに収まる', () => {
-  for (const id of UI_AGENT_IDS) {
-    const prompt = buildPromptForAgent(id);
-    const idx = prompt.indexOf('【薄く残しておきたいこと】');
-    if (idx < 0) continue;
-    // 直後の空行までの bullet を数える
-    const tail = prompt.slice(idx).split('\n\n')[0];
-    const bullets = tail.split('\n').filter((line) => line.startsWith('- '));
-    assert.ok(bullets.length <= 6, `${id}: avoid block bullets must be <= 6 (got ${bullets.length})`);
+    assert.ok(
+      !prompt.includes('【今、場に浮かんでいるもの】'),
+      `${id} prompt should omit activated particles`
+    );
+    assert.ok(
+      !prompt.includes('今は、ひとつ触れて、少し待てる感じがある。'),
+      `${id} prompt should omit mode guide`
+    );
   }
 });
 
-test('5 人の system prompt 冒頭が同一ではない (anchor / existence 両方で差が出ている)', () => {
+test('5 人の system prompt 冒頭が同一ではない (anchor で差が出ている)', () => {
   const heads = UI_AGENT_IDS.map((id) => buildPromptForAgent(id).slice(0, 200));
   const unique = new Set(heads);
   assert.equal(unique.size, UI_AGENT_IDS.length, 'all 5 prompt heads should differ');

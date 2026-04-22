@@ -175,7 +175,7 @@ export const buildFullGenerationContext = ({
     agents,
     maxMessages: isMaster ? 6 : AGENT_CONTEXT_MESSAGES,
     maxCharsPerMessage: AGENT_CONTEXT_CHARS,
-    userOnly: !isMaster,
+    userOnly: false,
   });
 
   // B. others_field 生成
