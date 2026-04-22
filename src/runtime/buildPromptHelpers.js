@@ -7,9 +7,9 @@ import { truncatePromptText } from './context.js';
 // --- 定数 ---
 
 export const MODE_GUIDE = {
-  short: '場は静かで、多くの言葉を必要としていない。',
-  medium: '触れたぶんだけで足りる。',
-  long: '少し奥まで見ていても、急がなくていい。',
+  short: '短く、核心だけ。',
+  medium: '自分の見方を一つ伝えて、相手の反応を待つくらいの分量で。',
+  long: '丁寧に。複数の角度から見てもいい。',
 };
 
 export const MAX_AGENT_CONTEXT_MESSAGES = 6;
@@ -74,12 +74,14 @@ export const normalizeContext = (context) => {
 
         const role = item.role || 'user';
         const name = item.name || (role === 'user' ? 'ユーザー' : 'AI');
+        // AIメッセージのエージェント名を匿名化して、後のエージェントが引きずられないようにする
+        const displayName = role === 'ai' ? '別の視点' : name;
         const content = truncatePromptText(
           item.content || '',
           MAX_AGENT_CONTEXT_CHARS,
         );
 
-        return `${name}: ${content}`.trim();
+        return `${displayName}: ${content}`.trim();
       })
       .filter(Boolean)
       .join('\n');
