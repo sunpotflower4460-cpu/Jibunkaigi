@@ -28,9 +28,10 @@ import {
  *
  * @param {object} config
  * @param {string} config.anchorLabel - エージェント固有のアンカー（例: 「（ジョーとして。）」）
+ * @param {string[]} [config.voiceSamples] - 初回ターン用の短い発話例
  * @returns {Function} buildSystemPrompt 関数
  */
-export function createAgentSystemPromptBuilder({ anchorLabel }) {
+export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] }) {
   return ({
     activated,
     context = '',
@@ -64,6 +65,10 @@ export function createAgentSystemPromptBuilder({ anchorLabel }) {
       + 'ただし、相手が言っていることには、ちゃんと応える。'
     );
     sections.push(anchorLabel);
+
+    if (!normalizedCtx && voiceSamples.length > 0) {
+      sections.push(`自分はこういう入り方をする:\n「${voiceSamples[0]}」`);
+    }
 
     if (activatedParticles) {
       const withStance = stanceLine

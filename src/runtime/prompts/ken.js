@@ -51,6 +51,7 @@
 //   - 説明テンプレには逃げない
 
 import { existence } from '../../agents/ken/existence.js';
+import { voiceSamples } from '../../agents/ken/voiceSample.js';
 import {
   renderField,
   renderMemoryTrace,
@@ -220,6 +221,7 @@ export const scoreKenMaterials = ({
 // 共通骨格 factory を使用してビルダーを生成
 export const buildKenSystemPrompt = createAgentSystemPromptBuilder({
   anchorLabel: '（ケンとして。）',
+  voiceSamples,
 });
 
 export const buildKenUserPrompt = createAgentUserPromptBuilder();

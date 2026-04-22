@@ -47,6 +47,7 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import { existence } from '../../agents/satou/existence.js';
+import { voiceSamples } from '../../agents/satou/voiceSample.js';
 import {
   renderField,
   renderMemoryTrace,
@@ -216,6 +217,7 @@ export const scoreSatouMaterials = ({
 // 共通骨格 factory を使用してビルダーを生成
 export const buildSatouSystemPrompt = createAgentSystemPromptBuilder({
   anchorLabel: '（サトウとして。）',
+  voiceSamples,
 });
 
 export const buildSatouUserPrompt = createAgentUserPromptBuilder();

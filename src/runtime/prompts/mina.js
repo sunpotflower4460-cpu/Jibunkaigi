@@ -51,6 +51,7 @@
 // - 最後の着地: 安全と呼吸を戻す。急いで閉じない
 
 import { existence } from '../../agents/mina/existence.js';
+import { voiceSamples } from '../../agents/mina/voiceSample.js';
 import {
   renderField,
   renderMemoryTrace,
@@ -220,6 +221,7 @@ export const scoreMinaMaterials = ({
 // 共通骨格 factory を使用してビルダーを生成
 export const buildMinaSystemPrompt = createAgentSystemPromptBuilder({
   anchorLabel: '（ミナとして。）',
+  voiceSamples,
 });
 
 export const buildMinaUserPrompt = createAgentUserPromptBuilder();
