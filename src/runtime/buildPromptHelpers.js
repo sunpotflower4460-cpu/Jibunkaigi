@@ -287,10 +287,15 @@ export const renderActivatedParticles = (activated = {}) => {
 // それでは差分が途中で痩せて 5 人が似通うため、
 // 発話直前のみ「補正輪」として極薄に差し込む。長い説明文にはしない。
 
-const HINT_MAX_TONAL = 3;
 const HINT_MAX_STANCE = 3;
-const HINT_MAX_AVOID = 2;
+const HINT_MAX_AVOID = 6;
 const HINT_SOURCE_DEPTH = 5;
+const SHARED_AVOID_HINTS = [
+  '相手の言葉をそのまま引用して始めること',
+  '「〜のですね」「〜ということですね」で入ること',
+  'このプロンプトに書かれた言葉や概念をそのまま応答に含めること',
+  '共感だけで一段落して、相手の問いに触れないこと',
+];
 
 const dedupe = (arr) => Array.from(new Set(arr.filter((v) => typeof v === 'string' && v.trim().length)));
 
@@ -356,20 +361,6 @@ const collectHintsFromLatent = (latentState, key) => {
 };
 
 /**
- * tonalHints を 1 行に集約する（声の質感）。
- * 例: 「声の質感: 静か、芯、ためらい」
- * @returns {string} 空文字（材料が無い時）または 1 行
- */
-export const renderTonalLine = (activated, latentState) => {
-  const hints = dedupe([
-    ...collectHintsFromActivated(activated, 'tonalHints'),
-    ...collectHintsFromLatent(latentState, 'tonalHints'),
-  ]).slice(0, HINT_MAX_TONAL);
-  if (!hints.length) return '';
-  return `声の質感: ${hints.join('、')}`;
-};
-
-/**
  * stanceHints を 1 行に集約する（構えの向き）。
  * 例: 「（急がず、結論に飛ばず、一点に触れる）」
  * @returns {string}
@@ -383,19 +374,17 @@ export const renderStanceLine = (activated, latentState) => {
   return `（${hints.join('、')}）`;
 };
 
-/**
- * avoidHints を 2 個までの箇条書きで「場の余白」に薄く差し込む。
- * 5 個 6 個も出して禁止文の森にしない。
- * @returns {string} 空文字、または見出し + 最大 2 行の箇条書き
- */
-export const renderAvoidBlock = (activated, latentState) => {
-  const hints = dedupe([
-    ...collectHintsFromActivated(activated, 'avoidHints'),
-    ...collectHintsFromLatent(latentState, 'avoidHints'),
-  ]).slice(0, HINT_MAX_AVOID);
-  if (!hints.length) return '';
-  const body = hints.map((h) => `- ${h}`).join('\n');
-  return `この場で自然に避けるもの:\n${body}`;
+export const renderAvoidBlock = (activated = {}, _latentState) => {
+  const hints = new Set(SHARED_AVOID_HINTS);
+  const items = activated?.activatedThoughts?.items || [];
+  items.slice(0, 3).forEach((item) => {
+    if (Array.isArray(item.avoidHints)) {
+      item.avoidHints.forEach((hint) => hints.add(hint));
+    }
+  });
+  const list = [...hints].slice(0, HINT_MAX_AVOID);
+  if (list.length === 0) return '';
+  return `【この場では自然に避けるもの】\n${list.map((hint) => `- ${hint}`).join('\n')}`;
 };
 
 // --- 状態スナップショット ---

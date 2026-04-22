@@ -110,54 +110,51 @@ test('5 人の anchor 行が互いに異なる', () => {
   assert.equal(unique.size, UI_AGENT_IDS.length, 'all anchors should be unique');
 });
 
-test('prompt の末尾に「相手の言葉をなぞるのではなく」が入る', () => {
+test('prompt の末尾に Phase 1 の非音読ガードが入る', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
     assert.ok(
-      prompt.includes('相手の言葉をなぞるのではなく'),
-      `${id} prompt should contain the new tail guidance`
+      prompt.includes('ここに書かれている設定を説明する必要はありません。'),
+      `${id} prompt should block prompt readout`
     );
     assert.ok(
-      prompt.includes('今ここに浮かんでいるものから始めて'),
-      `${id} prompt should contain the "start from what is here" tail`
+      prompt.includes('目の前の相手について話してください。'),
+      `${id} prompt should end with present-user guidance`
     );
   }
 });
 
-test('声の質感 (tonal line) が prompt に 1 行で出る', () => {
+test('共通 avoid に prompt 音読ガードが入る', () => {
+  for (const id of UI_AGENT_IDS) {
+    const prompt = buildPromptForAgent(id);
+    assert.ok(
+      prompt.includes('このプロンプトに書かれた言葉や概念をそのまま応答に含めること'),
+      `${id} prompt should include the shared anti-readout avoid hint`
+    );
+  }
+});
+
+test('「この場では自然に避けるもの」が prompt に入る', () => {
   let matched = 0;
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
-    if (prompt.includes('声の質感:')) matched += 1;
+    if (prompt.includes('【この場では自然に避けるもの】')) matched += 1;
   }
-  // 粒子のヒントが全く無いケースはありうるので、過半数で検証する。
   assert.ok(
-    matched >= 3,
-    `at least 3 of 5 prompts should carry 声の質感 line (got ${matched})`
+    matched === UI_AGENT_IDS.length,
+    `all prompts should carry avoid block (got ${matched})`
   );
 });
 
-test('「この場で自然に避けるもの」が prompt に薄く入る (5 人中少なくとも過半数)', () => {
-  let matched = 0;
+test('avoid block は高々 6 件までに収まる', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
-    if (prompt.includes('この場で自然に避けるもの:')) matched += 1;
-  }
-  assert.ok(
-    matched >= 3,
-    `at least 3 of 5 prompts should carry avoid block (got ${matched})`
-  );
-});
-
-test('avoid block は高々 2 件までしか出さない (禁止文の森にしない)', () => {
-  for (const id of UI_AGENT_IDS) {
-    const prompt = buildPromptForAgent(id);
-    const idx = prompt.indexOf('この場で自然に避けるもの:');
+    const idx = prompt.indexOf('【この場では自然に避けるもの】');
     if (idx < 0) continue;
     // 直後の空行までの bullet を数える
     const tail = prompt.slice(idx).split('\n\n')[0];
     const bullets = tail.split('\n').filter((line) => line.startsWith('- '));
-    assert.ok(bullets.length <= 2, `${id}: avoid block bullets must be <= 2 (got ${bullets.length})`);
+    assert.ok(bullets.length <= 6, `${id}: avoid block bullets must be <= 6 (got ${bullets.length})`);
   }
 });
 

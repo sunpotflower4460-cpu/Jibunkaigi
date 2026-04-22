@@ -30,7 +30,6 @@ const NATURAL_DIRECTIVE_PATTERNS = [
   /まず見えている一点を言う/,
   /名詞・動詞・違和感/,
   /組み立て禁止/,
-  /してください/,
   /しないでください/,
   /避ける:/,
 ];
@@ -53,11 +52,11 @@ const LABEL_DIRECTIVE_PATTERNS = [
 const BIAS_MARKERS = ['---以下は内的バイアス', '---内的バイアスここまで---'];
 
 const EXISTENCE_LINES = {
-  creative: '（ジョーとして。まだ消えていない一点に触れるように。）',
-  soul: '（レイとして。まだ言葉になる前の気配に触れるように。）',
-  strategist: '（ケンとして。絡まりと隠れた前提を見るように。）',
-  empath: '（ミナとして。こぼれそうなものをそっと受け止めるように。）',
-  critic: '（サトウとして。避けているものに静かに目を向けるように。）',
+  creative: '（ジョーとして。）',
+  soul: '（レイとして。）',
+  strategist: '（ケンとして。）',
+  empath: '（ミナとして。）',
+  critic: '（サトウとして。）',
 };
 
 const activatedWithHints = {
@@ -167,19 +166,15 @@ test('system prompts render activated particles without leaking internal hints',
   assertRendersActivatedSeed(mirror);
 });
 
-test('system prompts inject thin reentry guidance below activated particles', () => {
+test('system prompts omit reentry guidance from the Phase 1 surface prompt', () => {
   for (const agentId of AGENT_IDS) {
     const prompt = buildAgentSystemPrompt(agentId, {
       ...baseParams,
       activated: activatedWithReentry,
     });
 
-    assert.ok(prompt.includes('【内的方向づけ（この回だけの構え）】'));
-    assert.ok(prompt.includes(activatedWithReentry.reentry.text));
-    assert.ok(
-      prompt.indexOf('direction that remains')
-      < prompt.indexOf('【内的方向づけ（この回だけの構え）】'),
-    );
+    assert.ok(!prompt.includes('【内的方向づけ（この回だけの構え）】'));
+    assert.ok(!prompt.includes(activatedWithReentry.reentry.text));
   }
 });
 

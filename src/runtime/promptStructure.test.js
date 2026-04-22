@@ -132,32 +132,30 @@ const baseParams = {
   },
 };
 
-test('新プロンプト構造は7ブロックを含む', () => {
+test('Phase 1 の新プロンプト構造を含む', () => {
   const prompt = buildAgentSystemPrompt('creative', {
     ...baseParams,
     latentState: scenarios.gentle.latentState,
   });
 
-  // 7ブロックの見出し確認
-  assert.ok(prompt.includes('【存在の前提】'), 'missing 存在の前提 block');
-  assert.ok(prompt.includes('【今の場の空気】'), 'missing 今の場の空気 block');
-  // 【場に浮かんでいるもの】は activated が空なので出ない
-  assert.ok(prompt.includes('【場の余白】'), 'missing 場の余白 block');
-  // 【内的方向づけ】は reentry が空なので出ない
-  // 【ここまでの流れ】は context が空なので出ない
-  // モード指示は【場の余白】に含まれる
-  assert.ok(prompt.includes('触れたぶんだけで足りる'), 'missing mode guide in margin block');
+  assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'), 'missing permission block');
+  assert.ok(prompt.includes('（ジョーとして。）'), 'missing anchor block');
+  assert.ok(prompt.includes('【この場では自然に避けるもの】'), 'missing avoid block');
+  assert.ok(prompt.includes('触れたぶんだけで足りる'), 'missing mode guide');
+  assert.ok(prompt.includes('ここに書かれている設定を説明する必要はありません。'), 'missing tail guard');
+  assert.ok(!prompt.includes('【存在の前提】'), 'should omit 存在の前提 block');
+  assert.ok(!prompt.includes('【今の場の空気】'), 'should omit 今の場の空気 block');
+  assert.ok(!prompt.includes('【場の余白】'), 'should omit 場の余白 block');
+  assert.ok(!prompt.includes('【内的方向づけ（この回だけの構え）】'), 'should omit reentry block');
 });
 
 test('アンカーテキストが含まれる', () => {
-  // Phase 4-2 (修正指示書 v3): anchorLabel は「極薄で機能化」されており、
-  // 一行で「どこに触れるか」を示す。性格説明文にはしない。
   const agentMap = {
-    creative: '（ジョーとして。まだ消えていない一点に触れるように。）',
-    soul: '（レイとして。まだ言葉になる前の気配に触れるように。）',
-    strategist: '（ケンとして。絡まりと隠れた前提を見るように。）',
-    empath: '（ミナとして。こぼれそうなものをそっと受け止めるように。）',
-    critic: '（サトウとして。避けているものに静かに目を向けるように。）',
+    creative: '（ジョーとして。）',
+    soul: '（レイとして。）',
+    strategist: '（ケンとして。）',
+    empath: '（ミナとして。）',
+    critic: '（サトウとして。）',
   };
 
   for (const [agentId, anchor] of Object.entries(agentMap)) {
@@ -169,7 +167,7 @@ test('アンカーテキストが含まれる', () => {
   }
 });
 
-test('buildExistenceText が latentState から動的生成する', () => {
+test('latentState の深層テキストは Phase 1 system prompt に出ない', () => {
   const gentlePrompt = buildAgentSystemPrompt('creative', {
     ...baseParams,
     latentState: scenarios.gentle.latentState,
@@ -180,63 +178,23 @@ test('buildExistenceText が latentState から動的生成する', () => {
     latentState: scenarios.intense.latentState,
   });
 
-  // identityFeelingText が反映されているか
-  assert.ok(gentlePrompt.includes('ざわつきを見る'), 'gentle scenario should include identityFeelingText');
-  assert.ok(intensePrompt.includes('震えを感じる'), 'intense scenario should include identityFeelingText');
-
-  // recalledSelfTraits が反映されているか
-  assert.ok(gentlePrompt.includes('冷静'), 'gentle scenario should include trait');
-  assert.ok(intensePrompt.includes('守る'), 'intense scenario should include trait');
+  assert.equal(gentlePrompt, intensePrompt, 'latentState-only differences should not affect the Phase 1 prompt');
+  assert.ok(!gentlePrompt.includes('ざわつきを見る'));
+  assert.ok(!intensePrompt.includes('震えを感じる'));
+  assert.ok(!gentlePrompt.includes('冷静'));
+  assert.ok(!intensePrompt.includes('守る'));
 });
 
-test('buildFieldText が field/stance/beliefCore から動的生成する', () => {
-  const gentlePrompt = buildAgentSystemPrompt('creative', {
+test('context と othersField だけが会話の流れに出る', () => {
+  const prompt = buildAgentSystemPrompt('creative', {
     ...baseParams,
+    context: '前の会話の流れ',
+    othersField: 'ほかの残響',
     latentState: scenarios.gentle.latentState,
   });
 
-  const intensePrompt = buildAgentSystemPrompt('creative', {
-    ...baseParams,
-    latentState: scenarios.intense.latentState,
-  });
-
-  // fragility に応じた描写の変動確認（数値が異なる）
-  // gentle: fragility 0.3, intense: fragility 0.8 なので異なる描写が期待される
-  assert.notEqual(gentlePrompt, intensePrompt, 'prompts should differ based on latentState');
-
-  // beliefCore.dominantBeliefAxis の反映確認
-  // gentle: reflection, intense: holding, angry: structure
-  const angryPrompt = buildAgentSystemPrompt('creative', {
-    ...baseParams,
-    latentState: scenarios.angry.latentState,
-  });
-
-  // 3つのシナリオで異なるプロンプトが生成されるか
-  assert.notEqual(gentlePrompt, intensePrompt);
-  assert.notEqual(gentlePrompt, angryPrompt);
-  assert.notEqual(intensePrompt, angryPrompt);
-});
-
-test('buildMarginText が permission と consciousIntent.holdBack から動的生成する', () => {
-  const gentlePrompt = buildAgentSystemPrompt('creative', {
-    ...baseParams,
-    latentState: scenarios.gentle.latentState,
-  });
-
-  const intensePrompt = buildAgentSystemPrompt('creative', {
-    ...baseParams,
-    latentState: scenarios.intense.latentState,
-  });
-
-  // consciousIntent.holdBack の反映確認
-  assert.ok(gentlePrompt.includes('説明を重ねない'), 'gentle should include holdBack text');
-  assert.ok(intensePrompt.includes('触れすぎない。そっと受ける'), 'intense should include holdBack text');
-
-  // permission の反映確認 (noOverExplain: 0.7 なので閾値 0.5 を超える)
-  assert.ok(gentlePrompt.includes('言い切らなくても崩れない'), 'gentle should include permission text');
-
-  // permission の反映確認 (allowSilence: 0.8 なので閾値 0.5 を超える)
-  assert.ok(intensePrompt.includes('少し黙っていても途切れない'), 'intense should include allowSilence text');
+  assert.ok(prompt.includes('【ここまでの流れ】\n前の会話の流れ'));
+  assert.ok(prompt.includes('【場の残響】\nほかの残響'));
 });
 
 test('latentState なしでも正常動作する (後方互換)', () => {
@@ -245,14 +203,11 @@ test('latentState なしでも正常動作する (後方互換)', () => {
     latentState: null,
   });
 
-  // アンカーテキストは必ず含まれる
-  assert.ok(prompt.includes('（ジョーとして。'), 'anchor should be present even without latentState');
-
-  // モードガイドは場の余白に含まれる
-  assert.ok(prompt.includes('触れたぶんだけで足りる'), 'mode guide should be present in margin section');
+  assert.ok(prompt.includes('（ジョーとして。）'), 'anchor should be present even without latentState');
+  assert.ok(prompt.includes('触れたぶんだけで足りる'), 'mode guide should be present');
 });
 
-test('mirror プロンプトも7ブロック構造を持つ', () => {
+test('mirror プロンプトは今回の Phase 1 変更後も従来どおり生成できる', () => {
   const mirror = buildMirrorSystemPrompt({
     context: '',
     signals: {},
@@ -261,49 +216,30 @@ test('mirror プロンプトも7ブロック構造を持つ', () => {
   });
 
   assert.ok(mirror.includes('あなたは「心の鏡」。'), 'mirror should have existence declaration');
-  assert.ok(mirror.includes('【存在の前提】') || mirror.includes('心の鏡'), 'mirror should have existence block');
+  assert.ok(mirror.includes('【存在の前提】') || mirror.includes('心の鏡'), 'mirror prompt remains intentionally exempt from the agent Phase 1 skeleton change');
 });
 
-test('A/B比較: 異なる field.fragility で異なる場の描写が生成される', () => {
-  const lowFragility = buildAgentSystemPrompt('creative', {
+test('activated thought の種と stance hint は出るが reentry は出ない', () => {
+  const prompt = buildAgentSystemPrompt('creative', {
     ...baseParams,
-    latentState: {
-      ...scenarios.gentle.latentState,
-      field: { fragility: 0.2, permeability: 0.5 },
+    activated: {
+      activatedThoughts: {
+        items: [
+          {
+            textSeed: '残っている違和感',
+            stanceHints: ['急がない'],
+            avoidHints: ['構えを説明しすぎること'],
+          },
+        ],
+      },
+      reentry: { text: '出してはいけない' },
     },
   });
 
-  const highFragility = buildAgentSystemPrompt('creative', {
-    ...baseParams,
-    latentState: {
-      ...scenarios.gentle.latentState,
-      field: { fragility: 0.9, permeability: 0.5 },
-    },
-  });
-
-  // fragility の値が変わると、プロンプトも変わる
-  assert.notEqual(lowFragility, highFragility, 'different fragility should produce different prompts');
-});
-
-test('A/B比較: 異なる stance.guard で異なる姿勢描写が生成される', () => {
-  const lowGuard = buildAgentSystemPrompt('creative', {
-    ...baseParams,
-    latentState: {
-      ...scenarios.gentle.latentState,
-      stance: { guard: 0.1, receive: 0.5, illuminate: 0.5 },
-    },
-  });
-
-  const highGuard = buildAgentSystemPrompt('creative', {
-    ...baseParams,
-    latentState: {
-      ...scenarios.gentle.latentState,
-      stance: { guard: 0.95, receive: 0.9, illuminate: 0.2 },
-    },
-  });
-
-  // stance.guard の値が変わると、プロンプトも変わる
-  assert.notEqual(lowGuard, highGuard, 'different guard should produce different prompts');
+  assert.ok(prompt.includes('残っている違和感'));
+  assert.ok(prompt.includes('（急がない）'));
+  assert.ok(!prompt.includes('【内的方向づけ（この回だけの構え）】'));
+  assert.ok(!prompt.includes('出してはいけない'));
 });
 
 test('全エージェントが新構造でプロンプト生成できる', () => {

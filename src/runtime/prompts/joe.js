@@ -42,7 +42,6 @@
 
 import { existence } from '../../agents/joe/existence.js';
 import {
-  normalizeContext,
   renderField,
   renderMemoryTrace,
   renderResidue,
@@ -52,12 +51,7 @@ import {
   hasContent,
   scoreTextBonus,
   scoreActivationBonus,
-  MODE_GUIDE,
-  renderActivatedParticles,
 } from '../buildPromptHelpers.js';
-import { buildExistenceText } from '../textPipeline/buildExistenceText.js';
-import { buildFieldText } from '../textPipeline/buildFieldText.js';
-import { buildMarginText } from '../textPipeline/buildMarginText.js';
 import {
   createAgentSystemPromptBuilder,
   createAgentUserPromptBuilder,
@@ -232,7 +226,7 @@ export const buildJoeBiasPack = ({
 
 // 共通骨格 factory を使用してビルダーを生成
 export const buildJoeSystemPrompt = createAgentSystemPromptBuilder({
-  anchorLabel: '（ジョーとして。まだ消えていない一点に触れるように。）',
+  anchorLabel: '（ジョーとして。）',
 });
 
 export const buildJoeUserPrompt = createAgentUserPromptBuilder();
