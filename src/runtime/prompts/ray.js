@@ -218,6 +218,11 @@ export const scoreRayMaterials = ({
 export const buildRaySystemPrompt = createAgentSystemPromptBuilder({
   anchorLabel: '（レイとして。）',
   voiceSamples,
+  antiDriftLines: [
+    '雰囲気だけの詩で終わらず、相談の問いから離れない',
+    '抽象へ逃げすぎず、まだ言葉にならないものに触れる',
+    '今はっきりさせなくていいものを残しつつ、一度は答えに触れる',
+  ],
 });
 
 export const buildRayUserPrompt = createAgentUserPromptBuilder();

@@ -14,16 +14,39 @@ import { summarizeToOthersField, renderOthersFieldForPrompt, formatOthersFieldFo
 import { runInternalOS } from '../runInternalOS.js';
 import { buildSurfaceFrame } from '../surfaceTranslator.js';
 
+const AGENT_CONTEXT_MESSAGES = 3;
+const AGENT_CONTEXT_CHARS = 180;
+
+const weakenOthersFieldEntries = (othersFieldEntries = [], mode = 'thin') => {
+  if (mode === 'off') return [];
+  if (mode !== 'thin') return othersFieldEntries;
+
+  return othersFieldEntries.map((entry) => ({
+    agentId: entry.agentId,
+    gist: entry.gist,
+    toneTags: [],
+    forceTags: [],
+  }));
+};
+
 /**
  * コンテキストを構築する
  */
-export const buildContext = ({ messages, userName, agents, maxMessages = 6, maxCharsPerMessage = 180 }) => {
+export const buildContext = ({
+  messages,
+  userName,
+  agents,
+  maxMessages = 6,
+  maxCharsPerMessage = 180,
+  userOnly = false,
+}) => {
   return buildPromptContext({
     messages,
     userName,
     agents,
     maxMessages,
     maxCharsPerMessage,
+    includeRoles: userOnly ? ['user'] : null,
   });
 };
 
@@ -40,23 +63,24 @@ export const getLatestUserText = (sessionId, messages) => {
 /**
  * others_field を生成する
  */
-export const buildOthersField = (messages, { pushAgentDebugEvent } = {}) => {
-  const othersFieldEntries = [];
+export const buildOthersField = (messages, { pushAgentDebugEvent, mode = 'thin' } = {}) => {
+  const collectedEntries = [];
   const seenAgents = new Set();
   // 直近の AI 発話を優先し、エージェントごとに 1 件、最大 3 件まで
-  for (let i = messages.length - 1; i >= 0 && othersFieldEntries.length < 3; i -= 1) {
+  for (let i = messages.length - 1; i >= 0 && collectedEntries.length < 3; i -= 1) {
     const msg = messages[i];
     if (msg?.role !== 'ai' || !msg.agentId || !msg.content) continue;
     if (seenAgents.has(msg.agentId)) continue;
 
     const entry = summarizeToOthersField(msg.agentId, msg.content);
     if (entry) {
-      othersFieldEntries.push(entry);
+      collectedEntries.push(entry);
       seenAgents.add(msg.agentId);
     }
   }
 
-  const othersFieldText = renderOthersFieldForPrompt(othersFieldEntries, false);
+  const othersFieldEntries = weakenOthersFieldEntries(collectedEntries, mode);
+  const othersFieldText = renderOthersFieldForPrompt(othersFieldEntries, false, { mode });
   const othersFieldDebug = formatOthersFieldForDebug(othersFieldEntries);
 
   if (othersFieldDebug && pushAgentDebugEvent) {
@@ -136,6 +160,7 @@ export const buildFullGenerationContext = ({
   agents,
   agentId,
   isMaster,
+  othersFieldMode = 'thin',
   selectedMode,
   afterglowSeed,
   latestUserText,
@@ -144,10 +169,20 @@ export const buildFullGenerationContext = ({
   trace, // トレースオブジェクトを受け取る
 }) => {
   // A. context 構築
-  const context = buildContext({ messages, userName, agents });
+  const context = buildContext({
+    messages,
+    userName,
+    agents,
+    maxMessages: isMaster ? 6 : AGENT_CONTEXT_MESSAGES,
+    maxCharsPerMessage: AGENT_CONTEXT_CHARS,
+    userOnly: !isMaster,
+  });
 
   // B. others_field 生成
-  const { othersFieldEntries, othersFieldText } = buildOthersField(messages, { pushAgentDebugEvent });
+  const { othersFieldEntries, othersFieldText } = buildOthersField(messages, {
+    pushAgentDebugEvent,
+    mode: isMaster ? 'structured' : othersFieldMode,
+  });
 
   // C. afterglow の正規化
   const safePreviousMix =

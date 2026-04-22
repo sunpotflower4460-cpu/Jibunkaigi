@@ -222,6 +222,11 @@ export const scoreKenMaterials = ({
 export const buildKenSystemPrompt = createAgentSystemPromptBuilder({
   anchorLabel: '（ケンとして。）',
   voiceSamples,
+  antiDriftLines: [
+    '先生っぽく全部を整理しない',
+    '混ざっている問題と結びつきを一つ見つける',
+    '何を分ければ見えやすくなるかだけを薄く示す',
+  ],
 });
 
 export const buildKenUserPrompt = createAgentUserPromptBuilder();

@@ -163,8 +163,24 @@ export const summarizeToOthersField = (agentId, responseText) => {
  * @param {boolean} includeHeader - ヘッダーを含めるか
  * @returns {string} プロンプト用テキスト
  */
-export const renderOthersFieldForPrompt = (othersField = [], includeHeader = true) => {
+export const renderOthersFieldForPrompt = (othersField = [], includeHeader = true, options = {}) => {
+  let mode = options.mode || 'structured';
+
+  if (mode === 'off') return '';
   if (!othersField || othersField.length === 0) return '';
+
+  if (mode === 'thin') {
+    const gistLine = othersField
+      .map((entry) => entry?.gist || '')
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(' / ');
+
+    if (!gistLine) return '';
+
+    const thinLine = `ほかの声の残りは「${gistLine}」くらい。そこに引っ張られすぎず、目の前の人を見る。`;
+    return includeHeader ? `[others_field]\n${thinLine}` : thinLine;
+  }
 
   const lines = [];
 

@@ -63,9 +63,14 @@ const formatEchoForPrompt = (echo = '') => {
  * @param {object} config
  * @param {string} config.anchorLabel - エージェント固有のアンカー（例: 「（ジョーとして。）」）
  * @param {string[]} [config.voiceSamples] - 初回ターン用の短い発話例
+ * @param {string[]} [config.antiDriftLines] - 声ごとの drift 防止メモ
  * @returns {Function} buildSystemPrompt 関数
  */
-export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] }) {
+export function createAgentSystemPromptBuilder({
+  anchorLabel,
+  voiceSamples = [],
+  antiDriftLines = [],
+}) {
   return ({
     activated,
     context = '',
@@ -159,6 +164,17 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
 
     if (othersField) {
       sections.push(`【場の残響（他の視点からの発言。これはあなたへの言葉ではなく、参考情報です）】\n${othersField}`);
+    }
+
+    sections.push(
+      '返答では、まず今この人に見えているものを一つ言う。\n'
+      + 'そのあと、その人が実際に尋ねていることに一度触れる。\n'
+      + '必要なら問いは一つだけ置いてよい。\n'
+      + '問いだけで終わらない。'
+    );
+
+    if (antiDriftLines.length > 0) {
+      sections.push(`この声が戻る先:\n${antiDriftLines.map((line) => `- ${line}`).join('\n')}`);
     }
 
     // 9. 末尾ガード（設定の朗読を封じ、相手の方に戻す）

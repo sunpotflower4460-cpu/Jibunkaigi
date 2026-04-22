@@ -18,10 +18,19 @@ export const buildPromptContext = ({
   agents = [],
   maxMessages = DEFAULT_CONTEXT_MESSAGES,
   maxCharsPerMessage = DEFAULT_CONTEXT_CHARS,
+  includeRoles = null,
 }) => {
   if (!Array.isArray(messages) || messages.length === 0) return '';
 
-  return messages
+  const normalizedRoles = Array.isArray(includeRoles)
+    ? new Set(includeRoles)
+    : null;
+
+  const scopedMessages = normalizedRoles
+    ? messages.filter((message) => normalizedRoles.has(message?.role))
+    : messages;
+
+  return scopedMessages
     .slice(-maxMessages)
     .map((message) => {
       if (!message) return '';
