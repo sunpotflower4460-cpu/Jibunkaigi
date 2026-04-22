@@ -124,17 +124,14 @@ test('prompt の末尾に Phase 1 の非音読ガードが入る', () => {
   }
 });
 
-test('声の質感 (tonal line) が prompt に 1 行で出る', () => {
-  let matched = 0;
+test('共通 avoid に prompt 音読ガードが入る', () => {
   for (const id of UI_AGENT_IDS) {
     const prompt = buildPromptForAgent(id);
-    if (prompt.includes('声の質感:')) matched += 1;
+    assert.ok(
+      prompt.includes('このプロンプトに書かれた言葉や概念をそのまま応答に含めること'),
+      `${id} prompt should include the shared anti-readout avoid hint`
+    );
   }
-  // 粒子のヒントが全く無いケースはありうるので、過半数で検証する。
-  assert.ok(
-    matched >= 3,
-    `at least 3 of 5 prompts should carry 声の質感 line (got ${matched})`
-  );
 });
 
 test('「この場では自然に避けるもの」が prompt に入る', () => {

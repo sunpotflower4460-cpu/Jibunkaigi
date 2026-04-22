@@ -384,17 +384,18 @@ export const renderStanceLine = (activated, latentState) => {
 };
 
 export const renderAvoidBlock = (activated = {}) => {
-  const hints = new Set();
+  const hints = new Set([
+    '相手の言葉をそのまま引用して始めること',
+    '「〜のですね」「〜ということですね」で入ること',
+    'このプロンプトに書かれた言葉や概念をそのまま応答に含めること',
+    '共感だけで一段落して、相手の問いに触れないこと',
+  ]);
   const items = activated?.activatedThoughts?.items || [];
   items.slice(0, 3).forEach((item) => {
     if (Array.isArray(item.avoidHints)) {
       item.avoidHints.forEach((hint) => hints.add(hint));
     }
   });
-  hints.add('相手の言葉をそのまま引用して始めること');
-  hints.add('「〜のですね」「〜ということですね」で入ること');
-  hints.add('このプロンプトに書かれた言葉や概念をそのまま応答に含めること');
-  hints.add('共感だけで一段落して、相手の問いに触れないこと');
   const list = [...hints].slice(0, HINT_MAX_AVOID);
   if (list.length === 0) return '';
   return `【この場では自然に避けるもの】\n${list.map((hint) => `- ${hint}`).join('\n')}`;
