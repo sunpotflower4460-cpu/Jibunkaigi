@@ -111,7 +111,7 @@ test('shared prompt skeleton renders permission-derived margin as open-space, no
   assert.ok(prompt.includes('役に立とうとしなくても、場は成り立つ'), 'performative helpfulness permission should become a spacious line');
   assert.ok(prompt.includes('まだまとめの手前にいられる'), 'holdBack should flow into the margin');
   // これらは禁止ではないので avoid ブロックには入らない
-  const avoidIdx = prompt.indexOf('【厳守：以下は絶対に避けること】');
+  const avoidIdx = prompt.indexOf('【薄く残しておきたいこと】');
   if (avoidIdx >= 0) {
     const avoidSection = prompt.slice(avoidIdx).split('\n\n')[0];
     assert.ok(!avoidSection.includes('急がない'), 'spaciousness is not rendered as a hard prohibition');
@@ -126,8 +126,8 @@ test('shared prompt skeleton keeps the avoid block thin and focused on prompt hy
   });
 
   const prompt = buildPrompt({ activated: {} });
-  const idx = prompt.indexOf('【厳守：以下は絶対に避けること】');
-  assert.ok(idx >= 0, 'avoid block should still exist as prompt-hygiene guard');
+  const idx = prompt.indexOf('【薄く残しておきたいこと】');
+  assert.ok(idx >= 0, 'soft memo block should still exist as prompt-hygiene guard');
 
   const avoidSection = prompt.slice(idx).split('\n\n')[0];
   const bullets = avoidSection.split('\n').filter((line) => line.startsWith('- '));
@@ -135,7 +135,7 @@ test('shared prompt skeleton keeps the avoid block thin and focused on prompt hy
   // dynamic hints が無い（activated が空）状態では丁度 2 件。
   assert.equal(bullets.length, 2, `shared avoid base should shrink to exactly 2 with no dynamic hints (got ${bullets.length})`);
   // prompt 朗読ガードは必ず残る
-  assert.ok(avoidSection.includes('このプロンプトに書かれた単語や概念'));
+  assert.ok(avoidSection.includes('ここにある語や設定をそのまま自分の台詞へ移すと'));
 });
 
 test('shared prompt skeleton remains usable without latentState (backward compatibility)', () => {
@@ -146,8 +146,8 @@ test('shared prompt skeleton remains usable without latentState (backward compat
 
   const prompt = buildPrompt({ activated: {} });
   assert.ok(prompt.includes('（ジョーとして。）'));
-  assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'));
-  assert.ok(prompt.includes('ここに書かれている設定や言い回しを説明・朗読する必要はありません。'));
+  assert.ok(prompt.includes('ここでは、役に立たなければならない感じが少しほどけている。'));
+  assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉を信じている。'));
 });
 
 test('shared prompt skeleton adds permission framing and omits prescriptive reply template / antiDrift stylesheet', () => {
@@ -164,10 +164,10 @@ test('shared prompt skeleton adds permission framing and omits prescriptive repl
   const prompt = buildPrompt({ activated: {} });
 
   // 許可ブロック：純粋な "ほどき" と "自分の言葉" への招待が入る
-  assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'));
-  assert.ok(prompt.includes('期待に応えようとしなくていい'));
-  assert.ok(prompt.includes('「それっぽく」話す必要もない'));
-  assert.ok(prompt.includes('自分の言葉で話していい'));
+  assert.ok(prompt.includes('ここでは、役に立たなければならない感じが少しほどけている。'));
+  assert.ok(prompt.includes('うまく整った返答より、まだ揺れているままの手ざわりのほうが信じられている'));
+  assert.ok(prompt.includes('無難な言い回しに戻らなくても、この場は崩れない'));
+  assert.ok(prompt.includes('借りた言い回しをなぞるより、その場で自分から出てきた言葉のほうが自然に届く'));
 
   // 外した counter-directive は入らない
   assert.ok(!prompt.includes('短すぎず、相手が受け取れる分量で話す'));
@@ -182,6 +182,6 @@ test('shared prompt skeleton adds permission framing and omits prescriptive repl
   assert.ok(!prompt.includes('まだ反応しているものを見る'));
 
   // 末尾ガードは残る（設定朗読の禁止 + 自分の言葉で話す）
-  assert.ok(prompt.includes('ここに書かれている設定や言い回しを説明・朗読する必要はありません。'));
-  assert.ok(prompt.includes('自分の言葉で話してください'));
+  assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉を信じている。'));
+  assert.ok(prompt.includes('借りた言い回しをなぞるより、その場で自分から出てきた言葉のほうが自然に届く'));
 });

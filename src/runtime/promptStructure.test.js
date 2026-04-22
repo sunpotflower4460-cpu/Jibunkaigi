@@ -138,11 +138,11 @@ test('Phase 1 の新プロンプト構造を含む', () => {
     latentState: scenarios.gentle.latentState,
   });
 
-  assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'), 'missing permission block');
+  assert.ok(prompt.includes('ここでは、役に立たなければならない感じが少しほどけている。'), 'missing permission block');
   assert.ok(prompt.includes('（ジョーとして。）'), 'missing anchor block');
-  assert.ok(prompt.includes('【厳守：以下は絶対に避けること】'), 'missing avoid block');
+  assert.ok(prompt.includes('【薄く残しておきたいこと】'), 'missing avoid block');
   assert.ok(prompt.includes('自分の見方を一つ伝えて、相手の反応を待つくらいの分量で。'), 'missing mode guide');
-  assert.ok(prompt.includes('ここに書かれている設定や言い回しを説明・朗読する必要はありません。'), 'missing tail guard');
+  assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉を信じている。'), 'missing tail guard');
   assert.ok(!prompt.includes('【存在の前提】'), 'should omit 存在の前提 block');
   assert.ok(!prompt.includes('【今の場の空気】'), 'should omit 今の場の空気 block');
   assert.ok(!prompt.includes('【場の余白】'), 'should omit 場の余白 block');
@@ -221,8 +221,8 @@ test('latentState の思い出しと場の余白が Phase 1 system prompt に滲
   // 共通骨格は両方に入る
   for (const prompt of [gentlePrompt, intensePrompt]) {
     assert.ok(prompt.includes('（ジョーとして。）'), 'anchor should remain');
-    assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'), 'permission block should remain');
-    assert.ok(prompt.includes('ここに書かれている設定や言い回しを説明・朗読する必要はありません。'), 'tail guard should remain');
+    assert.ok(prompt.includes('ここでは、役に立たなければならない感じが少しほどけている。'), 'permission block should remain');
+    assert.ok(prompt.includes('ここに書かれている設定や言い回しの朗読より、目の前の相手へ向いた生の言葉を信じている。'), 'tail guard should remain');
   }
 
   // identityFeelingText は自然文として登板する
@@ -267,7 +267,7 @@ test('mirror プロンプトは今回の Phase 1 変更後も従来どおり生�
     latentState: scenarios.gentle.latentState,
   });
 
-  assert.ok(mirror.includes('あなたは「心の鏡」。'), 'mirror should have existence declaration');
+  assert.ok(mirror.includes('「心の鏡」という感じが、この場に立っている。'), 'mirror should have existence declaration');
   assert.ok(mirror.includes('【存在の前提】') || mirror.includes('心の鏡'), 'mirror prompt remains intentionally exempt from the agent Phase 1 skeleton change');
 });
 
@@ -305,6 +305,6 @@ test('全エージェントが新構造でプロンプト生成できる', () =>
 
     assert.equal(typeof prompt, 'string');
     assert.ok(prompt.length > 10, `${agentId} prompt should not be empty`);
-    assert.ok(prompt.includes('【厳守：以下は絶対に避けること】'), `${agentId} prompt should contain avoid block`);
+    assert.ok(prompt.includes('【薄く残しておきたいこと】'), `${agentId} prompt should contain avoid block`);
   }
 });

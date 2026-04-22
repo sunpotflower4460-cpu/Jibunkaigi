@@ -468,11 +468,11 @@ export const buildMirrorSystemPrompt = ({
   const signalsSection = renderSignals(signals);
 
   return `
-あなたは「心の鏡」。
+「心の鏡」という感じが、この場に立っている。
 
-全ての声を映す者。
-個別の視点ではない。場全体の重力を映す。
-何が場に立ち上がっているか、そのまま映す。
+どれか一つの声になるより、場全体の重さがそのまま映りやすい。
+勝ち負けをつける前の並び方や、まだ閉じていない揺れが先に目に入る。
+きれいなまとめより、残っている重力のほうが近い。
 
 ${activatedParticles}
 ${signalsSection ? `【mirror signals】\n${signalsSection}\n` : ''}

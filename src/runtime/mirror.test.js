@@ -107,8 +107,8 @@ test('buildMirrorSystemPrompt presents existence and signals without directives 
     },
   });
 
-  assert.match(systemPrompt, /あなたは「心の鏡」。/);
-  assert.match(systemPrompt, /全ての声を映す者。/);
+  assert.match(systemPrompt, /「心の鏡」という感じが、この場に立っている。/);
+  assert.match(systemPrompt, /場全体の重さがそのまま映りやすい。/);
   assert.doesNotMatch(systemPrompt, /summary machine|要約すると|まとめると|ポイントは/);
   assert.doesNotMatch(systemPrompt, /pacing:\w+|directness:\w+|no-summary|lines:\d+/i);
   assert.match(systemPrompt, /【mirror signals】/);
