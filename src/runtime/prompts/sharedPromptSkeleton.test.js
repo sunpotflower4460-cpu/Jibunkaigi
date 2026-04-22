@@ -126,8 +126,9 @@ test('shared prompt skeleton keeps the avoid block thin and focused on prompt hy
 
   const avoidSection = prompt.slice(idx).split('\n\n')[0];
   const bullets = avoidSection.split('\n').filter((line) => line.startsWith('- '));
-  // 信念の帰結に置き換えた分、ハード禁止のベースは 2 件まで縮退している
-  assert.ok(bullets.length <= 3, `shared avoid base should shrink (got ${bullets.length})`);
+  // 信念の帰結に置き換えた分、ハード禁止のベースは 2 件まで縮退している。
+  // dynamic hints が無い（activated が空）状態では丁度 2 件。
+  assert.equal(bullets.length, 2, `shared avoid base should shrink to exactly 2 with no dynamic hints (got ${bullets.length})`);
   // prompt 朗読ガードは必ず残る
   assert.ok(avoidSection.includes('このプロンプトに書かれた単語や概念'));
 });
