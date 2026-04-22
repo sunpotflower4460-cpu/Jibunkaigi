@@ -375,19 +375,14 @@ export const renderStanceLine = (activated, latentState) => {
   return `（${hints.join('、')}）`;
 };
 
-export const renderAvoidBlock = (activated = {}, _latentState) => {
-  const hints = new Set(SHARED_AVOID_HINTS);
-  const thoughtItems = activated?.activatedThoughts?.items || [];
-  const feelingItems = activated?.activatedFeelings?.items || [];
-  const moveItems = activated?.activatedMoves?.items || [];
-  [...thoughtItems, ...feelingItems, ...moveItems].slice(0, HINT_MAX_AVOID).forEach((item) => {
-    if (Array.isArray(item.avoidHints)) {
-      item.avoidHints.forEach((hint) => hints.add(hint));
-    }
-  });
-  const list = [...hints].slice(0, HINT_MAX_AVOID);
-  if (list.length === 0) return '';
-  return `【この場では自然に避けるもの】\n${list.map((hint) => `- ${hint}`).join('\n')}`;
+export const renderAvoidBlock = (activated = {}, latentState) => {
+  const hints = dedupe([
+    ...collectHintsFromActivated(activated, 'avoidHints'),
+    ...collectHintsFromLatent(latentState, 'avoidHints'),
+    ...SHARED_AVOID_HINTS,
+  ]).slice(0, HINT_MAX_AVOID);
+  if (!hints.length) return '';
+  return `この場で自然に避けるもの:\n${hints.map((hint) => `- ${hint}`).join('\n')}`;
 };
 
 // --- 状態スナップショット ---
