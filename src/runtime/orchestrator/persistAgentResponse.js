@@ -10,6 +10,8 @@
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { buildNextAfterglow } from '../afterglow.js';
 
+const MAX_RESPONSE_ECHO_SENTENCES = 2;
+
 export const extractResponseEcho = (responseText = '') => {
   if (!responseText || typeof responseText !== 'string') return '';
 
@@ -24,7 +26,7 @@ export const extractResponseEcho = (responseText = '') => {
     .map((sentence) => sentence.trim())
     .filter(Boolean);
 
-  return sentences.slice(0, 2).join('');
+  return sentences.slice(0, MAX_RESPONSE_ECHO_SENTENCES).join('');
 };
 
 /**
