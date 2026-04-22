@@ -375,7 +375,7 @@ export const renderStanceLine = (activated, latentState) => {
   return `（${hints.join('、')}）`;
 };
 
-export const renderAvoidBlock = (activated = {}, latentState) => {
+export const renderAvoidBlock = (activated = {}, latentState = null) => {
   const dynamicHints = dedupe([
     ...collectHintsFromActivated(activated, 'avoidHints'),
     ...collectHintsFromLatent(latentState, 'avoidHints'),
