@@ -31,6 +31,9 @@ export const TRIGGER_MATCH_WEIGHT = 0.25;
  * How much agent ownership (shared vs specific agent) influences activation
  */
 export const AGENT_AFFINITY_WEIGHT = 0.15;
+export const SHARED_AGENT_AFFINITY = 0.05;
+export const OWN_AGENT_AFFINITY = 0.50;
+export const OTHER_AGENT_AFFINITY = -0.30;
 
 /**
  * Resonance match weight
