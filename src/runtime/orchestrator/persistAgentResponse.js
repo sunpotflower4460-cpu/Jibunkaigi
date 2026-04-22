@@ -21,8 +21,7 @@ export const extractResponseEcho = (responseText = '') => {
 
   if (!cleaned) return '';
 
-  const sentences = cleaned
-    .split(/(?<=[。！？!?])/)
+  const sentences = (cleaned.match(/[^。！？!?]+[。！？!?]?/g) ?? [])
     .map((sentence) => sentence.trim())
     .filter(Boolean);
 
