@@ -2,6 +2,12 @@
 // 信念層1（強固な信念）の正本。
 // 各エージェントの最深部の core belief profile をここで管理する。
 // identity / mission / world-view の3軸で構成する。
+// ■ 重要：
+//   textJa はパイプライン内部のスコアリング・軸選択用。
+//   LLM に直接見せない。
+//   この文を prompt に載せると、LLM が設定語彙をそのまま応答に使いやすくなる。
+//   エージェント差は textJa そのものではなく、
+//   textJa が決める dominantBeliefAxis → seed選択 → avoid選択を通じて間接的に出すこと。
 
 /**
  * @typedef {{ id: string, textJa: string, weight: number, axis: string }} BeliefCore

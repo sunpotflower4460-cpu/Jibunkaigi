@@ -1,6 +1,10 @@
 // src/runtime/textPipeline/buildFieldText.js
 // 第3章3-3の実装: field / stance / body の状態を日本語の情景描写として生成する
 // 設計用語を一切含まない
+// ■ 注意：
+//   この関数の出力は本番 prompt の説明文として使わない。
+//   field / margin の計算結果は、知覚種の選択や avoid の調整に間接的に使う。
+//   LLM にそのまま説明すると、場の空気を外部推定で上書きしやすい。
 
 import { AXIS_DESCRIPTIONS, STANCE_TEXT } from './axisDescriptions.js';
 
