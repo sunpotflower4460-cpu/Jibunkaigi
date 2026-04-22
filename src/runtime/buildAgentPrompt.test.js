@@ -101,17 +101,6 @@ const assertHasExistence = (prompt, agentId) => {
   assert.ok(prompt.includes(EXISTENCE_LINES[agentId]), `missing existence for ${agentId}`);
 };
 
-const assertRendersActivatedSeed = (prompt) => {
-  // selectedClusters (legacy) 側に入っている hints は LLM に漏れない。
-  // activatedThoughts.items 等の新経路にだけ hints を薄く出す設計なので、
-  // 旧 selectedClusters のプロパティは引き続き blacklist。
-  assert.ok(prompt.includes('direction that remains'));
-  assert.ok(!prompt.includes('legacy-tonal-xyz-短い'));
-  assert.ok(!prompt.includes('legacy-tonal-xyz-密度'));
-  assert.ok(!prompt.includes('legacy-stance-xyz-一点'));
-  assert.ok(!prompt.includes('legacy-avoid-xyz-励まし'));
-};
-
 const assertShortPrompt = (prompt, maxLines = 50) => {
   const lines = prompt.split('\n').filter((line) => line.trim().length > 0);
   assert.ok(lines.length < maxLines, `prompt too long: ${lines.length} lines`);
@@ -149,21 +138,18 @@ test('system prompts keep existence declarations', () => {
   assert.ok(mirror.includes('「心の鏡」という感じが、この場に立っている。'));
 });
 
-test('system prompts render activated particles without leaking internal hints', () => {
+test('system prompts keep activated particles hidden from the visible prompt', () => {
   for (const agentId of AGENT_IDS) {
     const prompt = buildAgentSystemPrompt(agentId, {
       ...baseParams,
       activated: activatedWithHints,
     });
-    assertRendersActivatedSeed(prompt);
+    assert.ok(!prompt.includes('direction that remains'));
+    assert.ok(!prompt.includes('legacy-tonal-xyz-短い'));
+    assert.ok(!prompt.includes('legacy-tonal-xyz-密度'));
+    assert.ok(!prompt.includes('legacy-stance-xyz-一点'));
+    assert.ok(!prompt.includes('legacy-avoid-xyz-励まし'));
   }
-
-  const mirror = buildMirrorSystemPrompt({
-    context: '',
-    signals: {},
-    activated: activatedWithHints,
-  });
-  assertRendersActivatedSeed(mirror);
 });
 
 test('system prompts omit reentry guidance from the Phase 1 surface prompt', () => {
@@ -197,6 +183,7 @@ test('dispatcher returns non-null prompts and still routes correctly', () => {
   for (const agentId of AGENT_IDS) {
     const userPrompt = buildAgentUserPrompt(agentId, { userName: 'あなた', userText: 'テスト入力' });
     assert.ok(userPrompt.includes('テスト入力'));
+    assert.ok(!userPrompt.includes('この場に生まれた別の声'));
   }
 
   assert.equal(buildAgentSystemPrompt('unknown', baseParams), null);

@@ -3,40 +3,17 @@
 // 【P系 prompt 構築の正本入口】
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //
-// このファイルは、P系（Phase P-1 以降）のプロンプト構築における
+// このファイルは、P系（Phase P-1 以降）の prompt 構築における
 // **唯一の正本ディスパッチャ**である。
 //
-// ■ 責務：
-//   - agentId に応じて適切なエージェント固有 builder を呼び出す
-//   - 全エージェント共通の入力パラメータ（latentState, activated, context など）を受け取る
-//   - system prompt と user prompt の2つの関数で構成される
+// 現在の通常 agent prompt は visible 側を最小に保ち、
+// 1. ほどく
+// 2. 残響を少し返す
+// 3. raw conversation を渡す
+// ことだけを担う。
 //
-// ■ エージェント固有 builder の責務境界：
-//   各エージェント (joe/ray/ken/mina/satou) の prompt builder は、
-//   以下の責務を持つ：
-//   1. latentState を textPipeline モジュールに渡し、7ブロック構造を組み立てる
-//   2. activated particles / reentry / context / othersField などを適切に配置する
-//   3. mode に応じた末尾誘導文を追加する
-//   4. エージェント固有の存在アンカー（例: 「（ジョーとして。）」）を含める
-//
-// ■ 7ブロック構造との対応：
-//   各エージェント builder は、docs/prompt-structure-v2.md に記載された
-//   7ブロック構造に従ってプロンプトを構築する：
-//   1. 【存在の前提】  ← buildExistenceText(latentState)
-//   2. 【今の場の空気】  ← buildFieldText(latentState)
-//   3. 【場に浮かんでいるもの】  ← renderActivatedParticles(activated)
-//   4. 【場の余白】  ← buildMarginText(latentState)
-//   5. 【内的方向づけ（この回だけの構え）】  ← activated.reentry.text
-//   6. 【ここまでの流れ】  ← normalizeContext(context)
-//   7. 【今回のモード】  ← MODE_GUIDE[mode]
-//
-// ■ textPipeline との関係：
-//   textPipeline モジュール (src/runtime/textPipeline/) は、
-//   latentState から「設計用語を含まない日本語の情景描写」を生成する独立モジュール。
-//   各エージェント builder は、textPipeline の以下の関数を呼び出す：
-//   - buildExistenceText(latentState)  ← 存在層の前提
-//   - buildFieldText(latentState)      ← 場の空気・姿勢・身体状態
-//   - buildMarginText(latentState)     ← 何をしないか
+// agent 差・belief・seed・field などの意味づけは prompt 本文へ書かず、
+// latentState / reservoir / afterglow 側に残す。
 //
 // ■ 本番 prompt 正本 vs debug preview：
 //   - 本番 prompt 正本：buildAgentSystemPrompt / buildAgentUserPrompt が構築
@@ -97,12 +74,9 @@ import { buildBiasPack } from './buildPromptHelpers.js';
  * エージェント ID に対応するシステムプロンプトを構築する（P系正本入口）。
  *
  * ■ 入力パラメータの説明：
- *   - activated: activate phase の出力（粒子・reentry・debug など）
- *   - context: 過去のやりとり履歴
- *   - mode: 応答の長さ感（'short' / 'medium' / 'long'）
- *   - userText: ユーザーの今回の入力テキスト
- *   - latentState: runInternalOS の13層計算の出力（P-1以降の正本入力）
- *   - othersField: 他エージェントの残響（オプション）
+ *   - context: 過去のやりとり履歴（ユーザー / 前のAI発話を含んでよい）
+ *   - previousResponseEcho: 前回の自分の残響（ある場合のみ visible に返す）
+ *   - latentState / activated / othersField: hidden 側で差を作るために受け取る
  *
  * ■ 後方互換パラメータ（非推奨）：
  *   - internalOS / surfaceFrame / stateGuide / internalFrame / surfaceGuidance
