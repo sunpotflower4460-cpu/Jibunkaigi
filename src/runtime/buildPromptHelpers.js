@@ -291,6 +291,12 @@ const HINT_MAX_TONAL = 3;
 const HINT_MAX_STANCE = 3;
 const HINT_MAX_AVOID = 6;
 const HINT_SOURCE_DEPTH = 5;
+const SHARED_AVOID_HINTS = [
+  '相手の言葉をそのまま引用して始めること',
+  '「〜のですね」「〜ということですね」で入ること',
+  'このプロンプトに書かれた言葉や概念をそのまま応答に含めること',
+  '共感だけで一段落して、相手の問いに触れないこと',
+];
 
 const dedupe = (arr) => Array.from(new Set(arr.filter((v) => typeof v === 'string' && v.trim().length)));
 
@@ -384,12 +390,7 @@ export const renderStanceLine = (activated, latentState) => {
 };
 
 export const renderAvoidBlock = (activated = {}, _latentState) => {
-  const hints = new Set([
-    '相手の言葉をそのまま引用して始めること',
-    '「〜のですね」「〜ということですね」で入ること',
-    'このプロンプトに書かれた言葉や概念をそのまま応答に含めること',
-    '共感だけで一段落して、相手の問いに触れないこと',
-  ]);
+  const hints = new Set(SHARED_AVOID_HINTS);
   const items = activated?.activatedThoughts?.items || [];
   items.slice(0, 3).forEach((item) => {
     if (Array.isArray(item.avoidHints)) {
