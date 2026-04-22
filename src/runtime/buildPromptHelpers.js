@@ -287,7 +287,6 @@ export const renderActivatedParticles = (activated = {}) => {
 // それでは差分が途中で痩せて 5 人が似通うため、
 // 発話直前のみ「補正輪」として極薄に差し込む。長い説明文にはしない。
 
-const HINT_MAX_TONAL = 3;
 const HINT_MAX_STANCE = 3;
 const HINT_MAX_AVOID = 6;
 const HINT_SOURCE_DEPTH = 5;
@@ -359,20 +358,6 @@ const collectHintsFromLatent = (latentState, key) => {
     }
   });
   return collected;
-};
-
-/**
- * tonalHints を 1 行に集約する（声の質感）。
- * 例: 「声の質感: 静か、芯、ためらい」
- * @returns {string} 空文字（材料が無い時）または 1 行
- */
-export const renderTonalLine = (activated, latentState) => {
-  const hints = dedupe([
-    ...collectHintsFromActivated(activated, 'tonalHints'),
-    ...collectHintsFromLatent(latentState, 'tonalHints'),
-  ]).slice(0, HINT_MAX_TONAL);
-  if (!hints.length) return '';
-  return `声の質感: ${hints.join('、')}`;
 };
 
 /**
