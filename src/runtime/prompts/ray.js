@@ -47,6 +47,7 @@
 // レイは「抽象にする人」ではなく「まだ言葉になる前の揺れに触れやすい存在」
 
 import { existence } from '../../agents/ray/existence.js';
+import { voiceSamples } from '../../agents/ray/voiceSample.js';
 import {
   renderField,
   renderMemoryTrace,
@@ -216,6 +217,7 @@ export const scoreRayMaterials = ({
 // 共通骨格 factory を使用してビルダーを生成
 export const buildRaySystemPrompt = createAgentSystemPromptBuilder({
   anchorLabel: '（レイとして。）',
+  voiceSamples,
 });
 
 export const buildRayUserPrompt = createAgentUserPromptBuilder();

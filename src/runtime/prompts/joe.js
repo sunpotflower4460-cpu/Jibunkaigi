@@ -41,6 +41,7 @@
 // buildPrompt.js から完全分離した独立プロンプト
 
 import { existence } from '../../agents/joe/existence.js';
+import { voiceSamples } from '../../agents/joe/voiceSample.js';
 import {
   renderField,
   renderMemoryTrace,
@@ -227,6 +228,7 @@ export const buildJoeBiasPack = ({
 // 共通骨格 factory を使用してビルダーを生成
 export const buildJoeSystemPrompt = createAgentSystemPromptBuilder({
   anchorLabel: '（ジョーとして。）',
+  voiceSamples,
 });
 
 export const buildJoeUserPrompt = createAgentUserPromptBuilder();
