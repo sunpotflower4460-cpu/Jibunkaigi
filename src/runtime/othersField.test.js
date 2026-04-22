@@ -70,6 +70,23 @@ test('renderOthersFieldForPrompt: empty field returns empty string', () => {
   assert.strictEqual(result, '', 'should return empty string for empty field');
 });
 
+test('renderOthersFieldForPrompt: thin / off mode', () => {
+  const othersField = [
+    {
+      agentId: 'joe',
+      gist: 'まだ残っている力に触れた',
+      toneTags: [],
+      forceTags: [],
+    },
+  ];
+
+  const thin = renderOthersFieldForPrompt(othersField, false, { mode: 'thin' });
+  assert.match(thin, /ほかの声の残りは「まだ残っている力に触れた」くらい。/);
+
+  const off = renderOthersFieldForPrompt(othersField, false, { mode: 'off' });
+  assert.strictEqual(off, '');
+});
+
 test('formatOthersFieldForDebug: デバッグ用フォーマット', () => {
   const othersField = [
     { agentId: 'joe', gist: 'まだ残っている力に触れた', toneTags: [], forceTags: [] },

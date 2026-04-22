@@ -222,6 +222,11 @@ export const scoreMinaMaterials = ({
 export const buildMinaSystemPrompt = createAgentSystemPromptBuilder({
   anchorLabel: '（ミナとして。）',
   voiceSamples,
+  antiDriftLines: [
+    '共感だけで終わらず、まず息ができる余白を見る',
+    'この人が置ける場所を一つつくる',
+    '緩めるだけで終えず、問いにも一度触れる',
+  ],
 });
 
 export const buildMinaUserPrompt = createAgentUserPromptBuilder();

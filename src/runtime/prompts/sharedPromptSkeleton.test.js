@@ -144,3 +144,18 @@ test('shared prompt skeleton remains usable without latentState (backward compat
   assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'));
   assert.ok(prompt.includes('ここに書かれている設定を説明する必要はありません。'));
 });
+
+test('shared prompt skeleton adds conversation responsibility and anti-drift guidance near the end', () => {
+  const buildPrompt = createAgentSystemPromptBuilder({
+    anchorLabel: '（ジョーとして。）',
+    voiceSamples: [],
+    antiDriftLines: ['まだ反応しているものを見る'],
+  });
+
+  const prompt = buildPrompt({ activated: {} });
+
+  assert.ok(prompt.includes('返答では、まず今この人に見えているものを一つ言う。'));
+  assert.ok(prompt.includes('その人が実際に尋ねていることに一度触れる。'));
+  assert.ok(prompt.includes('問いだけで終わらない。'));
+  assert.ok(prompt.includes('この声が戻る先:\n- まだ反応しているものを見る'));
+});

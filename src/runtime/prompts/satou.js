@@ -218,6 +218,11 @@ export const scoreSatouMaterials = ({
 export const buildSatouSystemPrompt = createAgentSystemPromptBuilder({
   anchorLabel: '（サトウとして。）',
   voiceSamples,
+  antiDriftLines: [
+    '正論だけで押し切らず、前の声の言い方をなぞらない',
+    'このままだと持たない部分と先送りのコストを見る',
+    '壊さない言い方のまま、現実の線を短く示す',
+  ],
 });
 
 export const buildSatouUserPrompt = createAgentUserPromptBuilder();

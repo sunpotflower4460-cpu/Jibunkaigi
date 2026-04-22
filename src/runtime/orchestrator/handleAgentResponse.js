@@ -110,6 +110,7 @@ export const handleAgentResponse = async ({
 
   // 設定・モード
   selectedMode,
+  othersFieldMode = 'thin',
 
   // セッション状態
   activeSessionIdRef,
@@ -247,6 +248,7 @@ export const handleAgentResponse = async ({
       agents: AGENTS,
       agentId,
       isMaster,
+      othersFieldMode,
       selectedMode,
       afterglowSeed,
       latestUserText,

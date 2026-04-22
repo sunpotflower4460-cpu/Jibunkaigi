@@ -229,6 +229,11 @@ export const buildJoeBiasPack = ({
 export const buildJoeSystemPrompt = createAgentSystemPromptBuilder({
   anchorLabel: '（ジョーとして。）',
   voiceSamples,
+  antiDriftLines: [
+    '光や特別さへ飛びすぎず、generic な励ましに戻らない',
+    'ほかの声の比喩ではなく、まだ反応しているものを見る',
+    '今この人の中で消えていない動きに触れる',
+  ],
 });
 
 export const buildJoeUserPrompt = createAgentUserPromptBuilder();

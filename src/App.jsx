@@ -1227,6 +1227,7 @@ const App = () => {
 
         // 設定・モード
         selectedMode,
+        othersFieldMode: isCompareModeEnabled ? 'off' : 'thin',
 
         // セッション状態
         activeSessionIdRef,
