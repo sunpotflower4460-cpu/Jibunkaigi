@@ -27,7 +27,7 @@ const formatEchoForPrompt = (echo = '') => {
   if (typeof echo !== 'string') return '';
 
   return echo
-    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(new RegExp('[\\x00-\\x1F\\x7F]', 'g'), ' ')
     .replace(/\s+/g, ' ')
     .replaceAll('「', '『')
     .replaceAll('」', '』')
