@@ -291,11 +291,11 @@ const HINT_MAX_STANCE = 3;
 const HINT_MAX_AVOID = 6;
 const HINT_SOURCE_DEPTH = 5;
 const SHARED_AVOID_HINTS = [
-  '相手の言葉をそのまま引用して始めること',
-  '「〜のですね」「〜ということですね」で入ること',
-  'この prompt に書かれた言葉や概念をそのまま応答に含めること',
-  '共感だけで一段落して、相手の問いに触れないこと',
-  '詩的な言い換えだけで終わること',
+  '相手の言葉を「」で引用して返答を始めること',
+  '「〜のですね」「〜と感じているのですね」というオウム返しの共感',
+  'このプロンプトに書かれた単語や概念を、そのまま自分のセリフに混ぜること',
+  '共感だけで一段落を作り、相手の問いに触れないこと',
+  '詩的な比喩で話をまとめること',
 ];
 
 const dedupe = (arr) => Array.from(new Set(arr.filter((v) => typeof v === 'string' && v.trim().length)));
@@ -385,7 +385,7 @@ export const renderAvoidBlock = (activated = {}, latentState = null) => {
     ...dynamicHints,
   ]).slice(0, HINT_MAX_AVOID);
   if (!hints.length) return '';
-  return `この場で自然に避けるもの:\n${hints.map((hint) => `- ${hint}`).join('\n')}`;
+  return `【厳守：以下は絶対に避けること】\n${hints.map((hint) => `- ${hint}`).join('\n')}`;
 };
 
 // --- 状態スナップショット ---
