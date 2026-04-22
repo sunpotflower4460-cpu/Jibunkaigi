@@ -15,7 +15,7 @@ test('shared prompt skeleton prefers previousResponseEcho over voice sample', ()
   });
 
   assert.match(prompt, /前回、自分はこう話した:\n「前回の残響。」/);
-  assert.doesNotMatch(prompt, /自分はこういう入り方をする:/);
+  assert.doesNotMatch(prompt, /前回、自分はこう話した:\n「最初のサンプル。」/);
 });
 
 test('shared prompt skeleton falls back to the first voice sample when no echo exists', () => {
@@ -29,7 +29,7 @@ test('shared prompt skeleton falls back to the first voice sample when no echo e
     context: '会話の続き',
   });
 
-  assert.match(prompt, /自分はこういう入り方をする:\n「最初のサンプル。」/);
+  assert.match(prompt, /前回、自分はこう話した:\n「最初のサンプル。」/);
 });
 
 test('shared prompt skeleton sanitizes echoed quotes and control whitespace before interpolation', () => {
