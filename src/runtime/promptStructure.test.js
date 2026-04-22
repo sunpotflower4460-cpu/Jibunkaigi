@@ -178,15 +178,15 @@ test('初回ターンだけ voice sample を 1 本だけ含む', () => {
   assert.ok(!prompt.includes('なくなったように見えても、まだ少し動こうとしてるものはある気がする。'));
 });
 
-test('voice sample は context があるターンでは出さない', () => {
+test('voice sample は echo がない限り context があっても fallback として出る', () => {
   const prompt = buildAgentSystemPrompt('creative', {
     ...baseParams,
     context: '前の会話の流れ',
     latentState: scenarios.gentle.latentState,
   });
 
-  assert.ok(!prompt.includes('自分はこういう入り方をする:'));
-  assert.ok(!prompt.includes('そこ全部じゃなくて、まだ反応してるところだけ見てもいいと思う。'));
+  assert.ok(prompt.includes('自分はこういう入り方をする:'));
+  assert.ok(prompt.includes('そこ全部じゃなくて、まだ反応してるところだけ見てもいいと思う。'));
 });
 
 test('latentState の深層テキストは Phase 1 system prompt に出ない', () => {
