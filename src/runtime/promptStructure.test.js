@@ -207,7 +207,7 @@ test('latentState なしでも正常動作する (後方互換)', () => {
   assert.ok(prompt.includes('触れたぶんだけで足りる'), 'mode guide should be present');
 });
 
-test('mirror プロンプトも7ブロック構造を持つ', () => {
+test('mirror プロンプトは今回の Phase 1 変更後も従来どおり生成できる', () => {
   const mirror = buildMirrorSystemPrompt({
     context: '',
     signals: {},
@@ -216,7 +216,7 @@ test('mirror プロンプトも7ブロック構造を持つ', () => {
   });
 
   assert.ok(mirror.includes('あなたは「心の鏡」。'), 'mirror should have existence declaration');
-  assert.ok(mirror.includes('【存在の前提】') || mirror.includes('心の鏡'), 'mirror should have existence block');
+  assert.ok(mirror.includes('【存在の前提】') || mirror.includes('心の鏡'), 'mirror prompt remains intentionally exempt from the agent Phase 1 skeleton change');
 });
 
 test('activated thought の種と stance hint は出るが reentry は出ない', () => {

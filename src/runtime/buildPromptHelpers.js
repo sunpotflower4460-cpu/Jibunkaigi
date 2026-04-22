@@ -383,7 +383,7 @@ export const renderStanceLine = (activated, latentState) => {
   return `（${hints.join('、')}）`;
 };
 
-export const renderAvoidBlock = (activated = {}) => {
+export const renderAvoidBlock = (activated = {}, _latentState) => {
   const hints = new Set([
     '相手の言葉をそのまま引用して始めること',
     '「〜のですね」「〜ということですね」で入ること',

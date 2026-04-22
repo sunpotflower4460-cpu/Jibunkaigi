@@ -37,7 +37,7 @@ export function createAgentSystemPromptBuilder({ anchorLabel }) {
     mode = 'medium',
     userText: _userText = '',
     othersField,
-    // 互換のため受け取るが、この phase では使わない
+    // 互換のため受け取るが、この Phase では使わない
     latentState: _latentState,
     emergingField: _emergingField,
     previousLatentState: _previousLatentState,
