@@ -376,10 +376,13 @@ export const renderStanceLine = (activated, latentState) => {
 };
 
 export const renderAvoidBlock = (activated = {}, latentState) => {
-  const hints = dedupe([
+  const dynamicHints = dedupe([
     ...collectHintsFromActivated(activated, 'avoidHints'),
     ...collectHintsFromLatent(latentState, 'avoidHints'),
+  ]);
+  const hints = dedupe([
     ...SHARED_AVOID_HINTS,
+    ...dynamicHints,
   ]).slice(0, HINT_MAX_AVOID);
   if (!hints.length) return '';
   return `この場で自然に避けるもの:\n${hints.map((hint) => `- ${hint}`).join('\n')}`;

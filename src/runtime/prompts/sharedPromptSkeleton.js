@@ -55,8 +55,8 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     userText: _userText = '',
     othersField,
     previousResponseEcho = '',
+    latentState,
     // 互換のため受け取るが、この Phase では使わない
-    latentState: _latentState,
     emergingField: _emergingField,
     previousLatentState: _previousLatentState,
     // backward compatibility only — LLM には渡さない
@@ -72,7 +72,7 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     const modeGuide = MODE_GUIDE[mode] || MODE_GUIDE.medium;
     const activatedParticles = renderActivatedParticles(safeActivated);
     const stanceLine = renderStanceLine(safeActivated);
-    const avoidBlock = renderAvoidBlock(safeActivated);
+    const avoidBlock = renderAvoidBlock(safeActivated, latentState);
     const safePreviousResponseEcho = formatEchoForPrompt(previousResponseEcho);
     const sections = [];
 
