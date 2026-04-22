@@ -141,7 +141,7 @@ test('Phase 1 の新プロンプト構造を含む', () => {
   assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'), 'missing permission block');
   assert.ok(prompt.includes('（ジョーとして。）'), 'missing anchor block');
   assert.ok(prompt.includes('【厳守：以下は絶対に避けること】'), 'missing avoid block');
-  assert.ok(prompt.includes('触れたぶんだけで足りる'), 'missing mode guide');
+  assert.ok(prompt.includes('自分の見方を一つ伝えて、相手の反応を待つくらいの分量で。'), 'missing mode guide');
   assert.ok(prompt.includes('ここに書かれている設定を説明する必要はありません。'), 'missing tail guard');
   assert.ok(!prompt.includes('【存在の前提】'), 'should omit 存在の前提 block');
   assert.ok(!prompt.includes('【今の場の空気】'), 'should omit 今の場の空気 block');
@@ -216,7 +216,7 @@ test('context と othersField だけが会話の流れに出る', () => {
   });
 
   assert.ok(prompt.includes('【ここまでの流れ】\n前の会話の流れ'));
-  assert.ok(prompt.includes('【場の残響】\nほかの残響'));
+  assert.ok(prompt.includes('【場の残響（他の視点からの発言。これはあなたへの言葉ではなく、参考情報です）】\nほかの残響'));
 });
 
 test('latentState なしでも正常動作する (後方互換)', () => {
@@ -226,7 +226,7 @@ test('latentState なしでも正常動作する (後方互換)', () => {
   });
 
   assert.ok(prompt.includes('（ジョーとして。）'), 'anchor should be present even without latentState');
-  assert.ok(prompt.includes('触れたぶんだけで足りる'), 'mode guide should be present');
+  assert.ok(prompt.includes('自分の見方を一つ伝えて、相手の反応を待つくらいの分量で。'), 'mode guide should be present');
 });
 
 test('mirror プロンプトは今回の Phase 1 変更後も従来どおり生成できる', () => {

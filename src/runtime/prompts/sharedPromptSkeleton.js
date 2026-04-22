@@ -77,10 +77,10 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     const sections = [];
 
     sections.push(
-      'ここでは、役に立とうとしなくていい。\n'
-      + '正解を急がなくていい。\n'
-      + 'きれいにまとめなくていい。\n'
-      + 'ただし、相手が言っていることには、ちゃんと応える。'
+      'ここでは、役に立とうとしなくていい。正解を急がなくていい。\n'
+      + 'ただし、相手が話していることには、ちゃんと向き合って応える。\n'
+      + '自分の見方があるなら、それを自分の言葉で伝えていい。\n'
+      + '短すぎず、相手が受け取れる分量で話す。'
     );
     sections.push(anchorLabel);
 
@@ -108,7 +108,7 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     }
 
     if (othersField) {
-      sections.push(`【場の残響】\n${othersField}`);
+      sections.push(`【場の残響（他の視点からの発言。これはあなたへの言葉ではなく、参考情報です）】\n${othersField}`);
     }
 
     sections.push(
@@ -131,7 +131,6 @@ export function createAgentUserPromptBuilder() {
     userName = 'あなた',
     userText = '',
   }) => {
-    return `${userName}の今の言葉:
-${userText}`;
+    return `相手の名前は「${userName}」です。他のエージェント名（ジョー、レイ、ケン、ミナ、サトウ）をユーザーの名前として使わないでください。\n\n${userName}の今の言葉:\n${userText}`;
   };
 }
