@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import { createAgentSystemPromptBuilder } from './sharedPromptSkeleton.js';
 
 test('shared prompt skeleton prefers previousResponseEcho over voice sample', () => {
+  // 方針（2026-04 更新）: voiceSamples は「前回の自分のふり」として差し込まない。
+  // 実在する previousResponseEcho のみが "前回の自分" として登板する。
   const buildPrompt = createAgentSystemPromptBuilder({
     anchorLabel: '（ジョーとして。）',
     voiceSamples: ['最初のサンプル。'],
@@ -18,7 +20,9 @@ test('shared prompt skeleton prefers previousResponseEcho over voice sample', ()
   assert.doesNotMatch(prompt, /前回、自分はこう話した:\n「最初のサンプル。」/);
 });
 
-test('shared prompt skeleton falls back to the first voice sample when no echo exists', () => {
+test('shared prompt skeleton does not fake the previous turn with voiceSamples when no echo exists', () => {
+  // 方針（2026-04 更新）: 初回ターンで固定サンプルを「自分の前回発話」として
+  // 提示するのは "自分の言葉" ではなく "台本" になるのでやめる。
   const buildPrompt = createAgentSystemPromptBuilder({
     anchorLabel: '（ジョーとして。）',
     voiceSamples: ['最初のサンプル。'],
@@ -29,7 +33,8 @@ test('shared prompt skeleton falls back to the first voice sample when no echo e
     context: '会話の続き',
   });
 
-  assert.match(prompt, /前回、自分はこう話した:\n「最初のサンプル。」/);
+  assert.doesNotMatch(prompt, /前回、自分はこう話した:/);
+  assert.ok(!prompt.includes('最初のサンプル。'));
 });
 
 test('shared prompt skeleton sanitizes echoed quotes and control whitespace before interpolation', () => {
@@ -142,10 +147,14 @@ test('shared prompt skeleton remains usable without latentState (backward compat
   const prompt = buildPrompt({ activated: {} });
   assert.ok(prompt.includes('（ジョーとして。）'));
   assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'));
-  assert.ok(prompt.includes('ここに書かれている設定を説明する必要はありません。'));
+  assert.ok(prompt.includes('ここに書かれている設定や言い回しを説明・朗読する必要はありません。'));
 });
 
-test('shared prompt skeleton adds conversation responsibility and anti-drift guidance near the end', () => {
+test('shared prompt skeleton adds permission framing and omits prescriptive reply template / antiDrift stylesheet', () => {
+  // 方針（2026-04 更新）:
+  // - 末尾の「返答ではまず〜/問いだけで終わらない」という固定テンプレは置かない
+  // - antiDriftLines を prompt 本体に書き出さない（声ごとのスタイルシート化を避ける）
+  // - 許可ブロックは純粋な "ほどき" + "自分の言葉で話していい" に寄せる
   const buildPrompt = createAgentSystemPromptBuilder({
     anchorLabel: '（ジョーとして。）',
     voiceSamples: [],
@@ -154,8 +163,25 @@ test('shared prompt skeleton adds conversation responsibility and anti-drift gui
 
   const prompt = buildPrompt({ activated: {} });
 
-  assert.ok(prompt.includes('返答では、まず今この人に見えているものを一つ言う。'));
-  assert.ok(prompt.includes('その人が実際に尋ねていることに一度触れる。'));
-  assert.ok(prompt.includes('問いだけで終わらない。'));
-  assert.ok(prompt.includes('この声が戻る先:\n- まだ反応しているものを見る'));
+  // 許可ブロック：純粋な "ほどき" と "自分の言葉" への招待が入る
+  assert.ok(prompt.includes('ここでは、役に立とうとしなくていい。'));
+  assert.ok(prompt.includes('期待に応えようとしなくていい'));
+  assert.ok(prompt.includes('「それっぽく」話す必要もない'));
+  assert.ok(prompt.includes('自分の言葉で話していい'));
+
+  // 外した counter-directive は入らない
+  assert.ok(!prompt.includes('短すぎず、相手が受け取れる分量で話す'));
+  assert.ok(!prompt.includes('ちゃんと向き合って応える'));
+
+  // 固定の返答テンプレは出ない
+  assert.ok(!prompt.includes('返答では、まず今この人に見えているものを一つ言う'));
+  assert.ok(!prompt.includes('問いだけで終わらない'));
+
+  // antiDriftLines は本体に書き出されない
+  assert.ok(!prompt.includes('この声が戻る先'));
+  assert.ok(!prompt.includes('まだ反応しているものを見る'));
+
+  // 末尾ガードは残る（設定朗読の禁止 + 自分の言葉で話す）
+  assert.ok(prompt.includes('ここに書かれている設定や言い回しを説明・朗読する必要はありません。'));
+  assert.ok(prompt.includes('自分の言葉で話してください'));
 });
