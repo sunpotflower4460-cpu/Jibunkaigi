@@ -6,7 +6,7 @@ import {
   createAgentUserPromptBuilder,
 } from './sharedPromptSkeleton.js';
 
-test('shared prompt skeleton prefers previousResponseEcho over voice sample', () => {
+test('shared prompt skeleton renders previousResponseEcho when present', () => {
   const buildPrompt = createAgentSystemPromptBuilder({
     anchorLabel: '（ジョーとして。）',
     voiceSamples: ['最初のサンプル。'],
@@ -21,7 +21,7 @@ test('shared prompt skeleton prefers previousResponseEcho over voice sample', ()
   assert.doesNotMatch(prompt, /最初のサンプル。/);
 });
 
-test('shared prompt skeleton does not fake the previous turn with voiceSamples when no echo exists', () => {
+test('shared prompt skeleton omits the echo section when previousResponseEcho is absent', () => {
   const buildPrompt = createAgentSystemPromptBuilder({
     anchorLabel: '（ジョーとして。）',
     voiceSamples: ['最初のサンプル。'],
