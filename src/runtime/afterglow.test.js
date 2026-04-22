@@ -57,7 +57,15 @@ test('afterglow values stay clamped to 0..1 range', () => {
 test('getAfterglowSeed is null-safe and returns empty seed', () => {
   const seed = getAfterglowSeed(null);
 
-  assert.deepEqual(seed, { previousMix: null, previousLatentState: null });
+  assert.deepEqual(seed, { previousMix: null, previousLatentState: null, previousResponseEcho: '' });
+});
+
+test('getAfterglowSeed exposes previousResponseEcho when present', () => {
+  const seed = getAfterglowSeed({
+    previousResponseEcho: '前回の入り方。',
+  });
+
+  assert.equal(seed.previousResponseEcho, '前回の入り方。');
 });
 
 test('master response does not overwrite non-master continuity', () => {

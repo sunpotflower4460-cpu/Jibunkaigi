@@ -23,6 +23,22 @@ import {
   renderStanceLine,
 } from '../buildPromptHelpers.js';
 
+const formatEchoForPrompt = (echo = '') => {
+  if (typeof echo !== 'string') return '';
+
+  return echo
+    .split('')
+    .map((char) => {
+      const code = char.charCodeAt(0);
+      return ((code >= 0 && code <= 31) || code === 127) ? ' ' : char;
+    })
+    .join('')
+    .replace(/\s+/g, ' ')
+    .replaceAll('「', '『')
+    .replaceAll('」', '』')
+    .trim();
+};
+
 /**
  * 共通の system prompt builder を生成する factory
  *
@@ -38,6 +54,7 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     mode = 'medium',
     userText: _userText = '',
     othersField,
+    previousResponseEcho = '',
     // 互換のため受け取るが、この Phase では使わない
     latentState: _latentState,
     emergingField: _emergingField,
@@ -56,6 +73,7 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     const activatedParticles = renderActivatedParticles(safeActivated);
     const stanceLine = renderStanceLine(safeActivated);
     const avoidBlock = renderAvoidBlock(safeActivated);
+    const safePreviousResponseEcho = formatEchoForPrompt(previousResponseEcho);
     const sections = [];
 
     sections.push(
@@ -66,7 +84,9 @@ export function createAgentSystemPromptBuilder({ anchorLabel, voiceSamples = [] 
     );
     sections.push(anchorLabel);
 
-    if (!normalizedCtx && voiceSamples.length > 0) {
+    if (safePreviousResponseEcho) {
+      sections.push(`前回、自分はこう話した:\n「${safePreviousResponseEcho}」`);
+    } else if (voiceSamples.length > 0) {
       sections.push(`自分はこういう入り方をする:\n「${voiceSamples[0]}」`);
     }
 

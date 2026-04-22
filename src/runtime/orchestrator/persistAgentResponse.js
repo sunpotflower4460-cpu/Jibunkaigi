@@ -10,6 +10,24 @@
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { buildNextAfterglow } from '../afterglow.js';
 
+const MAX_RESPONSE_ECHO_SENTENCES = 2;
+
+export const extractResponseEcho = (responseText = '') => {
+  if (!responseText || typeof responseText !== 'string') return '';
+
+  const cleaned = responseText
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!cleaned) return '';
+
+  const sentences = (cleaned.match(/[^。！？!?]+[。！？!?]?/g) ?? [])
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  return sentences.slice(0, MAX_RESPONSE_ECHO_SENTENCES).join('');
+};
+
 /**
  * AI メッセージを Firestore に保存する
  */
@@ -39,6 +57,7 @@ export const updateAfterglow = async ({
   continuityInternalOS,
   agentId,
   isMaster,
+  cleanedResponse = '',
   readSessionAfterglow,
   writeSessionAfterglowLocal,
   safeUpdateSession,
@@ -50,6 +69,7 @@ export const updateAfterglow = async ({
     respondingAgentId: isMaster ? 'master' : agentId,
     isMaster,
   });
+  nextAfterglow.previousResponseEcho = extractResponseEcho(cleanedResponse);
 
   writeSessionAfterglowLocal(sessionId, nextAfterglow);
   await safeUpdateSession(sessionId, { afterglow: nextAfterglow, updatedAt: serverTimestamp() });
@@ -91,6 +111,7 @@ export const persistAgentResponse = async ({
   continuityInternalOS,
   agentId,
   isMaster,
+  cleanedResponse = '',
   measureFirestoreWrite,
   traceId,
   readSessionAfterglow,
@@ -122,6 +143,7 @@ export const persistAgentResponse = async ({
     continuityInternalOS,
     agentId,
     isMaster,
+    cleanedResponse,
     readSessionAfterglow,
     writeSessionAfterglowLocal,
     safeUpdateSession,
