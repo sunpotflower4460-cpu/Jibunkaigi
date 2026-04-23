@@ -1469,35 +1469,42 @@ const App = () => {
   const comparePanelVisible = shouldShowComparePanel({ enabled: isCompareModeEnabled, entries: compareEntries });
 
   return (
-    <div className="lake-bg relative min-h-screen overflow-hidden flex font-sans text-[#2d3748]">
+    <div className="lake-bg premium-shell relative min-h-screen overflow-hidden flex font-sans text-[#2d3748]">
       <div aria-hidden="true" className="water-shimmer z-0" />
+      <div aria-hidden="true" className="mesh-grid z-0" />
+      <div aria-hidden="true" className="aurora-orb aurora-orb-left z-0" />
+      <div aria-hidden="true" className="aurora-orb aurora-orb-right z-0" />
+      <div aria-hidden="true" className="aurora-orb aurora-orb-top z-0" />
       <div
         aria-hidden={showIntro ? 'true' : 'false'}
         className={`flex w-full h-full relative z-10 transition-opacity duration-500 ${isHomeReady || !showIntro ? 'opacity-100' : 'opacity-0'} ${showIntro ? 'pointer-events-none' : ''}`}
       >
         {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-[60] md:hidden" />}
 
-        <aside className={`fixed md:relative inset-y-0 left-0 w-72 bg-[#eef2f7]/50 border-r border-white/20 z-[70] transition-transform duration-300 backdrop-blur-xl flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+        <aside className={`sidebar-shell fixed md:relative inset-y-0 left-0 w-72 z-[70] transition-transform duration-300 backdrop-blur-xl flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
           <div className="flex-1 flex flex-col p-6 overflow-hidden">
             <button type="button" onClick={() => setShowBeliefs(true)} className="flex items-center gap-3 mb-10 px-2 cursor-pointer text-left">
-              <div className="p-2 rounded-xl bg-[#1e293b] text-white flex items-center justify-center"><Users size={18} /></div>
-              <h1 className="text-lg font-black tracking-tighter">じぶん会議</h1>
+              <div className="p-2.5 rounded-2xl bg-[#1e293b] text-white flex items-center justify-center shadow-lg shadow-slate-900/20"><Users size={18} /></div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[9px] font-black uppercase tracking-[0.35em] text-slate-400">Inner Room</span>
+                <h1 className="text-lg font-black tracking-tighter text-slate-800">じぶん会議</h1>
+              </div>
             </button>
-            <button onClick={() => { setTempName(userName); setIsEditingUserName(true); }} className="group flex items-center gap-4 w-full p-4 mb-8 rounded-2xl hover:bg-white/30 transition-all text-left">
-              <div className="w-10 h-10 rounded-full bg-white/40 border border-white/60 flex items-center justify-center text-slate-400 shrink-0"><UserCircle2 size={20} /></div>
+            <button onClick={() => { setTempName(userName); setIsEditingUserName(true); }} className="group flex items-center gap-4 w-full p-4 mb-8 rounded-[1.75rem] panel-surface hover:-translate-y-0.5 transition-all text-left">
+              <div className="w-10 h-10 rounded-full bg-white/50 border border-white/70 flex items-center justify-center text-slate-400 shrink-0 shadow-inner"><UserCircle2 size={20} /></div>
               <div className="flex-1 overflow-hidden">
                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Client</p>
                 <p className="font-bold truncate text-xs">{userName}</p>
               </div>
               <Edit3 size={12} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
             </button>
-            <button onClick={() => { setCurrentSessionId(null); setIsSidebarOpen(false); resetSessionUIState(true); }} className="flex items-center justify-center gap-2 w-full py-4 bg-[#1e293b] text-white rounded-2xl font-bold text-xs mb-6 shadow-xl shadow-slate-800/20 hover:opacity-90 transition-colors shrink-0">
+            <button onClick={() => { setCurrentSessionId(null); setIsSidebarOpen(false); resetSessionUIState(true); }} className="action-primary flex items-center justify-center gap-2 w-full py-4 text-white rounded-2xl font-bold text-xs mb-6 shrink-0">
               <Plus size={16} /> 新しい問い
             </button>
             <div className="flex-1 overflow-y-auto no-scrollbar space-y-1 relative">
               {sessions.length === 0 && <p className="text-[10px] text-slate-400 font-bold px-4 py-2 text-center opacity-70 mt-4">過去の問いはありません</p>}
               {sessions.map(s => (
-                <div key={s.id} onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); resetSessionUIState(false); }} className={`group relative flex flex-col px-4 py-3 rounded-xl cursor-pointer transition-all ${currentSessionId === s.id ? 'neu-pressed text-indigo-700' : 'hover:bg-white/20 text-slate-500'}`}>
+                <div key={s.id} onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); resetSessionUIState(false); }} className={`group relative flex flex-col px-4 py-3 rounded-[1.35rem] cursor-pointer transition-all border ${currentSessionId === s.id ? 'session-card-active text-indigo-700' : 'session-card-idle text-slate-500'}`}>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0 flex items-center gap-1.5">
                       {s.isPinned && <Pin size={10} className="text-amber-500 shrink-0 fill-amber-500" />}
@@ -1522,12 +1529,12 @@ const App = () => {
         </aside>
 
         <div className="flex-1 flex flex-col min-w-0 relative">
-          <header className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 neu-convex-sm gap-2" style={{ borderRadius: '0 0 16px 16px', zIndex: 10 }}>
+          <header className="header-shell flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 gap-2 mx-3 mt-3 sm:mx-4 sm:mt-4" style={{ borderRadius: '24px', zIndex: 10 }}>
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
               <button aria-label="メニューを開く" title="メニューを開く" onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-500 shrink-0"><Menu size={18} /></button>
               <h2 className="font-bold text-sm tracking-tight truncate text-slate-800">{sessions.find(s => s.id === currentSessionId)?.title || optimisticSessionTitles[currentSessionId] || "思考の領域"}</h2>
             </div>
-            <div className="flex p-0.5 sm:p-1 rounded-xl neu-concave shrink-0">
+            <div className="flex p-1 rounded-2xl neu-concave shrink-0 shadow-inner">
               {Object.entries(MODES).map(([key, m]) => (
                 <button aria-label={`応答モード: ${m.label}`} title={m.label} key={key} onClick={() => setSelectedMode(key)} className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedMode === key ? 'bg-white/60 text-slate-900 shadow-sm border border-white/50' : 'text-slate-400 hover:text-slate-600 hover:bg-white/20'}`}>{m.icon} <span className="hidden sm:inline">{m.label}</span></button>
               ))}
@@ -1569,9 +1576,9 @@ const App = () => {
                 <div className="flex gap-4 animate-in fade-in slide-in-from-top-2 w-full">
                   <div className="flex-1">
                     <p id="composer-helper-text" className="mb-2 px-2 text-[11px] font-bold text-slate-400">{composerHelperText}</p>
-                    <div className="relative">
-                      <textarea ref={textareaRef} rows="1" value={userInput} disabled={hasBlockingConfigIssue} onChange={(e) => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={inputPlaceholder} aria-label="相談内容の入力欄" aria-describedby="composer-helper-text" className="w-full rounded-2xl px-6 py-4 pr-16 text-base font-medium outline-none resize-none transition-all neu-concave border-none focus:ring-2 focus:ring-indigo-200/50 disabled:opacity-60 disabled:cursor-not-allowed" />
-                      <button aria-label="メッセージを送信" title="メッセージを送信" onClick={() => handleSend()} disabled={!userInput.trim() || !isAppReady} className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-[#1e293b] text-white transition-all active:scale-95 disabled:opacity-30 shadow-lg">
+                    <div className="composer-shell relative">
+                      <textarea ref={textareaRef} rows="1" value={userInput} disabled={hasBlockingConfigIssue} onChange={(e) => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={inputPlaceholder} aria-label="相談内容の入力欄" aria-describedby="composer-helper-text" className="w-full rounded-[1.75rem] px-6 py-5 pr-16 text-base font-medium outline-none resize-none transition-all bg-transparent border-none focus:ring-0 placeholder:text-slate-400/80 disabled:opacity-60 disabled:cursor-not-allowed" />
+                      <button aria-label="メッセージを送信" title="メッセージを送信" onClick={() => handleSend()} disabled={!userInput.trim() || !isAppReady} className="action-primary absolute right-2.5 top-1/2 -translate-y-1/2 p-3 rounded-2xl text-white transition-all active:scale-95 disabled:opacity-30">
                         <Send aria-hidden="true" size={18} />
                       </button>
                     </div>
@@ -1622,19 +1629,19 @@ const App = () => {
           </div>
 
           <main ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 no-scrollbar relative z-10">
-            <div className="max-w-2xl mx-auto pb-32">
+            <div className="max-w-3xl mx-auto pb-32">
               {shouldShowFullMessagesLoading ? (
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-slate-400" size={32} /></div>
               ) : (
                 <>
                   {messages.length === 0 && !isGenerating && !isSending && showInput && (
                     <div className="h-full flex flex-col items-center justify-center py-20 animate-in fade-in duration-1000">
-                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-slate-400 mb-6 glass-card"><Feather size={32} /></div>
+                      <div className="w-20 h-20 rounded-[1.75rem] flex items-center justify-center text-slate-400 mb-6 glass-card shadow-xl shadow-indigo-950/5"><Feather size={34} /></div>
                       <h3 className="text-lg font-black text-slate-800 mb-2">思考の部屋へようこそ</h3>
                       <p className="text-xs text-slate-500 mb-10 text-center font-medium">心の欠片を、自由に置いてみてください。</p>
                       <div className="flex flex-col gap-3 w-full max-w-sm">
                         {["言葉にならないけど、ずっと胸にあるもの", "誰にも言っていない、小さな違和感", "理由はないけど、心が動いたこと"].map((hint, idx) => (
-                          <button key={idx} onClick={() => handleHintClick(hint)} className="w-full py-4 px-6 rounded-2xl text-xs font-bold text-slate-600 hover:text-slate-800 transition-all text-left glass-card border border-slate-200/30">{hint}</button>
+                          <button key={idx} onClick={() => handleHintClick(hint)} className="w-full py-4 px-6 rounded-[1.6rem] text-xs font-bold text-slate-600 hover:text-slate-800 transition-all text-left panel-surface hover:-translate-y-0.5">{hint}</button>
                         ))}
                       </div>
                     </div>
@@ -1651,7 +1658,7 @@ const App = () => {
                               {msg.agentId === 'master' && <span className="bg-indigo-50/50 text-indigo-400 text-[8px] font-black px-1 rounded border border-indigo-100/30">総括</span>}
                             </div>
                           )}
-                          <div onClick={() => setOpenToolbarMsgId(openToolbarMsgId === msg.id ? null : msg.id)} className={`relative px-5 py-4 whitespace-pre-wrap text-[15px] leading-relaxed rounded-2xl transition-all cursor-pointer ${isUser ? 'bg-slate-800 text-slate-100 shadow-lg shadow-slate-800/20' : 'neu-convex-sm mirror-reflection text-slate-700'}`}>
+                          <div onClick={() => setOpenToolbarMsgId(openToolbarMsgId === msg.id ? null : msg.id)} className={`relative px-5 py-4 whitespace-pre-wrap text-[15px] leading-relaxed rounded-[1.75rem] transition-all cursor-pointer border ${isUser ? 'message-user text-slate-100' : 'message-agent mirror-reflection text-slate-700'}`}>
                             {msg.content}
                             {msg.id && (
                               <div className={`absolute top-2 right-2 flex items-center gap-1 p-1 rounded-lg transition-opacity ${isUser ? 'bg-slate-700/50' : 'bg-white/50 shadow-sm'} ${openToolbarMsgId === msg.id ? 'opacity-100' : 'opacity-0 md:group-hover/msg:opacity-100'}`} onClick={e => e.stopPropagation()}>
@@ -1719,7 +1726,7 @@ const App = () => {
                           </div>
 
                           {!isUser && activeReaction?.msgId === msg.id && msg.reactions?.[activeReaction.agentId] && (
-                            <div className="mt-3 w-full p-5 rounded-2xl glass-card animate-in fade-in slide-in-from-top-1">
+                            <div className="mt-3 w-full p-5 rounded-[1.75rem] panel-surface animate-in fade-in slide-in-from-top-1">
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{AGENTS.find(a => a.id === activeReaction.agentId)?.name}</span>
                                 <span className="px-1.5 py-0.5 bg-white/50 border text-slate-400 text-[8px] font-black rounded italic">{msg.reactions[activeReaction.agentId]?.posture}</span>
@@ -1734,7 +1741,7 @@ const App = () => {
                           )}
 
                           {!isUser && autoExpandReactions?.msgId === msg.id && !activeReaction && (
-                            <div className="mt-4 p-4 rounded-2xl glass-card flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 shadow-lg border border-indigo-100/50 w-full min-h-[80px] relative">
+                            <div className="mt-4 p-4 rounded-[1.75rem] panel-surface flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 shadow-lg border border-indigo-100/50 w-full min-h-[80px] relative">
                               <div className="flex items-center justify-between px-1 mb-1">
                                 <div className="flex items-center gap-2">
                                   <span className="text-[9px] font-black text-indigo-400/80 uppercase tracking-widest">Others</span>
@@ -1801,7 +1808,7 @@ const App = () => {
                   )}
                   {!isGenerating && messages.length > 0 && messages[messages.length - 1].role === 'ai' && messages[messages.length - 1].agentId !== 'master' && userMessageCount >= 3 && (
                     <div className="flex justify-center mt-12 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
-                      <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents} className="group flex items-center gap-4 px-6 py-4 rounded-2xl glass-card border border-indigo-200/50 hover:bg-white/60 transition-all active:scale-95 shadow-lg shadow-indigo-900/5 disabled:opacity-30">
+                      <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents} className="group flex items-center gap-4 px-6 py-4 rounded-[1.75rem] panel-surface hover:bg-white/70 transition-all active:scale-95 shadow-lg shadow-indigo-900/5 disabled:opacity-30">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-110 transition-transform"><Compass size={18} /></div>
                         <div className="flex flex-col text-left">
                           <span className="text-sm font-black text-slate-700">ここまでの声を映してみますか？</span>
@@ -1819,8 +1826,8 @@ const App = () => {
 
       {showIntro && (
           <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 transition-opacity duration-500 ${isHomeReady ? 'opacity-0' : 'opacity-100'}`}>
-            <div className="absolute inset-0 bg-[#eef2f7] z-0" /><div className="water-shimmer z-0" />
-            <div className="max-w-md w-full text-center p-8 md:p-10 rounded-[3rem] glass-card relative z-10 space-y-8 anim-card-rise">
+            <div className="absolute inset-0 bg-[#eef2f7] z-0" /><div className="water-shimmer z-0" /><div className="mesh-grid z-0" />
+            <div className="hero-panel max-w-md w-full text-center p-8 md:p-10 rounded-[3rem] relative z-10 space-y-8 anim-card-rise">
             <div className="anim-scale-in"><div className="inline-flex items-center justify-center p-5 rounded-[2rem] bg-[#1e293b] text-white anim-float shadow-2xl"><Users size={36} /></div></div>
             <div className="space-y-2">
               <p className="text-[10px] font-black tracking-[0.4em] text-slate-400 uppercase">Inner Conference Room</p>
@@ -1830,20 +1837,20 @@ const App = () => {
             <div className="py-6 px-2 md:p-8 rounded-[2rem] bg-white/20 border border-white/40 shadow-inner flex justify-center items-center w-full">
               <p className="text-base sm:text-lg md:text-xl font-medium text-slate-700 leading-loose tracking-[0.1em] text-center whitespace-nowrap">導かない。照らすだけ。<br />歩くのは、あなた自身。</p>
             </div>
-            <button onClick={handleStartIntro} className="w-full py-5 bg-[#1e293b] text-white rounded-2xl font-black text-sm active:scale-95 flex items-center justify-center gap-2 shadow-2xl">会議をはじめる <ChevronRight size={18} /></button>
+            <button onClick={handleStartIntro} className="action-primary w-full py-5 text-white rounded-2xl font-black text-sm active:scale-95 flex items-center justify-center gap-2">会議をはじめる <ChevronRight size={18} /></button>
           </div>
         </div>
       )}
 
       {isEditingUserName && (
         <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-md z-[150] flex items-center justify-center p-6" onClick={() => setIsEditingUserName(false)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="user-name-dialog-title" className="rounded-[2.5rem] w-full max-w-sm p-10 text-center glass-card" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" aria-labelledby="user-name-dialog-title" className="modal-shell rounded-[2.5rem] w-full max-w-sm p-10 text-center" onClick={e => e.stopPropagation()}>
             <h3 id="user-name-dialog-title" className="text-lg font-black mb-3">お名前を教えてください</h3>
             <p className="text-xs font-medium text-slate-500 mb-6">会議メンバーからの呼ばれ方に使われます。</p>
             <input aria-labelledby="user-name-dialog-title" aria-describedby="user-name-dialog-help" autoFocus maxLength={24} value={tempName} onChange={e => setTempName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); if (e.key === 'Escape') setIsEditingUserName(false); }} className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-3 neu-concave bg-transparent" />
             <p id="user-name-dialog-help" className="text-[11px] font-bold text-slate-400 mb-8">24文字まで</p>
             <div className="flex flex-col gap-2">
-              <button onClick={handleUpdateUserName} className="w-full py-4 bg-[#1e293b] text-white rounded-2xl font-black text-xs shadow-lg">変更を適用</button>
+              <button onClick={handleUpdateUserName} className="action-primary w-full py-4 text-white rounded-2xl font-black text-xs">変更を適用</button>
               <button onClick={() => setIsEditingUserName(false)} className="w-full py-4 text-slate-500 font-black text-xs hover:bg-white/50 rounded-2xl transition-all">キャンセル</button>
             </div>
           </div>
@@ -1852,7 +1859,7 @@ const App = () => {
 
       {deleteTargetId && (
         <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-md z-[150] flex items-center justify-center p-6" onClick={() => setDeleteTargetId(null)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="delete-session-dialog-title" className="rounded-[2.5rem] w-full max-w-sm p-10 text-center glass-card" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" aria-labelledby="delete-session-dialog-title" className="modal-shell rounded-[2.5rem] w-full max-w-sm p-10 text-center" onClick={e => e.stopPropagation()}>
             <h3 id="delete-session-dialog-title" className="text-lg font-black mb-8">この思考を消去しますか？</h3>
             <div className="flex flex-col gap-2">
               <button onClick={() => { playSound('delete'); handleDeleteSession(deleteTargetId); }} disabled={isDeletingSession} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs disabled:opacity-50">消去する</button>
@@ -1864,14 +1871,14 @@ const App = () => {
 
       {showBeliefs && (
         <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-xl z-[150] flex items-center justify-center p-6" onClick={() => setShowBeliefs(false)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="beliefs-dialog-title" className="rounded-[2.5rem] w-full max-w-xl h-4/5 flex flex-col overflow-hidden glass-card" onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" aria-labelledby="beliefs-dialog-title" className="modal-shell rounded-[2.5rem] w-full max-w-xl h-4/5 flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-8 pb-4 flex items-center justify-between border-b border-white/10">
               <h3 id="beliefs-dialog-title" className="text-xl font-black tracking-tight">会議メンバーの魂</h3>
               <button aria-label="会議メンバーの魂を閉じる" title="閉じる" onClick={() => setShowBeliefs(false)} className="p-2 hover:bg-white/40 rounded-full"><X size={20}/></button>
             </div>
             <div className="flex-1 overflow-y-auto p-8 pt-6 no-scrollbar space-y-4">
               {AGENTS.map(a => (
-                <div key={a.id} className={`p-6 rounded-2xl ${a.color} ${a.accentColor} neu-convex-sm backdrop-blur-sm`}>
+                <div key={a.id} className={`p-6 rounded-[1.75rem] ${a.color} ${a.accentColor} panel-surface backdrop-blur-sm`}>
                   <div className="flex items-center gap-3 mb-3">{a.icon}<span className="font-black text-xs">{a.name} — {a.title}</span></div>
                   <p className="text-xs font-bold leading-relaxed text-slate-600 italic">{a.belief}</p>
                 </div>
@@ -1903,14 +1910,37 @@ const App = () => {
         @keyframes slideInFromBottom2 { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .lake-bg { background: linear-gradient(175deg, #f2f6fa 0%, #e6ecf3 30%, #dce4ee 50%, #d3dce8 70%, #e0e7f0 100%); min-height: 100vh; }
-        .neu-convex-sm { background: linear-gradient(145deg, rgba(255,255,255,0.88), rgba(243,247,251,0.78)); box-shadow: 2px 2px 6px rgba(174,188,206,0.2), -2px -2px 6px rgba(255,255,255,0.85), inset 0 1px 0 rgba(255,255,255,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.55); }
-        .neu-concave { background: linear-gradient(145deg, rgba(230,236,244,0.4), rgba(240,245,250,0.4)); box-shadow: inset 2px 2px 6px rgba(174,188,206,0.2), inset -2px -2px 6px rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.35); }
-        .neu-pressed { background: linear-gradient(145deg, rgba(224,230,238,0.6), rgba(236,241,247,0.5)); box-shadow: inset 2px 2px 6px rgba(163,177,198,0.35), inset -2px -2px 6px rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.3); }
+        .lake-bg { background:
+          radial-gradient(circle at top, rgba(255,255,255,0.9), transparent 32%),
+          linear-gradient(160deg, #f8fbff 0%, #eef3fb 18%, #e5edf7 42%, #dce5f1 68%, #d6ddeb 100%);
+          min-height: 100vh;
+        }
+        .premium-shell::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.38), transparent 28%, transparent 72%, rgba(255,255,255,0.22)); pointer-events: none; }
+        .mesh-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(148,163,184,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.09) 1px, transparent 1px); background-size: 80px 80px; mask-image: radial-gradient(circle at center, black 30%, transparent 82%); opacity: 0.35; pointer-events: none; }
+        .aurora-orb { position: absolute; border-radius: 9999px; filter: blur(70px); opacity: 0.55; animation: orbDrift 18s ease-in-out infinite; pointer-events: none; }
+        .aurora-orb-left { width: 280px; height: 280px; left: -80px; top: 14%; background: rgba(125, 211, 252, 0.34); }
+        .aurora-orb-right { width: 320px; height: 320px; right: -90px; top: 22%; background: rgba(167, 139, 250, 0.26); animation-delay: -6s; }
+        .aurora-orb-top { width: 260px; height: 260px; left: 50%; top: -120px; transform: translateX(-50%); background: rgba(255, 255, 255, 0.42); animation-delay: -10s; }
+        .neu-convex-sm { background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(243,247,251,0.82)); box-shadow: 10px 10px 26px rgba(148,163,184,0.14), -8px -8px 20px rgba(255,255,255,0.72), inset 0 1px 0 rgba(255,255,255,0.78); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.6); }
+        .neu-concave { background: linear-gradient(145deg, rgba(231,237,244,0.56), rgba(246,249,253,0.66)); box-shadow: inset 3px 3px 8px rgba(174,188,206,0.18), inset -3px -3px 8px rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.42); }
+        .neu-pressed { background: linear-gradient(145deg, rgba(226,232,240,0.72), rgba(241,245,249,0.62)); box-shadow: inset 4px 4px 10px rgba(148,163,184,0.28), inset -4px -4px 10px rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.4); }
         .mirror-reflection::before { content: ''; position: absolute; top: 0; left: -10%; right: -10%; height: 50%; background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 100%); pointer-events: none; z-index: 1; transform: skewX(-2deg); }
-        .glass-card { background: linear-gradient(145deg, rgba(255,255,255,0.75), rgba(247,250,253,0.65)); box-shadow: 3px 3px 10px rgba(174,188,206,0.2), -3px -3px 10px rgba(255,255,255,0.75), inset 0 1px 0 rgba(255,255,255,0.6); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.6); }
+        .glass-card { background: linear-gradient(145deg, rgba(255,255,255,0.8), rgba(247,250,253,0.68)); box-shadow: 0 22px 50px rgba(148,163,184,0.16), inset 0 1px 0 rgba(255,255,255,0.68); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.68); }
+        .panel-surface { background: linear-gradient(145deg, rgba(255,255,255,0.82), rgba(245,248,252,0.7)); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 16px 40px rgba(148,163,184,0.14), inset 0 1px 0 rgba(255,255,255,0.78); backdrop-filter: blur(18px); }
+        .sidebar-shell { background: linear-gradient(180deg, rgba(248,251,255,0.76), rgba(235,241,248,0.62)); border-right: 1px solid rgba(255,255,255,0.5); box-shadow: 20px 0 50px rgba(148,163,184,0.12), inset -1px 0 0 rgba(255,255,255,0.5); }
+        .header-shell { background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(243,247,252,0.6)); border: 1px solid rgba(255,255,255,0.62); box-shadow: 0 18px 40px rgba(148,163,184,0.14), inset 0 1px 0 rgba(255,255,255,0.8); backdrop-filter: blur(18px); }
+        .hero-panel { background: linear-gradient(160deg, rgba(255,255,255,0.82), rgba(241,246,252,0.68)); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 30px 80px rgba(99,102,241,0.16), inset 0 1px 0 rgba(255,255,255,0.82); backdrop-filter: blur(24px); }
+        .modal-shell { background: linear-gradient(160deg, rgba(255,255,255,0.84), rgba(242,246,251,0.7)); border: 1px solid rgba(255,255,255,0.72); box-shadow: 0 28px 70px rgba(148,163,184,0.18), inset 0 1px 0 rgba(255,255,255,0.84); backdrop-filter: blur(24px); }
+        .composer-shell { background: linear-gradient(145deg, rgba(255,255,255,0.84), rgba(241,246,251,0.72)); border: 1px solid rgba(255,255,255,0.75); box-shadow: 0 20px 45px rgba(148,163,184,0.14), inset 0 1px 0 rgba(255,255,255,0.82); border-radius: 1.75rem; backdrop-filter: blur(18px); }
+        .action-primary { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%); box-shadow: 0 18px 35px rgba(15,23,42,0.26), inset 0 1px 0 rgba(255,255,255,0.2); border: 1px solid rgba(99,102,241,0.18); }
+        .session-card-active { background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(237,242,255,0.78)); box-shadow: 0 16px 34px rgba(99,102,241,0.12), inset 0 1px 0 rgba(255,255,255,0.85); border-color: rgba(165,180,252,0.38); }
+        .session-card-idle { background: rgba(255,255,255,0.24); border-color: rgba(255,255,255,0.18); }
+        .session-card-idle:hover { background: rgba(255,255,255,0.44); border-color: rgba(255,255,255,0.42); box-shadow: 0 14px 30px rgba(148,163,184,0.12); transform: translateY(-1px); }
+        .message-user { background: linear-gradient(145deg, rgba(15,23,42,0.94), rgba(30,41,59,0.88)); box-shadow: 0 22px 44px rgba(15,23,42,0.2); border-color: rgba(99,102,241,0.2); }
+        .message-agent { background: linear-gradient(145deg, rgba(255,255,255,0.88), rgba(245,248,252,0.76)); box-shadow: 0 18px 44px rgba(148,163,184,0.14), inset 0 1px 0 rgba(255,255,255,0.84); border-color: rgba(255,255,255,0.7); backdrop-filter: blur(18px); }
         .water-shimmer { position: absolute; inset: 0; background: radial-gradient(ellipse at 25% 75%, rgba(147,197,253,0.15), transparent), radial-gradient(ellipse at 75% 55%, rgba(165,180,252,0.1), transparent); animation: water-shimmer 10s ease-in-out infinite; pointer-events: none; }
         @keyframes water-shimmer { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.5; } }
+        @keyframes orbDrift { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(0, -18px, 0) scale(1.06); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .anim-float { animation: float 4s ease-in-out infinite; }
         @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
