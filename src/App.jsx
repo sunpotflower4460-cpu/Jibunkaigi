@@ -1486,7 +1486,7 @@ const App = () => {
             <button type="button" onClick={() => setShowBeliefs(true)} className="flex items-center gap-3 mb-10 px-2 cursor-pointer text-left">
               <div className="p-2.5 rounded-2xl bg-[#1e293b] text-white flex items-center justify-center shadow-lg shadow-slate-900/20"><Users size={18} /></div>
               <div className="flex flex-col gap-0.5">
-                <span className="text-[9px] font-black uppercase tracking-[0.35em] text-slate-400">Inner Room</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.35em] text-slate-400">Inner Conference</span>
                 <h1 className="text-lg font-black tracking-tighter text-slate-800">じぶん会議</h1>
               </div>
             </button>
@@ -1629,7 +1629,7 @@ const App = () => {
           </div>
 
           <main ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 no-scrollbar relative z-10">
-            <div className="max-w-3xl mx-auto pb-32">
+            <div className="max-w-2xl mx-auto pb-32">
               {shouldShowFullMessagesLoading ? (
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-slate-400" size={32} /></div>
               ) : (
@@ -1917,11 +1917,11 @@ const App = () => {
         }
         .premium-shell::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.38), transparent 28%, transparent 72%, rgba(255,255,255,0.22)); pointer-events: none; }
         .mesh-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(148,163,184,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.09) 1px, transparent 1px); background-size: 80px 80px; mask-image: radial-gradient(circle at center, black 30%, transparent 82%); opacity: 0.35; pointer-events: none; }
-        .aurora-orb { position: absolute; border-radius: 9999px; filter: blur(70px); opacity: 0.55; animation: orbDrift 18s ease-in-out infinite; pointer-events: none; }
+        .aurora-orb { position: absolute; border-radius: 9999px; filter: blur(56px); opacity: 0.55; animation: orbDrift 18s ease-in-out infinite; pointer-events: none; will-change: transform; }
         .aurora-orb-left { width: 280px; height: 280px; left: -80px; top: 14%; background: rgba(125, 211, 252, 0.34); }
         .aurora-orb-right { width: 320px; height: 320px; right: -90px; top: 22%; background: rgba(167, 139, 250, 0.26); animation-delay: -6s; }
         .aurora-orb-top { width: 260px; height: 260px; left: 50%; top: -120px; transform: translateX(-50%); background: rgba(255, 255, 255, 0.42); animation-delay: -10s; }
-        .neu-convex-sm { background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(243,247,251,0.82)); box-shadow: 10px 10px 26px rgba(148,163,184,0.14), -8px -8px 20px rgba(255,255,255,0.72), inset 0 1px 0 rgba(255,255,255,0.78); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.6); }
+        .neu-convex-sm { background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(243,247,251,0.82)); box-shadow: 8px 8px 22px rgba(148,163,184,0.12), -6px -6px 16px rgba(255,255,255,0.68), inset 0 1px 0 rgba(255,255,255,0.78); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.6); }
         .neu-concave { background: linear-gradient(145deg, rgba(231,237,244,0.56), rgba(246,249,253,0.66)); box-shadow: inset 3px 3px 8px rgba(174,188,206,0.18), inset -3px -3px 8px rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.42); }
         .neu-pressed { background: linear-gradient(145deg, rgba(226,232,240,0.72), rgba(241,245,249,0.62)); box-shadow: inset 4px 4px 10px rgba(148,163,184,0.28), inset -4px -4px 10px rgba(255,255,255,0.58); border: 1px solid rgba(255,255,255,0.4); }
         .mirror-reflection::before { content: ''; position: absolute; top: 0; left: -10%; right: -10%; height: 50%; background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 100%); pointer-events: none; z-index: 1; transform: skewX(-2deg); }
