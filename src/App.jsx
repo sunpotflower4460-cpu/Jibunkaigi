@@ -1486,7 +1486,7 @@ const App = () => {
             <button type="button" onClick={() => setShowBeliefs(true)} className="flex items-center gap-3 mb-10 px-2 cursor-pointer text-left">
               <div className="p-2.5 rounded-2xl bg-[#1e293b] text-white flex items-center justify-center shadow-lg shadow-slate-900/20"><Users size={18} /></div>
               <div className="flex flex-col gap-0.5">
-                <span className="text-[9px] font-black uppercase tracking-[0.35em] text-slate-400">Inner Conference</span>
+                <span className="text-[9px] font-black tracking-[0.25em] text-slate-400">内なる会議</span>
                 <h1 className="text-lg font-black tracking-tighter text-slate-800">じぶん会議</h1>
               </div>
             </button>
@@ -1577,7 +1577,7 @@ const App = () => {
                   <div className="flex-1">
                     <p id="composer-helper-text" className="mb-2 px-2 text-[11px] font-bold text-slate-400">{composerHelperText}</p>
                     <div className="composer-shell relative">
-                      <textarea ref={textareaRef} rows="1" value={userInput} disabled={hasBlockingConfigIssue} onChange={(e) => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={inputPlaceholder} aria-label="相談内容の入力欄" aria-describedby="composer-helper-text" className="w-full rounded-[1.75rem] px-6 py-5 pr-16 text-base font-medium outline-none resize-none transition-all bg-transparent border-none focus:ring-0 placeholder:text-slate-400/80 disabled:opacity-60 disabled:cursor-not-allowed" />
+                      <textarea ref={textareaRef} rows="1" value={userInput} disabled={hasBlockingConfigIssue} onChange={(e) => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={inputPlaceholder} aria-label="相談内容の入力欄" aria-describedby="composer-helper-text" className="w-full rounded-[1.75rem] px-6 py-5 pr-16 text-base font-medium outline-none resize-none transition-all bg-transparent border-none focus-visible:ring-2 focus-visible:ring-indigo-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white/30 placeholder:text-slate-400/80 disabled:opacity-60 disabled:cursor-not-allowed" />
                       <button aria-label="メッセージを送信" title="メッセージを送信" onClick={() => handleSend()} disabled={!userInput.trim() || !isAppReady} className="action-primary absolute right-2.5 top-1/2 -translate-y-1/2 p-3 rounded-2xl text-white transition-all active:scale-95 disabled:opacity-30">
                         <Send aria-hidden="true" size={18} />
                       </button>
