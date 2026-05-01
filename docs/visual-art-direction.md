@@ -191,7 +191,7 @@ Vinus-craft の魅力は明るい場所と暗い場所の差にあります。
 
 ## 10. スマホ視認性への配慮
 
-- 重い bloom・volumetric fog・多数 particle を避ける
+- 重い bloom・volumetric fog・多数 particles を避ける
 - 発光素材は emissive で軽量に表現
 - 暗部でも輪郭が見える（shadowTint 活用）
 - 霧密度は視認性を壊さない範囲に設定
