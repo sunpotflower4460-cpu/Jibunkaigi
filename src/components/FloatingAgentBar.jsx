@@ -93,17 +93,18 @@ const FloatingAgentBar = ({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
-            padding: '4px 12px',
-            borderRadius: 20,
-            background: 'rgba(30,41,59,0.65)',
-            color: '#cbd5e1',
+            gap: 5,
+            padding: '6px 16px',
+            borderRadius: 24,
+            background: 'linear-gradient(150deg, rgba(14,22,58,0.78), rgba(22,32,70,0.72))',
+            color: '#c7d2e8',
             fontSize: 10,
             fontWeight: 700,
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.12)',
             cursor: 'pointer',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            backdropFilter: 'blur(18px) saturate(1.3)',
+            boxShadow: '0 4px 16px rgba(8,12,36,0.24), inset 0 1px 0 rgba(255,255,255,0.12)',
+            letterSpacing: '0.04em',
           }}
         >
           <ChevronUp size={12} />
@@ -131,15 +132,15 @@ const FloatingAgentBar = ({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 6,
-          padding: '6px 10px',
-          borderRadius: 20,
+          gap: 5,
+          padding: '7px 10px',
+          borderRadius: 22,
           background: compareModeEnabled || isDebugMode
-            ? 'rgba(30,41,59,0.78)'
-            : 'rgba(30,41,59,0.65)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(14px)',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+            ? 'linear-gradient(150deg, rgba(14,22,58,0.88), rgba(20,30,68,0.82))'
+            : 'linear-gradient(150deg, rgba(14,22,58,0.78), rgba(20,30,68,0.72))',
+          border: '1px solid rgba(255,255,255,0.13)',
+          backdropFilter: 'blur(22px) saturate(1.35)',
+          boxShadow: '0 6px 24px rgba(8,12,36,0.28), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.2)',
           overflowX: 'auto',
           whiteSpace: 'nowrap',
           msOverflowStyle: 'none',
@@ -253,7 +254,7 @@ const FloatingAgentBar = ({
           <span style={{ fontSize: 10, fontWeight: 800 }}>OTHERS</span>
         </button>
 
-        <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.15)', flexShrink: 0 }} />
+        <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.14)', flexShrink: 0, borderRadius: 1 }} />
 
         {/* たたむボタン */}
         <button
@@ -290,33 +291,53 @@ function buttonStyle({ disabled, variant }) {
   const base = {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 4,
-    padding: '5px 10px',
+    gap: 5,
+    padding: '6px 11px',
     borderRadius: 14,
     border: 'none',
     cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.35 : 1,
-    transition: 'opacity 0.15s',
+    opacity: disabled ? 0.32 : 1,
+    transition: 'opacity 0.18s, transform 0.18s',
     flexShrink: 0,
     whiteSpace: 'nowrap',
+    letterSpacing: '0.02em',
   };
 
   switch (variant) {
     case 'dark':
-      return { ...base, background: 'rgba(30,41,59,0.9)', color: '#e2e8f0' };
+      return {
+        ...base,
+        background: 'linear-gradient(150deg, rgba(24,36,72,0.95), rgba(30,46,80,0.9))',
+        color: '#dde4f0',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
+        border: '1px solid rgba(99,102,241,0.2)',
+      };
     case 'gradient':
       return {
         ...base,
-        background: 'linear-gradient(135deg, rgba(124,58,237,0.85), rgba(99,102,241,0.85))',
+        background: 'linear-gradient(135deg, rgba(108,40,220,0.88), rgba(79,80,220,0.88))',
         color: '#fff',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18)',
+        border: '1px solid rgba(167,139,250,0.2)',
       };
     case 'orange':
-      return { ...base, background: 'rgba(255,247,237,0.9)', color: '#9a3412' };
+      return {
+        ...base,
+        background: 'linear-gradient(150deg, rgba(255,248,238,0.94), rgba(255,237,213,0.88))',
+        color: '#92400e',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
+        border: '1px solid rgba(251,191,36,0.2)',
+      };
     case 'light':
-      return { ...base, background: 'rgba(255,255,255,0.18)', color: '#e2e8f0' };
+      return {
+        ...base,
+        background: 'rgba(255,255,255,0.16)',
+        color: '#dde4f0',
+        border: '1px solid rgba(255,255,255,0.1)',
+      };
     case 'ghost':
     default:
-      return { ...base, background: 'transparent', color: 'rgba(226,232,240,0.7)' };
+      return { ...base, background: 'transparent', color: 'rgba(196,210,234,0.75)', border: 'none' };
   }
 }
 
