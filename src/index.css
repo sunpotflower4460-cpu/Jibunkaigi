@@ -1,1 +1,41 @@
 @import "tailwindcss";
+
+/* じぶん会議 — global stylesheet entry */
+@import "./styles/design-tokens.css";
+@import "./styles/premium-surfaces.css";
+@import "./styles/motion.css";
+
+/* ============================================================
+ * Root / Body defaults
+ * ============================================================ */
+html, body, #root {
+  background: var(--jk-bg-base);
+  color: var(--jk-ink-main);
+  font-family: var(--jk-font-jp);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  /* iOS で 100vh が回り込まないように dvh フォールバック */
+  min-height: 100vh;
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
+}
+
+/* Prose-style readability for AI messages */
+.jk-prose {
+  line-height: var(--jk-leading-prose);
+  letter-spacing: var(--jk-tracking-tight);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Ensure tap targets are at least 44x44 on mobile */
+@media (pointer: coarse) {
+  button, [role="button"], a {
+    min-height: var(--jk-tap-min);
+  }
+  .jk-no-min-tap { min-height: 0; }
+}
