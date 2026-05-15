@@ -12,18 +12,20 @@ import { colors, radius, spacing, shadow, type as typeScale } from '../../theme/
 interface MobileComposerProps {
   onSend: (text: string) => void;
   disabled?: boolean;
+  isThinking?: boolean;
   placeholder?: string;
 }
 
 export function MobileComposer({
   onSend,
   disabled = false,
+  isThinking = false,
   placeholder = 'ここに置いてみる…',
 }: MobileComposerProps) {
   const [text, setText] = useState('');
   const inputRef = useRef<TextInput>(null);
 
-  const canSend = text.trim().length > 0 && !disabled;
+  const canSend = text.trim().length > 0 && !disabled && !isThinking;
 
   function handleSend() {
     if (!canSend) return;
@@ -40,12 +42,12 @@ export function MobileComposer({
           style={styles.input}
           value={text}
           onChangeText={setText}
-          placeholder={placeholder}
+          placeholder={isThinking ? '応答を待っています…' : placeholder}
           placeholderTextColor={colors.inkFaint}
           multiline
           returnKeyType="default"
           blurOnSubmit={false}
-          editable={!disabled}
+          editable={!disabled && !isThinking}
           textAlignVertical="top"
         />
         {canSend && (
