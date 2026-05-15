@@ -1,7 +1,8 @@
-// Phase 2 local types for Expo mobile app.
+// Universal types for Expo app (iOS / Android / Web).
+// Canonical names use Universal* prefix to reflect the cross-platform target.
 // Not yet synced with Firestore — designed to be easy to migrate later.
 
-export type MobileAgentId =
+export type UniversalAgentId =
   | 'mirror'
   | 'delegate'
   | 'ray'
@@ -10,21 +11,34 @@ export type MobileAgentId =
   | 'mina'
   | 'satou';
 
-export type MobileMessageRole = 'user' | 'agent';
+export type UniversalModeId =
+  | 'flash'
+  | 'dialogue'
+  | 'deep';
 
-export interface MobileMessage {
+export type UniversalMessageRole = 'user' | 'agent';
+
+export interface UniversalMessage {
   id: string;
-  role: MobileMessageRole;
+  role: UniversalMessageRole;
   text: string;
-  agentId?: MobileAgentId;
+  agentId?: UniversalAgentId;
   agentLabel?: string;
+  modeId?: UniversalModeId;
   createdAt: number;
 }
 
-export interface MobileSession {
+export interface UniversalSession {
   id: string;
   title: string;
   createdAt: number;
   updatedAt: number;
-  messages: MobileMessage[];
+  messages: UniversalMessage[];
+  pinned?: boolean;
 }
+
+// Backward-compatible aliases used by existing Mobile* components.
+export type MobileAgentId = UniversalAgentId;
+export type MobileMessageRole = UniversalMessageRole;
+export type MobileMessage = UniversalMessage;
+export type MobileSession = UniversalSession;

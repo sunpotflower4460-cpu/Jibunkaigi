@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import type { MobileAgentId } from '../../state/mobileTypes';
-import { AGENT_THINKING_TEXT } from '../../services/mobileAgentMock';
+import type { UniversalAgentId } from '../../state/mobileTypes';
+import { AGENT_THINKING_TEXT } from '../../services/universalAgentMock';
 import { colors, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileThinkingIndicatorProps {
-  agentId: MobileAgentId;
+  agentId: UniversalAgentId;
 }
 
 export function MobileThinkingIndicator({ agentId }: MobileThinkingIndicatorProps) {
