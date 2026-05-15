@@ -42,4 +42,13 @@ export default defineConfig([
       },
     },
   },
+  // Mobile app config files (CommonJS / Node.js environment)
+  {
+    files: ['apps/mobile/**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
 ])

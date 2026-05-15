@@ -1,0 +1,22 @@
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { colors } from '../../theme/tokens';
+
+interface MobileAppShellProps {
+  children: React.ReactNode;
+}
+
+export function MobileAppShell({ children }: MobileAppShellProps) {
+  return (
+    <View style={styles.shell}>
+      {children}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  shell: {
+    flex: 1,
+    backgroundColor: colors.bgBase,
+  },
+});
