@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { MobileAgentId } from '../../state/mobileTypes';
-import { AGENT_THINKING_TEXT } from '../../services/mobileAgentMock';
+import { getThinkingText } from '../../../../packages/shared/src';
 import { colors, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileThinkingIndicatorProps {
@@ -9,7 +9,8 @@ interface MobileThinkingIndicatorProps {
 }
 
 export function MobileThinkingIndicator({ agentId }: MobileThinkingIndicatorProps) {
-  const text = AGENT_THINKING_TEXT[agentId] ?? '考えています…';
+  // Default to 'dialogue' mode until mode selection is added to the mobile app.
+  const text = getThinkingText(agentId, 'dialogue');
 
   return (
     <View style={styles.row}>

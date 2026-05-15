@@ -1,7 +1,53 @@
 # packages/shared
 
-共通ロジックの将来の共有先です。現時点では Web 版の `src/` からのコピーは行っていません。
-まずはどこが共有できるかを整理します。
+iOS / Android / Web でエージェント・モード・文言・基本挙動がズレないための共通コアです。
+
+---
+
+## src/ の構成
+
+```
+packages/shared/src/
+  index.ts          # すべての公開 API を re-export
+  agents.ts         # Universal Agent 定義（ID・表示名・絵文字・役割・姿勢）
+  modes.ts          # Universal Mode 定義（一閃・対話・深淵）
+  thinking.ts       # Thinking 文言生成（エージェント × モード）
+  mockReply.ts      # ローカル mock 応答（Firebase/Gemini 未接続時用）
+  ids.ts            # ID 生成・セッションタイトル生成
+  parityFeatures.ts # Parity Feature ID 定義（checklist との紐付け）
+```
+
+---
+
+## 現在 shared 化されているもの
+
+- エージェント定義（`UNIVERSAL_AGENTS`）
+- モード定義（`UNIVERSAL_MODES`）
+- Thinking 文言（`getThinkingText`）
+- ローカル mock 応答（`createUniversalMockReply`）
+- ID ヘルパー（`createUniversalId`, `createSessionTitleFromText`）
+- Parity Feature ID（`UNIVERSAL_PARITY_FEATURES`）
+
+---
+
+## まだ Web 版 runtime は移動していない
+
+既存 Web 版の `src/runtime/` を壊さないため、今回は純粋定義だけを shared 化している。  
+Firebase / Gemini / localStorage / window / document に依存するコードは含まない。
+
+---
+
+## 今後の移行順
+
+| フェーズ | 内容 |
+|---|---|
+| Phase 0（旧） | この README のみ。src/ なし |
+| Phase 1（本 PR） | 純粋定義を shared 化。apps/mobile が参照開始 |
+| Phase 2 | Web 依存のあるモジュールを抽象化レイヤで包む |
+| Phase 3 | Firebase を抽象化し Web / Native で差し替え可能に |
+| Phase 4 | Gemini API Proxy を介した実接続 |
+
+---
 
 ---
 
