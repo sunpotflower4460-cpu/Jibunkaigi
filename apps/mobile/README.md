@@ -90,6 +90,21 @@ artifacts/{appId}/users/{uid}/sessions/{sessionId}/messages/{messageId}
 
 ---
 
+## Universal方針
+
+この `apps/mobile` は名前上 mobile だが、今後は iOS / Android / Expo Web を同じUI・同じ機能で提供する Expo Universal App として育てる。
+App Store版を主戦場としながら、Android / Web でも同じ体験を提供する。
+旧Vite Web版は、Expo Universal版が完全に追いつくまでの比較元・移行元・保険として扱う。
+
+詳細な方針・チェックリスト・UI対応表・デザイントークン対応は `docs/` を参照してください。
+
+- `docs/universal-parity-contract.md` — Universal方針の憲法
+- `docs/universal-feature-parity-checklist.md` — 機能パリティチェックリスト
+- `docs/universal-ui-map.md` — Web UIとExpo UIの対応表
+- `docs/universal-design-tokens.md` — デザイントークン対応表
+
+---
+
 ## 現状（未実装）
 
 - Firebase / Firestore 接続
