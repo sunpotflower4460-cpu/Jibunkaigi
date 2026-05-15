@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
-  Text,
 } from 'react-native';
 import { Send } from 'lucide-react-native';
 import { colors, radius, spacing, shadow, type as typeScale } from '../../theme/tokens';
@@ -30,6 +29,7 @@ export function MobileComposer({
     if (!canSend) return;
     onSend(text.trim());
     setText('');
+    inputRef.current?.focus();
   }
 
   return (
