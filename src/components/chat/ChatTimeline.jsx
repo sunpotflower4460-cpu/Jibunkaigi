@@ -42,9 +42,9 @@ const ChatTimeline = React.forwardRef(function ChatTimeline(
   return (
     <main
       ref={scrollRef}
-      className="flex-1 overflow-y-auto p-5 sm:p-6 md:p-10 no-scrollbar relative z-10"
+      className="flex-1 overflow-y-auto px-4 sm:px-5 pt-4 sm:pt-5 no-scrollbar relative z-10"
     >
-      <div className="max-w-2xl mx-auto pb-32 sm:pb-40">
+      <div className="max-w-2xl mx-auto pb-4 sm:pb-6">
         {showFullLoading ? (
           <div className="flex justify-center py-20" role="status" aria-live="polite">
             <Loader2 className="animate-spin text-slate-400" size={32} aria-hidden="true" />

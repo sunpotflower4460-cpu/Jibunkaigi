@@ -29,11 +29,11 @@ const Composer = forwardRef(function Composer(
   };
 
   return (
-    <div className="flex gap-3 sm:gap-4 animate-in fade-in slide-in-from-top-2 w-full">
-      <div className="flex-1">
+    <div className="flex gap-2.5 sm:gap-3 animate-in fade-in slide-in-from-bottom-2 w-full items-end">
+      <div className="flex-1 min-w-0">
         <p
           id="composer-helper-text"
-          className="mb-2 px-2 text-[11px] font-bold text-slate-400"
+          className="mb-1.5 px-1 text-[11px] font-bold text-slate-400"
           aria-live="polite"
         >
           {helperText}
@@ -52,7 +52,7 @@ const Composer = forwardRef(function Composer(
             placeholder={placeholder}
             aria-label="相談内容の入力欄"
             aria-describedby="composer-helper-text"
-            className="w-full rounded-[1.75rem] px-5 py-5 pr-16 text-base font-medium outline-none resize-none transition-all bg-transparent placeholder:text-slate-400/80 disabled:opacity-60 disabled:cursor-not-allowed jk-prose"
+            className="w-full rounded-[1.75rem] px-5 py-4 pr-14 text-base font-medium outline-none resize-none transition-all bg-transparent placeholder:text-slate-400/80 disabled:opacity-60 disabled:cursor-not-allowed jk-prose"
           />
           <button
             type="button"
@@ -60,9 +60,9 @@ const Composer = forwardRef(function Composer(
             title="メッセージを送信"
             onClick={onSend}
             disabled={!canSend}
-            className="action-primary absolute right-2.5 top-1/2 -translate-y-1/2 p-3 rounded-2xl text-white transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed jk-no-min-tap"
+            className="action-primary absolute right-2.5 bottom-2.5 p-2.5 rounded-xl text-white transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed jk-no-min-tap"
           >
-            <Send aria-hidden="true" size={18} />
+            <Send aria-hidden="true" size={17} />
           </button>
         </div>
       </div>
@@ -72,7 +72,7 @@ const Composer = forwardRef(function Composer(
           aria-label="入力欄を閉じる"
           title="入力欄を閉じる"
           onClick={onClose}
-          className="p-2 text-slate-400 hover:text-slate-900 self-center rounded-xl jk-no-min-tap"
+          className="p-2 mb-2 text-slate-400 hover:text-slate-600 rounded-xl jk-no-min-tap flex-shrink-0"
         >
           <X size={20} aria-hidden="true" />
         </button>
