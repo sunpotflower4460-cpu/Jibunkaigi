@@ -40,13 +40,16 @@ const BeliefsDialog = ({ open, agents, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 sm:p-8 pb-4 flex items-center justify-between border-b border-white/10">
-          <div>
+          <div className="min-w-0 pr-2">
             <p className="text-[10px] font-black tracking-[0.32em] text-slate-400 uppercase mb-1">
               Inner Voices
             </p>
             <h3 id="beliefs-dialog-title" className="text-xl font-black tracking-tight">
               会議メンバーの魂
             </h3>
+            <p className="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed">
+              それぞれの視点が、どんな角度からあなたを見るか。
+            </p>
           </div>
           <button
             ref={closeBtnRef}

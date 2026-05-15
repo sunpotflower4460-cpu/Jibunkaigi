@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Users, Copy, Check, Trash2 } from 'lucide-react';
 import ReactionPanel from './ReactionPanel';
 import OthersPanel from './OthersPanel';
@@ -188,4 +188,4 @@ const MessageBubble = ({
   );
 };
 
-export default MessageBubble;
+export default memo(MessageBubble);

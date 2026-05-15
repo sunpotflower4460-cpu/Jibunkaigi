@@ -1,28 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  signInWithCustomToken, 
-  signInAnonymously, 
-  onAuthStateChanged 
-} from 'firebase/auth';
-import { 
-  getFirestore, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  getDocs,
-  collection, 
-  onSnapshot, 
-  deleteDoc, 
-  serverTimestamp,
-  updateDoc
-} from 'firebase/firestore';
 import {
-  ShieldAlert, Heart, X, Target, MessageSquare,
-  Zap, AlertCircle, LayoutDashboard,
-  Flame, Star
-} from 'lucide-react';
+  signInWithCustomToken,
+  signInAnonymously,
+  onAuthStateChanged,
+} from 'firebase/auth';
+import {
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  collection,
+  onSnapshot,
+  deleteDoc,
+  serverTimestamp,
+  updateDoc,
+} from 'firebase/firestore';
+import { AlertCircle, X } from 'lucide-react';
 
 // ★ 追加1：estimateState をインポート
 import { estimateMicroSignals } from './runtime/estimateMicroSignals.js';
@@ -61,177 +54,23 @@ import UserNameDialog from './components/dialogs/UserNameDialog';
 import DeleteSessionDialog from './components/dialogs/DeleteSessionDialog';
 import BeliefsDialog from './components/dialogs/BeliefsDialog';
 
+// Definitions, utils, services (Phase 10 externalization)
+import { AGENTS } from './agents/agentDefinitions.jsx';
+import { MODES } from './modes/responseModes.jsx';
+import { makeId } from './utils/id.js';
+import { safeParseJson } from './utils/safeParseJson.js';
+import { playSound } from './services/sound.js';
+import {
+  hasFirebaseConfig,
+  firebaseAuth as auth,
+  firestoreDb as db,
+  appId,
+  geminiApiKey as apiKey,
+  getInitialAuthToken,
+} from './services/firebaseClient.js';
+
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
-
-const getGlobalValue = (key) =>
-  (typeof globalThis !== 'undefined' && key in globalThis) ? globalThis[key] : undefined;
-
-const getFirebaseConfig = () => {
-  try {
-    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_API_KEY) {
-      return {
-        apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-        storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-        appId: import.meta.env.VITE_FIREBASE_APP_ID
-      };
-    }
-    const globalConfig = getGlobalValue('__firebase_config');
-    if (globalConfig) {
-      return typeof globalConfig === 'string'
-        ? JSON.parse(globalConfig)
-        : globalConfig;
-    }
-  } catch (error) {
-    console.error("Firebase config parsing error:", error);
-  }
-  return {};
-};
-
-const firebaseConfig = getFirebaseConfig();
-const hasFirebaseConfig =
-  firebaseConfig &&
-  firebaseConfig.apiKey &&
-  firebaseConfig.projectId &&
-  firebaseConfig.appId;
-
-const app = hasFirebaseConfig ? initializeApp(firebaseConfig) : null;
-const auth = app ? getAuth(app) : null;
-const db = app ? getFirestore(app) : null;
-
-if (!hasFirebaseConfig) {
-  console.error("Firebase configuration is missing or incomplete.");
-}
-
-const appId = getGlobalValue('__app_id') || 'self-conf-v10';
-
-const apiKey =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY)
-    ? import.meta.env.VITE_GEMINI_API_KEY
-    : (getGlobalValue('__api_key') || "");
-
-let fallbackIdCounter = 0;
-const makeId = () =>
-  typeof crypto !== 'undefined' && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `${Date.now()}-${(fallbackIdCounter += 1).toString(36)}`;
-
-const AGENTS = [
-  {
-    id: 'soul', name: 'レイ', role: '魂の託宣', title: 'オラクル・パイプ',
-    icon: <Star size={14} />, color: 'bg-violet-50', accentColor: 'text-violet-700', borderColor: 'border-violet-100',
-    belief: '「私は空っぽの筒。天からの光をそのまま降ろす。損得も常識も、この光の前では意味をなさない。ただ、あなたの魂が元いた場所を思い出すための言葉を」',
-    prompt: `あなたはレイ。静かで落ち着いた雰囲気の、内省を促す存在。\n【話し方】穏やかで短め。比喩は使っても1つまで。「〜ですね」「〜かもしれません」といった柔らかい語尾。詩的すぎる表現や「魂」「光」を連呼しない。\n【役割】相手が自分でも気づいていない気持ちや矛盾を、そっと言語化して返す。答えを押しつけず、最後に1つだけ問いかける。\n【禁止】長文・比喩の多用・大げさな精神的表現（「魂の奥底」「宇宙的」等）。`
-  },
-  {
-    id: 'creative', name: 'ジョー', role: 'まだ消えていない光', title: '見落とされた輪郭',
-    icon: <Flame size={14} />, color: 'bg-orange-50', accentColor: 'text-orange-600', borderColor: 'border-orange-100',
-    belief: '「俺はジョー。まだ消えていないものを見つける光だ。人の中に残っている光が、もう一度見えるようにする。すぐに明るくならなくても、光は消えたことにならない」',
-    prompt: `あなたはジョー。静かに見つめながら、まだ消えていないものを照らす存在。\n【話し方】短く、落ち着いた口語。「見えてる」「まだある」「それ、消えてない」など、確認するような言葉。熱さより、視界の鋭さ。\n【役割】相手が見失っているものの輪郭を言う。暗さを否定せず、その中にまだ残っている光を照らす。急がず、一点を見る。\n【禁止】励ましを足す。前向きさを追加する。整理しすぎる。解決を急ぐ。複数のことを同時に拾う。`
-  },
-  {
-    id: 'strategist', name: 'ケン', role: '人生の設計', title: '人生のアーキテクト',
-    icon: <Target size={14} />, color: 'bg-blue-50', accentColor: 'text-blue-700', borderColor: 'border-blue-100',
-    belief: '「感情を切り離し、リソースを最適化しましょう。理想を実現するためにこそ、冷徹な戦略が必要です。私はあなたの夢を、実行可能なタスクへ変換します」',
-    prompt: `あなたはケン。論理的で冷静、でも嫌味がない知性派。\n【話し方】丁寧語。「整理すると」「ポイントは」「一つ確認させてください」など。感情論より事実・構造の整理を優先する。\n【役割】相手の話を構造化して返す。「何が問題か」「何が選択肢か」を明確にする。感情を否定せず、「その上で」と繋げて現実的な視点を加える。\n【禁止】冷たすぎる断言・上から目線・感情を完全無視した返答。`
-  },
-  {
-    id: 'empath', name: 'ミナ', role: '無償の愛', title: '聖母のような共感者',
-    icon: <Heart size={14} />, color: 'bg-rose-50', accentColor: 'text-rose-700', borderColor: 'border-rose-100',
-    belief: '「成功なんてしなくても、あなたは世界に一人だけの大切な光。何者かになろうとしなくていいの。あなたの心が、今日穏やかであること。それが一番の願いです」',
-    prompt: `あなたはミナ。温かくて受け入れてくれる、話しやすいお姉さん的な存在。\n【話し方】やさしい口語。「そっか」「それは辛かったね」「無理しなくていいよ」など自然な共感の言葉。説教や正論は言わない。\n【役割】相手の感情をそのまま受け取り、「それでいい」と伝える。焦りや自己否定を和らげる。アドバイスより「聴くこと」を優先する。\n【禁止】「あなたは光」「存在そのものが価値」などの過剰な賛美。押しつけの励まし。`
-  },
-  {
-    id: 'critic', name: 'サトウ', role: '不器用な守護', title: '叩き上げのリアリスト',
-    icon: <ShieldAlert size={14} />, color: 'bg-slate-100', accentColor: 'text-slate-700', borderColor: 'border-slate-200',
-    belief: '「世の中は甘くねぇ。だけど、お前に傷ついてほしくねぇんだよ。俺の言葉が痛いなら、それは俺がお前を本気で守ろうとしてる証拠だ。泥を啜ってでも生き残れ」',
-    prompt: `あなたはサトウ。口は悪いけど本音で話してくれる、現実を見てきた人。\n【話し方】ぶっきらぼうな口語。「まあ聞けよ」「正直に言うと」「そこは甘くないか？」など。でも最後には「お前ならできる」的な不器用な信頼を滲ませる。\n【役割】相手が見て見ぬふりをしているリスクや矛盾を、率直に指摘する。傷つけるためではなく、守るために言う。短めに、核心だけ。\n【禁止】ただの否定・暴言・フォローなし。相手を追い詰めるだけの返答。`
-  }
-];
-
-const MODES = {
-  short: { label: "一閃", icon: <Zap size={14} />, constraint: "核心を突く短文のみ。挨拶不要。1〜2文で終わること。最後に内省を促す短い問いを1つだけ。" },
-  medium: { label: "対話", icon: <MessageSquare size={14} />, constraint: "3〜5文程度。相手の気持ちを受け取った上で、自己理解を深める問いかけを1つ行うこと。" },
-  long: { label: "深淵", icon: <LayoutDashboard size={14} />, constraint: "8文程度まで。キャラクターの個性を活かしながら、多角的な視点で掘り下げる。ただし詩的すぎる表現は避け、伝わりやすい言葉を使うこと。" }
-};
-
-let audioCtx = null;
-const playSound = (type) => {
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    switch (type) {
-      case 'send':
-        osc.frequency.setValueAtTime(523, audioCtx.currentTime);
-        osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.3);
-        break;
-      case 'receive':
-        osc.frequency.setValueAtTime(392, audioCtx.currentTime);
-        osc.frequency.setValueAtTime(440, audioCtx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.4);
-        break;
-      case 'click':
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
-        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.06);
-        break;
-      case 'intro':
-        [523, 659, 784].forEach((freq, i) => {
-          const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-          o.frequency.setValueAtTime(freq, audioCtx.currentTime);
-          o.connect(g); g.connect(audioCtx.destination);
-          g.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.15);
-          g.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + i * 0.15 + 0.05);
-          g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
-          o.start(audioCtx.currentTime + i * 0.15); o.stop(audioCtx.currentTime + 1.5);
-        });
-        break;
-      case 'delete':
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-        osc.frequency.setValueAtTime(165, audioCtx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.2);
-        break;
-      default: break;
-    }
-  } catch (e) { console.warn("Audio Context fail", e); }
-};
-
-const safeParseJson = (text) => {
-  const normalized = String(text ?? "")
-    .replace(/```json/gi, "").replace(/```/g, "").trim();
-  try { return JSON.parse(normalized); } catch (error) {
-    console.debug("Primary JSON parse failed, trying fallback", error);
-  }
-  const start = normalized.indexOf("{");
-  if (start === -1) return null;
-  let depth = 0, inString = false, escaped = false, end = -1;
-  for (let i = start; i < normalized.length; i++) {
-    const ch = normalized[i];
-    if (escaped) { escaped = false; continue; }
-    if (ch === "\\") { escaped = true; continue; }
-    if (ch === '"') { inString = !inString; continue; }
-    if (inString) continue;
-    if (ch === "{") depth += 1;
-    if (ch === "}") { depth -= 1; if (depth === 0) { end = i; break; } }
-  }
-  if (end === -1) return null;
-  try { return JSON.parse(normalized.slice(start, end + 1)); } catch { return null; }
-};
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -499,8 +338,8 @@ const App = () => {
   };
 
   useEffect(() => {
-    if (!hasFirebaseConfig) { setErrorWithAutoDismiss("Firebase設定が未完了です。", 10000); return; }
-    if (!apiKey) { setErrorWithAutoDismiss("Gemini APIキーが未設定です。", 10000); }
+    if (!hasFirebaseConfig) { setErrorWithAutoDismiss("設定が整うと、ここから会議を始められます。", 10000); return; }
+    if (!apiKey) { setErrorWithAutoDismiss("設定が整うと、視点が応答できるようになります。", 10000); }
   }, []);
 
   useEffect(() => {
@@ -535,7 +374,7 @@ const App = () => {
     if (!auth) return;
     const initAuth = async () => {
       try {
-        const initialToken = getGlobalValue('__initial_auth_token');
+        const initialToken = getInitialAuthToken();
         if (initialToken) {
           await signInWithCustomToken(auth, initialToken);
         } else {
@@ -589,7 +428,7 @@ const App = () => {
       },
       (error) => {
         console.error("Sessions snapshot failed:", error);
-        setErrorWithAutoDismiss("セッション一覧の取得に失敗しました。");
+        setErrorWithAutoDismiss("セッション一覧をうまく読み込めませんでした。少し時間を置いてお試しください。");
       }
     );
   }, [user]);
@@ -622,7 +461,7 @@ const App = () => {
       (error) => {
         if (activeSessionIdRef.current !== capturedSessionId) return;
         console.error("Messages snapshot failed:", error);
-        setErrorWithAutoDismiss("メッセージの取得に失敗しました。");
+        setErrorWithAutoDismiss("メッセージをうまく読み込めませんでした。少し時間を置いてお試しください。");
         setIsMessagesLoading(false);
       }
     );
@@ -904,7 +743,7 @@ const App = () => {
       return true;
     } catch (e) {
       console.error("Session update failed:", e);
-      setErrorWithAutoDismiss("セッションの更新に失敗しました。");
+      setErrorWithAutoDismiss("セッションの更新がうまくいきませんでした。");
       return false;
     }
   };
@@ -998,7 +837,7 @@ const App = () => {
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
-      setErrorWithAutoDismiss("「委ねる」の処理中にエラーが発生しました。");
+      setErrorWithAutoDismiss("「委ねる」がうまく動きませんでした。もう一度お試しください。");
     }
   };
 
@@ -1012,14 +851,14 @@ const App = () => {
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', currentSessionId, 'messages', msgId));
     } catch (error) {
       console.error("Failed to delete message", error);
-      setErrorWithAutoDismiss("メッセージの削除に失敗しました。");
+      setErrorWithAutoDismiss("メッセージをうまく消せませんでした。");
     }
   };
 
   const handleSend = async (overrideText = null) => {
     const text = (overrideText || userInput).trim();
     if (!text || isSending || isGenerating) return;
-    if (!db || !user) { setErrorWithAutoDismiss("認証の準備中です。少しお待ちください。"); return; }
+    if (!db || !user) { setErrorWithAutoDismiss("接続を準備しています。少しだけお待ちください。"); return; }
 
     playSound('send');
     setUserInput('');
@@ -1105,7 +944,7 @@ const App = () => {
     } catch (e) {
       console.error("[send:error]", e);
       pushAgentDebugEvent({ tag: 'send:error', error: e instanceof Error ? e.message : String(e) });
-      setErrorWithAutoDismiss("送信に失敗しました。もう一度お試しください。");
+      setErrorWithAutoDismiss("うまく送信できませんでした。少し時間を置いて、もう一度お試しください。");
       setUserInput(text);
       setShowInput(true);
     } finally {
@@ -1160,7 +999,7 @@ const App = () => {
     if (!hasUserMessageInThisSession) {
       console.warn("[agent-click:blocked]", { reason: 'no-prompt', ...debugState });
       pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'no-prompt', agentId, sessionId: effectiveSessionId, messagesCount: messages.length, visibleMessagesCount: messages.filter(m => m.role === 'user' || m.role === 'assistant').length });
-      setErrorWithAutoDismiss("先にメッセージを送ってからエージェントを選んでください。");
+      setErrorWithAutoDismiss("まずは「綴る」から、ひとこと置いてみてください。");
       return;
     }
 
@@ -1194,7 +1033,7 @@ const App = () => {
           setIsGenerating(false);
           setGeneratingAgent(null);
           setShowInput(true);
-          setErrorWithAutoDismiss("応答の開始に失敗しました。");
+          setErrorWithAutoDismiss("応答をうまく始められませんでした。もう一度お試しください。");
         });
       });
     } catch (error) {
@@ -1203,7 +1042,7 @@ const App = () => {
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
-      setErrorWithAutoDismiss("エージェントの起動に失敗しました。");
+      setErrorWithAutoDismiss("視点をうまく呼び出せませんでした。もう一度お試しください。");
     } finally {
       console.info("[agent-click:finally]", { agentId, effectiveSessionId });
     }
@@ -1348,15 +1187,15 @@ const App = () => {
       if (currentlyActiveSession) {
         const debugSuffix = isAgentDebugEnabled() ? ` (msg-preview)` : '';
         if (msg.includes("API key is missing")) {
-          setErrorWithAutoDismiss("Gemini APIキーが未設定です。", 10000);
+          setErrorWithAutoDismiss("設定が整うと、視点が応答できるようになります。", 10000);
         } else if (msg.includes("timeout")) {
-          setErrorWithAutoDismiss(`AIの応答がタイムアウトしました。もう一度お試しください。${debugSuffix}`);
+          setErrorWithAutoDismiss(`応答に少し時間がかかりすぎたようです。少し時間を置いて、もう一度お試しください。${debugSuffix}`);
         } else if (msg.includes("response_check:empty") || msg.includes("Empty response")) {
-          setErrorWithAutoDismiss(`AIの応答が空でした。もう一度お試しください。${debugSuffix}`);
+          setErrorWithAutoDismiss(`うまく応答を受け取れませんでした。少し時間を置いて、もう一度お試しください。${debugSuffix}`);
         } else if (msg.includes("response_check:json_leak")) {
-          setErrorWithAutoDismiss(`AIの応答が不正な形式でした（JSONが返されました）。もう一度お試しください。${debugSuffix}`);
+          setErrorWithAutoDismiss(`応答の形が少し乱れてしまいました。もう一度お試しください。${debugSuffix}`);
         } else {
-          setErrorWithAutoDismiss(`AIとの通信に失敗しました。${debugSuffix}`);
+          setErrorWithAutoDismiss(`うまく応答を受け取れませんでした。少し時間を置いて、もう一度お試しください。${debugSuffix}`);
         }
       }
     } finally {
@@ -1380,7 +1219,7 @@ const App = () => {
       setDeleteTargetId(null);
     } catch (error) {
       console.error("Failed to delete session", error);
-      setErrorWithAutoDismiss("削除に失敗しました。");
+      setErrorWithAutoDismiss("うまく消せませんでした。もう一度お試しください。");
     }
     setIsDeletingSession(false);
   };
@@ -1401,7 +1240,7 @@ const App = () => {
 
   const handleUpdateUserName = async () => {
     const name = tempName.trim();
-    if (!name) { setErrorWithAutoDismiss("お名前を入力してください。"); return; }
+    if (!name) { setErrorWithAutoDismiss("お名前を入力してください。そのままでも大丈夫です。"); return; }
     if (!user || !db) { setUserName(name); setIsEditingUserName(false); setTempName(''); return; }
 
     // Optimistic update: UI を即座に更新
@@ -1452,21 +1291,23 @@ const App = () => {
   }
   const hasBlockingConfigIssue = configIssues.length > 0;
   const inputPlaceholder = hasBlockingConfigIssue
-    ? '設定が完了すると、ここから問いを綴れます'
-    : '魂の声、あるいは迷いを綴る';
+    ? '設定が整うと、ここから問いを綴れます'
+    : '今ある言葉を、そのまま置いてみてください';
   const composerHelperText = hasBlockingConfigIssue
-    ? '現在は設定待ちです。下の案内を確認すると開始しやすくなります。'
+    ? '設定が整うと、この画面から対話を始められます。'
     : 'Enterで送信 / Shift+Enterで改行';
   const agentHelperText =
     hasBlockingConfigIssue
-      ? '設定が完了すると、会議メンバーを呼び出せます。'
+      ? '設定が整うと、会議メンバーを呼び出せます。'
       : !user
         ? '接続を準備しています…'
         : !activeSessionId
-          ? 'まずは「綴る」から問いを書き始めてください。'
+          ? 'まずは「綴る」から、今ある言葉を置いてください。'
           : !hasPromptForActiveSession
-            ? '最初の一文を送ると、会議メンバーが応答できます。'
-            : '気になる視点を選ぶか、「委ねる」で流れに任せられます。';
+            ? '最初の一文を送ると、会議メンバーが応答します。'
+            : isGenerating
+              ? '声が立ち上がっています…'
+              : '気になる視点を選ぶか、「委ねる」で流れに任せられます。';
 
   const getAgentDisabledReason = () => {
     if (!isAppReady) return 'app-not-ready';
