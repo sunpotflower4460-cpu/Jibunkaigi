@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "じぶん会議",
+    "slug": "jibunkaigi-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#eef4fb"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.jibunkaigi.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#eef4fb"
+      },
+      "package": "com.jibunkaigi.mobile"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "scheme": "jibunkaigi"
+  }
+}
