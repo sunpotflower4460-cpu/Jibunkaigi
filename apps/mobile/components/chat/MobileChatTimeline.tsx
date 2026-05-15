@@ -1,22 +1,41 @@
-import React from 'react';
+// TODO: Consider migrating to FlatList for large conversation histories.
+import React, { useRef, useEffect } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { MobileMessageBubble, type MessageRole } from './MobileMessageBubble';
+import { MobileThinkingIndicator } from './MobileThinkingIndicator';
+import type { MobileAgentId } from '../../state/mobileTypes';
 import { spacing } from '../../theme/tokens';
 
 export interface ChatMessage {
   id: string;
   role: MessageRole;
   text: string;
+  agentId?: MobileAgentId;
   agentLabel?: string;
 }
 
 interface MobileChatTimelineProps {
   messages: ChatMessage[];
+  isThinking?: boolean;
+  thinkingAgentId?: MobileAgentId;
 }
 
-export function MobileChatTimeline({ messages }: MobileChatTimelineProps) {
+export function MobileChatTimeline({
+  messages,
+  isThinking = false,
+  thinkingAgentId = 'ray',
+}: MobileChatTimelineProps) {
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Scroll to bottom whenever messages change or thinking state changes.
+  useEffect(() => {
+    scrollRef.current?.scrollToEnd({ animated: true });
+  }, [messages.length, isThinking]);
+
   return (
+    // TODO: FlatList candidate when message count grows large.
     <ScrollView
+      ref={scrollRef}
       style={styles.scroll}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
@@ -29,6 +48,8 @@ export function MobileChatTimeline({ messages }: MobileChatTimelineProps) {
           agentLabel={msg.agentLabel}
         />
       ))}
+      {isThinking && <MobileThinkingIndicator agentId={thinkingAgentId} />}
+      {/* Bottom padding so last message is not hidden by the composer */}
       <View style={styles.bottomPad} />
     </ScrollView>
   );
