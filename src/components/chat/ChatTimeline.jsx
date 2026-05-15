@@ -85,7 +85,10 @@ const ChatTimeline = React.forwardRef(function ChatTimeline(
             })}
 
             {isGenerating && (
-              <ThinkingIndicator agentName={generatingAgent?.name} />
+              <ThinkingIndicator
+                agentName={generatingAgent?.name}
+                agentId={generatingAgent?.id}
+              />
             )}
 
             {showMirrorInvite && (
