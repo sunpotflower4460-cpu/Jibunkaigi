@@ -47,10 +47,18 @@ apps/mobile/
     _layout.tsx       # Expo Router ルートレイアウト
     index.tsx         # メイン画面
   components/
-    chat/             # MobileMessageBubble / MobileChatTimeline / MobileEmptyState
+    chat/             # MobileMessageBubble / MobileChatTimeline / MobileEmptyState / MobileThinkingIndicator
     composer/         # MobileComposer / MobileAgentControlBar
+    modes/            # MobileModeSelector（一閃 / 対話 / 深淵）
     intro/            # MobileIntroScreen
     layout/           # MobileAppShell / MobileBackground
+    session/          # MobileSessionHeader
+  state/
+    mobileTypes.ts          # Universal* 型定義 + Mobile* エイリアス
+    useUniversalConversation.ts  # モード対応会話フック
+  services/
+    universalAgentMock.ts   # モード対応疑似エージェント応答
+    universalSessionLocal.ts # ローカルセッション管理
   theme/
     tokens.ts         # カラー / スペーシング / タイポ定数（design-tokens.css の RN 版）
   assets/             # アイコン・スプラッシュ等（今後追加）

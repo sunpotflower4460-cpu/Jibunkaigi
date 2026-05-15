@@ -14,20 +14,23 @@ import { MobileIntroScreen } from '../components/intro/MobileIntroScreen';
 import { MobileComposer } from '../components/composer/MobileComposer';
 import { MobileAgentControlBar } from '../components/composer/MobileAgentControlBar';
 import { MobileSessionHeader } from '../components/session/MobileSessionHeader';
-import { useMobileConversation } from '../state/useMobileConversation';
+import { MobileModeSelector } from '../components/modes/MobileModeSelector';
+import { useUniversalConversation } from '../state/useUniversalConversation';
 
 export default function IndexScreen() {
   const {
     session,
     messages,
     selectedAgent,
+    selectedMode,
     isThinking,
     selectAgent,
+    selectMode,
     sendMessage,
     startFromHint,
     clearConversation,
     createNewSession,
-  } = useMobileConversation();
+  } = useUniversalConversation();
 
   const [showIntro, setShowIntro] = useState(true);
 
@@ -84,6 +87,10 @@ export default function IndexScreen() {
 
             {/* Bottom controls */}
             <View style={styles.bottom}>
+              <MobileModeSelector
+                selected={selectedMode}
+                onSelect={selectMode}
+              />
               <MobileAgentControlBar
                 selected={selectedAgent}
                 onSelect={selectAgent}
