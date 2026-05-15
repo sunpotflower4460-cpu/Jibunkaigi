@@ -1,0 +1,94 @@
+/* ============================================================
+ * じぶん会議 — Design Tokens
+ * ------------------------------------------------------------
+ * 色 / 角丸 / 影 / blur / motion を一元管理する。
+ * 直接 JSX や他CSSに rgba(...) を書かず、必ずトークン経由で扱う。
+ * 世界観: 湖面・透明感・静かな高級感。派手なグラデは入れない。
+ * ============================================================ */
+
+:root {
+  /* --- Base palette --- */
+  --jk-bg-base: #eef4fb;
+  --jk-bg-deep: #d5e2f5;
+  --jk-ink-strong: #0f172a;
+  --jk-ink-main: #1f2937;
+  --jk-ink-soft: #334155;
+  --jk-ink-muted: #64748b;
+  --jk-ink-faint: #94a3b8;
+  --jk-ink-ghost: #cbd5e1;
+
+  /* --- Surfaces (glass / panel) --- */
+  --jk-surface-glass: rgba(255, 255, 255, 0.76);
+  --jk-surface-strong: rgba(255, 255, 255, 0.92);
+  --jk-surface-soft: rgba(255, 255, 255, 0.5);
+  --jk-surface-faint: rgba(255, 255, 255, 0.28);
+  --jk-surface-pressed: rgba(220, 230, 242, 0.82);
+
+  /* --- Borders --- */
+  --jk-border-soft: rgba(255, 255, 255, 0.68);
+  --jk-border-strong: rgba(255, 255, 255, 0.82);
+  --jk-border-subtle: rgba(148, 163, 184, 0.22);
+  --jk-border-ink: rgba(15, 23, 42, 0.08);
+
+  /* --- Accent (indigo / violet — quiet) --- */
+  --jk-accent-indigo: #6366f1;
+  --jk-accent-indigo-soft: rgba(99, 102, 241, 0.16);
+  --jk-accent-violet-soft: rgba(167, 139, 250, 0.16);
+  --jk-accent-amber: #d97706;
+
+  /* --- Status --- */
+  --jk-status-rose: #e11d48;
+  --jk-status-emerald: #059669;
+
+  /* --- Radius --- */
+  --jk-radius-xs: 10px;
+  --jk-radius-sm: 14px;
+  --jk-radius-md: 20px;
+  --jk-radius-lg: 28px;
+  --jk-radius-xl: 40px;
+  --jk-radius-full: 9999px;
+
+  /* --- Shadow (soft) --- */
+  --jk-shadow-soft: 0 18px 50px rgba(148, 163, 184, 0.16);
+  --jk-shadow-card: 0 24px 64px rgba(99, 102, 241, 0.12);
+  --jk-shadow-deep: 0 32px 90px rgba(15, 23, 42, 0.18);
+  --jk-shadow-pressed: inset 4px 4px 11px rgba(158, 172, 196, 0.24),
+                       inset -4px -4px 11px rgba(255, 255, 255, 0.7);
+
+  /* --- Inner highlight (the “glass top edge”) --- */
+  --jk-inner-top: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --jk-inner-bottom: inset 0 -1px 0 rgba(148, 163, 184, 0.07);
+
+  /* --- Blur --- */
+  --jk-blur-md: blur(22px) saturate(1.35);
+  --jk-blur-lg: blur(28px) saturate(1.42);
+
+  /* --- Motion --- */
+  --jk-motion-fast: 160ms;
+  --jk-motion-base: 260ms;
+  --jk-motion-slow: 420ms;
+  --jk-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --jk-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* --- Spacing / Layout --- */
+  --jk-tap-min: 44px;            /* Apple HIG / iOS 標準 */
+  --jk-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --jk-safe-top: env(safe-area-inset-top, 0px);
+  --jk-content-max: 720px;
+
+  /* --- Type --- */
+  --jk-font-jp: 'Noto Sans JP', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --jk-leading-prose: 1.85;
+  --jk-leading-tight: 1.45;
+  --jk-tracking-loose: 0.04em;
+  --jk-tracking-tight: -0.01em;
+}
+
+/* High-contrast / accessibility fallback ----------------------- */
+@media (prefers-contrast: more) {
+  :root {
+    --jk-ink-muted: #475569;
+    --jk-ink-faint: #64748b;
+    --jk-border-subtle: rgba(71, 85, 105, 0.4);
+  }
+}

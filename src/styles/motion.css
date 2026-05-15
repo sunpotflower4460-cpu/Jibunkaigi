@@ -1,0 +1,138 @@
+/* ============================================================
+ * じぶん会議 — Motion
+ * ------------------------------------------------------------
+ * アニメーション / トランジション / focus-visible の管理。
+ * 派手にしすぎず、prefers-reduced-motion に必ず追従する。
+ * ============================================================ */
+
+/* ===== Fade / Slide in helpers ===== */
+.animate-in           { animation: jk-fade-in var(--jk-motion-slow) var(--jk-ease-out) both; }
+.fade-in              { animation-name: jk-fade-in; }
+.slide-in-from-top-2  { animation: jk-slide-in-top-2 var(--jk-motion-slow) var(--jk-ease-out) both; }
+.slide-in-from-bottom-2{animation: jk-slide-in-bottom-2 var(--jk-motion-slow) var(--jk-ease-out) both;}
+.slide-in-from-top-1  { animation: jk-slide-in-top-1 var(--jk-motion-base) var(--jk-ease-out) both; }
+
+/* ===== Scrollbar utility ===== */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ===== Keyframes ===== */
+@keyframes jk-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes jk-slide-in-top-2 {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes jk-slide-in-top-1 {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes jk-slide-in-bottom-2 {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes jk-water-shimmer {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  33%      { opacity: 0.68; transform: scale(1.015); }
+  66%      { opacity: 0.5;  transform: scale(0.995); }
+}
+@keyframes jk-orb-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.4; }
+  33%      { transform: translate3d(8px, -22px, 0) scale(1.07); opacity: 0.55; }
+  66%      { transform: translate3d(-5px, -11px, 0) scale(1.03); opacity: 0.46; }
+}
+@keyframes jk-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-11px) rotate(0.5deg); }
+}
+@keyframes jk-scale-in {
+  from { opacity: 0; transform: scale(0.86); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes jk-card-rise {
+  from { opacity: 0; transform: translateY(36px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes jk-shimmer-pass {
+  0%   { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+  14%  { opacity: 0.5; }
+  100% { transform: translateX(260%) skewX(-12deg); opacity: 0; }
+}
+@keyframes jk-crystal-pulse {
+  0%, 100% { opacity: 0.82; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.18); }
+}
+
+/* ===== Composite helpers ===== */
+.anim-float     { animation: jk-float 5.6s ease-in-out infinite; }
+.anim-scale-in  { animation: jk-scale-in 0.68s var(--jk-ease-out) 0.1s both; }
+.anim-card-rise { animation: jk-card-rise 0.88s var(--jk-ease-out) 0.3s both; }
+
+/* ===== Thinking dots ===== */
+.thinking-dot {
+  width: 7px; height: 7px;
+  border-radius: var(--jk-radius-full);
+  background: linear-gradient(135deg, rgba(147, 197, 253, 0.9), rgba(167, 139, 250, 0.9));
+  animation: jk-crystal-pulse 1.4s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(147, 197, 253, 0.32);
+}
+.thinking-dot:nth-child(2) {
+  animation-delay: 0.22s;
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.9), rgba(99, 102, 241, 0.9));
+  box-shadow: 0 0 8px rgba(167, 139, 250, 0.32);
+}
+.thinking-dot:nth-child(3) {
+  animation-delay: 0.44s;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(147, 197, 253, 0.9));
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.32);
+}
+
+/* ===== Hero shimmer (Intro Overlay) — 控えめ ===== */
+.hero-panel { position: relative; overflow: hidden; }
+.hero-panel::after {
+  content: '';
+  position: absolute; top: 0; left: 0; width: 38%; height: 100%;
+  background: linear-gradient(108deg, transparent 18%, rgba(255, 255, 255, 0.2) 50%, transparent 82%);
+  animation: jk-shimmer-pass 11s ease-in-out 3s infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* ===== Focus-visible — 一貫した focus ring ===== */
+:where(button, a, [role="button"], textarea, input, select):focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.55);
+  outline-offset: 2px;
+  border-radius: var(--jk-radius-sm);
+}
+.composer-shell:focus-within textarea:focus-visible {
+  outline: none;
+}
+
+/* ===== Reduced motion — 必ず効かせる ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .water-shimmer,
+  .aurora-orb,
+  .anim-float,
+  .anim-scale-in,
+  .anim-card-rise,
+  .hero-panel::after,
+  .thinking-dot {
+    animation: none !important;
+  }
+  .water-shimmer { opacity: 0.4; }
+  .aurora-orb { opacity: 0.3; }
+}
+
+/* ===== Safe area — iOS 系の下部 ===== */
+.safe-bottom { padding-bottom: max(1rem, var(--jk-safe-bottom)); }
+.safe-top    { padding-top: max(0.5rem, var(--jk-safe-top)); }

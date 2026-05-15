@@ -19,10 +19,9 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import {
-  Users, Send, ShieldAlert, Heart, Trash2,
-  Plus, Menu, MessageSquare, UserCircle2, X, Target, Sparkles,
-  Edit3, Pin, Zap, AlertCircle, Loader2, Feather, LayoutDashboard,
-  Info, Compass, ChevronRight, Check, Copy, Flame, Star
+  ShieldAlert, Heart, X, Target, MessageSquare,
+  Zap, AlertCircle, LayoutDashboard,
+  Flame, Star
 } from 'lucide-react';
 
 // ★ 追加1：estimateState をインポート
@@ -38,7 +37,7 @@ import { getAfterglowSeed } from './runtime/afterglow';
 import { buildReactionSystemPrompt, buildReactionUserPrompt, sanitizeReactionData } from './runtime/internalReaction';
 import { pickContextualAgent, getLastRespondingAgentId } from './runtime/switchAgent';
 import { isSurfaceDebugEnabled, SURFACE_DEBUG_MAX_ENTRIES } from './runtime/surfaceDebug';
-import { getOthersVisibilityState, getOthersEmptyMessage, getOthersDebugLabel } from './runtime/getOthersVisibilityState';
+import { getOthersVisibilityState } from './runtime/getOthersVisibilityState';
 import { getJoeDebugRuntimeFlags, setJoeDebugEnabled, JOE_DEBUG_STORAGE_KEY } from './runtime/joeDebug';
 import { isInspectorEnabled, setInspectorEnabled, INSPECTOR_STORAGE_KEY } from './runtime/inspectorDebug';
 import { saveTraceToHistory, loadTraceHistory } from './runtime/trace/traceHistoryStore.js';
@@ -49,6 +48,18 @@ import AgentInspectorPanel from './components/AgentInspectorPanel';
 import AgentGateDebugPanel, { isAgentDebugEnabled } from './components/AgentGateDebugPanel';
 import CompareModePanel from './components/CompareModePanel';
 import FloatingAgentBar from './components/FloatingAgentBar';
+
+// じぶん会議 — premium UI/UX components
+import BackgroundLayer from './components/layout/BackgroundLayer';
+import TopHeader from './components/layout/TopHeader';
+import Sidebar from './components/sidebar/Sidebar';
+import Composer from './components/composer/Composer';
+import AgentControlBar from './components/composer/AgentControlBar';
+import ChatTimeline from './components/chat/ChatTimeline';
+import IntroOverlay from './components/dialogs/IntroOverlay';
+import UserNameDialog from './components/dialogs/UserNameDialog';
+import DeleteSessionDialog from './components/dialogs/DeleteSessionDialog';
+import BeliefsDialog from './components/dialogs/BeliefsDialog';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
@@ -1468,79 +1479,49 @@ const App = () => {
   const agentDisabledReason = getAgentDisabledReason();
   const comparePanelVisible = shouldShowComparePanel({ enabled: isCompareModeEnabled, entries: compareEntries });
 
+  const sidebarTitle =
+    sessions.find((s) => s.id === currentSessionId)?.title ||
+    optimisticSessionTitles[currentSessionId] ||
+    '思考の領域';
+
   return (
-    <div className="lake-bg premium-shell relative min-h-screen overflow-hidden flex font-sans text-[#2d3748]">
-      <div aria-hidden="true" className="water-shimmer z-0" />
-      <div aria-hidden="true" className="mesh-grid z-0" />
-      <div aria-hidden="true" className="aurora-orb aurora-orb-left z-0" />
-      <div aria-hidden="true" className="aurora-orb aurora-orb-right z-0" />
-      <div aria-hidden="true" className="aurora-orb aurora-orb-top z-0" />
-      <div aria-hidden="true" className="aurora-orb aurora-orb-bottom z-0" />
+    <div className="lake-bg premium-shell relative min-h-screen overflow-hidden flex font-sans text-slate-800">
+      <BackgroundLayer />
       <div
         aria-hidden={showIntro ? 'true' : 'false'}
         className={`flex w-full h-full relative z-10 transition-opacity duration-500 ${isHomeReady || !showIntro ? 'opacity-100' : 'opacity-0'} ${showIntro ? 'pointer-events-none' : ''}`}
       >
-        {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-[60] md:hidden" />}
-
-        <aside className={`sidebar-shell fixed md:relative inset-y-0 left-0 w-72 z-[70] transition-transform duration-300 backdrop-blur-xl flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-          <div className="flex-1 flex flex-col p-6 overflow-hidden">
-            <button type="button" onClick={() => setShowBeliefs(true)} className="flex items-center gap-3 mb-10 px-2 cursor-pointer text-left">
-              <div className="p-2.5 rounded-2xl bg-[#1e293b] text-white flex items-center justify-center shadow-lg shadow-slate-900/20"><Users size={18} /></div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[11px] font-black tracking-[0.12em] text-slate-400">内なる会議</span>
-                <h1 className="text-lg font-black tracking-tighter text-slate-800">じぶん会議</h1>
-              </div>
-            </button>
-            <button onClick={() => { setTempName(userName); setIsEditingUserName(true); }} className="group flex items-center gap-4 w-full p-4 mb-8 rounded-[1.75rem] panel-surface hover:-translate-y-0.5 transition-all text-left">
-              <div className="w-10 h-10 rounded-full bg-white/50 border border-white/70 flex items-center justify-center text-slate-400 shrink-0 shadow-inner"><UserCircle2 size={20} /></div>
-              <div className="flex-1 overflow-hidden">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Client</p>
-                <p className="font-bold truncate text-xs">{userName}</p>
-              </div>
-              <Edit3 size={12} className="text-slate-300 group-hover:text-indigo-500 transition-colors" />
-            </button>
-            <button onClick={() => { setCurrentSessionId(null); setIsSidebarOpen(false); resetSessionUIState(true); }} className="action-primary flex items-center justify-center gap-2 w-full py-4 text-white rounded-2xl font-bold text-xs mb-6 shrink-0">
-              <Plus size={16} /> 新しい問い
-            </button>
-            <div className="flex-1 overflow-y-auto no-scrollbar space-y-1 relative">
-              {sessions.length === 0 && <p className="text-[10px] text-slate-400 font-bold px-4 py-2 text-center opacity-70 mt-4">過去の問いはありません</p>}
-              {sessions.map(s => (
-                <div key={s.id} onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); resetSessionUIState(false); }} className={`group relative flex flex-col px-4 py-3 rounded-[1.35rem] cursor-pointer transition-all border ${currentSessionId === s.id ? 'session-card-active text-indigo-700' : 'session-card-idle text-slate-500'}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0 flex items-center gap-1.5">
-                      {s.isPinned && <Pin size={10} className="text-amber-500 shrink-0 fill-amber-500" />}
-                      {editingSessionId === s.id
-                        ? <input autoFocus className="flex-1 bg-white border border-indigo-200 rounded px-1 py-0.5 text-xs font-bold outline-none" value={editSessionTitle} onChange={e => setEditSessionTitle(e.target.value)} onBlur={async () => { const val = editSessionTitle.trim(); if(val) await safeUpdateSession(s.id, { title: val }); setEditingSessionId(null); }} onKeyDown={e => e.key === 'Enter' && e.target.blur()} />
-                        : <span className="text-xs font-bold truncate">{s.title || "無題"}</span>
-                      }
-                    </div>
-                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <button aria-label="タイトルを編集" title="タイトルを編集" onClick={(e) => { e.stopPropagation(); setEditingSessionId(s.id); setEditSessionTitle(s.title || ''); }} className="p-1 hover:text-indigo-600"><Edit3 size={10}/></button>
-                      <button aria-label={s.isPinned ? 'ピン留めを外す' : 'ピン留めする'} title={s.isPinned ? 'ピン留めを外す' : 'ピン留めする'} onClick={(e) => { e.stopPropagation(); safeUpdateSession(s.id, { isPinned: !s.isPinned }); }} className={`p-1 ${s.isPinned ? 'text-amber-500' : 'hover:text-amber-500'}`}><Pin size={10}/></button>
-                      <button aria-label="セッションを削除" title="セッションを削除" onClick={(e) => { e.stopPropagation(); setDeleteTargetId(s.id); }} className="p-1 hover:text-rose-500"><Trash2 size={10}/></button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-4 border-t border-slate-300/30 shrink-0">
-              <button onClick={() => { setShowBeliefs(true); setIsSidebarOpen(false); }} className="flex items-center justify-center gap-2 text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors w-full p-2 rounded-xl hover:bg-white/30"><Info size={14} className="text-slate-400" /> エージェントの役割</button>
-            </div>
-          </div>
-        </aside>
+        <Sidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          userName={userName}
+          onOpenUserName={() => { setTempName(userName); setIsEditingUserName(true); }}
+          onOpenBeliefs={() => { setShowBeliefs(true); setIsSidebarOpen(false); }}
+          onNewSession={() => { setCurrentSessionId(null); setIsSidebarOpen(false); resetSessionUIState(true); }}
+          sessions={sessions}
+          currentSessionId={currentSessionId}
+          editingSessionId={editingSessionId}
+          editSessionTitle={editSessionTitle}
+          onSelectSession={(id) => { setCurrentSessionId(id); setIsSidebarOpen(false); resetSessionUIState(false); }}
+          onStartEdit={(id, title) => { setEditingSessionId(id); setEditSessionTitle(title); }}
+          onChangeEditTitle={setEditSessionTitle}
+          onCommitEditTitle={async (id) => {
+            const val = editSessionTitle.trim();
+            if (val) await safeUpdateSession(id, { title: val });
+            setEditingSessionId(null);
+          }}
+          onTogglePin={(s) => safeUpdateSession(s.id, { isPinned: !s.isPinned })}
+          onRequestDelete={(id) => setDeleteTargetId(id)}
+        />
 
         <div className="flex-1 flex flex-col min-w-0 relative">
-          <header className="header-shell flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 gap-2 mx-3 mt-3 sm:mx-4 sm:mt-4" style={{ borderRadius: '24px', zIndex: 10 }}>
-            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-              <button aria-label="メニューを開く" title="メニューを開く" onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-500 shrink-0"><Menu size={18} /></button>
-              <h2 className="font-bold text-sm tracking-tight truncate text-slate-800">{sessions.find(s => s.id === currentSessionId)?.title || optimisticSessionTitles[currentSessionId] || "思考の領域"}</h2>
-            </div>
-            <div className="flex p-1 rounded-2xl neu-concave shrink-0 shadow-inner">
-              {Object.entries(MODES).map(([key, m]) => (
-                <button aria-label={`応答モード: ${m.label}`} title={m.label} key={key} onClick={() => setSelectedMode(key)} className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${selectedMode === key ? 'bg-white/60 text-slate-900 shadow-sm border border-white/50' : 'text-slate-400 hover:text-slate-600 hover:bg-white/20'}`}>{m.icon} <span className="hidden sm:inline">{m.label}</span></button>
-              ))}
-            </div>
-          </header>
+          <TopHeader
+            title={sidebarTitle}
+            onOpenSidebar={() => setIsSidebarOpen(true)}
+            modes={MODES}
+            selectedMode={selectedMode}
+            onChangeMode={setSelectedMode}
+          />
 
           {errorMessage && (
             <div className="mx-6 mt-4 p-3 rounded-xl glass-card border-rose-200/50 flex items-center justify-between animate-in fade-in slide-in-from-top-2 z-40">
@@ -1571,323 +1552,126 @@ const App = () => {
             </div>
           )}
 
-          <div className="p-4 md:p-6 relative z-30">
-            <div className="max-w-4xl mx-auto min-h-[72px] flex flex-col justify-center">
+          <div className="p-4 md:p-6 safe-bottom relative z-30">
+            <div className="max-w-4xl mx-auto min-h-[72px] flex flex-col justify-center gap-2">
               {showInput && !isGenerating && !isSending && (
-                <div className="flex gap-4 animate-in fade-in slide-in-from-top-2 w-full">
-                  <div className="flex-1">
-                    <p id="composer-helper-text" className="mb-2 px-2 text-[11px] font-bold text-slate-400">{composerHelperText}</p>
-                    <div className="composer-shell relative">
-                      <textarea ref={textareaRef} rows="1" value={userInput} disabled={hasBlockingConfigIssue} onChange={(e) => { setUserInput(e.target.value); autoResize(); }} onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder={inputPlaceholder} aria-label="相談内容の入力欄" aria-describedby="composer-helper-text" className="w-full rounded-[1.75rem] px-6 py-5 pr-16 text-base font-medium outline-none resize-none transition-all bg-white/20 border border-white/30 focus-visible:ring-2 focus-visible:ring-indigo-300/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white/30 placeholder:text-slate-400/80 disabled:opacity-60 disabled:cursor-not-allowed" />
-                      <button aria-label="メッセージを送信" title="メッセージを送信" onClick={() => handleSend()} disabled={!userInput.trim() || !isAppReady} className="action-primary absolute right-2.5 top-1/2 -translate-y-1/2 p-3 rounded-2xl text-white transition-all active:scale-95 disabled:opacity-30">
-                        <Send aria-hidden="true" size={18} />
-                      </button>
-                    </div>
-                  </div>
-                  {messages.length > 0 && <button aria-label="入力欄を閉じる" title="入力欄を閉じる" onClick={() => setShowInput(false)} className="p-2 text-slate-400 hover:text-slate-900 self-center"><X size={20}/></button>}
-                </div>
+                <Composer
+                  ref={textareaRef}
+                  userInput={userInput}
+                  onChange={setUserInput}
+                  onSend={() => handleSend()}
+                  onClose={() => setShowInput(false)}
+                  onResize={autoResize}
+                  disabled={hasBlockingConfigIssue}
+                  canSend={!!userInput.trim() && isAppReady}
+                  placeholder={inputPlaceholder}
+                  helperText={composerHelperText}
+                  showCloseButton={messages.length > 0}
+                />
               )}
               {showDelegateBar && (
-                <div className="relative flex flex-col animate-in fade-in slide-in-from-bottom-2 w-full gap-2">
-                  <div className="flex items-center w-full">
-                    <div className="flex-1 flex gap-2 py-2 px-1 overflow-x-auto no-scrollbar items-center w-full">
-                      <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents || isGenerating || isSending} className="shrink-0 flex items-center gap-3 px-4 py-2.5 bg-[#1e293b] text-white rounded-xl shadow-xl shadow-slate-800/10 hover:opacity-90 transition-all active:scale-95 text-left border border-indigo-900/20 disabled:opacity-30 disabled:cursor-not-allowed">
-                        <Compass size={14} className="text-indigo-400" />
-                        <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">心の鏡</span><span className="text-[7px] opacity-70 font-bold tracking-tighter truncate">思考を総括する</span></div>
-                      </button>
-                      <button onClick={() => handleRandomResponse()} disabled={!canUseAgents || isGenerating || isSending} className="shrink-0 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-500/80 to-indigo-500/80 text-white rounded-xl text-[10px] font-black shadow-lg active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
-                        <Sparkles size={14} /> 委ねる
-                      </button>
-                      <div className="w-px h-6 bg-slate-300 self-center mx-1 shrink-0" />
-                      {(() => {
-                        const toggleProps = showInput
-                          ? { onClick: () => setShowInput(false), icon: <X size={14} />, label: '閉じる' }
-                          : { onClick: () => setShowInput(true), icon: <Feather size={14} />, label: '綴る' };
-                        return (
-                          <button onClick={toggleProps.onClick} className="shrink-0 flex items-center gap-2 px-5 py-3.5 text-slate-600 rounded-xl text-[10px] font-black hover:bg-white active:scale-95 neu-convex-sm">
-                            {toggleProps.icon} {toggleProps.label}
-                          </button>
-                        );
-                      })()}
-                      {AGENTS.map(a => (
-                        <button key={a.id} onClick={() => handleAgentClick(a.id)} disabled={!canUseAgents || isGenerating || isSending} className={`shrink-0 flex items-center gap-3 px-4 py-2.5 rounded-xl ${a.color} ${a.accentColor} text-left active:scale-[0.97] neu-convex-sm disabled:opacity-30 disabled:cursor-not-allowed`}>
-                          {a.icon}
-                          <div className="flex flex-col min-w-0"><span className="text-[10px] font-black mb-0.5">{a.name}</span><span className="text-[7px] opacity-50 font-bold tracking-tighter truncate">{a.role}</span></div>
-                        </button>
-                      ))}
-                      <div className="w-4 md:w-0 shrink-0" />
-                    </div>
-                  </div>
-                  <p className="px-2 text-[11px] font-bold text-slate-400">{agentHelperText}</p>
-                  {isAgentDebugEnabled() && agentDisabledReason && (
-                    <p className="px-2 text-[10px] font-black text-orange-500 font-mono">
-                      disabled: {agentDisabledReason}
-                    </p>
-                  )}
-                </div>
+                <AgentControlBar
+                  agents={AGENTS}
+                  canUseAgents={canUseAgents}
+                  isBusy={isGenerating || isSending}
+                  helperText={agentHelperText}
+                  agentDisabledReason={agentDisabledReason}
+                  isDebugMode={isAgentDebugEnabled()}
+                  showInput={showInput}
+                  onToggleShowInput={setShowInput}
+                  onAgentClick={(id) => handleAgentClick(id)}
+                  onMasterClick={() => handleAgentClick('master', true)}
+                  onRandomResponse={handleRandomResponse}
+                />
               )}
             </div>
           </div>
 
-          <main ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 no-scrollbar relative z-10">
-            <div className="max-w-2xl mx-auto pb-32">
-              {shouldShowFullMessagesLoading ? (
-                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-slate-400" size={32} /></div>
-              ) : (
-                <>
-                  {messages.length === 0 && !isGenerating && !isSending && showInput && (
-                    <div className="h-full flex flex-col items-center justify-center py-20 animate-in fade-in duration-1000">
-                      <div className="w-20 h-20 rounded-[1.75rem] flex items-center justify-center text-slate-400 mb-6 glass-card shadow-xl shadow-indigo-950/5"><Feather size={34} /></div>
-                      <h3 className="text-lg font-black text-slate-800 mb-2">思考の部屋へようこそ</h3>
-                      <p className="text-xs text-slate-500 mb-10 text-center font-medium">心の欠片を、自由に置いてみてください。</p>
-                      <div className="flex flex-col gap-3 w-full max-w-sm">
-                        {["言葉にならないけど、ずっと胸にあるもの", "誰にも言っていない、小さな違和感", "理由はないけど、心が動いたこと"].map((hint, idx) => (
-                          <button key={idx} onClick={() => handleHintClick(hint)} className="w-full py-4 px-6 rounded-[1.6rem] text-xs font-bold text-slate-600 hover:text-slate-800 transition-all text-left panel-surface hover:-translate-y-0.5">{hint}</button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {messages.map((msg, i) => {
-                    const isUser = msg.role === 'user';
-                    const agent = AGENTS.find(a => a.id === msg.agentId) || (msg.agentId === 'master' ? { name: '心の鏡' } : null);
-                    return (
-                      <div key={msg.id || i} className="group/msg mb-12 animate-in fade-in slide-in-from-bottom-2 flex flex-col items-start">
-                        <div className={`flex flex-col ${isUser ? 'items-end self-end' : 'items-start'}`}>
-                          {!isUser && (
-                            <div className="flex items-center gap-2 mb-2 ml-1">
-                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{agent?.name}</span>
-                              {msg.agentId === 'master' && <span className="bg-indigo-50/50 text-indigo-400 text-[8px] font-black px-1 rounded border border-indigo-100/30">総括</span>}
-                            </div>
-                          )}
-                          <div onClick={() => setOpenToolbarMsgId(openToolbarMsgId === msg.id ? null : msg.id)} className={`relative px-5 py-4 whitespace-pre-wrap text-[15px] leading-relaxed rounded-[1.75rem] transition-all cursor-pointer border ${isUser ? 'message-user text-slate-100' : 'message-agent mirror-reflection text-slate-700'}`}>
-                            {msg.content}
-                            {msg.id && (
-                              <div className={`absolute top-2 right-2 flex items-center gap-1 p-1 rounded-lg transition-opacity ${isUser ? 'bg-slate-700/50' : 'bg-white/50 shadow-sm'} ${openToolbarMsgId === msg.id ? 'opacity-100' : 'opacity-0 md:group-hover/msg:opacity-100'}`} onClick={e => e.stopPropagation()}>
-                                <button aria-label="メッセージをコピー" title="メッセージをコピー" onClick={() => { handleCopyMessage(msg.id, msg.content); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-indigo-500">{copiedMsgId === msg.id ? <Check size={12}/> : <Copy size={12}/>}</button>
-                                <button aria-label="メッセージを削除" title="メッセージを削除" onClick={() => { handleDeleteMessage(msg.id); setOpenToolbarMsgId(null); }} className="p-1 text-slate-400 hover:text-rose-500"><Trash2 size={12}/></button>
-                              </div>
-                            )}
-                            {(() => {
-                              // OTHERS 表示状態を集約判定
-                              const othersState = getOthersVisibilityState({
-                                activeSessionId: currentSessionId,
-                                hasPromptForActiveSession,
-                                isMessagesLoading,
-                                visibleMessagesCount: messages.filter(m => m.role === 'user' || m.role === 'ai').length,
-                                compareModeEnabled: isCompareModeEnabled,
-                                reactions: msg.reactions,
-                                isGenerating,
-                              });
-
-                              // 通常は reactions がある AI メッセージのみ
-                              if (!isUser && othersState.shouldRenderOthers && othersState.hasReactionData) {
-                                return (
-                                  <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-white/20">
-                                    <button onClick={e => { e.stopPropagation(); if (autoExpandReactions?.msgId === msg.id && !activeReaction) setAutoExpandReactions(null); else { setActiveReaction(null); setAutoExpandReactions({msgId: msg.id, isLoading: false}); } }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${(autoExpandReactions?.msgId === msg.id && !activeReaction) ? 'bg-slate-800 text-white border-slate-900 shadow-md' : 'bg-white/40 text-slate-500 border-white/60 hover:bg-white/60'}`}>
-                                      <Users size={10} /> OTHERS
-                                      {(isCompareModeEnabled || isAgentDebugEnabled()) && (
-                                        <span className="text-[8px] opacity-60 ml-0.5">({othersState.othersCount})</span>
-                                      )}
-                                    </button>
-                                    {Object.entries(msg.reactions).map(([rId]) => {
-                                      const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
-                                      return (
-                                        <button key={rId} onClick={e => { e.stopPropagation(); setActiveReaction(activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? null : {msgId: msg.id, agentId: rId}); setAutoExpandReactions(null); }} className={`px-3 py-1 rounded-full border text-[9px] font-black transition-all flex items-center gap-1.5 ${activeReaction?.msgId === msg.id && activeReaction?.agentId === rId ? 'bg-slate-800 text-white border-slate-900' : 'bg-white/40 text-slate-400 border-white/60 hover:bg-white/60'}`}>
-                                          {rAgent.icon} {rAgent.name}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                );
-                              }
-
-                              // Compare Mode 中は、reactions がなくても状態表示
-                              if (!isUser && isCompareModeEnabled && othersState.shouldRenderOthers && !othersState.hasReactionData) {
-                                const emptyMsg = getOthersEmptyMessage(othersState.reason, isCompareModeEnabled);
-                                const debugLabel = getOthersDebugLabel(othersState);
-                                return (
-                                  <div className="mt-4 pt-3 border-t border-white/20">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                                        <Users size={10} /> OTHERS
-                                      </span>
-                                      {isAgentDebugEnabled() && (
-                                        <span className="text-[8px] text-slate-400 opacity-70 font-mono">{debugLabel}</span>
-                                      )}
-                                    </div>
-                                    {emptyMsg && (
-                                      <p className="text-[11px] text-slate-400 italic">{emptyMsg}</p>
-                                    )}
-                                  </div>
-                                );
-                              }
-
-                              return null;
-                            })()}
-                          </div>
-
-                          {!isUser && activeReaction?.msgId === msg.id && msg.reactions?.[activeReaction.agentId] && (
-                            <div className="mt-3 w-full p-5 rounded-[1.75rem] panel-surface animate-in fade-in slide-in-from-top-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{AGENTS.find(a => a.id === activeReaction.agentId)?.name}</span>
-                                <span className="px-1.5 py-0.5 bg-white/50 border text-slate-400 text-[8px] font-black rounded italic">{msg.reactions[activeReaction.agentId]?.posture}</span>
-                                <span className={`text-[8px] px-2 py-0.5 rounded-full font-black ${
-                                  msg.reactions[activeReaction.agentId]?.stance === '賛成' ? 'bg-emerald-100 text-emerald-700' :
-                                  msg.reactions[activeReaction.agentId]?.stance === '反対' ? 'bg-rose-100 text-rose-700' :
-                                  'bg-slate-100 text-slate-500'
-                                }`}>{msg.reactions[activeReaction.agentId]?.stance}</span>
-                              </div>
-                              <p className="text-[13px] font-medium text-slate-600 italic">「{msg.reactions[activeReaction.agentId]?.comment}」</p>
-                            </div>
-                          )}
-
-                          {!isUser && autoExpandReactions?.msgId === msg.id && !activeReaction && (
-                            <div className="mt-4 p-4 rounded-[1.75rem] panel-surface flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 shadow-lg border border-indigo-100/50 w-full min-h-[80px] relative">
-                              <div className="flex items-center justify-between px-1 mb-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[9px] font-black text-indigo-400/80 uppercase tracking-widest">Others</span>
-                                  {(isCompareModeEnabled || isAgentDebugEnabled()) && msg.reactions && (
-                                    <span className="text-[8px] text-slate-400 opacity-70 font-mono">
-                                      ({Object.keys(msg.reactions).length} voices)
-                                    </span>
-                                  )}
-                                </div>
-                                <button aria-label="Othersを閉じる" title="閉じる" onClick={e => { e.stopPropagation(); setAutoExpandReactions(null); }} className="text-slate-400 hover:bg-white/50 rounded-full p-1"><X size={12}/></button>
-                              </div>
-                              {autoExpandReactions.isLoading ? (
-                                <div className="py-4 flex flex-col items-center justify-center opacity-70">
-                                  <div className="flex gap-1.5 mb-2">
-                                    <div className="thinking-dot" style={{ width:'6px', height:'6px' }} />
-                                    <div className="thinking-dot" style={{ width:'6px', height:'6px' }} />
-                                    <div className="thinking-dot" style={{ width:'6px', height:'6px' }} />
-                                  </div>
-                                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Gathering thoughts…</p>
-                                </div>
-                              ) : msg.reactions && Object.keys(msg.reactions).length > 0 ? (
-                                Object.entries(msg.reactions).map(([rId, data]) => {
-                                  const rAgent = AGENTS.find(a => a.id === rId); if (!rAgent) return null;
-                                  return (
-                                    <div key={rId} className="flex gap-3 items-start bg-white/60 p-3 rounded-xl border border-white/80 animate-in fade-in">
-                                      <div className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${rAgent.color} ${rAgent.accentColor} border ${rAgent.borderColor}`}>{rAgent.icon}</div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <span className="text-[10px] font-black text-slate-700">{rAgent.name}</span>
-                                          <span className="text-[8px] px-1.5 py-0.5 bg-white/80 text-slate-500 rounded italic font-bold">{data.posture}</span>
-                                          <span className={`text-[8px] px-2 py-0.5 rounded-full font-black ${
-                                            data.stance === '賛成' ? 'bg-emerald-100 text-emerald-700' :
-                                            data.stance === '反対' ? 'bg-rose-100 text-rose-700' :
-                                            'bg-slate-100 text-slate-500'
-                                          }`}>{data.stance}</span>
-                                        </div>
-                                        <p className="text-[12px] font-medium text-slate-600 leading-relaxed">「{data.comment}」</p>
-                                      </div>
-                                    </div>
-                                  );
-                                })
-                              ) : (
-                                <div className="py-4 flex flex-col items-center justify-center opacity-70">
-                                  <p className="text-[11px] text-slate-400 italic">
-                                    {isCompareModeEnabled ? 'まだ比較対象がありません' : '他の声はまだありません'}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {isGenerating && (
-                    <div className="flex flex-col gap-3 p-4 animate-in fade-in">
-                      <div className="flex gap-2 items-center">
-                        <div className="thinking-dot" />
-                        <div className="thinking-dot" />
-                        <div className="thinking-dot" />
-                      </div>
-                      {generatingAgent && <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.22em]">{generatingAgent.name} が思考中…</p>}
-                    </div>
-                  )}
-                  {!isGenerating && messages.length > 0 && messages[messages.length - 1].role === 'ai' && messages[messages.length - 1].agentId !== 'master' && userMessageCount >= 3 && (
-                    <div className="flex justify-center mt-12 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-700 delay-300">
-                      <button onClick={() => handleAgentClick('master', true)} disabled={!canUseAgents} className="group flex items-center gap-4 px-6 py-4 rounded-[1.75rem] panel-surface hover:bg-white/70 transition-all active:scale-95 shadow-lg shadow-indigo-900/5 disabled:opacity-30">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-110 transition-transform"><Compass size={18} /></div>
-                        <div className="flex flex-col text-left">
-                          <span className="text-sm font-black text-slate-700">ここまでの声を映してみますか？</span>
-                          <span className="text-[10px] font-bold text-slate-400">心の鏡が、散らばった思考を総括します</span>
-                        </div>
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </main>
+          <ChatTimeline
+            ref={scrollRef}
+            messages={messages}
+            agents={AGENTS}
+            isGenerating={isGenerating}
+            isSending={isSending}
+            isMessagesLoading={isMessagesLoading}
+            showInput={showInput}
+            generatingAgent={generatingAgent}
+            showFullLoading={shouldShowFullMessagesLoading}
+            openToolbarMsgId={openToolbarMsgId}
+            onToggleToolbar={(id) => setOpenToolbarMsgId(openToolbarMsgId === id ? null : id)}
+            onCopy={handleCopyMessage}
+            onDelete={handleDeleteMessage}
+            copiedMsgId={copiedMsgId}
+            activeReaction={activeReaction}
+            autoExpandReactions={autoExpandReactions}
+            onOpenOthers={(msgId) => {
+              if (autoExpandReactions?.msgId === msgId && !activeReaction) {
+                setAutoExpandReactions(null);
+              } else {
+                setActiveReaction(null);
+                setAutoExpandReactions({ msgId, isLoading: false });
+              }
+            }}
+            onSelectReaction={(msgId, agentId) => {
+              setActiveReaction(
+                activeReaction?.msgId === msgId && activeReaction?.agentId === agentId
+                  ? null
+                  : { msgId, agentId }
+              );
+              setAutoExpandReactions(null);
+            }}
+            onCloseOthers={() => setAutoExpandReactions(null)}
+            isCompareModeEnabled={isCompareModeEnabled}
+            isDebugVisible={isCompareModeEnabled || isAgentDebugEnabled()}
+            getOthersState={(msg) => getOthersVisibilityState({
+              activeSessionId: currentSessionId,
+              hasPromptForActiveSession,
+              isMessagesLoading,
+              visibleMessagesCount: messages.filter((m) => m.role === 'user' || m.role === 'ai').length,
+              compareModeEnabled: isCompareModeEnabled,
+              reactions: msg.reactions,
+              isGenerating,
+            })}
+            onHintClick={handleHintClick}
+            showMirrorInvite={
+              !isGenerating &&
+              messages.length > 0 &&
+              messages[messages.length - 1].role === 'ai' &&
+              messages[messages.length - 1].agentId !== 'master' &&
+              userMessageCount >= 3
+            }
+            canUseAgents={canUseAgents}
+            onMasterClick={() => handleAgentClick('master', true)}
+          />
         </div>
       </div>
 
-      {showIntro && (
-          <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 transition-opacity duration-500 ${isHomeReady ? 'opacity-0' : 'opacity-100'}`}>
-            <div className="absolute inset-0 bg-[#eef2f7] z-0" /><div className="water-shimmer z-0" /><div className="mesh-grid z-0" />
-            <div className="hero-panel max-w-md w-full text-center p-8 md:p-10 rounded-[3rem] relative z-10 space-y-8 anim-card-rise">
-            <div className="anim-scale-in"><div className="inline-flex items-center justify-center p-5 rounded-[2rem] bg-[#1e293b] text-white anim-float shadow-2xl"><Users size={36} /></div></div>
-            <div className="space-y-2">
-              <p className="text-[10px] font-black tracking-[0.4em] text-slate-400 uppercase">Inner Conference Room</p>
-              <h1 className="text-4xl font-black tracking-tighter text-slate-800">じぶん会議</h1>
-              <p className="text-sm font-bold text-slate-500">5つの視点で、じぶんに潜る</p>
-            </div>
-            <div className="py-6 px-2 md:p-8 rounded-[2rem] bg-white/20 border border-white/40 shadow-inner flex justify-center items-center w-full">
-              <p className="text-base sm:text-lg md:text-xl font-medium text-slate-700 leading-loose tracking-[0.1em] text-center whitespace-nowrap">導かない。照らすだけ。<br />歩くのは、あなた自身。</p>
-            </div>
-            <button onClick={handleStartIntro} className="action-primary w-full py-5 text-white rounded-2xl font-black text-sm active:scale-95 flex items-center justify-center gap-2">会議をはじめる <ChevronRight size={18} /></button>
-          </div>
-        </div>
-      )}
+      <IntroOverlay
+        visible={showIntro}
+        isHomeReady={isHomeReady}
+        onStart={handleStartIntro}
+      />
 
-      {isEditingUserName && (
-        <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-md z-[150] flex items-center justify-center p-6" onClick={() => setIsEditingUserName(false)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="user-name-dialog-title" className="modal-shell rounded-[2.5rem] w-full max-w-sm p-10 text-center" onClick={e => e.stopPropagation()}>
-            <h3 id="user-name-dialog-title" className="text-lg font-black mb-3">お名前を教えてください</h3>
-            <p className="text-xs font-medium text-slate-500 mb-6">会議メンバーからの呼ばれ方に使われます。</p>
-            <input aria-labelledby="user-name-dialog-title" aria-describedby="user-name-dialog-help" autoFocus maxLength={24} value={tempName} onChange={e => setTempName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleUpdateUserName(); if (e.key === 'Escape') setIsEditingUserName(false); }} className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-3 neu-concave bg-transparent" />
-            <p id="user-name-dialog-help" className="text-[11px] font-bold text-slate-400 mb-8">24文字まで</p>
-            <div className="flex flex-col gap-2">
-              <button onClick={handleUpdateUserName} className="action-primary w-full py-4 text-white rounded-2xl font-black text-xs">変更を適用</button>
-              <button onClick={() => setIsEditingUserName(false)} className="w-full py-4 text-slate-500 font-black text-xs hover:bg-white/50 rounded-2xl transition-all">キャンセル</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <UserNameDialog
+        open={isEditingUserName}
+        tempName={tempName}
+        onChange={setTempName}
+        onConfirm={handleUpdateUserName}
+        onCancel={() => setIsEditingUserName(false)}
+      />
 
-      {deleteTargetId && (
-        <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-md z-[150] flex items-center justify-center p-6" onClick={() => setDeleteTargetId(null)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="delete-session-dialog-title" className="modal-shell rounded-[2.5rem] w-full max-w-sm p-10 text-center" onClick={e => e.stopPropagation()}>
-            <h3 id="delete-session-dialog-title" className="text-lg font-black mb-8">この思考を消去しますか？</h3>
-            <div className="flex flex-col gap-2">
-              <button onClick={() => { playSound('delete'); handleDeleteSession(deleteTargetId); }} disabled={isDeletingSession} className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs disabled:opacity-50">消去する</button>
-              <button onClick={() => setDeleteTargetId(null)} disabled={isDeletingSession} className="w-full py-4 text-slate-500 font-black text-xs hover:bg-white/50 rounded-2xl transition-all">キャンセル</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteSessionDialog
+        open={!!deleteTargetId}
+        isDeleting={isDeletingSession}
+        onConfirm={() => { playSound('delete'); handleDeleteSession(deleteTargetId); }}
+        onCancel={() => setDeleteTargetId(null)}
+      />
 
-      {showBeliefs && (
-        <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-xl z-[150] flex items-center justify-center p-6" onClick={() => setShowBeliefs(false)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="beliefs-dialog-title" className="modal-shell rounded-[2.5rem] w-full max-w-xl h-4/5 flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="p-8 pb-4 flex items-center justify-between border-b border-white/10">
-              <h3 id="beliefs-dialog-title" className="text-xl font-black tracking-tight">会議メンバーの魂</h3>
-              <button aria-label="会議メンバーの魂を閉じる" title="閉じる" onClick={() => setShowBeliefs(false)} className="p-2 hover:bg-white/40 rounded-full"><X size={20}/></button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-8 pt-6 no-scrollbar space-y-4">
-              {AGENTS.map(a => (
-                <div key={a.id} className={`p-6 rounded-[1.75rem] ${a.color} ${a.accentColor} panel-surface backdrop-blur-sm`}>
-                  <div className="flex items-center gap-3 mb-3">{a.icon}<span className="font-black text-xs">{a.name} — {a.title}</span></div>
-                  <p className="text-xs font-bold leading-relaxed text-slate-600 italic">{a.belief}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <BeliefsDialog
+        open={showBeliefs}
+        agents={AGENTS}
+        onClose={() => setShowBeliefs(false)}
+      />
 
       {comparePanelVisible && (
         <CompareModePanel
@@ -1899,239 +1683,6 @@ const App = () => {
         />
       )}
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        /* ===== FONT ===== */
-        body, .font-sans { font-family: 'Noto Sans JP', system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
-
-        /* ===== UTILITIES ===== */
-        .animate-in { animation: fadeIn 350ms cubic-bezier(0.22,1,0.36,1) both; }
-        .fade-in { animation-name: fadeIn; }
-        .slide-in-from-top-2 { animation: slideInFromTop2 380ms cubic-bezier(0.22,1,0.36,1) both; }
-        .slide-in-from-bottom-2 { animation: slideInFromBottom2 380ms cubic-bezier(0.22,1,0.36,1) both; }
-        .slide-in-from-top-1 { animation: slideInFromTop1 260ms cubic-bezier(0.22,1,0.36,1) both; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* ===== PASS 1 — MIRROR FOUNDATION: BACKGROUND ===== */
-        .lake-bg {
-          background:
-            radial-gradient(ellipse 150% 65% at 50% -5%, rgba(255,255,255,0.96) 0%, transparent 52%),
-            radial-gradient(ellipse at 12% 88%, rgba(186,230,253,0.22) 0%, transparent 42%),
-            radial-gradient(ellipse at 92% 68%, rgba(196,181,255,0.16) 0%, transparent 40%),
-            linear-gradient(162deg, #f2f7ff 0%, #e8f0fd 16%, #dde9f9 38%, #d5e2f5 60%, #cedcf2 82%, #c8d7ee 100%);
-          min-height: 100vh;
-        }
-        .premium-shell::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, rgba(255,255,255,0.46) 0%, transparent 26%, transparent 70%, rgba(255,255,255,0.26) 100%);
-          pointer-events: none;
-        }
-
-        /* ===== PASS 1 — GRID & WATER ===== */
-        .mesh-grid {
-          position: absolute; inset: 0;
-          background-image: linear-gradient(rgba(148,163,184,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.07) 1px, transparent 1px);
-          background-size: 56px 56px;
-          mask-image: radial-gradient(ellipse 72% 72% at 50% 50%, black 12%, transparent 76%);
-          opacity: 0.28;
-          pointer-events: none;
-        }
-        .water-shimmer {
-          position: absolute; inset: 0;
-          background:
-            radial-gradient(ellipse 56% 38% at 22% 74%, rgba(147,197,253,0.22) 0%, transparent 58%),
-            radial-gradient(ellipse 48% 34% at 78% 48%, rgba(196,181,253,0.16) 0%, transparent 52%),
-            radial-gradient(ellipse 38% 28% at 52% 94%, rgba(167,243,208,0.1) 0%, transparent 46%);
-          animation: water-shimmer 16s ease-in-out infinite;
-          pointer-events: none;
-        }
-
-        /* ===== PASS 1 — AURORA ORBS ===== */
-        .aurora-orb {
-          position: absolute; border-radius: 9999px;
-          filter: blur(74px); opacity: 0.5;
-          animation: orbDrift 22s ease-in-out infinite;
-          pointer-events: none; will-change: transform, opacity;
-        }
-        .aurora-orb-left   { width:340px; height:340px; left:-110px; top:10%;
-          background: radial-gradient(ellipse, rgba(103,232,249,0.4) 0%, rgba(147,197,253,0.2) 55%, transparent 78%); }
-        .aurora-orb-right  { width:380px; height:380px; right:-120px; top:18%;
-          background: radial-gradient(ellipse, rgba(167,139,250,0.32) 0%, rgba(192,184,255,0.16) 55%, transparent 78%);
-          animation-delay:-8s; }
-        .aurora-orb-top    { width:320px; height:320px; left:50%; top:-140px; transform:translateX(-50%);
-          background: radial-gradient(ellipse, rgba(255,255,255,0.6) 0%, rgba(224,242,254,0.28) 55%, transparent 78%);
-          animation-delay:-14s; }
-        .aurora-orb-bottom { width:260px; height:260px; right:6%; bottom:-70px;
-          background: radial-gradient(ellipse, rgba(167,243,208,0.2) 0%, rgba(147,197,253,0.1) 55%, transparent 78%);
-          filter:blur(82px); opacity:0.36; animation-delay:-4s; }
-
-        /* ===== PASS 1 — GLASS MORPHISM ===== */
-        .glass-card {
-          background: linear-gradient(150deg, rgba(255,255,255,0.88) 0%, rgba(250,253,255,0.76) 50%, rgba(242,249,255,0.68) 100%);
-          box-shadow: 0 28px 64px rgba(148,163,184,0.18), 0 8px 22px rgba(99,102,241,0.05), inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(148,163,184,0.07);
-          backdrop-filter: blur(28px) saturate(1.45);
-          border: 1px solid rgba(255,255,255,0.75);
-        }
-        .panel-surface {
-          background: linear-gradient(150deg, rgba(255,255,255,0.9) 0%, rgba(249,252,255,0.78) 50%, rgba(240,248,255,0.7) 100%);
-          border: 1px solid rgba(255,255,255,0.78);
-          box-shadow: 0 20px 52px rgba(148,163,184,0.16), 0 6px 18px rgba(99,102,241,0.04), inset 0 1px 0 rgba(255,255,255,0.86), inset 0 -1px 0 rgba(148,163,184,0.05);
-          backdrop-filter: blur(24px) saturate(1.38);
-        }
-        .sidebar-shell {
-          background: linear-gradient(180deg, rgba(249,252,255,0.86) 0%, rgba(240,247,255,0.76) 50%, rgba(229,240,252,0.68) 100%);
-          border-right: 1px solid rgba(255,255,255,0.6);
-          box-shadow: 26px 0 64px rgba(148,163,184,0.15), inset -1px 0 0 rgba(255,255,255,0.6), inset 1px 0 0 rgba(255,255,255,0.28);
-          backdrop-filter: blur(32px) saturate(1.48);
-        }
-        .header-shell {
-          background: linear-gradient(135deg, rgba(255,255,255,0.82) 0%, rgba(249,252,255,0.7) 50%, rgba(240,248,255,0.65) 100%);
-          border: 1px solid rgba(255,255,255,0.72);
-          box-shadow: 0 22px 52px rgba(148,163,184,0.16), 0 5px 14px rgba(99,102,241,0.04), inset 0 1px 0 rgba(255,255,255,0.9);
-          backdrop-filter: blur(26px) saturate(1.42);
-        }
-        .hero-panel {
-          background: linear-gradient(162deg, rgba(255,255,255,0.92) 0%, rgba(247,252,255,0.82) 38%, rgba(237,246,255,0.74) 100%);
-          border: 1px solid rgba(255,255,255,0.8);
-          box-shadow: 0 44px 110px rgba(99,102,241,0.2), 0 18px 52px rgba(148,163,184,0.22), inset 0 1px 0 rgba(255,255,255,0.94), inset 0 -1px 0 rgba(148,163,184,0.06);
-          backdrop-filter: blur(34px) saturate(1.58);
-        }
-        .modal-shell {
-          background: linear-gradient(162deg, rgba(255,255,255,0.94) 0%, rgba(249,253,255,0.82) 38%, rgba(240,248,255,0.76) 100%);
-          border: 1px solid rgba(255,255,255,0.82);
-          box-shadow: 0 36px 90px rgba(148,163,184,0.22), 0 14px 36px rgba(99,102,241,0.09), inset 0 1px 0 rgba(255,255,255,0.94);
-          backdrop-filter: blur(32px) saturate(1.48);
-        }
-        .composer-shell {
-          background: linear-gradient(150deg, rgba(255,255,255,0.94) 0%, rgba(249,252,255,0.82) 50%, rgba(240,248,255,0.76) 100%);
-          border: 1px solid rgba(255,255,255,0.84);
-          box-shadow: 0 26px 60px rgba(148,163,184,0.16), 0 8px 20px rgba(99,102,241,0.05), inset 0 1px 0 rgba(255,255,255,0.92);
-          border-radius: 1.75rem;
-          backdrop-filter: blur(26px) saturate(1.42);
-        }
-
-        /* ===== PASS 1 — NEUMORPHISM ===== */
-        .neu-convex-sm {
-          background: linear-gradient(150deg, rgba(255,255,255,0.97) 0%, rgba(247,251,255,0.9) 50%, rgba(238,246,254,0.86) 100%);
-          box-shadow: 12px 12px 30px rgba(148,163,184,0.15), -9px -9px 22px rgba(255,255,255,0.78), inset 0 1px 0 rgba(255,255,255,0.88);
-          backdrop-filter: blur(15px) saturate(1.25);
-          border: 1px solid rgba(255,255,255,0.7);
-        }
-        .neu-concave {
-          background: linear-gradient(150deg, rgba(226,235,245,0.65) 0%, rgba(238,246,255,0.76) 100%);
-          box-shadow: inset 4px 4px 11px rgba(158,172,196,0.24), inset -4px -4px 11px rgba(255,255,255,0.7);
-          border: 1px solid rgba(255,255,255,0.48);
-        }
-        .neu-pressed {
-          background: linear-gradient(150deg, rgba(220,230,242,0.82) 0%, rgba(236,244,254,0.7) 100%);
-          box-shadow: inset 5px 5px 14px rgba(148,163,184,0.36), inset -5px -5px 14px rgba(255,255,255,0.66);
-          border: 1px solid rgba(255,255,255,0.46);
-        }
-
-        /* ===== PASS 2 — MIRROR REFLECTION (enhanced) ===== */
-        .mirror-reflection { position: relative; }
-        .mirror-reflection::before {
-          content: '';
-          position: absolute; top:-1px; left:-12%; right:-12%; height:54%;
-          background: linear-gradient(186deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0.24) 44%, rgba(255,255,255,0) 100%);
-          pointer-events: none; z-index: 1;
-          transform: skewX(-1.5deg);
-          border-radius: inherit;
-        }
-        .mirror-reflection::after {
-          content: '';
-          position: absolute; top:0; left:10%; right:12%; height:1px;
-          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.86) 28%, rgba(255,255,255,1) 50%, rgba(255,255,255,0.86) 72%, transparent 100%);
-          pointer-events: none; z-index: 2;
-        }
-
-        /* ===== PASS 2 — MESSAGE BUBBLES ===== */
-        .message-user {
-          background: linear-gradient(150deg, rgba(8,12,36,0.97) 0%, rgba(12,20,52,0.94) 32%, rgba(18,28,62,0.91) 68%, rgba(26,36,72,0.91) 100%);
-          box-shadow: 0 26px 56px rgba(8,12,36,0.3), 0 10px 24px rgba(99,102,241,0.15), inset 0 1px 0 rgba(255,255,255,0.11), inset 0 -1px 0 rgba(0,0,0,0.28);
-          border-color: rgba(99,102,241,0.26);
-          position: relative; overflow: hidden;
-        }
-        .message-user::before {
-          content: '';
-          position: absolute; top:0; left:0; right:0; height:44%;
-          background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%);
-          pointer-events: none; border-radius: inherit;
-        }
-        .message-agent {
-          background: linear-gradient(150deg, rgba(255,255,255,0.96) 0%, rgba(250,253,255,0.86) 40%, rgba(242,249,255,0.79) 100%);
-          box-shadow: 0 22px 56px rgba(148,163,184,0.17), 0 7px 20px rgba(99,102,241,0.05), inset 0 1px 0 rgba(255,255,255,0.94), inset 0 -1px 0 rgba(148,163,184,0.06);
-          border-color: rgba(255,255,255,0.8);
-          backdrop-filter: blur(26px) saturate(1.48);
-        }
-
-        /* ===== PASS 2 — ACTION BUTTON ===== */
-        .action-primary {
-          background: linear-gradient(150deg, #060c22 0%, #0d1830 22%, #162040 50%, #1c2b48 75%, #263856 100%);
-          box-shadow: 0 22px 44px rgba(6,12,34,0.36), 0 10px 20px rgba(99,102,241,0.18), inset 0 1px 0 rgba(255,255,255,0.17), inset 0 -1px 0 rgba(0,0,0,0.26);
-          border: 1px solid rgba(99,102,241,0.28);
-          position: relative; overflow: hidden;
-        }
-        .action-primary::before {
-          content: '';
-          position: absolute; top:0; left:0; right:0; height:50%;
-          background: linear-gradient(180deg, rgba(255,255,255,0.14) 0%, transparent 100%);
-          pointer-events: none;
-        }
-
-        /* ===== PASS 2 — SESSION CARDS ===== */
-        .session-card-active {
-          background: linear-gradient(150deg, rgba(255,255,255,0.97) 0%, rgba(242,247,255,0.88) 50%, rgba(232,241,255,0.84) 100%);
-          box-shadow: 0 20px 44px rgba(99,102,241,0.16), 0 7px 16px rgba(99,102,241,0.07), inset 0 1px 0 rgba(255,255,255,0.94), inset 0 -1px 0 rgba(148,163,184,0.06);
-          border-color: rgba(165,180,252,0.48);
-        }
-        .session-card-idle { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.22); transition: all 0.22s cubic-bezier(0.22,1,0.36,1); }
-        .session-card-idle:hover {
-          background: rgba(255,255,255,0.54);
-          border-color: rgba(255,255,255,0.52);
-          box-shadow: 0 18px 40px rgba(148,163,184,0.15), inset 0 1px 0 rgba(255,255,255,0.74);
-          transform: translateY(-2px);
-        }
-
-        /* ===== PASS 3 — SHIMMER & PRISM ANIMATIONS ===== */
-        @keyframes fadeIn            { from { opacity:0; } to { opacity:1; } }
-        @keyframes slideInFromTop2   { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes slideInFromTop1   { from { opacity:0; transform:translateY(-5px);  } to { opacity:1; transform:translateY(0); } }
-        @keyframes slideInFromBottom2{ from { opacity:0; transform:translateY(10px);  } to { opacity:1; transform:translateY(0); } }
-        @keyframes water-shimmer     { 0%,100%{ opacity:0.5; transform:scale(1); } 33%{ opacity:0.82; transform:scale(1.02); } 66%{ opacity:0.62; transform:scale(0.99); } }
-        @keyframes orbDrift          { 0%,100%{ transform:translate3d(0,0,0) scale(1); opacity:0.5; } 33%{ transform:translate3d(8px,-22px,0) scale(1.09); opacity:0.65; } 66%{ transform:translate3d(-5px,-11px,0) scale(1.04); opacity:0.54; } }
-        @keyframes float             { 0%,100%{ transform:translateY(0) rotate(0deg); } 50%{ transform:translateY(-13px) rotate(0.7deg); } }
-        @keyframes scaleIn           { from { opacity:0; transform:scale(0.86); } to { opacity:1; transform:scale(1); } }
-        @keyframes introCardRise     { from { opacity:0; transform:translateY(36px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
-        @keyframes shimmerPass       { 0%{ transform:translateX(-120%) skewX(-12deg); opacity:0; } 14%{ opacity:0.65; } 100%{ transform:translateX(260%) skewX(-12deg); opacity:0; } }
-        @keyframes prismGlow         { 0%,100%{ box-shadow:0 0 24px rgba(99,102,241,0.15); } 50%{ box-shadow:0 0 40px rgba(99,102,241,0.3), 0 0 70px rgba(147,197,253,0.12); } }
-        @keyframes crystalPulse      { 0%,100%{ opacity:0.86; } 50%{ opacity:1; } }
-
-        .anim-float     { animation: float 4.6s ease-in-out infinite; }
-        .anim-scale-in  { animation: scaleIn 0.68s cubic-bezier(0.22,1,0.36,1) 0.1s both; }
-        .anim-card-rise { animation: introCardRise 0.88s cubic-bezier(0.22,1,0.36,1) 0.32s both; }
-
-        /* ===== PASS 3 — SHIMMER HIGHLIGHT ON HERO PANEL ===== */
-        .hero-panel::after {
-          content: '';
-          position: absolute; top:0; left:0; width:38%; height:100%;
-          background: linear-gradient(108deg, transparent 18%, rgba(255,255,255,0.28) 50%, transparent 82%);
-          animation: shimmerPass 7s ease-in-out 2.5s infinite;
-          pointer-events: none; border-radius: inherit;
-        }
-
-        /* ===== PASS 3 — GENERATING DOTS ENHANCED ===== */
-        .thinking-dot {
-          width:7px; height:7px; border-radius:50%;
-          background: linear-gradient(135deg, rgba(147,197,253,0.9), rgba(167,139,250,0.9));
-          animation: crystalPulse 1.2s ease-in-out infinite;
-          box-shadow: 0 0 8px rgba(147,197,253,0.4);
-        }
-        .thinking-dot:nth-child(2) { animation-delay:0.22s; background: linear-gradient(135deg, rgba(167,139,250,0.9), rgba(99,102,241,0.9)); box-shadow: 0 0 8px rgba(167,139,250,0.4); }
-        .thinking-dot:nth-child(3) { animation-delay:0.44s; background: linear-gradient(135deg, rgba(99,102,241,0.9), rgba(147,197,253,0.9)); box-shadow: 0 0 8px rgba(99,102,241,0.4); }
-      ` }} />
 
       <FloatingAgentBar
         activeSessionId={activeSessionId}
