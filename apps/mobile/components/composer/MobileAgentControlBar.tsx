@@ -6,32 +6,11 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { UNIVERSAL_AGENTS, type UniversalAgentId } from '../../../../packages/shared/src';
 import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
 
-export type AgentKey =
-  | 'mirror'
-  | 'delegate'
-  | 'ray'
-  | 'joe'
-  | 'ken'
-  | 'mina'
-  | 'satou';
-
-interface Agent {
-  key: AgentKey;
-  label: string;
-  emoji: string;
-}
-
-const AGENTS: Agent[] = [
-  { key: 'mirror', label: '心の鏡', emoji: '🪞' },
-  { key: 'delegate', label: '委ねる', emoji: '🌊' },
-  { key: 'ray', label: 'レイ', emoji: '✨' },
-  { key: 'joe', label: 'ジョー', emoji: '🔍' },
-  { key: 'ken', label: 'ケン', emoji: '⚡' },
-  { key: 'mina', label: 'ミナ', emoji: '💙' },
-  { key: 'satou', label: 'サトウ', emoji: '🌿' },
-];
+// Re-export so callers that imported AgentKey from here continue to work.
+export type AgentKey = UniversalAgentId;
 
 interface MobileAgentControlBarProps {
   selected: AgentKey;
@@ -49,13 +28,13 @@ export function MobileAgentControlBar({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        {AGENTS.map((agent) => {
-          const isActive = selected === agent.key;
+        {UNIVERSAL_AGENTS.map((agent) => {
+          const isActive = selected === agent.id;
           return (
             <TouchableOpacity
-              key={agent.key}
+              key={agent.id}
               style={[styles.chip, isActive && styles.chipActive]}
-              onPress={() => onSelect(agent.key)}
+              onPress={() => onSelect(agent.id)}
               activeOpacity={0.7}
             >
               <Text style={styles.emoji}>{agent.emoji}</Text>

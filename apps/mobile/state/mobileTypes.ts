@@ -1,14 +1,9 @@
 // Phase 2 local types for Expo mobile app.
 // Not yet synced with Firestore — designed to be easy to migrate later.
 
-export type MobileAgentId =
-  | 'mirror'
-  | 'delegate'
-  | 'ray'
-  | 'joe'
-  | 'ken'
-  | 'mina'
-  | 'satou';
+// Agent and mode IDs are sourced from the universal shared core.
+import type { UniversalAgentId } from '../../../packages/shared/src';
+export type MobileAgentId = UniversalAgentId;
 
 export type MobileMessageRole = 'user' | 'agent';
 

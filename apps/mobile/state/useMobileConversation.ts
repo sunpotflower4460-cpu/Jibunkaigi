@@ -5,11 +5,8 @@
 import { useState, useCallback, useRef } from 'react';
 import type { MobileAgentId, MobileMessage, MobileSession } from './mobileTypes';
 import {
-  createMockAgentReply,
-  createMirrorSummaryReply,
-  pickMockDelegatedAgent,
-  AGENT_LABELS,
-} from '../services/mobileAgentMock';
+  createUniversalAgentReply,
+} from '../services/universalAgentMock';
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -68,22 +65,12 @@ export function useMobileConversation(): UseMobileConversationReturn {
       isThinkingRef.current = true;
       setIsThinking(true);
 
-      // Determine which agent actually responds.
-      const respondingAgent: MobileAgentId =
-        selectedAgent === 'delegate'
-          ? pickMockDelegatedAgent(trimmed)
-          : selectedAgent;
-
-      // Build the reply text based on the responding agent.
-      let replyText: string;
-      if (respondingAgent === 'mirror') {
-        const userTexts = currentMessages
-          .filter((m) => m.role === 'user')
-          .map((m) => m.text);
-        replyText = createMirrorSummaryReply([...userTexts, trimmed]);
-      } else {
-        replyText = createMockAgentReply(respondingAgent, trimmed);
-      }
+      // Build the reply using universal shared mock (handles delegate and mirror internally).
+      const reply = createUniversalAgentReply(
+        selectedAgent,
+        trimmed,
+        currentMessages.map((m) => ({ role: m.role, text: m.text, agentId: m.agentId })),
+      );
 
       const delay = 300 + Math.floor(Math.random() * 400);
 
@@ -91,9 +78,9 @@ export function useMobileConversation(): UseMobileConversationReturn {
         const agentMsg: MobileMessage = {
           id: generateId(),
           role: 'agent',
-          text: replyText,
-          agentId: respondingAgent,
-          agentLabel: AGENT_LABELS[respondingAgent],
+          text: reply.text,
+          agentId: reply.agentId,
+          agentLabel: reply.agentLabel,
           createdAt: Date.now(),
         };
 
