@@ -28,6 +28,8 @@ const Composer = forwardRef(function Composer(
     }
   };
 
+  const textareaPaddingClass = disabled ? 'pr-5' : 'pr-14';
+
   return (
     <div className="flex gap-2.5 sm:gap-3 animate-in fade-in slide-in-from-bottom-2 w-full items-end">
       <div className="flex-1 min-w-0">
@@ -52,18 +54,20 @@ const Composer = forwardRef(function Composer(
             placeholder={placeholder}
             aria-label="相談内容の入力欄"
             aria-describedby="composer-helper-text"
-            className="w-full rounded-[1.75rem] px-5 py-4 pr-14 text-base font-medium outline-none resize-none transition-all bg-transparent placeholder:text-slate-400/80 disabled:opacity-60 disabled:cursor-not-allowed jk-prose"
+            className={`w-full rounded-[1.75rem] px-5 py-4 ${textareaPaddingClass} text-base font-medium outline-none resize-none transition-all bg-transparent placeholder:text-[15px] sm:placeholder:text-base placeholder:text-slate-400/80 disabled:opacity-60 disabled:cursor-not-allowed jk-prose`}
           />
-          <button
-            type="button"
-            aria-label="メッセージを送信"
-            title="メッセージを送信"
-            onClick={onSend}
-            disabled={!canSend}
-            className="action-primary absolute right-2.5 bottom-2.5 p-2.5 rounded-xl text-white transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed jk-no-min-tap"
-          >
-            <Send aria-hidden="true" size={17} />
-          </button>
+          {!disabled && (
+            <button
+              type="button"
+              aria-label="メッセージを送信"
+              title="メッセージを送信"
+              onClick={onSend}
+              disabled={!canSend}
+              className="action-primary !absolute right-2.5 bottom-2.5 p-2.5 rounded-xl text-white transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed jk-no-min-tap"
+            >
+              <Send aria-hidden="true" size={17} />
+            </button>
+          )}
         </div>
       </div>
       {showCloseButton && (
