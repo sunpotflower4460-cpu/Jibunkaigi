@@ -1365,26 +1365,26 @@ const App = () => {
           />
 
           {errorMessage && (
-            <div className="mx-6 mt-4 p-3 rounded-xl glass-card border-rose-200/50 flex items-center justify-between animate-in fade-in slide-in-from-top-2 z-40">
+            <div className="mx-4 sm:mx-6 mt-3 p-3 rounded-xl glass-card border-rose-200/50 flex items-center justify-between animate-in fade-in slide-in-from-top-2 z-40">
               <div className="flex items-center gap-2 text-rose-600 text-xs font-bold"><AlertCircle size={14}/> {errorMessage}</div>
               <button aria-label="エラーメッセージを閉じる" title="閉じる" onClick={() => setErrorMessage(null)} className="p-1 hover:bg-rose-100 rounded-full text-rose-400"><X size={14}/></button>
             </div>
           )}
 
           {hasBlockingConfigIssue && (
-            <div className="mx-4 sm:mx-6 mt-4 rounded-3xl glass-card border border-amber-200/60 p-5 sm:p-6 relative z-20">
+            <div className="mx-4 sm:mx-6 mt-3 rounded-3xl glass-card border border-amber-200/60 p-4 sm:p-5 relative z-20">
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 p-2 rounded-2xl bg-amber-100 text-amber-700 shrink-0"><AlertCircle size={18} /></div>
-                <div className="space-y-3">
+                <div className="mt-0.5 p-2 rounded-2xl bg-amber-100 text-amber-700 shrink-0"><AlertCircle size={16} /></div>
+                <div className="space-y-2.5">
                   <div>
                     <h3 className="text-sm font-black text-slate-800">この環境では、まだ会議を開始できません</h3>
-                    <p className="text-xs font-medium text-slate-500 mt-1">不足している設定を補うと、そのままこの画面から対話を始められます。</p>
+                    <p className="text-xs font-medium text-slate-500 mt-0.5">不足している設定を補うと、そのままこの画面から対話を始められます。</p>
                   </div>
-                  <ul className="space-y-2">
+                  <ul className="space-y-1.5">
                     {configIssues.map((issue) => (
-                      <li key={issue.id} className="rounded-2xl bg-white/50 border border-white/70 px-4 py-3">
+                      <li key={issue.id} className="rounded-2xl bg-white/50 border border-white/70 px-3.5 py-2.5">
                         <p className="text-xs font-black text-slate-700">{issue.title}</p>
-                        <p className="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed">{issue.detail}</p>
+                        <p className="text-[11px] font-medium text-slate-500 mt-0.5 leading-relaxed">{issue.detail}</p>
                       </li>
                     ))}
                   </ul>
@@ -1392,41 +1392,6 @@ const App = () => {
               </div>
             </div>
           )}
-
-          <div className="p-4 md:p-6 safe-bottom relative z-30">
-            <div className="max-w-4xl mx-auto min-h-[72px] flex flex-col justify-center gap-2">
-              {showInput && !isGenerating && !isSending && (
-                <Composer
-                  ref={textareaRef}
-                  userInput={userInput}
-                  onChange={setUserInput}
-                  onSend={() => handleSend()}
-                  onClose={() => setShowInput(false)}
-                  onResize={autoResize}
-                  disabled={hasBlockingConfigIssue}
-                  canSend={!!userInput.trim() && isAppReady}
-                  placeholder={inputPlaceholder}
-                  helperText={composerHelperText}
-                  showCloseButton={messages.length > 0}
-                />
-              )}
-              {showDelegateBar && (
-                <AgentControlBar
-                  agents={AGENTS}
-                  canUseAgents={canUseAgents}
-                  isBusy={isGenerating || isSending}
-                  helperText={agentHelperText}
-                  agentDisabledReason={agentDisabledReason}
-                  isDebugMode={isAgentDebugEnabled()}
-                  showInput={showInput}
-                  onToggleShowInput={setShowInput}
-                  onAgentClick={(id) => handleAgentClick(id)}
-                  onMasterClick={() => handleAgentClick('master', true)}
-                  onRandomResponse={handleRandomResponse}
-                />
-              )}
-            </div>
-          </div>
 
           <ChatTimeline
             ref={scrollRef}
@@ -1484,6 +1449,42 @@ const App = () => {
             canUseAgents={canUseAgents}
             onMasterClick={() => handleAgentClick('master', true)}
           />
+
+          {/* 入力エリア — ChatTimeline の下に配置 */}
+          <div className="px-4 sm:px-5 pt-2 safe-bottom relative z-30">
+            <div className="max-w-2xl mx-auto flex flex-col gap-2">
+              {showInput && !isGenerating && !isSending && (
+                <Composer
+                  ref={textareaRef}
+                  userInput={userInput}
+                  onChange={setUserInput}
+                  onSend={() => handleSend()}
+                  onClose={() => setShowInput(false)}
+                  onResize={autoResize}
+                  disabled={hasBlockingConfigIssue}
+                  canSend={!!userInput.trim() && isAppReady}
+                  placeholder={inputPlaceholder}
+                  helperText={composerHelperText}
+                  showCloseButton={messages.length > 0}
+                />
+              )}
+              {showDelegateBar && (
+                <AgentControlBar
+                  agents={AGENTS}
+                  canUseAgents={canUseAgents}
+                  isBusy={isGenerating || isSending}
+                  helperText={agentHelperText}
+                  agentDisabledReason={agentDisabledReason}
+                  isDebugMode={isAgentDebugEnabled()}
+                  showInput={showInput}
+                  onToggleShowInput={setShowInput}
+                  onAgentClick={(id) => handleAgentClick(id)}
+                  onMasterClick={() => handleAgentClick('master', true)}
+                  onRandomResponse={handleRandomResponse}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
