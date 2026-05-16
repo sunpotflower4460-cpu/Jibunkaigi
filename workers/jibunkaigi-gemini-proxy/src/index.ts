@@ -1,3 +1,10 @@
+import {
+  buildUniversalConversationPrompt,
+  type UniversalAgentId,
+  type UniversalModeId,
+  type UniversalPromptMessage,
+} from '../../../packages/shared/src';
+
 export interface Env {
   GEMINI_API_KEY: string;
   GEMINI_MODEL?: string;
@@ -22,58 +29,18 @@ function json(data: unknown, status: number, env: Env): Response {
   });
 }
 
-function getAgentLabel(agentId: string): string {
-  const labels: Record<string, string> = {
-    mirror: '心の鏡',
-    delegate: '委ねる',
-    ray: 'レイ',
-    joe: 'ジョー',
-    ken: 'ケン',
-    mina: 'ミナ',
-    satou: 'サトウ',
-  };
-  return labels[agentId] || 'レイ';
+function normalizeAgentId(value: string): UniversalAgentId {
+  const allowed = ['mirror', 'delegate', 'ray', 'joe', 'ken', 'mina', 'satou'] as const;
+  return (allowed as readonly string[]).includes(value)
+    ? (value as UniversalAgentId)
+    : 'ray';
 }
 
-function getModeLabel(modeId: string): string {
-  const labels: Record<string, string> = {
-    flash: '一閃',
-    dialogue: '対話',
-    deep: '深淵',
-  };
-  return labels[modeId] || '対話';
-}
-
-function buildPrompt(params: {
-  userText: string;
-  agentId: string;
-  modeId: string;
-  messages: Array<{ role?: string; text?: string; agentLabel?: string }>;
-}): string {
-  const agentLabel = getAgentLabel(params.agentId);
-  const modeLabel = getModeLabel(params.modeId);
-  const history = params.messages
-    .slice(-12)
-    .map((msg) =>
-      `${msg.role === 'user' ? 'ユーザー' : msg.agentLabel || 'AI'}: ${msg.text || ''}`,
-    )
-    .join('\n');
-
-  return [
-    'あなたは「じぶん会議」の応答生成APIです。',
-    '固定の一般チャットではなく、選ばれた視点として短く自然に返してください。',
-    '',
-    `選択エージェント: ${agentLabel}`,
-    `応答モード: ${modeLabel}`,
-    '',
-    '直近の会話:',
-    history || '(なし)',
-    '',
-    '今回のユーザー入力:',
-    params.userText,
-    '',
-    '返答は日本語で。過剰に長くせず、じぶん会議らしい自然な一言〜数段落にしてください。',
-  ].join('\n');
+function normalizeModeId(value: string): UniversalModeId {
+  const allowed = ['flash', 'dialogue', 'deep'] as const;
+  return (allowed as readonly string[]).includes(value)
+    ? (value as UniversalModeId)
+    : 'dialogue';
 }
 
 export default {
@@ -98,21 +65,46 @@ export default {
         agentId?: unknown;
         modeId?: unknown;
         messages?: unknown;
+        userName?: unknown;
       }>();
 
       const userText = String(body.userText || '').trim();
-      const agentId = String(body.agentId || 'ray');
-      const modeId = String(body.modeId || 'dialogue');
+      const agentId = normalizeAgentId(String(body.agentId || 'ray'));
+      const modeId = normalizeModeId(String(body.modeId || 'dialogue'));
+      const userName = typeof body.userName === 'string' ? body.userName : null;
 
       if (!userText) {
         return json({ error: 'userText is required' }, 400, env);
       }
 
-      const messages = Array.isArray(body.messages)
-        ? (body.messages as Array<{ role?: string; text?: string; agentLabel?: string }>)
+      const rawMessages = Array.isArray(body.messages)
+        ? (body.messages as Array<{
+            role?: unknown;
+            text?: unknown;
+            agentId?: unknown;
+            agentLabel?: unknown;
+            modeId?: unknown;
+            createdAt?: unknown;
+          }>)
         : [];
 
-      const prompt = buildPrompt({ userText, agentId, modeId, messages });
+      const messages: UniversalPromptMessage[] = rawMessages.map((msg) => ({
+        role: msg.role === 'user' ? 'user' : 'agent',
+        text: String(msg.text || ''),
+        agentId: typeof msg.agentId === 'string' ? normalizeAgentId(msg.agentId) : undefined,
+        agentLabel: typeof msg.agentLabel === 'string' ? msg.agentLabel : undefined,
+        modeId: typeof msg.modeId === 'string' ? normalizeModeId(msg.modeId) : undefined,
+        createdAt: typeof msg.createdAt === 'number' ? msg.createdAt : undefined,
+      }));
+
+      const built = buildUniversalConversationPrompt({
+        userText,
+        agentId,
+        modeId,
+        messages,
+        userName,
+      });
+
       const model = env.GEMINI_MODEL || 'gemini-1.5-flash';
       const geminiUrl =
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
@@ -127,7 +119,7 @@ export default {
           contents: [
             {
               role: 'user',
-              parts: [{ text: prompt }],
+              parts: [{ text: built.prompt }],
             },
           ],
         }),
@@ -159,7 +151,7 @@ export default {
         {
           text,
           agentId,
-          agentLabel: getAgentLabel(agentId),
+          agentLabel: built.agentLabel,
           model,
         },
         200,
@@ -171,3 +163,4 @@ export default {
     }
   },
 };
+
