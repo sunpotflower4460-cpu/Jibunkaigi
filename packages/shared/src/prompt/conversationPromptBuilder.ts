@@ -13,7 +13,16 @@ export function buildUniversalConversationPrompt(
   const agent = getAgentPromptProfile(params.agentId);
   const mode = getModePromptProfile(params.modeId);
   const recentMessages = selectRecentPromptMessages(params.messages);
-  const history = recentMessages
+  // If the last message is the current user input (already present as "今回のユーザー入力"),
+  // exclude it from the history section to avoid duplication.
+  const sanitizedUserText = sanitizePromptText(params.userText, 800);
+  const historyMessages =
+    recentMessages.length > 0 &&
+    recentMessages[recentMessages.length - 1].role === 'user' &&
+    recentMessages[recentMessages.length - 1].text === sanitizedUserText
+      ? recentMessages.slice(0, -1)
+      : recentMessages;
+  const history = historyMessages
     .map((msg) => {
       const speaker =
         msg.role === 'user' ? (params.userName || 'ユーザー') : (msg.agentLabel || 'AI');
