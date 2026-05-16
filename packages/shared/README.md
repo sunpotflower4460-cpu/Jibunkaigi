@@ -108,9 +108,24 @@ Firebase / Gemini 接続も含みません。
 |---|---|
 | Phase 0（完了） | この README のみ。コピーなし |
 | Phase 1（完了） | 純粋定義（agents, modes, thinking, mockReply, ids, parityFeatures）を shared 化 |
+| Phase 2-6（完了） | Prompt / Agent Runtime の第一層を追加 |
 | Phase 2 | Web 依存のあるモジュールを抽象化レイヤで包む |
 | Phase 3 | Firebase を抽象化し Web / Native で差し替え可能に |
 | Phase 4 | Gemini API Proxy を介した実接続 |
+
+---
+
+## Prompt Runtime
+
+Phase 2-6 で Prompt / Agent Runtime の第一層を追加。
+
+- `prompt/agentPromptProfiles` — エージェントの核・見るもの・避けるもの・声の温度
+- `prompt/modePromptProfiles` — 一閃・対話・深淵の方針・長さガイド
+- `prompt/responsePolicy` — 全媒体共通返答方針
+- `prompt/promptSanitizer` — 会話履歴の長さ制限・テキスト正規化
+- `prompt/conversationPromptBuilder` — Universal Conversation Prompt Builder
+
+これは Worker 側の Gemini prompt と、将来の Web / Expo 共通 prompt の基礎になる。
 
 ---
 
@@ -125,8 +140,16 @@ packages/shared/
     mockReply.ts      # ローカル mock 応答
     ids.ts            # ID 生成ユーティリティ
     parityFeatures.ts # Parity Feature ID 一覧
+    prompt/
+      promptTypes.ts              # Prompt 型定義
+      agentPromptProfiles.ts      # Agent Prompt Profiles
+      modePromptProfiles.ts       # Mode Prompt Profiles
+      responsePolicy.ts           # 共通返答方針
+      promptSanitizer.ts          # テキスト正規化・長さ制限
+      conversationPromptBuilder.ts # Universal Prompt Builder
     index.ts          # re-export
   package.json
   tsconfig.json
   README.md
 ```
+

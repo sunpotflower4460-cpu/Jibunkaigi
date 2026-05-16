@@ -10,17 +10,17 @@
 | ホーム/空状態 | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | MobileEmptyState / MobileIntroScreen |
 | 問いを書く | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | MobileComposer |
 | メッセージ送信 | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了（mock） | 本物送信はPhase 3 |
-| AI応答 | ✅ | ⬜ | ⬜ | ⬜ | 土台追加 / Proxy未デプロイ | Gemini Proxy Client土台追加 / env設定後に実応答確認 |
+| AI応答 | ✅ | ⬜ | ⬜ | ⬜ | Prompt Runtime 共有化 / Proxy 土台追加 / env 設定後に実応答確認 | Gemini Proxy Client + Universal Prompt Builder |
 | 一閃モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
 | 対話モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
 | 深淵モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
-| レイ | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了（mock） | UNIVERSAL_AGENTS → MobileAgentControlBar |
-| ジョー | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了（mock） | UNIVERSAL_AGENTS → MobileAgentControlBar |
-| ケン | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了（mock） | UNIVERSAL_AGENTS → MobileAgentControlBar |
-| ミナ | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了（mock） | UNIVERSAL_AGENTS → MobileAgentControlBar |
-| サトウ | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了（mock） | UNIVERSAL_AGENTS → MobileAgentControlBar |
-| 委ねる | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカル疑似対応 | pickMockDelegatedAgent → shared |
-| 心の鏡 | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカル疑似対応 | buildMirrorMockReply → shared |
+| レイ | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル MVP 完了（mock） | UNIVERSAL_AGENTS + AgentPromptProfile → MobileAgentControlBar |
+| ジョー | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル MVP 完了（mock） | UNIVERSAL_AGENTS + AgentPromptProfile → MobileAgentControlBar |
+| ケン | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル MVP 完了（mock） | UNIVERSAL_AGENTS + AgentPromptProfile → MobileAgentControlBar |
+| ミナ | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル MVP 完了（mock） | UNIVERSAL_AGENTS + AgentPromptProfile → MobileAgentControlBar |
+| サトウ | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル MVP 完了（mock） | UNIVERSAL_AGENTS + AgentPromptProfile → MobileAgentControlBar |
+| 委ねる | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル疑似対応 | pickMockDelegatedAgent → shared |
+| 心の鏡 | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル疑似対応 | buildMirrorMockReply → shared |
 | OTHERS | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
 | セッション保存 | ✅ | ✅ | ✅ | ✅ | Adapter完了（Firestore / local fallback） | FirestoreSessionRepository |
 | セッション一覧 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | MobileSessionDrawer |
