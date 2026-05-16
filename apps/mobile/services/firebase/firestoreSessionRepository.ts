@@ -93,6 +93,16 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
     await setDoc(doc(this.messagesCol(uid, sessionId), message.id), message);
   }
 
+  async clearMessages(sessionId: string): Promise<void> {
+    const uid = await this.getCurrentUserId();
+    if (!uid) return;
+    const services = getMobileFirebaseServices()!;
+    const batch = writeBatch(services.db);
+    const msgSnap = await getDocs(this.messagesCol(uid, sessionId));
+    msgSnap.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+
   async loadMessages(sessionId: string): Promise<UniversalMessage[]> {
     const uid = await this.getCurrentUserId();
     if (!uid) return [];

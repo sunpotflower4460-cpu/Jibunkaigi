@@ -1,3 +1,4 @@
+import { pickMockDelegatedAgent } from '../../../../packages/shared/src';
 import { getJibunkaigiApiBaseUrl } from '../../config/mobileApiConfig';
 import type {
   UniversalAiClient,
@@ -17,6 +18,13 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
     },
 
     async createReply(request: UniversalAiRequest): Promise<UniversalAiResponse> {
+      // Resolve 'delegate' to a concrete agent so both proxy and mock-fallback
+      // paths return a consistent speaker/label in the UI.
+      const resolvedAgentId =
+        request.agentId === 'delegate'
+          ? pickMockDelegatedAgent(request.userText)
+          : request.agentId;
+
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -29,7 +37,7 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
           body: JSON.stringify({
             sessionId: request.sessionId,
             userText: request.userText,
-            agentId: request.agentId,
+            agentId: resolvedAgentId,
             modeId: request.modeId,
             messages: request.messages.slice(-20),
           }),
@@ -48,7 +56,7 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
 
         return {
           text: data.text,
-          agentId: data.agentId ?? request.agentId,
+          agentId: data.agentId ?? resolvedAgentId,
           agentLabel: data.agentLabel ?? '',
           source: 'proxy',
           model: data.model,

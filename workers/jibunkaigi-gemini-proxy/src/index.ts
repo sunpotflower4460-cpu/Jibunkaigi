@@ -115,11 +115,14 @@ export default {
       const prompt = buildPrompt({ userText, agentId, modeId, messages });
       const model = env.GEMINI_MODEL || 'gemini-1.5-flash';
       const geminiUrl =
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
       const geminiResponse = await fetch(geminiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': env.GEMINI_API_KEY,
+        },
         body: JSON.stringify({
           contents: [
             {
@@ -132,7 +135,8 @@ export default {
 
       if (!geminiResponse.ok) {
         const errorText = await geminiResponse.text();
-        return json({ error: 'Gemini request failed', detail: errorText }, 502, env);
+        console.error('[jibunkaigi-proxy] Gemini upstream error:', geminiResponse.status, errorText);
+        return json({ error: 'AI service temporarily unavailable' }, 502, env);
       }
 
       const data = await geminiResponse.json<{
@@ -162,15 +166,8 @@ export default {
         env,
       );
     } catch (error) {
-      const detail = error instanceof Error ? error.message : 'Unexpected error';
-      return json(
-        {
-          error: 'Internal error',
-          detail,
-        },
-        500,
-        env,
-      );
+      console.error('[jibunkaigi-proxy] Internal error:', error);
+      return json({ error: 'Internal error' }, 500, env);
     }
   },
 };

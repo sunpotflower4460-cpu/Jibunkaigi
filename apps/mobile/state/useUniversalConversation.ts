@@ -165,6 +165,9 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
             messages: messagesSnapshot,
           });
 
+          // Guard: discard the reply if the user navigated away from this session.
+          if (sessionRef.current.id !== sessionId) return;
+
           const agentMsg: UniversalMessage = {
             id: generateId(),
             role: 'agent',
@@ -184,8 +187,8 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
           setSession(afterReply);
           setAiSource(reply.source);
 
-          // Persist agent message.
-          void repoRef.current.saveMessage(sessionRef.current.id, agentMsg);
+          // Persist agent message to the originating session.
+          void repoRef.current.saveMessage(sessionId, agentMsg);
           void repoRef.current.saveSession({ ...afterReply, messages: [] });
           void refreshSessions();
         } catch (error) {
@@ -220,6 +223,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
       updatedAt: Date.now(),
     };
     setSession(cleared);
+    void repoRef.current.clearMessages(cleared.id);
     void repoRef.current.saveSession({ ...cleared, messages: [] });
   }, []);
 
