@@ -16,6 +16,7 @@ import { MobileAgentControlBar } from '../components/composer/MobileAgentControl
 import { MobileSessionHeader } from '../components/session/MobileSessionHeader';
 import { MobileSessionDrawer } from '../components/session/MobileSessionDrawer';
 import { MobileModeSelector } from '../components/modes/MobileModeSelector';
+import { MobileAiStatusBadge } from '../components/status/MobileAiStatusBadge';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 
 export default function IndexScreen() {
@@ -26,6 +27,7 @@ export default function IndexScreen() {
     selectedAgent,
     selectedMode,
     isThinking,
+    aiSource,
     selectAgent,
     selectMode,
     sendMessage,
@@ -100,6 +102,9 @@ export default function IndexScreen() {
                 />
               )}
             </View>
+
+            {/* AI source indicator (dev only) */}
+            <MobileAiStatusBadge source={aiSource} />
 
             {/* Bottom controls */}
             <View style={styles.bottom}>

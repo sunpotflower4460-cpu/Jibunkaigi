@@ -66,6 +66,25 @@ apps/mobile/
 
 ---
 
+## Gemini Proxy
+
+Expo Universal版はGemini APIを直接呼びません。
+AI応答は以下の流れで取得します。
+
+```
+Expo Universal App
+  → Cloudflare Worker Proxy
+  → Gemini API
+```
+
+Expo側には `EXPO_PUBLIC_JIBUNKAIGI_API_BASE_URL` だけを設定します。
+Gemini API KeyはCloudflare Workerのsecretとして設定します。
+Proxy未設定時はmock fallbackで動作します。
+
+詳細は `docs/universal-gemini-proxy.md` を参照してください。
+
+---
+
 ## Gemini API Key について
 
 **モバイルアプリに Gemini API Key を直埋めしてはいけません。**
