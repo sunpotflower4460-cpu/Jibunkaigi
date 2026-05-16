@@ -11,6 +11,7 @@ import type {
 } from './mobileTypes';
 import { AGENT_LABELS } from '../services/universalAgentMock';
 import { createUniversalAiReply } from '../services/ai/universalAiClient';
+import { createUniversalOthersReplies } from '../services/ai/universalOthersClient';
 import { isGeminiProxyConfigured } from '../config/mobileApiConfig';
 import { createLocalSession, createLocalSessionFromText } from '../services/universalSessionLocal';
 import {
@@ -19,6 +20,7 @@ import {
   type UniversalSessionRepository,
 } from '../services/sessionRepository';
 import { createFirestoreRepository } from '../services/firebase/firestoreSessionRepository';
+import { createUniversalId } from '../../../packages/shared/src';
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -41,11 +43,15 @@ interface UseUniversalConversationReturn {
   selectedAgent: UniversalAgentId;
   selectedMode: UniversalModeId;
   isThinking: boolean;
+  isLoadingOthers: boolean;
   isRemote: boolean;
   aiSource: 'proxy' | 'mock-fallback' | null;
+  othersSource: 'proxy' | 'mock-fallback' | null;
   aiError: string | null;
+  othersError: string | null;
   isRemoteAiEnabled: boolean;
   sendMessage: (text: string) => void;
+  requestOthers: () => Promise<void>;
   selectAgent: (agentId: UniversalAgentId) => void;
   selectMode: (modeId: UniversalModeId) => void;
   clearConversation: () => void;
@@ -63,13 +69,17 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
   const [selectedAgent, setSelectedAgent] = useState<UniversalAgentId>('ray');
   const [selectedMode, setSelectedMode] = useState<UniversalModeId>('dialogue');
   const [isThinking, setIsThinking] = useState(false);
+  const [isLoadingOthers, setIsLoadingOthers] = useState(false);
   const [isRemote, setIsRemote] = useState(false);
   const [aiSource, setAiSource] = useState<'proxy' | 'mock-fallback' | null>(null);
+  const [othersSource, setOthersSource] = useState<'proxy' | 'mock-fallback' | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [othersError, setOthersError] = useState<string | null>(null);
   const isRemoteAiEnabled = isGeminiProxyConfigured();
 
   // Refs to keep stable values inside async callbacks.
   const isThinkingRef = useRef(false);
+  const isLoadingOthersRef = useRef(false);
   const messagesRef = useRef<UniversalMessage[]>([]);
   // Keep mode accessible inside timeout callbacks without stale closure.
   const modeRef = useRef<UniversalModeId>('dialogue');
@@ -204,8 +214,62 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     [selectedAgent, refreshSessions],
   );
 
-  const selectAgent = useCallback((agentId: UniversalAgentId) => {
-    setSelectedAgent(agentId);
+  const requestOthers = useCallback(async () => {
+    if (isThinkingRef.current || isLoadingOthersRef.current) return;
+    const lastUser = [...messagesRef.current].reverse().find((m) => m.role === 'user');
+    if (!lastUser) return;
+
+    isLoadingOthersRef.current = true;
+    setIsLoadingOthers(true);
+    setOthersError(null);
+
+    const groupId = createUniversalId('others');
+    try {
+      const result = await createUniversalOthersReplies({
+        sessionId: sessionRef.current.id,
+        userText: lastUser.text,
+        currentAgentId: selectedAgent,
+        modeId: modeRef.current,
+        messages: messagesRef.current,
+      });
+
+      const now = Date.now();
+      const agentMessages: UniversalMessage[] = result.replies.map((reply, index) => ({
+        id: createUniversalId(`others_${reply.agentId}`),
+        role: 'agent' as const,
+        text: reply.text,
+        agentId: reply.agentId,
+        agentLabel: reply.agentLabel,
+        modeId: modeRef.current,
+        createdAt: now + index,
+        source: result.source,
+        model: result.model,
+        origin: 'others' as const,
+        groupId,
+      }));
+
+      messagesRef.current = [...messagesRef.current, ...agentMessages];
+      const updated: UniversalSession = {
+        ...sessionRef.current,
+        messages: messagesRef.current,
+        updatedAt: Date.now(),
+      };
+      setSession(updated);
+      setOthersSource(result.source);
+
+      for (const msg of agentMessages) {
+        void repoRef.current.saveMessage(sessionRef.current.id, msg);
+      }
+      void repoRef.current.saveSession({ ...updated, messages: [] });
+    } catch (error) {
+      setOthersError(error instanceof Error ? error.message : String(error));
+    } finally {
+      isLoadingOthersRef.current = false;
+      setIsLoadingOthers(false);
+    }
+  }, [selectedAgent]);
+
+  const selectAgent = useCallback((agentId: UniversalAgentId) => {    setSelectedAgent(agentId);
   }, []);
 
   const selectMode = useCallback((modeId: UniversalModeId) => {
@@ -300,11 +364,15 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     selectedAgent,
     selectedMode,
     isThinking,
+    isLoadingOthers,
     isRemote,
     aiSource,
+    othersSource,
     aiError,
+    othersError,
     isRemoteAiEnabled,
     sendMessage,
+    requestOthers,
     selectAgent,
     selectMode,
     clearConversation,

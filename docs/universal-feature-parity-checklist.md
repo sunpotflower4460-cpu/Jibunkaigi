@@ -21,7 +21,7 @@
 | サトウ | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル MVP 完了（mock） | UNIVERSAL_AGENTS + AgentPromptProfile → MobileAgentControlBar |
 | 委ねる | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル疑似対応 | pickMockDelegatedAgent → shared |
 | 心の鏡 | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル疑似対応 | buildMirrorMockReply → shared |
-| OTHERS | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
+| OTHERS | ✅ | ✅ | ✅ | ✅ | MVP対応 / 明示実行 / Proxy + fallback | MobileOthersTrigger + /api/jibunkaigi/others |
 | セッション保存 | ✅ | ✅ | ✅ | ✅ | Adapter完了（Firestore / local fallback） | FirestoreSessionRepository |
 | セッション一覧 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | MobileSessionDrawer |
 | セッション切り替え | ✅ | ✅ | ✅ | ✅ | Adapter完了 | switchSession |

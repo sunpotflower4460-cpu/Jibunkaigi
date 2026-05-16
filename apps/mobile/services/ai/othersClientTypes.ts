@@ -1,0 +1,27 @@
+import type {
+  UniversalAgentId,
+  UniversalMessage,
+  UniversalModeId,
+} from '../../state/mobileTypes';
+import type { ConcreteAgentId } from '../../../../packages/shared/src';
+
+export interface UniversalOthersAiRequest {
+  sessionId: string;
+  userText: string;
+  currentAgentId: UniversalAgentId;
+  modeId: UniversalModeId;
+  messages: UniversalMessage[];
+  targetAgentIds?: ConcreteAgentId[];
+}
+
+export interface UniversalOthersAiReply {
+  agentId: ConcreteAgentId;
+  agentLabel: string;
+  text: string;
+}
+
+export interface UniversalOthersAiResponse {
+  replies: UniversalOthersAiReply[];
+  source: 'proxy' | 'mock-fallback';
+  model?: string;
+}

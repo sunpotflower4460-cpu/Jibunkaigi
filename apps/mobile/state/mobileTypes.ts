@@ -16,6 +16,10 @@ export interface UniversalMessage {
   agentLabel?: string;
   modeId?: UniversalModeId;
   createdAt: number;
+  source?: 'proxy' | 'mock-fallback';
+  model?: string;
+  origin?: 'direct' | 'others';
+  groupId?: string;
 }
 
 export interface UniversalSession {

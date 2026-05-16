@@ -8,14 +8,17 @@ interface MobileMessageBubbleProps {
   role: MessageRole;
   text: string;
   agentLabel?: string;
+  origin?: 'direct' | 'others';
 }
 
 export function MobileMessageBubble({
   role,
   text,
   agentLabel,
+  origin,
 }: MobileMessageBubbleProps) {
   const isUser = role === 'user';
+  const isOthers = origin === 'others';
 
   return (
     <View style={[styles.row, isUser ? styles.rowUser : styles.rowAgent]}>
@@ -23,10 +26,20 @@ export function MobileMessageBubble({
         style={[
           styles.bubble,
           isUser ? styles.bubbleUser : styles.bubbleAgent,
+          isOthers && styles.bubbleOthers,
         ]}
       >
-        {!isUser && agentLabel && (
-          <Text style={styles.agentLabel}>{agentLabel}</Text>
+        {!isUser && (agentLabel || isOthers) && (
+          <View style={styles.labelRow}>
+            {agentLabel ? (
+              <Text style={styles.agentLabel}>{agentLabel}</Text>
+            ) : null}
+            {isOthers && (
+              <View style={styles.othersBadge}>
+                <Text style={styles.othersBadgeText}>OTHERS</Text>
+              </View>
+            )}
+          </View>
         )}
         <Text style={[styles.text, isUser ? styles.textUser : styles.textAgent]}>
           {text}
@@ -63,11 +76,32 @@ const styles = StyleSheet.create({
     borderColor: colors.borderSoft,
     borderBottomLeftRadius: radius.xs,
   },
+  bubbleOthers: {
+    borderColor: colors.accentIndigoSoft,
+    backgroundColor: 'rgba(99,102,241,0.06)',
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
   agentLabel: {
     fontSize: typeScale.tiny,
     color: colors.inkMuted,
     fontWeight: '600',
-    marginBottom: spacing.xs,
+    letterSpacing: 0.5,
+  },
+  othersBadge: {
+    backgroundColor: colors.accentIndigoSoft,
+    borderRadius: radius.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 1,
+  },
+  othersBadgeText: {
+    fontSize: typeScale.tiny - 1,
+    color: colors.accentIndigo,
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
   text: {
