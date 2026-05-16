@@ -18,6 +18,7 @@ import { MobileSessionDrawer } from '../components/session/MobileSessionDrawer';
 import { MobileModeSelector } from '../components/modes/MobileModeSelector';
 import { MobileAiStatusBadge } from '../components/status/MobileAiStatusBadge';
 import { MobileOthersTrigger } from '../components/others/MobileOthersTrigger';
+import { MobileMemberSheet } from '../components/members/MobileMemberSheet';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 
 export default function IndexScreen() {
@@ -43,6 +44,7 @@ export default function IndexScreen() {
 
   const [showIntro, setShowIntro] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [memberSheetOpen, setMemberSheetOpen] = useState(false);
 
   function handleSend(text: string) {
     if (showIntro) setShowIntro(false);
@@ -83,12 +85,13 @@ export default function IndexScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={0}
           >
-            {/* Session header with new/clear actions and drawer toggle */}
+            {/* Session header with new/clear/member actions and drawer toggle */}
             <MobileSessionHeader
               session={session}
               onNewSession={handleNewSession}
               onClear={handleClear}
               onOpenDrawer={() => setDrawerOpen(true)}
+              onOpenMembers={() => setMemberSheetOpen(true)}
             />
 
             {/* Timeline or Intro */}
@@ -142,6 +145,12 @@ export default function IndexScreen() {
         onSelect={handleSwitchSession}
         onDelete={handleDeleteSession}
         onNewSession={handleNewSession}
+      />
+
+      {/* Member explanation sheet */}
+      <MobileMemberSheet
+        visible={memberSheetOpen}
+        onClose={() => setMemberSheetOpen(false)}
       />
     </MobileAppShell>
   );
