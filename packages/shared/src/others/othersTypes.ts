@@ -20,6 +20,6 @@ export interface UniversalOthersReply {
 
 export interface UniversalOthersResponse {
   replies: UniversalOthersReply[];
-  source: 'proxy' | 'mock-fallback';
+  source?: 'proxy' | 'mock-fallback';
   model?: string;
 }

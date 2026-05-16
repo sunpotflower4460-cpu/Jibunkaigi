@@ -80,10 +80,13 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
     const userName = typeof body.userName === 'string' ? body.userName : null;
 
     const rawTargets = Array.isArray(body.targetAgentIds) ? body.targetAgentIds : [];
-    const targetAgentIds: ConcreteAgentId[] = rawTargets
-      .map((id) => normalizeConcreteAgentId(String(id)))
-      .filter((id): id is ConcreteAgentId => id !== null)
-      .slice(0, 5);
+    const targetAgentIds: ConcreteAgentId[] = [
+      ...new Set(
+        rawTargets
+          .map((id) => normalizeConcreteAgentId(String(id)))
+          .filter((id): id is ConcreteAgentId => id !== null),
+      ),
+    ].slice(0, 5);
 
     const rawMessages = Array.isArray(body.messages)
       ? (body.messages as Array<{

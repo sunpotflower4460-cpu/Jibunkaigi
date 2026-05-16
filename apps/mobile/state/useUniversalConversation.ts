@@ -219,6 +219,10 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     const lastUser = [...messagesRef.current].reverse().find((m) => m.role === 'user');
     if (!lastUser) return;
 
+    // Capture origin session and messages snapshot at the time the request starts.
+    const originSessionId = sessionRef.current.id;
+    const messagesSnapshot = messagesRef.current;
+
     isLoadingOthersRef.current = true;
     setIsLoadingOthers(true);
     setOthersError(null);
@@ -226,12 +230,15 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     const groupId = createUniversalId('others');
     try {
       const result = await createUniversalOthersReplies({
-        sessionId: sessionRef.current.id,
+        sessionId: originSessionId,
         userText: lastUser.text,
         currentAgentId: selectedAgent,
         modeId: modeRef.current,
-        messages: messagesRef.current,
+        messages: messagesSnapshot,
       });
+
+      // Guard: discard replies if the user navigated away from this session.
+      if (sessionRef.current.id !== originSessionId) return;
 
       const now = Date.now();
       const agentMessages: UniversalMessage[] = result.replies.map((reply, index) => ({
@@ -255,10 +262,10 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
         updatedAt: Date.now(),
       };
       setSession(updated);
-      setOthersSource(result.source);
+      setOthersSource(result.source ?? null);
 
       for (const msg of agentMessages) {
-        void repoRef.current.saveMessage(sessionRef.current.id, msg);
+        void repoRef.current.saveMessage(originSessionId, msg);
       }
       void repoRef.current.saveSession({ ...updated, messages: [] });
     } catch (error) {

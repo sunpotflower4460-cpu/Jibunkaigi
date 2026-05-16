@@ -16,7 +16,16 @@ export function buildUniversalOthersPrompt(request: UniversalOthersRequest): str
     : CONCRETE_AGENT_IDS;
 
   const recentMessages = selectRecentPromptMessages(request.messages, 12);
-  const history = recentMessages
+  // Exclude the last message from history if it is a user message matching userText,
+  // to avoid the same content appearing twice (history section + "今回のユーザー入力" section).
+  const sanitizedUserText = sanitizePromptText(request.userText, 1200);
+  const historyMessages =
+    recentMessages.length > 0 &&
+    recentMessages[recentMessages.length - 1].role === 'user' &&
+    sanitizePromptText(recentMessages[recentMessages.length - 1].text, 1200) === sanitizedUserText
+      ? recentMessages.slice(0, -1)
+      : recentMessages;
+  const history = historyMessages
     .map((msg) => {
       const speaker =
         msg.role === 'user'
