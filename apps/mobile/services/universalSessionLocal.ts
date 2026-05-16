@@ -3,20 +3,24 @@
 // Replace createLocalSession with a Firestore write in Phase 3.
 
 import type { UniversalSession } from '../state/mobileTypes';
-
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
+import {
+  createUniversalId,
+  createSessionTitleFromText,
+} from '../../../packages/shared/src/index';
 
 export function createLocalSession(title = '新しい問い'): UniversalSession {
   const now = Date.now();
   return {
-    id: generateId(),
+    id: createUniversalId('session'),
     title,
     createdAt: now,
     updatedAt: now,
     messages: [],
   };
+}
+
+export function createLocalSessionFromText(text: string): UniversalSession {
+  return createLocalSession(createSessionTitleFromText(text));
 }
 
 export function clearSessionMessages(session: UniversalSession): UniversalSession {

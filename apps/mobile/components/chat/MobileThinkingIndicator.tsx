@@ -1,15 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import type { UniversalAgentId } from '../../state/mobileTypes';
-import { AGENT_THINKING_TEXT } from '../../services/universalAgentMock';
+import type { UniversalAgentId, UniversalModeId } from '../../state/mobileTypes';
+import { getThinkingText } from '../../../../packages/shared/src/index';
 import { colors, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileThinkingIndicatorProps {
   agentId: UniversalAgentId;
+  modeId?: UniversalModeId;
 }
 
-export function MobileThinkingIndicator({ agentId }: MobileThinkingIndicatorProps) {
-  const text = AGENT_THINKING_TEXT[agentId] ?? '考えています…';
+export function MobileThinkingIndicator({ agentId, modeId = 'dialogue' }: MobileThinkingIndicatorProps) {
+  const text = getThinkingText(agentId, modeId);
 
   return (
     <View style={styles.row}>

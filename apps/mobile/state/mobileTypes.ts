@@ -1,20 +1,10 @@
 // Universal types for Expo app (iOS / Android / Web).
-// Canonical names use Universal* prefix to reflect the cross-platform target.
-// Not yet synced with Firestore — designed to be easy to migrate later.
+// UniversalAgentId and UniversalModeId are re-exported from @jibunkaigi/shared
+// so all platforms share the same canonical definitions.
 
-export type UniversalAgentId =
-  | 'mirror'
-  | 'delegate'
-  | 'ray'
-  | 'joe'
-  | 'ken'
-  | 'mina'
-  | 'satou';
+import type { UniversalAgentId, UniversalModeId } from '../../../packages/shared/src/index';
 
-export type UniversalModeId =
-  | 'flash'
-  | 'dialogue'
-  | 'deep';
+export type { UniversalAgentId, UniversalModeId };
 
 export type UniversalMessageRole = 'user' | 'agent';
 
