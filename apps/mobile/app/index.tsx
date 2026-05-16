@@ -14,12 +14,14 @@ import { MobileIntroScreen } from '../components/intro/MobileIntroScreen';
 import { MobileComposer } from '../components/composer/MobileComposer';
 import { MobileAgentControlBar } from '../components/composer/MobileAgentControlBar';
 import { MobileSessionHeader } from '../components/session/MobileSessionHeader';
+import { MobileSessionDrawer } from '../components/session/MobileSessionDrawer';
 import { MobileModeSelector } from '../components/modes/MobileModeSelector';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 
 export default function IndexScreen() {
   const {
     session,
+    sessions,
     messages,
     selectedAgent,
     selectedMode,
@@ -30,9 +32,12 @@ export default function IndexScreen() {
     startFromHint,
     clearConversation,
     createNewSession,
+    switchSession,
+    deleteSession,
   } = useUniversalConversation();
 
   const [showIntro, setShowIntro] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   function handleSend(text: string) {
     if (showIntro) setShowIntro(false);
@@ -54,6 +59,16 @@ export default function IndexScreen() {
     clearConversation();
   }
 
+  async function handleSwitchSession(sessionId: string) {
+    await switchSession(sessionId);
+    setShowIntro(false);
+  }
+
+  async function handleDeleteSession(sessionId: string) {
+    await deleteSession(sessionId);
+    setShowIntro(true);
+  }
+
   return (
     <MobileAppShell>
       <MobileBackground>
@@ -63,11 +78,12 @@ export default function IndexScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={0}
           >
-            {/* Session header with new/clear actions */}
+            {/* Session header with new/clear actions and drawer toggle */}
             <MobileSessionHeader
               session={session}
               onNewSession={handleNewSession}
               onClear={handleClear}
+              onOpenDrawer={() => setDrawerOpen(true)}
             />
 
             {/* Timeline or Intro */}
@@ -103,6 +119,17 @@ export default function IndexScreen() {
           </KeyboardAvoidingView>
         </SafeAreaView>
       </MobileBackground>
+
+      {/* Session history drawer */}
+      <MobileSessionDrawer
+        visible={drawerOpen}
+        sessions={sessions}
+        activeSessionId={session.id}
+        onClose={() => setDrawerOpen(false)}
+        onSelect={handleSwitchSession}
+        onDelete={handleDeleteSession}
+        onNewSession={handleNewSession}
+      />
     </MobileAppShell>
   );
 }

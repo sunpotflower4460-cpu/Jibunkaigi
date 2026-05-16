@@ -12,15 +12,25 @@ interface MobileSessionHeaderProps {
   session: MobileSession;
   onNewSession: () => void;
   onClear: () => void;
+  onOpenDrawer: () => void;
 }
 
 export function MobileSessionHeader({
   session,
   onNewSession,
   onClear,
+  onOpenDrawer,
 }: MobileSessionHeaderProps) {
   return (
     <View style={styles.header}>
+      <TouchableOpacity
+        style={styles.drawerBtn}
+        onPress={onOpenDrawer}
+        activeOpacity={0.7}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text style={styles.drawerBtnText}>≡</Text>
+      </TouchableOpacity>
       <View style={styles.titleBlock}>
         <Text style={styles.title}>じぶん会議</Text>
         <Text style={styles.sessionTitle} numberOfLines={1}>{session.title}</Text>
@@ -57,6 +67,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
+  },
+  drawerBtn: {
+    marginRight: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    minWidth: 32,
+    alignItems: 'center',
+  },
+  drawerBtnText: {
+    fontSize: 22,
+    color: colors.inkMuted,
+    lineHeight: 28,
   },
   titleBlock: {
     flex: 1,
