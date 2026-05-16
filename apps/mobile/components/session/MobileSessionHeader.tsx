@@ -13,6 +13,7 @@ interface MobileSessionHeaderProps {
   onNewSession: () => void;
   onClear: () => void;
   onOpenDrawer: () => void;
+  onOpenMembers: () => void;
 }
 
 export function MobileSessionHeader({
@@ -20,6 +21,7 @@ export function MobileSessionHeader({
   onNewSession,
   onClear,
   onOpenDrawer,
+  onOpenMembers,
 }: MobileSessionHeaderProps) {
   return (
     <View style={styles.header}>
@@ -36,6 +38,16 @@ export function MobileSessionHeader({
         <Text style={styles.sessionTitle} numberOfLines={1}>{session.title}</Text>
       </View>
       <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.btn}
+          onPress={onOpenMembers}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="会議メンバーを見る"
+        >
+          <Text style={styles.btnText}>メンバー</Text>
+        </TouchableOpacity>
         {session.messages.length > 0 && (
           <TouchableOpacity
             style={styles.btn}

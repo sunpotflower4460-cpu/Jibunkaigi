@@ -14,3 +14,5 @@ export * from './prompt/conversationPromptBuilder';
 export * from './others/othersTypes';
 export * from './others/othersPromptBuilder';
 export * from './others/othersMock';
+export * from './members/memberDisplayTypes';
+export * from './members/memberDisplayProfiles';

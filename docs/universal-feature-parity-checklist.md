@@ -31,7 +31,7 @@
 | 会話クリア | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | clearConversation |
 | 新しい問いを始める | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | createNewSession |
 | ユーザー名変更 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
-| 会議メンバー説明 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | BeliefsDialog相当 |
+| 会議メンバー説明 | ✅ | ✅ | ✅ | ✅ | 移植完了 | MobileMemberSheet / MobileMemberCard |
 | エラー表示 | ✅ | ⬜ | ⬜ | ⬜ | AI error state土台追加 | aiError state追加 |
 | 設定不足表示 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
 | ローディング表示 | ✅ | ⬜ | ⬜ | ⬜ | Thinking表示 + remote AI待機対応 | isThinking + MobileAiStatusBadge |
