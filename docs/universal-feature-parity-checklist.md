@@ -22,12 +22,12 @@
 | 委ねる | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカル疑似対応 | pickMockDelegatedAgent → shared |
 | 心の鏡 | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカル疑似対応 | buildMirrorMockReply → shared |
 | OTHERS | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
-| セッション保存 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | Firebase予定 |
-| セッション一覧 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
-| セッション切り替え | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
+| セッション保存 | ✅ | ✅ | ✅ | ✅ | Adapter完了（Firestore / local fallback） | FirestoreSessionRepository |
+| セッション一覧 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | MobileSessionDrawer |
+| セッション切り替え | ✅ | ✅ | ✅ | ✅ | Adapter完了 | switchSession |
 | セッションタイトル編集 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
 | ピン留め | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | UniversalSession.pinned型は定義済み |
-| セッション削除 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
+| セッション削除 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | deleteSession |
 | 会話クリア | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | clearConversation |
 | 新しい問いを始める | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | createNewSession |
 | ユーザー名変更 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
@@ -36,7 +36,7 @@
 | 設定不足表示 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
 | ローディング表示 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
 | 思考中表示 | ✅ | ✅ | ✅ | ✅ | 共通文言追加 / ローカルMVP完了 | getThinkingText → MobileThinkingIndicator |
-| 過去会話復元 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
+| 過去会話復元 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | loadMessages on switchSession |
 | コピー | ✅ | ⬜ | ⬜ | ⬜ | 未確認 | |
 | 共有 | ✅ | ⬜ | ⬜ | ⬜ | 未確認 | |
 | 入力欄を閉じる/開く | ✅ | ⬜ | ⬜ | ⬜ | 未確認 | |
