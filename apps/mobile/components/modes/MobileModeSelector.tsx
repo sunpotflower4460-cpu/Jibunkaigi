@@ -1,19 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import type { UniversalModeId } from '../../state/mobileTypes';
+import { UNIVERSAL_MODES, type UniversalModeId } from '../../../../packages/shared/src/index';
 import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
-
-interface Mode {
-  id: UniversalModeId;
-  label: string;
-  emoji: string;
-}
-
-const MODES: Mode[] = [
-  { id: 'flash', label: '一閃', emoji: '⚡' },
-  { id: 'dialogue', label: '対話', emoji: '💬' },
-  { id: 'deep', label: '深淵', emoji: '🌊' },
-];
 
 interface MobileModeSelectorProps {
   selected: UniversalModeId;
@@ -23,7 +11,7 @@ interface MobileModeSelectorProps {
 export function MobileModeSelector({ selected, onSelect }: MobileModeSelectorProps) {
   return (
     <View style={styles.wrapper}>
-      {MODES.map((mode) => {
+      {UNIVERSAL_MODES.map((mode) => {
         const isActive = selected === mode.id;
         return (
           <TouchableOpacity
@@ -79,3 +67,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+

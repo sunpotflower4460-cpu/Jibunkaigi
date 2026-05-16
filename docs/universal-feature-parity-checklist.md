@@ -11,16 +11,16 @@
 | 問いを書く | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | MobileComposer |
 | メッセージ送信 | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了（mock） | 本物送信はPhase 3 |
 | AI応答 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | Gemini Proxy予定 |
-| 一閃モード | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | MobileModeSelector |
-| 対話モード | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | MobileModeSelector |
-| 深淵モード | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | MobileModeSelector |
-| レイ | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了（mock） | モード対応疑似応答 |
-| ジョー | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了（mock） | モード対応疑似応答 |
-| ケン | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了（mock） | モード対応疑似応答 |
-| ミナ | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了（mock） | モード対応疑似応答 |
-| サトウ | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了（mock） | モード対応疑似応答 |
-| 委ねる | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了（mock） | 疑似委譲あり |
-| 心の鏡 | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了（mock） | 履歴要約疑似応答 |
+| 一閃モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
+| 対話モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
+| 深淵モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
+| レイ | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了（mock） | UNIVERSAL_AGENTS → MobileAgentControlBar |
+| ジョー | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了（mock） | UNIVERSAL_AGENTS → MobileAgentControlBar |
+| ケン | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了（mock） | UNIVERSAL_AGENTS → MobileAgentControlBar |
+| ミナ | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了（mock） | UNIVERSAL_AGENTS → MobileAgentControlBar |
+| サトウ | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了（mock） | UNIVERSAL_AGENTS → MobileAgentControlBar |
+| 委ねる | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカル疑似対応 | pickMockDelegatedAgent → shared |
+| 心の鏡 | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカル疑似対応 | buildMirrorMockReply → shared |
 | OTHERS | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
 | セッション保存 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | Firebase予定 |
 | セッション一覧 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
@@ -35,7 +35,7 @@
 | エラー表示 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
 | 設定不足表示 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
 | ローディング表示 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
-| 思考中表示 | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | MobileThinkingIndicator |
+| 思考中表示 | ✅ | ✅ | ✅ | ✅ | 共通文言追加 / ローカルMVP完了 | getThinkingText → MobileThinkingIndicator |
 | 過去会話復元 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
 | コピー | ✅ | ⬜ | ⬜ | ⬜ | 未確認 | |
 | 共有 | ✅ | ⬜ | ⬜ | ⬜ | 未確認 | |
