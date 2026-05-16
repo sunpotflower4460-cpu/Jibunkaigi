@@ -1,0 +1,10 @@
+name = "jibunkaigi-gemini-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-05-01"
+
+[vars]
+ALLOWED_ORIGIN = "*"
+GEMINI_MODEL = "gemini-1.5-flash"
+
+# Set the API key as a secret — never commit the real value:
+# wrangler secret put GEMINI_API_KEY
