@@ -12,6 +12,7 @@ export interface ChatMessage {
   text: string;
   agentId?: MobileAgentId;
   agentLabel?: string;
+  origin?: 'direct' | 'others';
 }
 
 interface MobileChatTimelineProps {
@@ -46,6 +47,7 @@ export function MobileChatTimeline({
           role={msg.role}
           text={msg.text}
           agentLabel={msg.agentLabel}
+          origin={msg.origin}
         />
       ))}
       {isThinking && <MobileThinkingIndicator agentId={thinkingAgentId} />}

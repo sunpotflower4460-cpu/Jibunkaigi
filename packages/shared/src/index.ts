@@ -11,3 +11,6 @@ export * from './prompt/modePromptProfiles';
 export * from './prompt/responsePolicy';
 export * from './prompt/promptSanitizer';
 export * from './prompt/conversationPromptBuilder';
+export * from './others/othersTypes';
+export * from './others/othersPromptBuilder';
+export * from './others/othersMock';

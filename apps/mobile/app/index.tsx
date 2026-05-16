@@ -17,6 +17,7 @@ import { MobileSessionHeader } from '../components/session/MobileSessionHeader';
 import { MobileSessionDrawer } from '../components/session/MobileSessionDrawer';
 import { MobileModeSelector } from '../components/modes/MobileModeSelector';
 import { MobileAiStatusBadge } from '../components/status/MobileAiStatusBadge';
+import { MobileOthersTrigger } from '../components/others/MobileOthersTrigger';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 
 export default function IndexScreen() {
@@ -27,10 +28,12 @@ export default function IndexScreen() {
     selectedAgent,
     selectedMode,
     isThinking,
+    isLoadingOthers,
     aiSource,
     selectAgent,
     selectMode,
     sendMessage,
+    requestOthers,
     startFromHint,
     clearConversation,
     createNewSession,
@@ -115,6 +118,11 @@ export default function IndexScreen() {
               <MobileAgentControlBar
                 selected={selectedAgent}
                 onSelect={selectAgent}
+              />
+              <MobileOthersTrigger
+                disabled={messages.length === 0 || isThinking}
+                isLoading={isLoadingOthers}
+                onPress={requestOthers}
               />
               <MobileComposer
                 onSend={handleSend}
