@@ -4,9 +4,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  useWindowDimensions,
 } from 'react-native';
 import type { MobileSession } from '../../state/mobileTypes';
 import { colors, spacing, type as typeScale, radius } from '../../theme/tokens';
+import { MobileUserNameTrigger } from '../user/MobileUserNameTrigger';
 
 interface MobileSessionHeaderProps {
   session: MobileSession;
@@ -14,6 +16,8 @@ interface MobileSessionHeaderProps {
   onClear: () => void;
   onOpenDrawer: () => void;
   onOpenMembers: () => void;
+  userName?: string;
+  onOpenUserName?: () => void;
 }
 
 export function MobileSessionHeader({
@@ -22,7 +26,12 @@ export function MobileSessionHeader({
   onClear,
   onOpenDrawer,
   onOpenMembers,
+  userName,
+  onOpenUserName,
 }: MobileSessionHeaderProps) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 720;
+
   return (
     <View style={styles.header}>
       <TouchableOpacity
@@ -38,6 +47,13 @@ export function MobileSessionHeader({
         <Text style={styles.sessionTitle} numberOfLines={1}>{session.title}</Text>
       </View>
       <View style={styles.actions}>
+        {onOpenUserName ? (
+          <MobileUserNameTrigger
+            userName={userName}
+            compact={isCompact}
+            onPress={onOpenUserName}
+          />
+        ) : null}
         <TouchableOpacity
           style={styles.btn}
           onPress={onOpenMembers}
@@ -74,14 +90,15 @@ export function MobileSessionHeader({
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
+    gap: spacing.sm,
   },
   drawerBtn: {
-    marginRight: spacing.md,
+    marginTop: spacing.xs,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     minWidth: 32,
@@ -94,7 +111,7 @@ const styles = StyleSheet.create({
   },
   titleBlock: {
     flex: 1,
-    marginRight: spacing.md,
+    minWidth: 0,
   },
   title: {
     fontSize: typeScale.title,
@@ -112,6 +129,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    flexShrink: 1,
   },
   btn: {
     paddingHorizontal: spacing.md,
@@ -120,7 +140,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderSubtle,
     backgroundColor: colors.surfaceStrong,
-    minHeight: 36,
+    minHeight: 44,
     justifyContent: 'center',
   },
   btnPrimary: {

@@ -10,6 +10,7 @@ export interface UniversalAiRequest {
   agentId: UniversalAgentId;
   modeId: UniversalModeId;
   messages: UniversalMessage[];
+  userName?: string | null;
 }
 
 export interface UniversalAiResponse {

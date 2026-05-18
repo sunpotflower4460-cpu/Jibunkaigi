@@ -54,6 +54,12 @@ function normalizeConcreteAgentId(value: string): ConcreteAgentId | null {
     : null;
 }
 
+function readOptionalUserName(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, 24) : null;
+}
+
 async function handleOthersRequest(request: Request, env: Env): Promise<Response> {
   if (!env.GEMINI_API_KEY) {
     return json({ error: 'Missing GEMINI_API_KEY' }, 500, env);
@@ -77,7 +83,7 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
 
     const currentAgentId = normalizeAgentId(String(body.currentAgentId || 'ray'));
     const modeId = normalizeModeId(String(body.modeId || 'dialogue'));
-    const userName = typeof body.userName === 'string' ? body.userName : null;
+    const userName = readOptionalUserName(body.userName);
 
     const rawTargets = Array.isArray(body.targetAgentIds) ? body.targetAgentIds : [];
     const targetAgentIds: ConcreteAgentId[] = [
@@ -230,7 +236,7 @@ export default {
       const userText = String(body.userText || '').trim();
       const agentId = normalizeAgentId(String(body.agentId || 'ray'));
       const modeId = normalizeModeId(String(body.modeId || 'dialogue'));
-      const userName = typeof body.userName === 'string' ? body.userName : null;
+      const userName = readOptionalUserName(body.userName);
 
       if (!userText) {
         return json({ error: 'userText is required' }, 400, env);
@@ -322,4 +328,3 @@ export default {
     }
   },
 };
-
