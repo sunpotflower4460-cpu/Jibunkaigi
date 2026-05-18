@@ -6,7 +6,15 @@ import {
   type UniversalAgentId,
   type UniversalComposerVisibility,
 } from '../../../../packages/shared/src';
-import { colors, radius, spacing, shadow, type as typeScale } from '../../theme/tokens';
+import {
+  colors,
+  mobileLayout,
+  mobileTouchTarget,
+  radius,
+  spacing,
+  shadow,
+  type as typeScale,
+} from '../../theme/tokens';
 
 interface MobileFloatingAgentBarProps {
   selectedAgent: UniversalAgentId;
@@ -140,14 +148,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   collapsedToggle: {
-    minHeight: 44,
+    minHeight: mobileTouchTarget.minimum,
     minWidth: 132,
     borderRadius: radius.full,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: colors.surfaceSoft,
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: colors.borderSubtle,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -155,15 +163,19 @@ const styles = StyleSheet.create({
   },
   collapsedToggleText: {
     fontSize: typeScale.small,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.inkMuted,
   },
   openWrap: {
     position: 'absolute',
-    left: spacing.lg,
-    right: spacing.lg,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
   },
   rail: {
+    width: '100%',
+    maxWidth: mobileLayout.panelMaxWidth,
     borderRadius: radius.md,
     backgroundColor: colors.surfaceStrong,
     borderWidth: 1,
@@ -181,12 +193,12 @@ const styles = StyleSheet.create({
   },
   railCaption: {
     fontSize: typeScale.tiny,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.inkMuted,
   },
   closeToggle: {
-    minHeight: 32,
-    minWidth: 32,
+    minHeight: mobileTouchTarget.minimum,
+    minWidth: mobileTouchTarget.minimum,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
@@ -198,19 +210,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   agentChip: {
-    minHeight: 44,
+    minHeight: mobileTouchTarget.minimum,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceSoft,
+    backgroundColor: colors.surfaceFaint,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
   agentChipActive: {
     borderColor: colors.accentIndigo,
-    backgroundColor: colors.accentIndigoSoft,
+    backgroundColor: colors.accentSurface,
   },
   agentEmoji: {
     fontSize: 15,

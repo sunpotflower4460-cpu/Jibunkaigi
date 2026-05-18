@@ -36,9 +36,17 @@ iOS / Android / Web で見た目の印象を揃えるため、Web版の `design-
 | 余白 | spacing系 | spacing.xs〜xxl | 一部対応 | |
 | タイポ | text scale | type.title / heading / body | 一部対応 | |
 | 影 | shadow系 | shadow.soft / card | 一部対応 | |
-| Motion | CSS animation | 未対応 | 未移植 | RNでは軽量化 |
+| Motion | CSS animation | `mobileMotion.ts` | 一部対応 | 150ms〜250msの静かな motion token を追加 |
 | Safe Area | CSS env | SafeAreaView | 一部対応 | |
-| Tap Target | CSS utility | minHeight 44 | 一部対応 | |
+| Tap Target | CSS utility | `mobileTouchTarget.minimum` / `comfortable` | 一部対応 | 主要操作の44px基準をtheme化 |
+
+## Expo側の基準ファイル
+
+- `apps/mobile/theme/mobileTheme.ts`
+- `apps/mobile/theme/mobileSpacing.ts`
+- `apps/mobile/theme/mobileTypography.ts`
+- `apps/mobile/theme/mobileMotion.ts`
+- `apps/mobile/theme/tokens.ts`（後方互換の集約レイヤ）
 
 ## 完成条件
 

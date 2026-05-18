@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { MEMBER_DISPLAY_PROFILES } from '../../../../packages/shared/src/members/memberDisplayProfiles';
 import { MobileMemberCard } from './MobileMemberCard';
-import { colors, spacing, type as typeScale, shadow } from '../../theme/tokens';
+import { colors, mobileLayout, shadow, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileMemberSheetProps {
   visible: boolean;
@@ -66,10 +66,13 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,23,42,0.35)',
+    backgroundColor: colors.overlayStrong,
   },
   sheet: {
-    backgroundColor: colors.bgBase,
+    width: '100%',
+    maxWidth: mobileLayout.sheetMaxWidth,
+    alignSelf: 'center',
+    backgroundColor: colors.surfaceSoft,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '88%',
@@ -104,9 +107,10 @@ const styles = StyleSheet.create({
   },
   sheetSub: {
     fontSize: typeScale.small,
-    color: colors.inkFaint,
+    color: colors.inkMuted,
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
+    lineHeight: 20,
   },
   list: {
     paddingHorizontal: spacing.xl,

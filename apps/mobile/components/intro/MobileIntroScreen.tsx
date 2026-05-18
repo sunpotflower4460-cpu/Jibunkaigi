@@ -6,7 +6,16 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
-import { colors, radius, spacing, type as typeScale, shadow } from '../../theme/tokens';
+import { Feather } from 'lucide-react-native';
+import {
+  colors,
+  mobileLayout,
+  mobileLineHeights,
+  radius,
+  spacing,
+  type as typeScale,
+  shadow,
+} from '../../theme/tokens';
 
 const HINTS = [
   '言葉にならないけど、ずっと胸にあるもの',
@@ -27,6 +36,9 @@ export function MobileIntroScreen({ onHintSelect }: MobileIntroScreenProps) {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.card}>
+        <View style={styles.iconWrap}>
+          <Feather size={24} color={colors.inkFaint} />
+        </View>
         <Text style={styles.heading}>まずは、ひとつ置いてみる。</Text>
         <Text style={styles.sub}>まだ言葉になっていなくても、大丈夫です。</Text>
       </View>
@@ -56,8 +68,11 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl,
     gap: spacing.xl,
     paddingBottom: spacing.xxl,
+    alignItems: 'center',
   },
   card: {
+    width: '100%',
+    maxWidth: mobileLayout.onboardingMaxWidth,
     backgroundColor: colors.surfaceStrong,
     borderRadius: radius.xl,
     padding: spacing.xxl,
@@ -65,17 +80,30 @@ const styles = StyleSheet.create({
     borderColor: colors.borderSoft,
     gap: spacing.md,
     ...shadow.card,
+    alignItems: 'center',
+  },
+  iconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceFaint,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
   },
   heading: {
     fontSize: typeScale.heading,
     fontWeight: '600',
     color: colors.inkStrong,
     letterSpacing: -0.3,
+    textAlign: 'center',
   },
   sub: {
     fontSize: typeScale.body,
     color: colors.inkMuted,
-    lineHeight: 24,
+    lineHeight: mobileLineHeights.body,
+    textAlign: 'center',
   },
   hintTitle: {
     fontSize: typeScale.small,
@@ -86,6 +114,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   hints: {
+    width: '100%',
+    maxWidth: mobileLayout.onboardingMaxWidth,
     gap: spacing.sm,
   },
   hintChip: {

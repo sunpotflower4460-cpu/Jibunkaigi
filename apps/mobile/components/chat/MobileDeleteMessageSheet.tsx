@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import { colors, mobileLayout, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileDeleteMessageSheetProps {
   visible: boolean;
@@ -26,14 +26,14 @@ export function MobileDeleteMessageSheet({
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onCancel} />
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.sheet}>
-            <Text style={styles.title}>このメッセージを削除しますか？</Text>
-            <Text style={styles.caption}>削除すると、この会話の表示から取り除かれます。</Text>
+            <Text style={styles.title}>このメッセージを手放しますか？</Text>
+            <Text style={styles.caption}>会話の表示から取り除かれます。</Text>
             <View style={styles.actions}>
               <TouchableOpacity style={styles.cancelButton} onPress={onCancel} activeOpacity={0.75}>
                 <Text style={styles.cancelText}>キャンセル</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.deleteButton} onPress={onConfirm} activeOpacity={0.75}>
-                <Text style={styles.deleteText}>削除</Text>
+                <Text style={styles.deleteText}>手放す</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -47,17 +47,20 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(15,23,42,0.24)',
+    backgroundColor: colors.overlay,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
   },
   safeArea: {
     paddingHorizontal: spacing.lg,
+    alignItems: 'center',
   },
   sheet: {
+    width: '100%',
+    maxWidth: mobileLayout.sheetMaxWidth,
     borderRadius: radius.md,
-    backgroundColor: colors.bgBase,
+    backgroundColor: colors.surfaceSoft,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xl,
     gap: spacing.md,
@@ -100,14 +103,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: 'rgba(244,114,182,0.18)',
-    backgroundColor: 'rgba(244,114,182,0.08)',
+    borderColor: colors.dangerBorder,
+    backgroundColor: colors.dangerSoft,
     justifyContent: 'center',
     alignItems: 'center',
   },
   deleteText: {
     fontSize: typeScale.small,
     fontWeight: '700',
-    color: '#be123c',
+    color: colors.danger,
   },
 });

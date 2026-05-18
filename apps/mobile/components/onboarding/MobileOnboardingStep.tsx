@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { UniversalOnboardingStep } from '../../../../packages/shared/src';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import { colors, mobileLineHeights, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileOnboardingStepProps {
   index: number;
@@ -40,11 +40,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.inkStrong,
+    backgroundColor: colors.accentSurface,
     marginTop: 2,
+    borderWidth: 1,
+    borderColor: colors.accentIndigoSoft,
   },
   numberText: {
-    color: '#fff',
+    color: colors.accentIndigo,
     fontSize: typeScale.tiny,
     fontWeight: '700',
   },
@@ -60,6 +62,6 @@ const styles = StyleSheet.create({
   body: {
     fontSize: typeScale.small,
     color: colors.inkMuted,
-    lineHeight: 20,
+    lineHeight: mobileLineHeights.small,
   },
 });

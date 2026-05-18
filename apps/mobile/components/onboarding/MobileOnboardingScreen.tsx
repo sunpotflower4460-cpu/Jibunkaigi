@@ -10,7 +10,15 @@ import {
 } from 'react-native';
 import { ChevronRight, Users } from 'lucide-react-native';
 import { UNIVERSAL_ONBOARDING_CONTENT } from '../../../../packages/shared/src';
-import { colors, radius, shadow, spacing, type as typeScale } from '../../theme/tokens';
+import {
+  colors,
+  mobileLayout,
+  mobileLineHeights,
+  radius,
+  shadow,
+  spacing,
+  type as typeScale,
+} from '../../theme/tokens';
 import { MobileOnboardingStep } from './MobileOnboardingStep';
 
 interface MobileOnboardingScreenProps {
@@ -39,7 +47,7 @@ export function MobileOnboardingScreen({
       >
         <View style={[styles.panel, isCompactHeight && styles.panelCompact]}>
           <View style={[styles.iconWrap, isCompactHeight && styles.iconWrapCompact]}>
-            <Users size={isCompactHeight ? 24 : 30} color="#fff" />
+            <Users size={isCompactHeight ? 24 : 30} color={colors.textOnAccent} />
           </View>
 
           <View style={styles.titleBlock}>
@@ -96,7 +104,7 @@ export function MobileOnboardingScreen({
             <Text style={styles.primaryButtonText}>
               {UNIVERSAL_ONBOARDING_CONTENT.primaryCta}
             </Text>
-            <ChevronRight size={18} color="#fff" />
+            <ChevronRight size={18} color={colors.textOnAccent} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -122,7 +130,7 @@ const styles = StyleSheet.create({
   panel: {
     width: '100%',
     alignSelf: 'center',
-    maxWidth: 480,
+    maxWidth: mobileLayout.onboardingMaxWidth,
     borderRadius: 40,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xxl,
@@ -164,16 +172,17 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 36,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -1.4,
     color: colors.inkStrong,
+    lineHeight: 40,
   },
   titleCompact: {
     fontSize: 30,
   },
   supportingText: {
     fontSize: typeScale.small,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.inkMuted,
     letterSpacing: 0.4,
   },
@@ -181,7 +190,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xl,
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: colors.surfaceSoft,
     borderWidth: 1,
     borderColor: colors.borderSoft,
   },
@@ -193,7 +202,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: typeScale.body,
     color: colors.inkSoft,
-    lineHeight: 28,
+    lineHeight: mobileLineHeights.body,
     fontWeight: '500',
   },
   steps: {
@@ -224,6 +233,7 @@ const styles = StyleSheet.create({
     fontSize: typeScale.tiny,
     color: colors.inkFaint,
     lineHeight: 18,
+    textAlign: 'center',
   },
   primaryButton: {
     minHeight: 52,
@@ -237,8 +247,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   primaryButtonText: {
-    color: '#fff',
+    color: colors.textOnAccent,
     fontSize: typeScale.small,
-    fontWeight: '800',
+    fontWeight: '700',
   },
 });

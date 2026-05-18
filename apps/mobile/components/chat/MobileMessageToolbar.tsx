@@ -1,7 +1,14 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { UNIVERSAL_MESSAGE_ACTIONS } from '../../../../packages/shared/src';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import {
+  colors,
+  mobileLineHeights,
+  mobileTouchTarget,
+  radius,
+  spacing,
+  type as typeScale,
+} from '../../theme/tokens';
 
 interface MobileMessageToolbarProps {
   messageId: string;
@@ -74,28 +81,29 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
   },
   actionButton: {
-    minHeight: 44,
-    minWidth: 72,
+    minHeight: mobileTouchTarget.minimum,
+    minWidth: 68,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceSoft,
+    backgroundColor: colors.surfaceFaint,
     justifyContent: 'center',
     alignItems: 'center',
   },
   actionButtonDestructive: {
-    backgroundColor: 'rgba(244,114,182,0.08)',
-    borderColor: 'rgba(244,114,182,0.18)',
+    backgroundColor: colors.dangerSoft,
+    borderColor: colors.dangerBorder,
   },
   actionText: {
     fontSize: typeScale.tiny,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.inkMuted,
     textAlign: 'center',
+    lineHeight: mobileLineHeights.tiny,
   },
   actionTextDestructive: {
-    color: '#be123c',
+    color: colors.danger,
   },
 });

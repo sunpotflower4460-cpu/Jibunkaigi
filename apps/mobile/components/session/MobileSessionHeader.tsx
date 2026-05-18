@@ -8,7 +8,14 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import type { MobileSession } from '../../state/mobileTypes';
-import { colors, spacing, type as typeScale, radius } from '../../theme/tokens';
+import {
+  colors,
+  mobileLayout,
+  mobileTouchTarget,
+  radius,
+  spacing,
+  type as typeScale,
+} from '../../theme/tokens';
 import { MobileUserNameTrigger } from '../user/MobileUserNameTrigger';
 
 interface MobileSessionHeaderProps {
@@ -31,8 +38,8 @@ export function MobileSessionHeader({
   onOpenUserName,
 }: MobileSessionHeaderProps) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 860;
-  const isNarrow = width < 420;
+  const isCompact = width < mobileLayout.mediumViewport;
+  const isNarrow = width < mobileLayout.compactViewport;
   const newSessionLabel = isNarrow ? '新規' : '新しい問い';
 
   return (
@@ -100,6 +107,9 @@ export function MobileSessionHeader({
 
 const styles = StyleSheet.create({
   header: {
+    width: '100%',
+    maxWidth: mobileLayout.panelMaxWidth,
+    alignSelf: 'center',
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,
     paddingBottom: spacing.md,
@@ -127,25 +137,25 @@ const styles = StyleSheet.create({
   titleBlock: {
     flex: 1,
     minWidth: 0,
+    gap: spacing.xs,
   },
   title: {
-    fontSize: typeScale.title,
+    fontSize: typeScale.tiny,
     fontWeight: '700',
-    color: colors.inkStrong,
-    letterSpacing: -0.5,
+    color: colors.inkFaint,
+    letterSpacing: 1.2,
   },
   sessionTitle: {
-    fontSize: typeScale.small,
-    color: colors.inkMuted,
-    marginTop: spacing.xs,
-    letterSpacing: 0.2,
+    fontSize: typeScale.heading,
+    color: colors.inkStrong,
+    letterSpacing: -0.4,
+    fontWeight: '600',
   },
   actions: {
     flexDirection: 'row',
     gap: spacing.sm,
     alignItems: 'center',
     flexWrap: 'wrap',
-    paddingRight: spacing.xl,
   },
   btn: {
     paddingHorizontal: spacing.md,
@@ -153,12 +163,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceStrong,
-    minHeight: 44,
+    backgroundColor: colors.surfaceSoft,
+    minHeight: mobileTouchTarget.minimum,
     justifyContent: 'center',
   },
   btnPrimary: {
-    backgroundColor: colors.accentIndigoSoft,
+    backgroundColor: colors.accentSurface,
     borderColor: colors.accentIndigo,
   },
   btnText: {

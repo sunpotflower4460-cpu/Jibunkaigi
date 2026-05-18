@@ -7,7 +7,13 @@ import {
   View,
 } from 'react-native';
 import { UNIVERSAL_AGENTS, type UniversalAgentId } from '../../../../packages/shared/src/index';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import {
+  colors,
+  mobileTouchTarget,
+  radius,
+  spacing,
+  type as typeScale,
+} from '../../theme/tokens';
 
 // Re-export for backward compatibility.
 export type AgentKey = UniversalAgentId;
@@ -25,6 +31,7 @@ export function MobileAgentControlBar({
 
   return (
     <View style={styles.wrapper}>
+      <Text style={styles.caption}>視点を選ぶ</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -54,9 +61,17 @@ export function MobileAgentControlBar({
 const styles = StyleSheet.create({
   wrapper: {
     paddingBottom: spacing.sm,
+    gap: spacing.xs,
+  },
+  caption: {
+    paddingHorizontal: spacing.lg,
+    fontSize: typeScale.tiny,
+    fontWeight: '600',
+    color: colors.inkFaint,
+    letterSpacing: 0.8,
   },
   content: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     gap: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
@@ -66,16 +81,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: colors.surfaceSoft,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
     gap: spacing.xs,
-    minHeight: 44,
+    minHeight: mobileTouchTarget.minimum,
     minWidth: 72,
   },
   chipActive: {
-    backgroundColor: colors.accentIndigoSoft,
+    backgroundColor: colors.accentSurface,
     borderColor: colors.accentIndigo,
   },
   emoji: {

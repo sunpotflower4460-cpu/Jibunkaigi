@@ -4,7 +4,7 @@ import {
   buildUniversalStatusItems,
   type UniversalRuntimeStatus,
 } from '../../../../packages/shared/src';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import { colors, mobileLayout, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileStatusStripProps {
   status: UniversalRuntimeStatus;
@@ -37,6 +37,9 @@ export function MobileStatusStrip({ status }: MobileStatusStripProps) {
 
 const styles = StyleSheet.create({
   wrap: {
+    width: '100%',
+    maxWidth: mobileLayout.panelMaxWidth,
+    alignSelf: 'center',
     marginHorizontal: spacing.xl,
     marginBottom: spacing.sm,
   },
@@ -49,15 +52,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
-    backgroundColor: colors.surfaceSoft,
+    backgroundColor: colors.surfaceFaint,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
   },
   label: {
     fontSize: typeScale.tiny,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.inkSoft,
   },
   message: {

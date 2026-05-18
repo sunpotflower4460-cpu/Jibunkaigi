@@ -4,7 +4,7 @@ import {
   buildUniversalStatusItems,
   type UniversalRuntimeStatus,
 } from '../../../../packages/shared/src';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import { colors, mobileLayout, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileErrorNoticeProps {
   status: UniversalRuntimeStatus;
@@ -35,6 +35,9 @@ export function MobileErrorNotice({ status }: MobileErrorNoticeProps) {
 
 const styles = StyleSheet.create({
   wrap: {
+    width: '100%',
+    maxWidth: mobileLayout.panelMaxWidth,
+    alignSelf: 'center',
     paddingHorizontal: spacing.xl,
     marginBottom: spacing.sm,
     gap: spacing.sm,
@@ -45,9 +48,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: 'rgba(245, 158, 11, 0.14)',
+    backgroundColor: colors.warningSurface,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.24)',
+    borderColor: colors.warningBorder,
   },
   label: {
     fontSize: typeScale.tiny,
