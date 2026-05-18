@@ -32,10 +32,6 @@ import {
   type UniversalRuntimeStatus,
 } from '../../../packages/shared/src';
 
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 async function initRepository(): Promise<UniversalSessionRepository> {
   const firestoreRepo = createFirestoreRepository();
   if (firestoreRepo) {
@@ -258,8 +254,8 @@ export function useUniversalConversation(
       if (!trimmed || isThinkingRef.current) return;
       closeComposer();
 
-      const userMsg: UniversalMessage = {
-        id: generateId(),
+        const userMsg: UniversalMessage = {
+        id: createUniversalId('message'),
         role: 'user',
         text: trimmed,
         modeId: modeRef.current,
@@ -304,7 +300,7 @@ export function useUniversalConversation(
           if (sessionRef.current.id !== sessionId) return;
 
           const agentMsg: UniversalMessage = {
-            id: generateId(),
+            id: createUniversalId('message'),
             role: 'agent',
             text: reply.text,
             agentId: reply.agentId,

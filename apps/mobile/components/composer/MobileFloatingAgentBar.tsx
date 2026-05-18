@@ -47,7 +47,7 @@ export function MobileFloatingAgentBar({
   if (!isOpen) {
     return (
       <View pointerEvents="box-none" style={styles.portal}>
-        <View style={[styles.collapsedWrap, { bottom: bottomOffset }]}> 
+        <View style={[styles.collapsedWrap, { bottom: bottomOffset }]}>
           <TouchableOpacity
             style={styles.collapsedToggle}
             onPress={() => setIsOpen(true)}
@@ -65,7 +65,7 @@ export function MobileFloatingAgentBar({
 
   return (
     <View pointerEvents="box-none" style={styles.portal}>
-      <View style={[styles.openWrap, { bottom: bottomOffset }]}> 
+      <View style={[styles.openWrap, { bottom: bottomOffset }]}>
         <View style={styles.rail}>
           <View style={styles.railHeader}>
             <Text style={styles.railCaption}>現在: {selected?.label ?? 'レイ'}</Text>

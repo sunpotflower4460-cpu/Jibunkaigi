@@ -60,10 +60,12 @@ export function MobileChatTimeline({
             origin={msg.origin}
             onCopy={onCopyMessage}
             onShare={onShareMessage}
-            onDelete={onDeleteMessage ? setPendingDeleteId : undefined}
-            onRequestOthers={onRequestOthers ? (messageId) => {
-              void onRequestOthers(messageId);
-            } : undefined}
+            onDelete={onDeleteMessage ? (messageId) => setPendingDeleteId(messageId) : undefined}
+            onRequestOthers={onRequestOthers
+              ? (messageId) => {
+                  void onRequestOthers(messageId);
+                }
+              : undefined}
           />
         ))}
         {isThinking && <MobileThinkingIndicator agentId={thinkingAgentId} />}
