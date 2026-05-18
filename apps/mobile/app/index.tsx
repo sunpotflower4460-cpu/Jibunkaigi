@@ -14,6 +14,7 @@ import { MobileIntroScreen } from '../components/intro/MobileIntroScreen';
 import { MobileOnboardingScreen } from '../components/onboarding/MobileOnboardingScreen';
 import { MobileComposer } from '../components/composer/MobileComposer';
 import { MobileAgentControlBar } from '../components/composer/MobileAgentControlBar';
+import { MobileFloatingAgentBar } from '../components/composer/MobileFloatingAgentBar';
 import { MobileSessionHeader } from '../components/session/MobileSessionHeader';
 import { MobileSessionDrawer } from '../components/session/MobileSessionDrawer';
 import { MobileModeSelector } from '../components/modes/MobileModeSelector';
@@ -40,16 +41,21 @@ export default function IndexScreen() {
     session,
     sessions,
     messages,
+    composerVisibility,
+    isComposerOpen,
     selectedAgent,
     selectedMode,
     isThinking,
     isLoadingOthers,
     isLoadingSessions,
     runtimeStatus,
+    openComposer,
+    closeComposer,
     selectAgent,
     selectMode,
     sendMessage,
     requestOthers,
+    deleteMessage,
     startFromHint,
     clearConversation,
     createNewSession,
@@ -69,6 +75,8 @@ export default function IndexScreen() {
   const [userNameSheetOpen, setUserNameSheetOpen] = useState(false);
   const [userNameDraft, setUserNameDraft] = useState('');
   const [onboardingUserName, setOnboardingUserName] = useState('');
+
+  const hasUserMessages = messages.some((message) => message.role === 'user');
 
   useEffect(() => {
     const nextDraft = userName === DEFAULT_USER_NAME ? '' : userName;
@@ -157,7 +165,6 @@ export default function IndexScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={0}
           >
-            {/* Session header with new/clear/member actions and drawer toggle */}
             <MobileSessionHeader
               session={session}
               onNewSession={handleNewSession}
@@ -172,7 +179,6 @@ export default function IndexScreen() {
             <MobileErrorNotice status={runtimeStatus} />
             <MobileStatusStrip status={runtimeStatus} />
 
-            {/* Timeline or Intro */}
             <View style={styles.content}>
               {showIntro ? (
                 <MobileIntroScreen onHintSelect={handleHintSelect} />
@@ -189,12 +195,23 @@ export default function IndexScreen() {
                   onShareMessage={(messageId) => {
                     void shareMessage(messageId);
                   }}
+                  onDeleteMessage={(messageId) => {
+                    void deleteMessage(messageId);
+                  }}
+                  onRequestOthers={(messageId) => {
+                    void requestOthers(messageId);
+                  }}
                 />
               )}
+              <MobileFloatingAgentBar
+                selectedAgent={selectedAgent}
+                onSelectAgent={selectAgent}
+                hasMessages={hasUserMessages}
+                composerVisibility={composerVisibility}
+              />
               <MobileLoadingOverlay visible={isLoadingSessions} />
             </View>
 
-            {/* Bottom controls */}
             <View style={styles.bottom}>
               <MobileModeSelector
                 selected={selectedMode}
@@ -205,11 +222,16 @@ export default function IndexScreen() {
                 onSelect={selectAgent}
               />
               <MobileOthersTrigger
-                disabled={messages.length === 0 || isThinking}
+                disabled={!hasUserMessages || isThinking}
                 isLoading={isLoadingOthers}
-                onPress={requestOthers}
+                onPress={() => {
+                  void requestOthers();
+                }}
               />
               <MobileComposer
+                visible={isComposerOpen}
+                onOpen={openComposer}
+                onClose={closeComposer}
                 onSend={handleSend}
                 isThinking={isThinking}
               />
@@ -218,7 +240,6 @@ export default function IndexScreen() {
         </SafeAreaView>
       </MobileBackground>
 
-      {/* Session history drawer */}
       <MobileSessionDrawer
         visible={drawerOpen}
         sessions={sessions}
@@ -233,7 +254,6 @@ export default function IndexScreen() {
         onShareCurrentSession={shareCurrentSession}
       />
 
-      {/* Member explanation sheet */}
       <MobileMemberSheet
         visible={memberSheetOpen}
         onClose={() => setMemberSheetOpen(false)}

@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---|---|
 | 初回オンボーディング | ✅ | ✅ | ✅ | ✅ | Phase 2-12 完了 / QA待ち | `MobileOnboardingScreen` + shared onboarding content + onboarding persistence |
 | ホーム/空状態 | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-006 / FP-007 | `MobileIntroScreen` / `MobileEmptyState` の文言・配置QAが残る |
-| 問いを書く | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-004 / FP-007 | Composerはあるが入力欄開閉・helper text parityが未完了 |
+| 問いを書く | ✅ | ✅ | ✅ | ✅ | Phase 2-13 完了 / QA待ち | `綴る / 閉じる` 導線と composer collapse を追加 |
 | メッセージ送信 | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-002 | 送信土台はあるが本番実応答確認待ち |
 | AI応答 | ✅ | ⬜ | ⬜ | ⬜ | userName引き渡し対応 / 実応答確認待ち / FP-002 | reply / OTHERS request は userName 対応済み、env実確認は別フェーズ |
 | 一閃モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
@@ -39,10 +39,10 @@
 | 過去会話復元 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | loadMessages on switchSession |
 | コピー | ✅ | ✅ | ✅ | ✅ | Phase 2-10 完了 | MobileCopyShareActions + sessionExport |
 | 共有 | ✅ | ✅ | ✅ | ✅ | 意図的差分 / FP-008 | OS共有シートの見た目差分は許容、導線と機能は揃える |
-| 入力欄を閉じる/開く | ✅ | ⬜ | ⬜ | ⬜ | 未一致 / FP-004 | Webの `綴る / 閉じる` 導線を100%移植対象にする |
-| FloatingAgentBar | ✅ | ⬜ | ⬜ | ⬜ | 未一致 / FP-005 | 固定下部レールを100%移植対象にする |
-| メッセージ個別削除 | ✅ | ⬜ | ⬜ | ⬜ | 未一致 / FP-012 | Webのメッセージツールバー delete がExpoにない |
-| OTHERS表示導線 | ✅ | ⬜ | ⬜ | ⬜ | 部分一致 / FP-013 | Webは各メッセージ配下、Expoは下部トリガーで代替中 |
+| 入力欄を閉じる/開く | ✅ | ✅ | ✅ | ✅ | Phase 2-13 完了 / QA待ち | `綴る / 閉じる` 導線 + collapsed composer hint |
+| FloatingAgentBar | ✅ | ✅ | ✅ | ✅ | Phase 2-13 完了 / QA待ち | `MobileFloatingAgentBar` を追加 |
+| メッセージ個別削除 | ✅ | ✅ | ✅ | ✅ | Phase 2-13 完了 / QA待ち | `deleteMessage` + `MobileMessageToolbar` |
+| OTHERS表示導線 | ✅ | ✅ | ✅ | ✅ | Phase 2-13 完了 / QA待ち | message toolbar から `requestOthers(messageId)` を実行 |
 | Debug/Compare/Inspector | ✅ | 任意 | 任意 | 任意 | 意図的差分 | 開発用。ストア向けユーザー体験の必須Parity対象外 |
 
 ## 完成条件

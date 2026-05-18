@@ -75,39 +75,39 @@ Expo Universal:
 - iOS / Android / Expo Webで旧Vite Web版と同等にユーザー名変更・保存・呼称反映が動作する
 
 ## FP-004 入力欄を閉じる/開く
-状態: 未一致  
+状態: 実装済み / QA待ち  
 優先度: P0
 
 旧Vite Web:
 - `Composer`の閉じるボタンと`AgentControlBar`の「綴る / 閉じる」で入力欄を開閉できる
 
 Expo Universal:
-- `MobileComposer`は常時表示
-- 開閉state、補助文言、再オープン導線がない
+- `composerVisibility` と `MobileComposer` の collapsed/open 導線を追加した
+- `綴る / 閉じる / 問いを綴る` を shared label 化した
 
 必要対応:
-- Webと同等の入力欄開閉導線をExpo Universalへ追加する
-- 開閉時のレイアウト、補助文言、フォーカス挙動を揃える
+- iOS / Android / Expo Web の実機QAでキーボードと safe area を確認する
+- 細かな helper text 差分が見つかった場合は別 gap へ切り出す
 
 完了条件:
-- iOS / Android / Expo Webで入力欄開閉の導線と挙動が旧Vite Web版と同等になる
+- `綴る / 閉じる` 導線と collapsed hint が 3 プラットフォームで確認される
 
 ## FP-005 FloatingAgentBar
-状態: 未一致  
+状態: 実装済み / QA待ち  
 優先度: P0
 
 旧Vite Web:
 - 初回入力後に固定下部バーが出現し、折りたたみ/展開、心の鏡、委ねる、各エージェント、OTHERS導線を持つ
 
 Expo Universal:
-- 固定下部バーがない
+- `MobileFloatingAgentBar` を追加し、会話後に固定下部トグルと compact agent bar を表示する
 
 必要対応:
-- FloatingAgentBarをExpo Universal版へ移植する
-- safe area、折りたたみ、表示条件、下部導線を揃える
+- iOS / Android / Expo Web の実機QAで safe area / keyboard との重なりを確認する
+- selection bar として残した意図的差分を必要に応じて再評価する
 
 完了条件:
-- iOS / Android / Expo Webで旧Vite Web版と同等のFloatingAgentBar体験になる
+- 固定下部の折りたたみ導線と agent quick access が 3 プラットフォームで確認される
 
 ## FP-006 旧Vite Webとの文言差分確認
 状態: 未確認  
@@ -213,24 +213,24 @@ Expo Universal:
 - App Store向けに境界文言が確認され、残課題が記録されている
 
 ## FP-012 メッセージ個別削除導線
-状態: 未一致  
+状態: 実装済み / QA待ち  
 優先度: P1
 
 旧Vite Web:
 - メッセージバブルのツールバーから個別copy / deleteができる
 
 Expo Universal:
-- `MobileMessageBubble`はcopy / shareのみでdeleteがない
+- `MobileMessageToolbar` と `MobileDeleteMessageSheet` を追加し、copy / share / delete を message 単位で実行できる
 
 必要対応:
-- メッセージ個別削除導線をExpo Universalへ追加する
-- 削除時のセッション保存、UI更新、操作導線を揃える
+- Firestore / local fallback の両方で削除反映と session.updatedAt 更新を実機QAする
+- 誤操作時の confirm sheet 表示を 3 プラットフォームで確認する
 
 完了条件:
-- iOS / Android / Expo Webで旧Vite Web版と同等にメッセージ個別削除ができる
+- message toolbar から個別削除でき、保存失敗時もアプリが落ちないことが確認される
 
 ## FP-013 OTHERS / Reaction導線
-状態: 部分一致  
+状態: 実装済み / QA待ち  
 優先度: P1
 
 旧Vite Web:
@@ -238,12 +238,12 @@ Expo Universal:
 - `OthersPanel`でまとめ表示し、メッセージ文脈に紐づいて閉じられる
 
 Expo Universal:
-- 画面下部の`MobileOthersTrigger`で一括取得し、結果をタイムラインへ追記する
-- Webのメッセージ単位導線、reaction切替、close操作がない
+- message toolbar から `requestOthers(messageId)` を実行できる
+- 下部 `MobileOthersTrigger` は直近 user message 向けの補助導線として残した
 
 必要対応:
-- OTHERSの呼び出し位置、表示位置、close導線、結果の見せ方をWeb版基準で再設計する
-- どうしても変える場合は意図的差分として理由を記録する
+- message context OTHERS と補助導線の両方を 3 プラットフォームでQAする
+- reaction 表示や close 導線の追加要否は別フェーズで再評価する
 
 完了条件:
-- OTHERS / reactionの導線と表示が旧Vite Web版と同等、または理由付きで固定されている
+- messageId 指定 OTHERS と補助 trigger の役割が QA で確認されている

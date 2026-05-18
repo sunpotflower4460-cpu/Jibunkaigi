@@ -1,8 +1,9 @@
 // TODO: Consider migrating to FlatList for large conversation histories.
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { MobileMessageBubble, type MessageRole } from './MobileMessageBubble';
 import { MobileThinkingIndicator } from './MobileThinkingIndicator';
+import { MobileDeleteMessageSheet } from './MobileDeleteMessageSheet';
 import type { MobileAgentId } from '../../state/mobileTypes';
 import { spacing } from '../../theme/tokens';
 
@@ -21,6 +22,8 @@ interface MobileChatTimelineProps {
   thinkingAgentId?: MobileAgentId;
   onCopyMessage?: (messageId: string) => void;
   onShareMessage?: (messageId: string) => void;
+  onDeleteMessage?: (messageId: string) => void | Promise<void>;
+  onRequestOthers?: (messageId?: string) => void | Promise<void>;
 }
 
 export function MobileChatTimeline({
@@ -29,38 +32,56 @@ export function MobileChatTimeline({
   thinkingAgentId = 'ray',
   onCopyMessage,
   onShareMessage,
+  onDeleteMessage,
+  onRequestOthers,
 }: MobileChatTimelineProps) {
   const scrollRef = useRef<ScrollView>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  // Scroll to bottom whenever messages change or thinking state changes.
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: true });
   }, [messages.length, isThinking]);
 
   return (
-    // TODO: FlatList candidate when message count grows large.
-    <ScrollView
-      ref={scrollRef}
-      style={styles.scroll}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      {messages.map((msg) => (
-        <MobileMessageBubble
-          key={msg.id}
-          messageId={msg.id}
-          role={msg.role}
-          text={msg.text}
-          agentLabel={msg.agentLabel}
-          origin={msg.origin}
-          onCopy={onCopyMessage}
-          onShare={onShareMessage}
-        />
-      ))}
-      {isThinking && <MobileThinkingIndicator agentId={thinkingAgentId} />}
-      {/* Bottom padding so last message is not hidden by the composer */}
-      <View style={styles.bottomPad} />
-    </ScrollView>
+    <>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {messages.map((msg) => (
+          <MobileMessageBubble
+            key={msg.id}
+            messageId={msg.id}
+            role={msg.role}
+            text={msg.text}
+            agentLabel={msg.agentLabel}
+            origin={msg.origin}
+            onCopy={onCopyMessage}
+            onShare={onShareMessage}
+            onDelete={onDeleteMessage ? (messageId) => setPendingDeleteId(messageId) : undefined}
+            onRequestOthers={onRequestOthers
+              ? (messageId) => {
+                  void onRequestOthers(messageId);
+                }
+              : undefined}
+          />
+        ))}
+        {isThinking && <MobileThinkingIndicator agentId={thinkingAgentId} />}
+        <View style={styles.bottomPad} />
+      </ScrollView>
+      <MobileDeleteMessageSheet
+        visible={pendingDeleteId !== null}
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId) {
+            void onDeleteMessage?.(pendingDeleteId);
+          }
+          setPendingDeleteId(null);
+        }}
+      />
+    </>
   );
 }
 
@@ -70,8 +91,9 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   bottomPad: {
-    height: spacing.xxl,
+    height: 208,
   },
 });
