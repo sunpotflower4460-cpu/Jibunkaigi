@@ -16,7 +16,10 @@ import { MobileAgentControlBar } from '../components/composer/MobileAgentControl
 import { MobileSessionHeader } from '../components/session/MobileSessionHeader';
 import { MobileSessionDrawer } from '../components/session/MobileSessionDrawer';
 import { MobileModeSelector } from '../components/modes/MobileModeSelector';
-import { MobileAiStatusBadge } from '../components/status/MobileAiStatusBadge';
+import { MobileConfigNotice } from '../components/status/MobileConfigNotice';
+import { MobileErrorNotice } from '../components/status/MobileErrorNotice';
+import { MobileLoadingOverlay } from '../components/status/MobileLoadingOverlay';
+import { MobileStatusStrip } from '../components/status/MobileStatusStrip';
 import { MobileOthersTrigger } from '../components/others/MobileOthersTrigger';
 import { MobileMemberSheet } from '../components/members/MobileMemberSheet';
 import { useUniversalConversation } from '../state/useUniversalConversation';
@@ -30,7 +33,8 @@ export default function IndexScreen() {
     selectedMode,
     isThinking,
     isLoadingOthers,
-    aiSource,
+    isLoadingSessions,
+    runtimeStatus,
     selectAgent,
     selectMode,
     sendMessage,
@@ -94,8 +98,12 @@ export default function IndexScreen() {
               onOpenMembers={() => setMemberSheetOpen(true)}
             />
 
+            <MobileConfigNotice status={runtimeStatus} />
+            <MobileErrorNotice status={runtimeStatus} />
+            <MobileStatusStrip status={runtimeStatus} />
+
             {/* Timeline or Intro */}
-            <View style={styles.flex}>
+            <View style={styles.content}>
               {showIntro ? (
                 <MobileIntroScreen onHintSelect={handleHintSelect} />
               ) : messages.length === 0 ? (
@@ -107,10 +115,8 @@ export default function IndexScreen() {
                   thinkingAgentId={selectedAgent}
                 />
               )}
+              <MobileLoadingOverlay visible={isLoadingSessions} />
             </View>
-
-            {/* AI source indicator (dev only) */}
-            <MobileAiStatusBadge source={aiSource} />
 
             {/* Bottom controls */}
             <View style={styles.bottom}>
@@ -162,6 +168,10 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+  },
+  content: {
+    flex: 1,
+    position: 'relative',
   },
   bottom: {
     gap: 0,

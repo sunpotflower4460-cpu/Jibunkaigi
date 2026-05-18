@@ -20,7 +20,11 @@ import {
   type UniversalSessionRepository,
 } from '../services/sessionRepository';
 import { createFirestoreRepository } from '../services/firebase/firestoreSessionRepository';
-import { createUniversalId } from '../../../packages/shared/src';
+import { isMobileFirebaseConfigured } from '../services/firebase/mobileFirebaseConfig';
+import {
+  createUniversalId,
+  type UniversalRuntimeStatus,
+} from '../../../packages/shared/src';
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -44,12 +48,18 @@ interface UseUniversalConversationReturn {
   selectedMode: UniversalModeId;
   isThinking: boolean;
   isLoadingOthers: boolean;
+  isLoadingSessions: boolean;
+  isSaving: boolean;
   isRemote: boolean;
   aiSource: 'proxy' | 'mock-fallback' | null;
   othersSource: 'proxy' | 'mock-fallback' | null;
   aiError: string | null;
   othersError: string | null;
+  storageError: string | null;
+  firebaseConfigured: boolean;
+  proxyConfigured: boolean;
   isRemoteAiEnabled: boolean;
+  runtimeStatus: UniversalRuntimeStatus;
   sendMessage: (text: string) => void;
   requestOthers: () => Promise<void>;
   selectAgent: (agentId: UniversalAgentId) => void;
@@ -70,16 +80,22 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
   const [selectedMode, setSelectedMode] = useState<UniversalModeId>('dialogue');
   const [isThinking, setIsThinking] = useState(false);
   const [isLoadingOthers, setIsLoadingOthers] = useState(false);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [isRemote, setIsRemote] = useState(false);
   const [aiSource, setAiSource] = useState<'proxy' | 'mock-fallback' | null>(null);
   const [othersSource, setOthersSource] = useState<'proxy' | 'mock-fallback' | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [othersError, setOthersError] = useState<string | null>(null);
-  const isRemoteAiEnabled = isGeminiProxyConfigured();
+  const [storageError, setStorageError] = useState<string | null>(null);
+  const firebaseConfigured = isMobileFirebaseConfigured();
+  const proxyConfigured = isGeminiProxyConfigured();
+  const isRemoteAiEnabled = proxyConfigured;
 
   // Refs to keep stable values inside async callbacks.
   const isThinkingRef = useRef(false);
   const isLoadingOthersRef = useRef(false);
+  const saveOperationsRef = useRef(0);
   const messagesRef = useRef<UniversalMessage[]>([]);
   // Keep mode accessible inside timeout callbacks without stale closure.
   const modeRef = useRef<UniversalModeId>('dialogue');
@@ -90,39 +106,74 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     sessionRef.current = session;
   }, [session]);
 
+  const runStorageTask = useCallback(async (task: () => Promise<void>) => {
+    saveOperationsRef.current += 1;
+    setIsSaving(true);
+    try {
+      await task();
+      setStorageError(null);
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setStorageError(message);
+      console.warn('[Jibunkaigi] Storage error:', error);
+      return false;
+    } finally {
+      saveOperationsRef.current = Math.max(0, saveOperationsRef.current - 1);
+      if (saveOperationsRef.current === 0) {
+        setIsSaving(false);
+      }
+    }
+  }, []);
+
   // Initialise: connect to Firestore if available and load sessions.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const repo = await initRepository();
-      if (cancelled) return;
-      repoRef.current = repo;
-      setIsRemote(repo.isRemoteEnabled());
+      setIsLoadingSessions(true);
+      try {
+        const repo = await initRepository();
+        if (cancelled) return;
+        repoRef.current = repo;
+        setIsRemote(repo.isRemoteEnabled());
 
-      const list = await repo.listSessions();
-      if (cancelled) return;
+        const list = await repo.listSessions();
+        if (cancelled) return;
 
-      if (list.length === 0) {
-        const initial = createLocalSession();
-        await repo.saveSession(initial);
-        messagesRef.current = [];
-        setSession(initial);
-        setSessions([initial]);
-      } else {
-        const active = list[0];
-        const msgs = await repo.loadMessages(active.id);
+        if (list.length === 0) {
+          const initial = createLocalSession();
+          await runStorageTask(async () => {
+            await repo.saveSession(initial);
+          });
+          if (cancelled) return;
+          messagesRef.current = [];
+          setSession(initial);
+          setSessions([initial]);
+        } else {
+          const active = list[0];
+          const msgs = await repo.loadMessages(active.id);
+          if (!cancelled) {
+            messagesRef.current = msgs;
+            setSession({ ...active, messages: msgs });
+            setSessions(list);
+          }
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
         if (!cancelled) {
-          messagesRef.current = msgs;
-          setSession({ ...active, messages: msgs });
-          setSessions(list);
+          setStorageError(message);
+          console.warn('[Jibunkaigi] Session bootstrap error:', error);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingSessions(false);
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [runStorageTask]);
 
   // Refresh the sessions sidebar list.
   const refreshSessions = useCallback(async () => {
@@ -153,8 +204,10 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
       setSession(updatedSession);
 
       // Persist user message.
-      void repoRef.current.saveMessage(sessionRef.current.id, userMsg);
-      void repoRef.current.saveSession({ ...updatedSession, messages: [] });
+      void runStorageTask(async () => {
+        await repoRef.current.saveMessage(sessionRef.current.id, userMsg);
+        await repoRef.current.saveSession({ ...updatedSession, messages: [] });
+      });
 
       isThinkingRef.current = true;
       setIsThinking(true);
@@ -198,9 +251,11 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
           setAiSource(reply.source);
 
           // Persist agent message to the originating session.
-          void repoRef.current.saveMessage(sessionId, agentMsg);
-          void repoRef.current.saveSession({ ...afterReply, messages: [] });
-          void refreshSessions();
+          void runStorageTask(async () => {
+            await repoRef.current.saveMessage(sessionId, agentMsg);
+            await repoRef.current.saveSession({ ...afterReply, messages: [] });
+            await refreshSessions();
+          });
         } catch (error) {
           const msg = error instanceof Error ? error.message : String(error);
           setAiError(msg);
@@ -211,7 +266,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
         }
       })();
     },
-    [selectedAgent, refreshSessions],
+    [refreshSessions, runStorageTask, selectedAgent],
   );
 
   const requestOthers = useCallback(async () => {
@@ -264,19 +319,22 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
       setSession(updated);
       setOthersSource(result.source ?? null);
 
-      for (const msg of agentMessages) {
-        void repoRef.current.saveMessage(originSessionId, msg);
-      }
-      void repoRef.current.saveSession({ ...updated, messages: [] });
+      void runStorageTask(async () => {
+        for (const msg of agentMessages) {
+          await repoRef.current.saveMessage(originSessionId, msg);
+        }
+        await repoRef.current.saveSession({ ...updated, messages: [] });
+      });
     } catch (error) {
       setOthersError(error instanceof Error ? error.message : String(error));
     } finally {
       isLoadingOthersRef.current = false;
       setIsLoadingOthers(false);
     }
-  }, [selectedAgent]);
+  }, [runStorageTask, selectedAgent]);
 
-  const selectAgent = useCallback((agentId: UniversalAgentId) => {    setSelectedAgent(agentId);
+  const selectAgent = useCallback((agentId: UniversalAgentId) => {
+    setSelectedAgent(agentId);
   }, []);
 
   const selectMode = useCallback((modeId: UniversalModeId) => {
@@ -294,9 +352,11 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
       updatedAt: Date.now(),
     };
     setSession(cleared);
-    void repoRef.current.clearMessages(cleared.id);
-    void repoRef.current.saveSession({ ...cleared, messages: [] });
-  }, []);
+    void runStorageTask(async () => {
+      await repoRef.current.clearMessages(cleared.id);
+      await repoRef.current.saveSession({ ...cleared, messages: [] });
+    });
+  }, [runStorageTask]);
 
   const createNewSession = useCallback(() => {
     isThinkingRef.current = false;
@@ -304,27 +364,43 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     messagesRef.current = [];
     setIsThinking(false);
     setSession(newSession);
-    void repoRef.current.saveSession(newSession).then(() => refreshSessions());
-  }, [refreshSessions]);
+    void runStorageTask(async () => {
+      await repoRef.current.saveSession(newSession);
+      await refreshSessions();
+    });
+  }, [refreshSessions, runStorageTask]);
 
   const switchSession = useCallback(async (sessionId: string) => {
     isThinkingRef.current = false;
     setIsThinking(false);
+    setIsLoadingSessions(true);
+    try {
+      const msgs = await repoRef.current.loadMessages(sessionId);
+      const list = await repoRef.current.listSessions();
+      const target = list.find((s) => s.id === sessionId);
+      if (!target) return;
 
-    const msgs = await repoRef.current.loadMessages(sessionId);
-    const list = await repoRef.current.listSessions();
-    const target = list.find((s) => s.id === sessionId);
-    if (!target) return;
-
-    messagesRef.current = msgs;
-    setSession({ ...target, messages: msgs });
-    setSessions(list);
+      setStorageError(null);
+      messagesRef.current = msgs;
+      setSession({ ...target, messages: msgs });
+      setSessions(list);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setStorageError(message);
+      console.warn('[Jibunkaigi] Session switch error:', error);
+    } finally {
+      setIsLoadingSessions(false);
+    }
   }, []);
 
   const deleteSession = useCallback(
     async (sessionId: string) => {
-      await repoRef.current.deleteSession(sessionId);
-      const list = await repoRef.current.listSessions();
+      let list: UniversalSession[] = [];
+      const deleted = await runStorageTask(async () => {
+        await repoRef.current.deleteSession(sessionId);
+        list = await repoRef.current.listSessions();
+      });
+      if (!deleted) return;
 
       if (sessionRef.current.id === sessionId) {
         if (list.length > 0) {
@@ -332,7 +408,9 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
           setSessions(list);
         } else {
           const newSession = createLocalSession();
-          await repoRef.current.saveSession(newSession);
+          await runStorageTask(async () => {
+            await repoRef.current.saveSession(newSession);
+          });
           messagesRef.current = [];
           setSession(newSession);
           setSessions([newSession]);
@@ -341,7 +419,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
         setSessions(list);
       }
     },
-    [switchSession],
+    [runStorageTask, switchSession],
   );
 
   const startFromHint = useCallback(
@@ -358,11 +436,26 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
       const titled = createLocalSessionFromText(firstUser.text);
       const updated: UniversalSession = { ...session, title: titled.title };
       setSession(updated);
-      void repoRef.current.saveSession({ ...updated, messages: [] });
-      void refreshSessions();
+      void runStorageTask(async () => {
+        await repoRef.current.saveSession({ ...updated, messages: [] });
+        await refreshSessions();
+      });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.messages.length]);
+  }, [refreshSessions, runStorageTask, session]);
+
+  const runtimeStatus: UniversalRuntimeStatus = {
+    storageMode: isRemote ? 'remote' : 'local',
+    aiMode: isRemoteAiEnabled ? 'proxy' : 'mock-fallback',
+    isLoadingSessions,
+    isSaving,
+    isThinking,
+    isLoadingOthers,
+    aiError,
+    othersError,
+    storageError,
+    firebaseConfigured,
+    proxyConfigured,
+  };
 
   return {
     session,
@@ -372,12 +465,18 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     selectedMode,
     isThinking,
     isLoadingOthers,
+    isLoadingSessions,
+    isSaving,
     isRemote,
     aiSource,
     othersSource,
     aiError,
     othersError,
+    storageError,
+    firebaseConfigured,
+    proxyConfigured,
     isRemoteAiEnabled,
+    runtimeStatus,
     sendMessage,
     requestOthers,
     selectAgent,
