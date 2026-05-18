@@ -1,6 +1,6 @@
 // TODO: Consider migrating to FlatList for large conversation histories.
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { MobileMessageBubble, type MessageRole } from './MobileMessageBubble';
 import { MobileThinkingIndicator } from './MobileThinkingIndicator';
 import { MobileDeleteMessageSheet } from './MobileDeleteMessageSheet';
