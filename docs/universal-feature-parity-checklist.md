@@ -6,11 +6,11 @@
 
 | 機能 | Vite Web | Expo iOS | Expo Android | Expo Web | 状態 | 備考 |
 |---|---:|---:|---:|---:|---|---|
-| 初回オンボーディング | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | IntroOverlay相当 |
-| ホーム/空状態 | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | MobileEmptyState / MobileIntroScreen |
-| 問いを書く | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | MobileComposer |
-| メッセージ送信 | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了（mock） | 本物送信はPhase 3 |
-| AI応答 | ✅ | ⬜ | ⬜ | ⬜ | Prompt Runtime 共有化 / Proxy 土台追加 / env 設定後に実応答確認 | Gemini Proxy Client + Universal Prompt Builder |
+| 初回オンボーディング | ✅ | ⬜ | ⬜ | ⬜ | 未一致 / FP-001 | Web `IntroOverlay` と同じ文言・導線・初回のみ表示の保存が必要 |
+| ホーム/空状態 | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-006 / FP-007 | `MobileIntroScreen` / `MobileEmptyState` の文言・配置QAが残る |
+| 問いを書く | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-004 / FP-007 | Composerはあるが入力欄開閉・helper text parityが未完了 |
+| メッセージ送信 | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-002 | 送信土台はあるが本番実応答確認待ち |
+| AI応答 | ✅ | ⬜ | ⬜ | ⬜ | 本番実応答確認待ち / FP-002 | Proxy土台あり、env実確認が必要 |
 | 一閃モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
 | 対話モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
 | 深淵モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
@@ -30,7 +30,7 @@
 | セッション削除 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | deleteSession |
 | 会話クリア | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | clearConversation |
 | 新しい問いを始める | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | createNewSession |
-| ユーザー名変更 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
+| ユーザー名変更 | ✅ | ⬜ | ⬜ | ⬜ | 未一致 / FP-003 | 保存 / 復元 / AI反映まで含めて未移植 |
 | 会議メンバー説明 | ✅ | ✅ | ✅ | ✅ | 移植完了 | MobileMemberSheet / MobileMemberCard |
 | エラー表示 | ✅ | ✅ | ✅ | ✅ | Phase 2-9 完了 | MobileErrorNotice + shared status messages |
 | 設定不足表示 | ✅ | ✅ | ✅ | ✅ | Phase 2-9 完了 | MobileConfigNotice + runtimeStatus |
@@ -38,12 +38,15 @@
 | 思考中表示 | ✅ | ✅ | ✅ | ✅ | 共通文言追加 / ローカルMVP完了 | getThinkingText → MobileThinkingIndicator |
 | 過去会話復元 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | loadMessages on switchSession |
 | コピー | ✅ | ✅ | ✅ | ✅ | Phase 2-10 完了 | MobileCopyShareActions + sessionExport |
-| 共有 | ✅ | ✅ | ✅ | ✅ | Phase 2-10 完了 | mobileClipboardShare + fallback copy |
-| 入力欄を閉じる/開く | ✅ | ⬜ | ⬜ | ⬜ | 未確認 | |
-| FloatingAgentBar | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
-| Debug/Compare/Inspector | ✅ | 任意 | 任意 | 任意 | 開発用 | 本番では隠してよい |
+| 共有 | ✅ | ✅ | ✅ | ✅ | 意図的差分 / FP-008 | OS共有シートの見た目差分は許容、導線と機能は揃える |
+| 入力欄を閉じる/開く | ✅ | ⬜ | ⬜ | ⬜ | 未一致 / FP-004 | Webの `綴る / 閉じる` 導線を100%移植対象にする |
+| FloatingAgentBar | ✅ | ⬜ | ⬜ | ⬜ | 未一致 / FP-005 | 固定下部レールを100%移植対象にする |
+| メッセージ個別削除 | ✅ | ⬜ | ⬜ | ⬜ | 未一致 / FP-012 | Webのメッセージツールバー delete がExpoにない |
+| OTHERS表示導線 | ✅ | ⬜ | ⬜ | ⬜ | 部分一致 / FP-013 | Webは各メッセージ配下、Expoは下部トリガーで代替中 |
+| Debug/Compare/Inspector | ✅ | 任意 | 任意 | 任意 | 意図的差分 | 開発用。ストア向けユーザー体験の必須Parity対象外 |
 
 ## 完成条件
 
 この表で、ユーザー向け機能の Expo iOS / Expo Android / Expo Web がすべて ✅ になるまで完成扱いにしない。
 開発者向け機能は、本番では非表示でもよい。
+`docs/full-parity-audit.md` と `docs/full-parity-gap-register.md` の全項目が完了するまで完成扱いにしない。
