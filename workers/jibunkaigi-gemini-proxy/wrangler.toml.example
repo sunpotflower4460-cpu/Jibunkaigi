@@ -3,8 +3,9 @@ main = "src/index.ts"
 compatibility_date = "2026-05-01"
 
 [vars]
-ALLOWED_ORIGIN = "*"
 GEMINI_MODEL = "gemini-1.5-flash"
+ALLOWED_ORIGIN = "*"
 
-# Set the API key as a secret — never commit the real value:
+# Do not put GEMINI_API_KEY here.
+# Set it as a secret manually:
 # wrangler secret put GEMINI_API_KEY
