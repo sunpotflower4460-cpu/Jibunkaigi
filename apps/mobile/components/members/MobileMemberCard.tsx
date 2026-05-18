@@ -6,7 +6,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import type { MemberDisplayProfile } from '../../../../packages/shared/src/members/memberDisplayTypes';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import { colors, mobileLineHeights, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileMemberCardProps {
   profile: MemberDisplayProfile;
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   oneLine: {
     fontSize: typeScale.small,
     color: colors.inkMuted,
-    lineHeight: 17,
+    lineHeight: mobileLineHeights.small,
   },
   chevron: {
     fontSize: typeScale.tiny,
@@ -98,6 +98,9 @@ const styles = StyleSheet.create({
   detail: {
     marginTop: spacing.md,
     gap: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
   },
   row: {
     gap: spacing.xs,
@@ -112,16 +115,16 @@ const styles = StyleSheet.create({
   rowValue: {
     fontSize: typeScale.small,
     color: colors.inkSoft,
-    lineHeight: 19,
+    lineHeight: mobileLineHeights.small,
   },
   hintBlock: {
     marginTop: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.accentIndigoSoft,
+    backgroundColor: colors.accentSurface,
     borderRadius: radius.xs,
     borderWidth: 1,
-    borderColor: 'rgba(99,102,241,0.18)',
+    borderColor: colors.accentIndigoSoft,
   },
   hintText: {
     fontSize: typeScale.small,

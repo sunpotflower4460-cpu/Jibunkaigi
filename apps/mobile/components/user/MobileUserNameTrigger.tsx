@@ -15,7 +15,7 @@ export function MobileUserNameTrigger({
   onPress,
 }: MobileUserNameTriggerProps) {
   const resolvedUserName = normalizeUserName(userName ?? DEFAULT_USER_NAME);
-  const label = compact ? '名前' : `こんにちは、${resolvedUserName}`;
+  const label = compact ? '名前' : resolvedUserName;
 
   return (
     <TouchableOpacity

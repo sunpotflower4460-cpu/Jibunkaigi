@@ -111,52 +111,59 @@ Expo Universal:
 - 固定下部の折りたたみ導線と agent quick access が 3 プラットフォームで確認される
 
 ## FP-006 旧Vite Webとの文言差分確認
-状態: 一部修正済み / 文言棚卸し継続  
+状態: Phase 2-16 polish調整済み / 実機確認継続  
 優先度: P1
 
 旧Vite Web:
 - Intro、EmptyState、helper text、status、ボタン文言がWeb版のトーンで統一されている
 
 Expo Universal:
-- Intro、header、composer、OTHERS、status周りに別文言が残っている
+- Intro、header、composer、OTHERS、status周りの tone を再調整した
+- delete / user name / empty state などに静かな microcopy を寄せた
+- まだ実機画面上での最終一致確認は残っている
 
 必要対応:
-- Header / Intro / Empty / Status / Composer の文言を画面単位で棚卸しし、差分を一致 / 意図的差分に振り分ける
-- 今回のUI調整で未一致文言が見つかった場合は追加修正する
+- Header / Intro / Empty / Status / Composer / Sheet の文言を画面単位で最終棚卸しする
+- iOS / Android 実機で tone が急かして見えないか確認する
+- 意図的差分は `docs/universal-ui-ux-polish-guide.md` に理由付きで残す
 
 完了条件:
 - ユーザー向け文言差分が全て解消されるか、理由付きで記録されている
 
 ## FP-007 旧Vite WebとのUI配置差分確認
-状態: 一部修正済み / 画面比較継続  
+状態: Phase 2-16 polish調整済み / 画面比較継続  
 優先度: P1
 
 旧Vite Web:
 - Sidebar / TopHeader / Composer / AgentControlBar / FloatingAgentBar / OTHERS panelの配置が固定されている
 
 Expo Universal:
-- Header / Drawer / bottom controls構成が別で、導線密度や余白に差分がある
+- Header / Drawer / bottom controls 構成は残しつつ、余白・最大幅・操作優先順位を再整理した
+- ChatTimeline / Composer / FloatingAgentBar / Sheet の密度差を縮めた
 
 必要対応:
-- Header / Status / Timeline / Composer / FloatingAgentBar / Drawer / Sheet の配置差分を画面単位で比較する
-- 未一致UIを修正するか、意図的差分として理由を記録する
+- Header / Status / Timeline / Composer / FloatingAgentBar / Drawer / Sheet の side-by-side 比較を残す
+- tablet / narrow viewport / 実機で間延びや詰まりが再発しないか確認する
+- 未一致UIを修正するか、意図的差分として `docs/universal-ui-ux-polish-guide.md` に理由を記録する
 
 完了条件:
 - 配置差分が未確認のまま残っていない
 
 ## FP-008 iOS/Android/Expo Web実機QA
-状態: コード調整済み / 実機Manual Gate待ち  
+状態: Expo Webコード確認済み / 実機Manual Gate待ち  
 優先度: P0
 
 旧Vite Web:
 - 比較元として常に参照できる
 
 Expo Universal:
-- コード上の確認はできるが、Firebase / Geminiの実接続QAはManual Gate後に行う
+- Expo Web の起動確認と viewport 前提の polish 調整は実施した
+- iOS / Android の safe area / keyboard / drawer / sheet / share / delete feel は実機での最終確認待ち
+- Firebase / Gemini の実接続QAはManual Gate後に行う
 
 必要対応:
 - 3プラットフォームで導線、safe area、共有、入力、session操作、status表示を確認する
-- まず `docs/universal-ui-ux-bug-qa.md` の UI-001〜UI-010 を画面サイズ別に埋める
+- まず `docs/universal-ui-ux-bug-qa.md` と `docs/universal-ui-ux-polish-checklist.md` を画面サイズ別に埋める
 - Firebase Remote保存とGemini Proxy応答の実機確認をManual Gate後に記録する
 - 差分はGap Registerへ反映する
 

@@ -11,7 +11,14 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import type { UniversalSession } from '../../state/mobileTypes';
-import { colors, spacing, type as typeScale, radius, shadow } from '../../theme/tokens';
+import {
+  colors,
+  mobileLayout,
+  radius,
+  shadow,
+  spacing,
+  type as typeScale,
+} from '../../theme/tokens';
 import { sortUniversalSessions } from '../../../../packages/shared/src';
 import { MobileSessionEditSheet } from './MobileSessionEditSheet';
 import { MobileSessionListItem } from './MobileSessionListItem';
@@ -170,17 +177,17 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15,23,42,0.35)',
+    backgroundColor: colors.overlayStrong,
   },
   drawer: {
-    width: '78%',
-    maxWidth: 320,
-    backgroundColor: colors.bgBase,
+    width: '84%',
+    maxWidth: mobileLayout.drawerMaxWidth,
+    backgroundColor: colors.surfaceSoft,
     ...shadow.soft,
   },
   drawerCompact: {
     width: '92%',
-    maxWidth: 360,
+    maxWidth: mobileLayout.drawerMaxWidth,
   },
   drawerAndroid: {
     paddingTop: spacing.xl,
@@ -217,7 +224,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    backgroundColor: colors.accentIndigoSoft,
+    backgroundColor: colors.accentSurface,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.accentIndigo,
@@ -242,7 +249,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: colors.surfaceFaint,
     justifyContent: 'center',
   },
   exportButtonText: {

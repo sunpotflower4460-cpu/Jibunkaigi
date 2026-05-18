@@ -24,7 +24,7 @@ import { MobileUserNameSheet } from '../components/user/MobileUserNameSheet';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 import { useUniversalOnboarding } from '../state/useUniversalOnboarding';
 import { DEFAULT_USER_NAME } from '../../../packages/shared/src';
-import { colors, spacing } from '../theme/tokens';
+import { colors, spacing, mobileLayout, shadow } from '../theme/tokens';
 
 export default function IndexScreen() {
   const insets = useSafeAreaInsets();
@@ -297,12 +297,19 @@ const styles = StyleSheet.create({
   bottomDock: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
+    alignItems: 'center',
   },
   bottomPanel: {
+    width: '100%',
+    maxWidth: mobileLayout.panelMaxWidth,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
     paddingTop: spacing.sm,
-    backgroundColor: colors.bgBase,
+    paddingBottom: spacing.xs,
+    backgroundColor: colors.surfaceSoft,
+    ...shadow.soft,
   },
   loadingScreen: {
     flex: 1,

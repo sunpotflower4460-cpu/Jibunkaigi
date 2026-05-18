@@ -4,7 +4,7 @@ import {
   buildUniversalStatusItems,
   type UniversalRuntimeStatus,
 } from '../../../../packages/shared/src';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import { colors, mobileLayout, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileConfigNoticeProps {
   status: UniversalRuntimeStatus;
@@ -36,6 +36,9 @@ export function MobileConfigNotice({ status }: MobileConfigNoticeProps) {
 
 const styles = StyleSheet.create({
   wrap: {
+    width: '100%',
+    maxWidth: mobileLayout.panelMaxWidth,
+    alignSelf: 'center',
     paddingHorizontal: spacing.xl,
     paddingRight: spacing.xxl,
     marginBottom: spacing.sm,

@@ -1,6 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import {
+  colors,
+  mobileLayout,
+  mobileLineHeights,
+  radius,
+  spacing,
+  type as typeScale,
+} from '../../theme/tokens';
 import { MobileMessageToolbar } from './MobileMessageToolbar';
 
 export type MessageRole = 'user' | 'agent';
@@ -75,8 +82,11 @@ export function MobileMessageBubble({
 
 const styles = StyleSheet.create({
   row: {
+    width: '100%',
+    maxWidth: mobileLayout.timelineMaxWidth,
+    alignSelf: 'center',
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   rowUser: {
     alignItems: 'flex-end',
@@ -85,11 +95,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   column: {
-    maxWidth: '100%',
+    maxWidth: '86%',
   },
   bubble: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
     borderRadius: radius.lg,
     maxWidth: '100%',
   },
@@ -100,12 +110,12 @@ const styles = StyleSheet.create({
   bubbleAgent: {
     backgroundColor: colors.surfaceStrong,
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: colors.borderSubtle,
     borderBottomLeftRadius: radius.xs,
   },
   bubbleOthers: {
     borderColor: colors.accentIndigoSoft,
-    backgroundColor: 'rgba(99,102,241,0.06)',
+    backgroundColor: colors.accentSurface,
   },
   labelRow: {
     flexDirection: 'row',
@@ -120,24 +130,27 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   othersBadge: {
-    backgroundColor: colors.accentIndigoSoft,
-    borderRadius: radius.xs,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 1,
+    backgroundColor: colors.surfaceStrong,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.accentIndigoSoft,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
   },
   othersBadgeText: {
     fontSize: typeScale.tiny - 1,
     color: colors.accentIndigo,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: 0.5,
   },
   text: {
     fontSize: typeScale.body,
-    lineHeight: 24,
+    lineHeight: mobileLineHeights.body,
     flexShrink: 1,
+    letterSpacing: 0.1,
   },
   textUser: {
-    color: '#ffffff',
+    color: colors.textOnAccent,
   },
   textAgent: {
     color: colors.inkMain,

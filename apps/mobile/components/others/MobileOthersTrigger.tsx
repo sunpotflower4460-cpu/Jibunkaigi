@@ -6,7 +6,13 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import {
+  colors,
+  mobileTouchTarget,
+  radius,
+  spacing,
+  type as typeScale,
+} from '../../theme/tokens';
 
 interface MobileOthersTriggerProps {
   onPress: () => void;
@@ -35,7 +41,7 @@ export function MobileOthersTrigger({
       ) : (
         <View style={styles.inner}>
           <Text style={[styles.label, isDisabled && styles.labelDisabled]}>OTHERS</Text>
-          <Text style={[styles.sub, isDisabled && styles.subDisabled]}>直近の問いに対して</Text>
+          <Text style={[styles.sub, isDisabled && styles.subDisabled]}>ほかの視点をひらく</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -44,21 +50,21 @@ export function MobileOthersTrigger({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 44,
+    minHeight: mobileTouchTarget.comfortable,
     minWidth: 132,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.accentIndigo,
-    backgroundColor: colors.accentIndigoSoft,
+    borderColor: colors.accentIndigoSoft,
+    backgroundColor: colors.surfaceSoft,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
   },
   buttonDisabled: {
     borderColor: colors.borderSubtle,
-    backgroundColor: 'transparent',
+    backgroundColor: colors.surfaceFaint,
   },
   inner: {
     alignItems: 'center',
@@ -66,17 +72,17 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typeScale.small,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.accentIndigo,
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
   labelDisabled: {
     color: colors.inkFaint,
   },
   sub: {
     fontSize: typeScale.tiny,
-    color: colors.accentIndigo,
-    opacity: 0.8,
+    color: colors.inkMuted,
+    opacity: 0.9,
   },
   subDisabled: {
     color: colors.inkFaint,

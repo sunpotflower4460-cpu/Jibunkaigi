@@ -78,13 +78,13 @@ export function MobileSessionListItem({
           <Text style={styles.actionText}>{session.pinned ? 'ピン解除' : 'ピン'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={[styles.actionButton, styles.actionButtonDanger]}
           onPress={onDelete}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={`${session.title}を削除`}
         >
-          <Text style={styles.actionText}>削除</Text>
+          <Text style={[styles.actionText, styles.actionTextDanger]}>削除</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -96,14 +96,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: colors.surfaceSoft,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     gap: spacing.sm,
   },
   cardActive: {
     borderColor: colors.accentIndigo,
-    backgroundColor: colors.accentIndigoSoft,
+    backgroundColor: colors.accentSurface,
   },
   metaRow: {
     flexDirection: 'row',
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
   badgeActive: {
     borderColor: colors.accentIndigo,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: colors.surfaceStrong,
   },
   badgeText: {
     fontSize: typeScale.tiny,
@@ -162,12 +162,19 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceSoft,
+    backgroundColor: colors.surfaceFaint,
     justifyContent: 'center',
+  },
+  actionButtonDanger: {
+    backgroundColor: colors.dangerSoft,
+    borderColor: colors.dangerBorder,
   },
   actionText: {
     fontSize: typeScale.tiny,
     fontWeight: '600',
     color: colors.inkMuted,
+  },
+  actionTextDanger: {
+    color: colors.danger,
   },
 });

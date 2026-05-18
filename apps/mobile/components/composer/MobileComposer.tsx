@@ -9,7 +9,16 @@ import {
 } from 'react-native';
 import { Send, X } from 'lucide-react-native';
 import { UNIVERSAL_COMPOSER_LABELS } from '../../../../packages/shared/src';
-import { colors, radius, spacing, shadow, type as typeScale } from '../../theme/tokens';
+import {
+  colors,
+  mobileLineHeights,
+  mobileMotion,
+  mobileTouchTarget,
+  radius,
+  spacing,
+  shadow,
+  type as typeScale,
+} from '../../theme/tokens';
 
 interface MobileComposerProps {
   onSend: (text: string) => void;
@@ -39,7 +48,7 @@ export function MobileComposer({
     if (!visible) return undefined;
     const timeoutId = setTimeout(() => {
       inputRef.current?.focus();
-    }, 80);
+    }, mobileMotion.focusDelay);
     return () => clearTimeout(timeoutId);
   }, [visible]);
 
@@ -103,7 +112,7 @@ export function MobileComposer({
           accessibilityRole="button"
           accessibilityLabel="メッセージを送信"
         >
-          <Send size={18} color="#ffffff" />
+          <Send size={18} color={colors.textOnAccent} />
         </TouchableOpacity>
       </View>
     </View>
@@ -122,10 +131,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   closeButton: {
-    minHeight: 44,
+    minHeight: mobileTouchTarget.minimum,
     paddingHorizontal: spacing.md,
     borderRadius: radius.full,
-    backgroundColor: colors.surfaceSoft,
+    backgroundColor: colors.surfaceFaint,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
     flexDirection: 'row',
@@ -138,11 +147,11 @@ const styles = StyleSheet.create({
     color: colors.inkMuted,
   },
   collapsedButton: {
-    minHeight: 52,
+    minHeight: mobileTouchTarget.comfortable,
     borderRadius: radius.full,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: colors.surfaceSoft,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     justifyContent: 'center',
@@ -150,13 +159,14 @@ const styles = StyleSheet.create({
   },
   collapsedLabel: {
     fontSize: typeScale.small,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.accentIndigo,
   },
   collapsedHint: {
     marginTop: 2,
     fontSize: typeScale.tiny,
     color: colors.inkMuted,
+    lineHeight: mobileLineHeights.tiny,
   },
   row: {
     flexDirection: 'row',
@@ -164,25 +174,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceStrong,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: colors.borderSubtle,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     ...shadow.soft,
-    minHeight: 60,
+    minHeight: 64,
   },
   input: {
     flex: 1,
     fontSize: typeScale.body,
     color: colors.inkMain,
-    lineHeight: 22,
+    lineHeight: mobileLineHeights.compactBody,
     maxHeight: 120,
     paddingTop: Platform.OS === 'android' ? spacing.sm : spacing.xs,
     paddingBottom: spacing.xs,
     marginRight: spacing.sm,
   },
   sendButton: {
-    width: 44,
-    height: 44,
+    width: mobileTouchTarget.minimum,
+    height: mobileTouchTarget.minimum,
     borderRadius: radius.full,
     backgroundColor: colors.accentIndigo,
     alignItems: 'center',

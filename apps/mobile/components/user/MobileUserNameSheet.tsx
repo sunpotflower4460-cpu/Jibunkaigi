@@ -11,7 +11,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors, radius, shadow, spacing, type as typeScale } from '../../theme/tokens';
+import {
+  colors,
+  mobileLayout,
+  radius,
+  shadow,
+  spacing,
+  type as typeScale,
+} from '../../theme/tokens';
 
 interface MobileUserNameSheetProps {
   visible: boolean;
@@ -43,7 +50,7 @@ export function MobileUserNameSheet({
             >
               <View style={styles.sheet}>
                 <View style={styles.header}>
-                  <Text style={styles.title}>お名前を教えてください</Text>
+                  <Text style={styles.title}>名前を整える</Text>
                   <Text style={styles.sub}>
                     会議メンバーからの呼ばれ方に使われます。
                   </Text>
@@ -97,21 +104,26 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,23,42,0.28)',
+    backgroundColor: colors.overlay,
   },
   safeArea: {
     justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   keyboard: {
     justifyContent: 'flex-end',
+    width: '100%',
   },
   scrollContent: {
     justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   sheet: {
+    width: '100%',
+    maxWidth: mobileLayout.sheetMaxWidth,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    backgroundColor: colors.bgBase,
+    backgroundColor: colors.surfaceSoft,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxl,
@@ -162,7 +174,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   primaryButtonText: {
-    color: '#fff',
+    color: colors.textOnAccent,
     fontSize: typeScale.small,
     fontWeight: '800',
   },
