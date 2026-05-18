@@ -12,9 +12,10 @@
   },
   "dependencies": {
     "expo": "~53.0.0",
-    "firebase": "^10.14.0",
+    "expo-clipboard": "~7.1.5",
     "expo-router": "~5.0.0",
     "expo-status-bar": "~2.2.3",
+    "firebase": "^10.14.0",
     "lucide-react-native": "^0.511.0",
     "react": "19.0.0",
     "react-native": "0.79.2",

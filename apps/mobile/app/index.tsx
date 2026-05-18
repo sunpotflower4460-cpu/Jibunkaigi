@@ -44,6 +44,12 @@ export default function IndexScreen() {
     createNewSession,
     switchSession,
     deleteSession,
+    renameSession,
+    togglePinSession,
+    copyMessage,
+    shareMessage,
+    copyCurrentSession,
+    shareCurrentSession,
   } = useUniversalConversation();
 
   const [showIntro, setShowIntro] = useState(true);
@@ -113,6 +119,12 @@ export default function IndexScreen() {
                   messages={messages}
                   isThinking={isThinking}
                   thinkingAgentId={selectedAgent}
+                  onCopyMessage={(messageId) => {
+                    void copyMessage(messageId);
+                  }}
+                  onShareMessage={(messageId) => {
+                    void shareMessage(messageId);
+                  }}
                 />
               )}
               <MobileLoadingOverlay visible={isLoadingSessions} />
@@ -151,6 +163,10 @@ export default function IndexScreen() {
         onSelect={handleSwitchSession}
         onDelete={handleDeleteSession}
         onNewSession={handleNewSession}
+        onRenameSession={renameSession}
+        onTogglePinSession={togglePinSession}
+        onCopyCurrentSession={copyCurrentSession}
+        onShareCurrentSession={shareCurrentSession}
       />
 
       {/* Member explanation sheet */}

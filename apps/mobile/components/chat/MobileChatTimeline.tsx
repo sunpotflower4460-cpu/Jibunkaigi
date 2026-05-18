@@ -19,12 +19,16 @@ interface MobileChatTimelineProps {
   messages: ChatMessage[];
   isThinking?: boolean;
   thinkingAgentId?: MobileAgentId;
+  onCopyMessage?: (messageId: string) => void;
+  onShareMessage?: (messageId: string) => void;
 }
 
 export function MobileChatTimeline({
   messages,
   isThinking = false,
   thinkingAgentId = 'ray',
+  onCopyMessage,
+  onShareMessage,
 }: MobileChatTimelineProps) {
   const scrollRef = useRef<ScrollView>(null);
 
@@ -44,10 +48,13 @@ export function MobileChatTimeline({
       {messages.map((msg) => (
         <MobileMessageBubble
           key={msg.id}
+          messageId={msg.id}
           role={msg.role}
           text={msg.text}
           agentLabel={msg.agentLabel}
           origin={msg.origin}
+          onCopy={onCopyMessage}
+          onShare={onShareMessage}
         />
       ))}
       {isThinking && <MobileThinkingIndicator agentId={thinkingAgentId} />}

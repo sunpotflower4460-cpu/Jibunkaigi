@@ -65,6 +65,16 @@ export function buildUniversalStatusItems(
     });
   }
 
+  if (status.lastActionMessage) {
+    items.push({
+      id: 'last-action',
+      label: '操作',
+      message: status.lastActionMessage,
+      severity: 'success',
+      visibleInProduction: true,
+    });
+  }
+
   if (status.aiError) {
     items.push({
       id: 'ai-error',
@@ -90,6 +100,16 @@ export function buildUniversalStatusItems(
       id: 'storage-error',
       label: '保存',
       message: '保存に一時的に失敗しました。表示中の会話は続けられます。',
+      severity: 'warning',
+      visibleInProduction: true,
+    });
+  }
+
+  if (status.shareError) {
+    items.push({
+      id: 'share-error',
+      label: '共有',
+      message: status.shareError,
       severity: 'warning',
       visibleInProduction: true,
     });

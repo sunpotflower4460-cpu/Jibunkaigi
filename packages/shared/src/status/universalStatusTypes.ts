@@ -19,9 +19,11 @@ export interface UniversalRuntimeStatus {
   isSaving: boolean;
   isThinking: boolean;
   isLoadingOthers: boolean;
+  lastActionMessage: string | null;
   aiError: string | null;
   othersError: string | null;
   storageError: string | null;
+  shareError: string | null;
   firebaseConfigured: boolean;
   proxyConfigured: boolean;
 }

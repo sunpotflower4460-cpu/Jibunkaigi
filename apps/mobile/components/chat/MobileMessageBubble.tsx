@@ -1,24 +1,32 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import { MobileCopyShareActions } from '../share/MobileCopyShareActions';
 
 export type MessageRole = 'user' | 'agent';
 
 interface MobileMessageBubbleProps {
+  messageId: string;
   role: MessageRole;
   text: string;
   agentLabel?: string;
   origin?: 'direct' | 'others';
+  onCopy?: (messageId: string) => void;
+  onShare?: (messageId: string) => void;
 }
 
 export function MobileMessageBubble({
+  messageId,
   role,
   text,
   agentLabel,
   origin,
+  onCopy,
+  onShare,
 }: MobileMessageBubbleProps) {
   const isUser = role === 'user';
   const isOthers = origin === 'others';
+  const hasActions = Boolean(onCopy || onShare);
 
   return (
     <View style={[styles.row, isUser ? styles.rowUser : styles.rowAgent]}>
@@ -44,6 +52,12 @@ export function MobileMessageBubble({
         <Text style={[styles.text, isUser ? styles.textUser : styles.textAgent]}>
           {text}
         </Text>
+        {hasActions ? (
+          <MobileCopyShareActions
+            onCopy={() => onCopy?.(messageId)}
+            onShare={() => onShare?.(messageId)}
+          />
+        ) : null}
       </View>
     </View>
   );
