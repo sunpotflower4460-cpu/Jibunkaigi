@@ -35,7 +35,7 @@ export function MobileOthersTrigger({
       ) : (
         <View style={styles.inner}>
           <Text style={[styles.label, isDisabled && styles.labelDisabled]}>OTHERS</Text>
-          <Text style={[styles.sub, isDisabled && styles.subDisabled]}>他の視点を見る</Text>
+          <Text style={[styles.sub, isDisabled && styles.subDisabled]}>直近の問いに対して</Text>
         </View>
       )}
     </TouchableOpacity>

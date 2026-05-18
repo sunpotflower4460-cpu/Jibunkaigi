@@ -28,6 +28,7 @@ import {
   formatSessionForCopy,
   normalizeSessionTitle,
   sortUniversalSessions,
+  type UniversalComposerVisibility,
   type UniversalRuntimeStatus,
 } from '../../../packages/shared/src';
 
@@ -48,6 +49,8 @@ interface UseUniversalConversationReturn {
   session: UniversalSession;
   sessions: UniversalSession[];
   messages: UniversalMessage[];
+  composerVisibility: UniversalComposerVisibility;
+  isComposerOpen: boolean;
   selectedAgent: UniversalAgentId;
   selectedMode: UniversalModeId;
   isThinking: boolean;
@@ -67,7 +70,10 @@ interface UseUniversalConversationReturn {
   isRemoteAiEnabled: boolean;
   runtimeStatus: UniversalRuntimeStatus;
   sendMessage: (text: string) => void;
-  requestOthers: () => Promise<void>;
+  requestOthers: (messageId?: string) => Promise<void>;
+  openComposer: () => void;
+  closeComposer: () => void;
+  toggleComposer: () => void;
   selectAgent: (agentId: UniversalAgentId) => void;
   selectMode: (modeId: UniversalModeId) => void;
   clearConversation: () => void;
@@ -79,6 +85,7 @@ interface UseUniversalConversationReturn {
   togglePinSession: (sessionId: string) => Promise<void>;
   copyMessage: (messageId: string) => Promise<void>;
   shareMessage: (messageId: string) => Promise<void>;
+  deleteMessage: (messageId: string) => Promise<void>;
   copyCurrentSession: () => Promise<void>;
   shareCurrentSession: () => Promise<void>;
 }
@@ -95,6 +102,8 @@ export function useUniversalConversation(
 
   const [session, setSession] = useState<UniversalSession>(() => createLocalSession());
   const [sessions, setSessions] = useState<UniversalSession[]>([]);
+  const [composerVisibility, setComposerVisibility] =
+    useState<UniversalComposerVisibility>('open');
   const [selectedAgent, setSelectedAgent] = useState<UniversalAgentId>('ray');
   const [selectedMode, setSelectedMode] = useState<UniversalModeId>('dialogue');
   const [isThinking, setIsThinking] = useState(false);
@@ -161,6 +170,18 @@ export function useUniversalConversation(
     const list = sortUniversalSessions(await repoRef.current.listSessions());
     setSessions(list);
     return list;
+  }, []);
+
+  const openComposer = useCallback(() => {
+    setComposerVisibility('open');
+  }, []);
+
+  const closeComposer = useCallback(() => {
+    setComposerVisibility('collapsed');
+  }, []);
+
+  const toggleComposer = useCallback(() => {
+    setComposerVisibility((current) => (current === 'open' ? 'collapsed' : 'open'));
   }, []);
 
   const setActionResult = useCallback((message: string) => {
@@ -235,6 +256,7 @@ export function useUniversalConversation(
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || isThinkingRef.current) return;
+      closeComposer();
 
       const userMsg: UniversalMessage = {
         id: generateId(),
@@ -315,13 +337,19 @@ export function useUniversalConversation(
         }
       })();
     },
-    [refreshSessions, resolvedUserName, runStorageTask, selectedAgent],
+    [closeComposer, refreshSessions, resolvedUserName, runStorageTask, selectedAgent],
   );
 
-  const requestOthers = useCallback(async () => {
+  const requestOthers = useCallback(async (messageId?: string) => {
     if (isThinkingRef.current || isLoadingOthersRef.current) return;
     const lastUser = [...messagesRef.current].reverse().find((message) => message.role === 'user');
-    if (!lastUser) return;
+    const requestedMessage = messageId
+      ? messagesRef.current.find((message) => message.id === messageId)
+      : null;
+    const targetUser = requestedMessage?.role === 'user'
+      ? requestedMessage
+      : lastUser;
+    if (!targetUser) return;
 
     const originSessionId = sessionRef.current.id;
     const messagesSnapshot = messagesRef.current;
@@ -334,7 +362,7 @@ export function useUniversalConversation(
     try {
       const result = await createUniversalOthersReplies({
         sessionId: originSessionId,
-        userText: lastUser.text,
+        userText: targetUser.text,
         currentAgentId: selectedAgent,
         modeId: modeRef.current,
         messages: messagesSnapshot,
@@ -395,6 +423,7 @@ export function useUniversalConversation(
     isThinkingRef.current = false;
     messagesRef.current = [];
     setIsThinking(false);
+    openComposer();
     const cleared: UniversalSession = {
       ...sessionRef.current,
       messages: [],
@@ -406,13 +435,14 @@ export function useUniversalConversation(
       await repoRef.current.saveSession({ ...cleared, messages: [] });
       await refreshSessions();
     });
-  }, [refreshSessions, runStorageTask]);
+  }, [openComposer, refreshSessions, runStorageTask]);
 
   const createNewSession = useCallback(() => {
     isThinkingRef.current = false;
     const newSession = createLocalSession();
     messagesRef.current = [];
     setIsThinking(false);
+    openComposer();
     setSession(newSession);
     setShareError(null);
     setLastActionMessage(null);
@@ -420,7 +450,7 @@ export function useUniversalConversation(
       await repoRef.current.saveSession(newSession);
       await refreshSessions();
     });
-  }, [refreshSessions, runStorageTask]);
+  }, [openComposer, refreshSessions, runStorageTask]);
 
   const switchSession = useCallback(async (sessionId: string) => {
     isThinkingRef.current = false;
@@ -435,6 +465,7 @@ export function useUniversalConversation(
       setStorageError(null);
       setShareError(null);
       messagesRef.current = msgs;
+      openComposer();
       setSession({ ...target, messages: msgs });
       setSessions(list);
     } catch (error) {
@@ -444,7 +475,7 @@ export function useUniversalConversation(
     } finally {
       setIsLoadingSessions(false);
     }
-  }, []);
+  }, [openComposer]);
 
   const deleteSession = useCallback(
     async (sessionId: string) => {
@@ -465,6 +496,7 @@ export function useUniversalConversation(
             await repoRef.current.saveSession(newSession);
           });
           messagesRef.current = [];
+          openComposer();
           setSession(newSession);
           setSessions(sortUniversalSessions([newSession]));
         }
@@ -472,7 +504,7 @@ export function useUniversalConversation(
         setSessions(list);
       }
     },
-    [runStorageTask, switchSession],
+    [openComposer, runStorageTask, switchSession],
   );
 
   const renameSession = useCallback(
@@ -585,6 +617,41 @@ export function useUniversalConversation(
     [createExportMessage, setActionResult],
   );
 
+  const deleteMessage = useCallback(
+    async (messageId: string) => {
+      const currentSession = sessionRef.current;
+      const currentMessages = messagesRef.current;
+      const target = currentMessages.find((message) => message.id === messageId);
+      if (!target) return;
+
+      const nextMessages = currentMessages.filter((message) => message.id !== messageId);
+      const updatedSession: UniversalSession = {
+        ...currentSession,
+        messages: nextMessages,
+        updatedAt: Date.now(),
+      };
+
+      messagesRef.current = nextMessages;
+      setSession(updatedSession);
+
+      const saved = await runStorageTask(async () => {
+        await repoRef.current.deleteMessage(currentSession.id, messageId);
+        await repoRef.current.saveSession({ ...updatedSession, messages: [] });
+        await refreshSessions();
+      });
+
+      if (!saved) {
+        messagesRef.current = currentMessages;
+        setSession(currentSession);
+        setStorageError('メッセージの削除に失敗しました。');
+        return;
+      }
+
+      setActionResult('メッセージを削除しました');
+    },
+    [refreshSessions, runStorageTask, setActionResult],
+  );
+
   const copyCurrentSession = useCallback(async () => {
     try {
       await copyTextToClipboard(createCurrentSessionExportText());
@@ -646,6 +713,8 @@ export function useUniversalConversation(
     session,
     sessions,
     messages: session.messages,
+    composerVisibility,
+    isComposerOpen: composerVisibility === 'open',
     selectedAgent,
     selectedMode,
     isThinking,
@@ -666,6 +735,9 @@ export function useUniversalConversation(
     runtimeStatus,
     sendMessage,
     requestOthers,
+    openComposer,
+    closeComposer,
+    toggleComposer,
     selectAgent,
     selectMode,
     clearConversation,
@@ -677,6 +749,7 @@ export function useUniversalConversation(
     togglePinSession,
     copyMessage,
     shareMessage,
+    deleteMessage,
     copyCurrentSession,
     shareCurrentSession,
   };
