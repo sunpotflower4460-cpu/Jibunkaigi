@@ -37,7 +37,7 @@ Expo Universal:
 - iOS / Android / Expo Webで旧Vite Web版と同等の初回体験になる
 
 ## FP-002 AI実応答確認
-状態: 部分一致  
+状態: Manual Gate待ち  
 優先度: P0
 
 旧Vite Web:
@@ -45,9 +45,10 @@ Expo Universal:
 
 Expo Universal:
 - `createUniversalAiReply`はGemini Proxy優先だが、失敗時はmock fallbackへ戻る
-- コード上はstatus表示できるが、本番envでの疎通記録がない
+- コード上はstatus表示できるが、本番envでの疎通記録はManual Gate後に残す
 
 必要対応:
+- Firebase / Gemini env の手動設定を完了する
 - iOS / Android / Expo Webでmock fallbackではなく本番AI応答が返ることを確認する
 - 応答元、失敗時表示、fallback発火条件を記録する
 
@@ -144,24 +145,25 @@ Expo Universal:
 - 配置差分が未確認のまま残っていない
 
 ## FP-008 iOS/Android/Expo Web実機QA
-状態: 未確認  
+状態: Manual Gate後  
 優先度: P0
 
 旧Vite Web:
 - 比較元として常に参照できる
 
 Expo Universal:
-- コード上の確認はできるが、iOS / Android / Expo Web実機比較が未完了
+- コード上の確認はできるが、Firebase / Geminiの実接続QAはManual Gate後に行う
 
 必要対応:
 - 3プラットフォームで導線、safe area、共有、入力、session操作、status表示を確認する
+- Firebase Remote保存とGemini Proxy応答の実機確認をManual Gate後に記録する
 - 差分はGap Registerへ反映する
 
 完了条件:
 - iOS / Android / Expo WebのQA結果が残り、未確認項目がゼロになる
 
 ## FP-009 Firebase/Firestore本番env確認
-状態: 未確認  
+状態: Manual Gate待ち  
 優先度: P0
 
 旧Vite Web:
@@ -169,9 +171,10 @@ Expo Universal:
 
 Expo Universal:
 - Firebase configがない場合はlocal fallbackへ切り替わる
-- 本番Firestoreへの接続確認が未記録
+- 本番Firestoreへの接続確認はManual Gate対象
 
 必要対応:
+- Firebase Consoleからenv値を取得して `apps/mobile/.env` に手動設定する
 - Expo Universalで本番Firestore設定を確認する
 - セッション保存、切替、削除、ユーザー名保存の本番疎通を確認する
 
@@ -179,7 +182,7 @@ Expo Universal:
 - 本番Firestore接続が確認され、fallback前提ではなくParity前提で運用できる
 
 ## FP-010 Gemini Proxy本番env確認
-状態: 未確認  
+状態: Manual Gate待ち  
 優先度: P0
 
 旧Vite Web:
@@ -187,8 +190,10 @@ Expo Universal:
 
 Expo Universal:
 - Worker endpointはあるが、Expo側は未設定でもmock fallbackで動作する
+- `GEMINI_API_KEY` はWorker secret前提で、Expo側には置かない
 
 必要対応:
+- Cloudflare Workerへ `GEMINI_API_KEY` をsecret登録し、手動deployする
 - Worker deploy、`EXPO_PUBLIC_JIBUNKAIGI_API_BASE_URL`、CORS、secret設定を確認する
 - reply / others両方の本番疎通を確認する
 

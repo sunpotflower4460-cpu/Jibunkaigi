@@ -5,21 +5,37 @@ export function buildUniversalStatusItems(
 ): UniversalStatusItem[] {
   const items: UniversalStatusItem[] = [];
 
-  if (!status.firebaseConfigured || status.storageMode === 'local') {
+  items.push({
+    id: status.storageMode === 'remote' ? 'storage-remote' : 'storage-local',
+    label: '保存',
+    message: status.storageMode === 'remote' ? 'Remote' : 'ローカルのみ',
+    severity: 'info',
+    visibleInProduction: true,
+  });
+
+  items.push({
+    id: status.aiMode === 'proxy' ? 'ai-proxy' : 'ai-fallback',
+    label: 'AI',
+    message: status.aiMode === 'proxy' ? 'Proxy' : 'ローカル応答',
+    severity: 'info',
+    visibleInProduction: true,
+  });
+
+  if (!status.firebaseConfigured) {
     items.push({
-      id: 'storage-local',
+      id: 'storage-local-notice',
       label: '保存',
-      message: 'ローカルのみで動作中',
+      message: 'Firebase envが未設定のため、端末内の一時保存で動作しています。',
       severity: 'info',
       visibleInProduction: false,
     });
   }
 
-  if (!status.proxyConfigured || status.aiMode === 'mock-fallback') {
+  if (!status.proxyConfigured) {
     items.push({
-      id: 'ai-fallback',
+      id: 'ai-fallback-notice',
       label: 'AI',
-      message: 'ローカル応答で動作中',
+      message: 'Gemini Proxy URLが未設定のため、mock fallbackで動作しています。',
       severity: 'info',
       visibleInProduction: false,
     });

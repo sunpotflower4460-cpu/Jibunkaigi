@@ -11,14 +11,18 @@ export interface MobileFirebaseConfig {
   appId: string;
 }
 
+function readEnv(name: string): string {
+  return process.env[name]?.trim() ?? '';
+}
+
 export function getMobileFirebaseConfig(): MobileFirebaseConfig | null {
   const config: MobileFirebaseConfig = {
-    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '',
-    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
-    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? '',
-    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET ?? '',
-    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
-    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? '',
+    apiKey: readEnv('EXPO_PUBLIC_FIREBASE_API_KEY'),
+    authDomain: readEnv('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'),
+    projectId: readEnv('EXPO_PUBLIC_FIREBASE_PROJECT_ID'),
+    storageBucket: readEnv('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET'),
+    messagingSenderId: readEnv('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
+    appId: readEnv('EXPO_PUBLIC_FIREBASE_APP_ID'),
   };
   const hasConfig = Object.values(config).every(Boolean);
   return hasConfig ? config : null;
@@ -29,5 +33,5 @@ export function isMobileFirebaseConfigured(): boolean {
 }
 
 export function getUniversalAppId(): string {
-  return process.env.EXPO_PUBLIC_JIBUNKAIGI_APP_ID || 'self-conf-v10-mobile-dev';
+  return readEnv('EXPO_PUBLIC_JIBUNKAIGI_APP_ID') || 'self-conf-v10-mobile-dev';
 }

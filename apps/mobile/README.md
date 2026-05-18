@@ -37,6 +37,17 @@ npm run lint      # expo lint
 npx tsc --noEmit  # TypeScript 型チェック
 ```
 
+## Manual Environment Gate
+
+Firebase / Gemini Proxy の実接続は手動ゲートです。
+実値やsecretはGitHubにコミットしません。
+
+手順:
+- `../../docs/environment-setup-gate.md`
+- `../../docs/env-setup-guide.md`
+- `../../docs/manual-environment-gate-checklist.md`
+- `../../docs/universal-real-ai-firebase-qa.md`
+
 ---
 
 ## ディレクトリ構成
@@ -100,6 +111,7 @@ Gemini API
 ```
 
 API Key はサーバー側（Cloudflare Worker）の環境変数で管理してください。
+`apps/mobile/.env` や `EXPO_PUBLIC_*` に Gemini API Key を入れてはいけません。
 詳細は `../../docs/expo-universal-plan.md` を参照してください。
 
 ---

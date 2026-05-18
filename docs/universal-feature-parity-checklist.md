@@ -9,8 +9,8 @@
 | 初回オンボーディング | ✅ | ✅ | ✅ | ✅ | Phase 2-12 完了 / QA待ち | `MobileOnboardingScreen` + shared onboarding content + onboarding persistence |
 | ホーム/空状態 | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-006 / FP-007 | `MobileIntroScreen` / `MobileEmptyState` の文言・配置QAが残る |
 | 問いを書く | ✅ | ✅ | ✅ | ✅ | Phase 2-13 完了 / QA待ち | `綴る / 閉じる` 導線と composer collapse を追加 |
-| メッセージ送信 | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-002 | 送信土台はあるが本番実応答確認待ち |
-| AI応答 | ✅ | ⬜ | ⬜ | ⬜ | userName引き渡し対応 / 実応答確認待ち / FP-002 | reply / OTHERS request は userName 対応済み、env実確認は別フェーズ |
+| メッセージ送信 | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-002 | 送信土台はあるが実応答確認はManual Gate待ち |
+| AI応答 | ✅ | ⬜ | ⬜ | ⬜ | Manual Gate待ち / FP-002 | Proxy土台あり。Firebase/Gemini env手動設定後に実応答確認 |
 | 一閃モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
 | 対話モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
 | 深淵モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
@@ -22,7 +22,7 @@
 | 委ねる | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル疑似対応 | pickMockDelegatedAgent → shared |
 | 心の鏡 | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / Prompt Profile 追加 / ローカル疑似対応 | buildMirrorMockReply → shared |
 | OTHERS | ✅ | ✅ | ✅ | ✅ | MVP対応 / 明示実行 / Proxy + fallback | MobileOthersTrigger + /api/jibunkaigi/others |
-| セッション保存 | ✅ | ✅ | ✅ | ✅ | Adapter完了（Firestore / local fallback） | FirestoreSessionRepository |
+| セッション保存 | ✅ | ✅ | ✅ | ✅ | Adapter完了 / Remote実確認はManual Gate | FirestoreSessionRepository + local fallback |
 | セッション一覧 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | MobileSessionDrawer |
 | セッション切り替え | ✅ | ✅ | ✅ | ✅ | Adapter完了 | switchSession |
 | セッションタイトル編集 | ✅ | ✅ | ✅ | ✅ | Phase 2-10 完了 | MobileSessionEditSheet + renameSession |
@@ -50,3 +50,4 @@
 この表で、ユーザー向け機能の Expo iOS / Expo Android / Expo Web がすべて ✅ になるまで完成扱いにしない。
 開発者向け機能は、本番では非表示でもよい。
 `docs/full-parity-audit.md` と `docs/full-parity-gap-register.md` の全項目が完了するまで完成扱いにしない。
+実接続の未確認項目は `docs/full-parity-gap-register.md` の FP-002 / FP-008 / FP-009 / FP-010 を参照し、Manual Gate完了まで ✅ にしない。

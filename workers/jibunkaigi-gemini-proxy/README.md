@@ -17,6 +17,17 @@ Expo Universal版からGemini API Keyを隠してAI応答を取得するため�
 3. `npm run dev`
 4. `npm run deploy`
 
+## Manual Environment Gate
+
+Firebase / Gemini Proxy の実接続は手動ゲートです。
+実値やsecretはGitHubにコミットしません。
+
+手順:
+- `../../docs/environment-setup-gate.md`
+- `../../docs/env-setup-guide.md`
+- `../../docs/manual-environment-gate-checklist.md`
+- `../../docs/universal-real-ai-firebase-qa.md`
+
 ## Endpoint
 
 `POST /api/jibunkaigi/reply`
