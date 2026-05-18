@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,9 @@ import {
 } from 'react-native';
 import type { UniversalSession } from '../../state/mobileTypes';
 import { colors, spacing, type as typeScale, radius, shadow } from '../../theme/tokens';
+import { sortUniversalSessions } from '../../../../packages/shared/src';
+import { MobileSessionEditSheet } from './MobileSessionEditSheet';
+import { MobileSessionListItem } from './MobileSessionListItem';
 
 interface MobileSessionDrawerProps {
   visible: boolean;
@@ -20,6 +23,10 @@ interface MobileSessionDrawerProps {
   onSelect: (sessionId: string) => void;
   onDelete: (sessionId: string) => void;
   onNewSession: () => void;
+  onRenameSession: (sessionId: string, title: string) => Promise<void>;
+  onTogglePinSession: (sessionId: string) => Promise<void>;
+  onCopyCurrentSession?: () => Promise<void>;
+  onShareCurrentSession?: () => Promise<void>;
 }
 
 export function MobileSessionDrawer({
@@ -30,7 +37,14 @@ export function MobileSessionDrawer({
   onSelect,
   onDelete,
   onNewSession,
+  onRenameSession,
+  onTogglePinSession,
+  onCopyCurrentSession,
+  onShareCurrentSession,
 }: MobileSessionDrawerProps) {
+  const [editingSession, setEditingSession] = useState<UniversalSession | null>(null);
+  const orderedSessions = useMemo(() => sortUniversalSessions(sessions), [sessions]);
+
   function handleSelect(id: string) {
     onSelect(id);
     onClose();
@@ -41,80 +55,102 @@ export function MobileSessionDrawer({
     onClose();
   }
 
+  async function handleSaveTitle(title: string) {
+    if (!editingSession) return;
+    await onRenameSession(editingSession.id, title);
+    setEditingSession(null);
+  }
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-        <SafeAreaView style={[styles.drawer, Platform.OS === 'android' && styles.drawerAndroid]}>
-          {/* Header */}
-          <View style={styles.drawerHeader}>
-            <Text style={styles.drawerTitle}>会議の記録</Text>
+    <>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        transparent
+        onRequestClose={onClose}
+      >
+        <View style={styles.overlay}>
+          <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+          <SafeAreaView style={[styles.drawer, Platform.OS === 'android' && styles.drawerAndroid]}>
+            <View style={styles.drawerHeader}>
+              <Text style={styles.drawerTitle}>会議の記録</Text>
+              <TouchableOpacity
+                style={styles.closeBtn}
+                onPress={onClose}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                accessibilityRole="button"
+                accessibilityLabel="セッション一覧を閉じる"
+              >
+                <Text style={styles.closeBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={onClose}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={styles.newBtn}
+              onPress={handleNewSession}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="新しい問いを始める"
             >
-              <Text style={styles.closeBtnText}>✕</Text>
+              <Text style={styles.newBtnText}>＋ 新しい問いを始める</Text>
             </TouchableOpacity>
-          </View>
 
-          {/* New session button */}
-          <TouchableOpacity
-            style={styles.newBtn}
-            onPress={handleNewSession}
-            activeOpacity={0.75}
-          >
-            <Text style={styles.newBtnText}>＋ 新しい問いを始める</Text>
-          </TouchableOpacity>
+            <View style={styles.exportRow}>
+              <TouchableOpacity
+                style={styles.exportButton}
+                onPress={() => {
+                  void onCopyCurrentSession?.();
+                }}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="会話全体をコピー"
+              >
+                <Text style={styles.exportButtonText}>会話全体をコピー</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.exportButton}
+                onPress={() => {
+                  void onShareCurrentSession?.();
+                }}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="会話全体を共有"
+              >
+                <Text style={styles.exportButtonText}>会話全体を共有</Text>
+              </TouchableOpacity>
+            </View>
 
-          {/* Session list */}
-          <FlatList
-            data={sessions}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.list}
-            renderItem={({ item }) => {
-              const isActive = item.id === activeSessionId;
-              return (
-                <View style={[styles.row, isActive && styles.rowActive]}>
-                  <TouchableOpacity
-                    style={styles.rowContent}
-                    onPress={() => handleSelect(item.id)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[styles.rowTitle, isActive && styles.rowTitleActive]}
-                      numberOfLines={2}
-                    >
-                      {item.title}
-                    </Text>
-                    <Text style={styles.rowDate}>
-                      {new Date(item.updatedAt).toLocaleDateString('ja-JP')}
-                    </Text>
-                  </TouchableOpacity>
-                  {!isActive && (
-                    <TouchableOpacity
-                      style={styles.deleteBtn}
-                      onPress={() => onDelete(item.id)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Text style={styles.deleteBtnText}>削除</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              );
-            }}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>まだ会議がありません</Text>
-            }
-          />
-        </SafeAreaView>
-      </View>
-    </Modal>
+            <FlatList
+              data={orderedSessions}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.list}
+              renderItem={({ item }) => (
+                <MobileSessionListItem
+                  session={item}
+                  isActive={item.id === activeSessionId}
+                  onOpen={() => handleSelect(item.id)}
+                  onEdit={() => setEditingSession(item)}
+                  onTogglePin={() => {
+                    void onTogglePinSession(item.id);
+                  }}
+                  onDelete={() => onDelete(item.id)}
+                />
+              )}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>まだ会議がありません</Text>
+              }
+            />
+          </SafeAreaView>
+        </View>
+      </Modal>
+
+      <MobileSessionEditSheet
+        visible={Boolean(editingSession)}
+        title={editingSession?.title ?? ''}
+        onClose={() => setEditingSession(null)}
+        onSave={handleSaveTitle}
+      />
+    </>
   );
 }
 
@@ -177,51 +213,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.accentIndigo,
   },
+  exportRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.md,
+  },
+  exportButton: {
+    minHeight: 44,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+    backgroundColor: colors.surfaceStrong,
+    justifyContent: 'center',
+  },
+  exportButtonText: {
+    fontSize: typeScale.tiny,
+    fontWeight: '600',
+    color: colors.inkMuted,
+  },
   list: {
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xxl,
     gap: spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surfaceStrong,
-    borderRadius: radius.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  rowActive: {
-    borderColor: colors.accentIndigo,
-    backgroundColor: colors.accentIndigoSoft,
-  },
-  rowContent: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  rowTitle: {
-    fontSize: typeScale.small,
-    fontWeight: '500',
-    color: colors.inkMain,
-    lineHeight: 18,
-  },
-  rowTitleActive: {
-    color: colors.accentIndigo,
-    fontWeight: '600',
-  },
-  rowDate: {
-    fontSize: typeScale.tiny,
-    color: colors.inkFaint,
-  },
-  deleteBtn: {
-    marginLeft: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  deleteBtnText: {
-    fontSize: typeScale.tiny,
-    color: colors.inkFaint,
   },
   emptyText: {
     fontSize: typeScale.small,

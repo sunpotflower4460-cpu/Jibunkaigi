@@ -21,8 +21,13 @@ import {
 } from '../services/sessionRepository';
 import { createFirestoreRepository } from '../services/firebase/firestoreSessionRepository';
 import { isMobileFirebaseConfigured } from '../services/firebase/mobileFirebaseConfig';
+import { copyTextToClipboard, shareText } from '../services/mobileClipboardShare';
 import {
   createUniversalId,
+  formatMessageForCopy,
+  formatSessionForCopy,
+  normalizeSessionTitle,
+  sortUniversalSessions,
   type UniversalRuntimeStatus,
 } from '../../../packages/shared/src';
 
@@ -30,7 +35,6 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// Bootstrap the repository: try Firestore, fall back to local.
 async function initRepository(): Promise<UniversalSessionRepository> {
   const firestoreRepo = createFirestoreRepository();
   if (firestoreRepo) {
@@ -53,9 +57,11 @@ interface UseUniversalConversationReturn {
   isRemote: boolean;
   aiSource: 'proxy' | 'mock-fallback' | null;
   othersSource: 'proxy' | 'mock-fallback' | null;
+  lastActionMessage: string | null;
   aiError: string | null;
   othersError: string | null;
   storageError: string | null;
+  shareError: string | null;
   firebaseConfigured: boolean;
   proxyConfigured: boolean;
   isRemoteAiEnabled: boolean;
@@ -69,6 +75,12 @@ interface UseUniversalConversationReturn {
   createNewSession: () => void;
   switchSession: (sessionId: string) => Promise<void>;
   deleteSession: (sessionId: string) => Promise<void>;
+  renameSession: (sessionId: string, title: string) => Promise<void>;
+  togglePinSession: (sessionId: string) => Promise<void>;
+  copyMessage: (messageId: string) => Promise<void>;
+  shareMessage: (messageId: string) => Promise<void>;
+  copyCurrentSession: () => Promise<void>;
+  shareCurrentSession: () => Promise<void>;
 }
 
 export function useUniversalConversation(): UseUniversalConversationReturn {
@@ -85,26 +97,38 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
   const [isRemote, setIsRemote] = useState(false);
   const [aiSource, setAiSource] = useState<'proxy' | 'mock-fallback' | null>(null);
   const [othersSource, setOthersSource] = useState<'proxy' | 'mock-fallback' | null>(null);
+  const [lastActionMessage, setLastActionMessage] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [othersError, setOthersError] = useState<string | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
   const firebaseConfigured = isMobileFirebaseConfigured();
   const proxyConfigured = isGeminiProxyConfigured();
   const isRemoteAiEnabled = proxyConfigured;
 
-  // Refs to keep stable values inside async callbacks.
   const isThinkingRef = useRef(false);
   const isLoadingOthersRef = useRef(false);
   const saveOperationsRef = useRef(0);
   const messagesRef = useRef<UniversalMessage[]>([]);
-  // Keep mode accessible inside timeout callbacks without stale closure.
+  const sessionsRef = useRef<UniversalSession[]>([]);
   const modeRef = useRef<UniversalModeId>('dialogue');
   const sessionRef = useRef<UniversalSession>(session);
 
-  // Keep sessionRef in sync with state.
   useEffect(() => {
     sessionRef.current = session;
   }, [session]);
+
+  useEffect(() => {
+    sessionsRef.current = sessions;
+  }, [sessions]);
+
+  useEffect(() => {
+    if (!lastActionMessage) return undefined;
+    const timeoutId = setTimeout(() => {
+      setLastActionMessage(null);
+    }, 2400);
+    return () => clearTimeout(timeoutId);
+  }, [lastActionMessage]);
 
   const runStorageTask = useCallback(async (task: () => Promise<void>) => {
     saveOperationsRef.current += 1;
@@ -126,7 +150,32 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     }
   }, []);
 
-  // Initialise: connect to Firestore if available and load sessions.
+  const refreshSessions = useCallback(async () => {
+    const list = sortUniversalSessions(await repoRef.current.listSessions());
+    setSessions(list);
+    return list;
+  }, []);
+
+  const setActionResult = useCallback((message: string) => {
+    setShareError(null);
+    setLastActionMessage(message);
+  }, []);
+
+  const createExportMessage = useCallback((message: UniversalMessage) => ({
+    role: message.role,
+    text: message.text,
+    agentLabel: message.agentLabel,
+    createdAt: message.createdAt,
+    origin: message.origin,
+  }), []);
+
+  const createCurrentSessionExportText = useCallback(() => {
+    return formatSessionForCopy({
+      title: sessionRef.current.title,
+      messages: messagesRef.current.map(createExportMessage),
+    });
+  }, [createExportMessage]);
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -137,7 +186,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
         repoRef.current = repo;
         setIsRemote(repo.isRemoteEnabled());
 
-        const list = await repo.listSessions();
+        const list = sortUniversalSessions(await repo.listSessions());
         if (cancelled) return;
 
         if (list.length === 0) {
@@ -148,7 +197,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
           if (cancelled) return;
           messagesRef.current = [];
           setSession(initial);
-          setSessions([initial]);
+          setSessions(sortUniversalSessions([initial]));
         } else {
           const active = list[0];
           const msgs = await repo.loadMessages(active.id);
@@ -175,12 +224,6 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     };
   }, [runStorageTask]);
 
-  // Refresh the sessions sidebar list.
-  const refreshSessions = useCallback(async () => {
-    const list = await repoRef.current.listSessions();
-    setSessions(list);
-  }, []);
-
   const sendMessage = useCallback(
     (text: string) => {
       const trimmed = text.trim();
@@ -203,10 +246,10 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
       };
       setSession(updatedSession);
 
-      // Persist user message.
       void runStorageTask(async () => {
         await repoRef.current.saveMessage(sessionRef.current.id, userMsg);
         await repoRef.current.saveSession({ ...updatedSession, messages: [] });
+        await refreshSessions();
       });
 
       isThinkingRef.current = true;
@@ -228,7 +271,6 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
             messages: messagesSnapshot,
           });
 
-          // Guard: discard the reply if the user navigated away from this session.
           if (sessionRef.current.id !== sessionId) return;
 
           const agentMsg: UniversalMessage = {
@@ -250,7 +292,6 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
           setSession(afterReply);
           setAiSource(reply.source);
 
-          // Persist agent message to the originating session.
           void runStorageTask(async () => {
             await repoRef.current.saveMessage(sessionId, agentMsg);
             await repoRef.current.saveSession({ ...afterReply, messages: [] });
@@ -271,10 +312,9 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
 
   const requestOthers = useCallback(async () => {
     if (isThinkingRef.current || isLoadingOthersRef.current) return;
-    const lastUser = [...messagesRef.current].reverse().find((m) => m.role === 'user');
+    const lastUser = [...messagesRef.current].reverse().find((message) => message.role === 'user');
     if (!lastUser) return;
 
-    // Capture origin session and messages snapshot at the time the request starts.
     const originSessionId = sessionRef.current.id;
     const messagesSnapshot = messagesRef.current;
 
@@ -292,7 +332,6 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
         messages: messagesSnapshot,
       });
 
-      // Guard: discard replies if the user navigated away from this session.
       if (sessionRef.current.id !== originSessionId) return;
 
       const now = Date.now();
@@ -324,6 +363,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
           await repoRef.current.saveMessage(originSessionId, msg);
         }
         await repoRef.current.saveSession({ ...updated, messages: [] });
+        await refreshSessions();
       });
     } catch (error) {
       setOthersError(error instanceof Error ? error.message : String(error));
@@ -331,7 +371,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
       isLoadingOthersRef.current = false;
       setIsLoadingOthers(false);
     }
-  }, [runStorageTask, selectedAgent]);
+  }, [refreshSessions, runStorageTask, selectedAgent]);
 
   const selectAgent = useCallback((agentId: UniversalAgentId) => {
     setSelectedAgent(agentId);
@@ -355,8 +395,9 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     void runStorageTask(async () => {
       await repoRef.current.clearMessages(cleared.id);
       await repoRef.current.saveSession({ ...cleared, messages: [] });
+      await refreshSessions();
     });
-  }, [runStorageTask]);
+  }, [refreshSessions, runStorageTask]);
 
   const createNewSession = useCallback(() => {
     isThinkingRef.current = false;
@@ -364,6 +405,8 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     messagesRef.current = [];
     setIsThinking(false);
     setSession(newSession);
+    setShareError(null);
+    setLastActionMessage(null);
     void runStorageTask(async () => {
       await repoRef.current.saveSession(newSession);
       await refreshSessions();
@@ -376,11 +419,12 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     setIsLoadingSessions(true);
     try {
       const msgs = await repoRef.current.loadMessages(sessionId);
-      const list = await repoRef.current.listSessions();
-      const target = list.find((s) => s.id === sessionId);
+      const list = sortUniversalSessions(await repoRef.current.listSessions());
+      const target = list.find((item) => item.id === sessionId);
       if (!target) return;
 
       setStorageError(null);
+      setShareError(null);
       messagesRef.current = msgs;
       setSession({ ...target, messages: msgs });
       setSessions(list);
@@ -398,7 +442,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
       let list: UniversalSession[] = [];
       const deleted = await runStorageTask(async () => {
         await repoRef.current.deleteSession(sessionId);
-        list = await repoRef.current.listSessions();
+        list = sortUniversalSessions(await repoRef.current.listSessions());
       });
       if (!deleted) return;
 
@@ -413,7 +457,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
           });
           messagesRef.current = [];
           setSession(newSession);
-          setSessions([newSession]);
+          setSessions(sortUniversalSessions([newSession]));
         }
       } else {
         setSessions(list);
@@ -422,6 +466,137 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     [runStorageTask, switchSession],
   );
 
+  const renameSession = useCallback(
+    async (sessionId: string, title: string) => {
+      const target = sessionsRef.current.find((item) => item.id === sessionId)
+        ?? (sessionRef.current.id === sessionId ? sessionRef.current : null);
+      if (!target) return;
+
+      const updatedAt = Date.now();
+      const normalized = normalizeSessionTitle(title);
+      const updated = {
+        ...target,
+        title: normalized,
+        updatedAt,
+      };
+
+      const saved = await runStorageTask(async () => {
+        await repoRef.current.saveSession({ ...updated, messages: [] });
+        await refreshSessions();
+      });
+
+      if (!saved) {
+        setStorageError('タイトルの保存に失敗しました');
+        return;
+      }
+
+      if (sessionRef.current.id === sessionId) {
+        setSession((current) => ({
+          ...current,
+          title: normalized,
+          updatedAt,
+        }));
+      }
+
+      setActionResult('タイトルを変更しました');
+    },
+    [refreshSessions, runStorageTask, setActionResult],
+  );
+
+  const togglePinSession = useCallback(
+    async (sessionId: string) => {
+      const target = sessionsRef.current.find((item) => item.id === sessionId)
+        ?? (sessionRef.current.id === sessionId ? sessionRef.current : null);
+      if (!target) return;
+
+      const updatedAt = Date.now();
+      const nextPinned = !target.pinned;
+      const updated = {
+        ...target,
+        pinned: nextPinned,
+        updatedAt,
+      };
+
+      const saved = await runStorageTask(async () => {
+        await repoRef.current.saveSession({ ...updated, messages: [] });
+        await refreshSessions();
+      });
+
+      if (!saved) {
+        setStorageError('ピン留めの保存に失敗しました');
+        return;
+      }
+
+      if (sessionRef.current.id === sessionId) {
+        setSession((current) => ({
+          ...current,
+          pinned: nextPinned,
+          updatedAt,
+        }));
+      }
+
+      setActionResult(nextPinned ? 'ピン留めしました' : 'ピン留めを外しました');
+    },
+    [refreshSessions, runStorageTask, setActionResult],
+  );
+
+  const copyMessage = useCallback(
+    async (messageId: string) => {
+      const target = messagesRef.current.find((message) => message.id === messageId);
+      if (!target) return;
+
+      try {
+        await copyTextToClipboard(formatMessageForCopy(createExportMessage(target)));
+        setActionResult('コピーしました');
+      } catch (error) {
+        console.warn('[Jibunkaigi] Copy message error:', error);
+        setShareError('コピーに失敗しました。もう一度お試しください。');
+      }
+    },
+    [createExportMessage, setActionResult],
+  );
+
+  const shareMessage = useCallback(
+    async (messageId: string) => {
+      const target = messagesRef.current.find((message) => message.id === messageId);
+      if (!target) return;
+
+      try {
+        const outcome = await shareText(
+          formatMessageForCopy(createExportMessage(target)),
+          sessionRef.current.title,
+        );
+        if (outcome === 'dismissed') return;
+        setActionResult(outcome === 'copied' ? 'コピーしました' : '共有を開きました');
+      } catch (error) {
+        console.warn('[Jibunkaigi] Share message error:', error);
+        setShareError('共有に失敗しました。もう一度お試しください。');
+      }
+    },
+    [createExportMessage, setActionResult],
+  );
+
+  const copyCurrentSession = useCallback(async () => {
+    try {
+      await copyTextToClipboard(createCurrentSessionExportText());
+      setActionResult('コピーしました');
+    } catch (error) {
+      console.warn('[Jibunkaigi] Copy session error:', error);
+      setShareError('コピーに失敗しました。もう一度お試しください。');
+    }
+  }, [createCurrentSessionExportText, setActionResult]);
+
+  const shareCurrentSession = useCallback(async () => {
+    try {
+      const outcome = await shareText(createCurrentSessionExportText(), sessionRef.current.title);
+      if (outcome === 'dismissed') return;
+      setActionResult(outcome === 'copied' ? 'コピーしました' : '共有を開きました');
+    } catch (error) {
+      console.warn('[Jibunkaigi] Share session error:', error);
+      setShareError('共有に失敗しました。もう一度お試しください。');
+    }
+  }, [createCurrentSessionExportText, setActionResult]);
+
   const startFromHint = useCallback(
     (hint: string) => {
       sendMessage(hint);
@@ -429,9 +604,8 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     [sendMessage],
   );
 
-  // Derive a better session title from first user message when still default.
   useEffect(() => {
-    const firstUser = session.messages.find((m) => m.role === 'user');
+    const firstUser = session.messages.find((message) => message.role === 'user');
     if (firstUser && session.title === '新しい問い') {
       const titled = createLocalSessionFromText(firstUser.text);
       const updated: UniversalSession = { ...session, title: titled.title };
@@ -450,9 +624,11 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     isSaving,
     isThinking,
     isLoadingOthers,
+    lastActionMessage,
     aiError,
     othersError,
     storageError,
+    shareError,
     firebaseConfigured,
     proxyConfigured,
   };
@@ -470,9 +646,11 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     isRemote,
     aiSource,
     othersSource,
+    lastActionMessage,
     aiError,
     othersError,
     storageError,
+    shareError,
     firebaseConfigured,
     proxyConfigured,
     isRemoteAiEnabled,
@@ -486,5 +664,11 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
     createNewSession,
     switchSession,
     deleteSession,
+    renameSession,
+    togglePinSession,
+    copyMessage,
+    shareMessage,
+    copyCurrentSession,
+    shareCurrentSession,
   };
 }

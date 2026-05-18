@@ -25,8 +25,8 @@
 | セッション保存 | ✅ | ✅ | ✅ | ✅ | Adapter完了（Firestore / local fallback） | FirestoreSessionRepository |
 | セッション一覧 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | MobileSessionDrawer |
 | セッション切り替え | ✅ | ✅ | ✅ | ✅ | Adapter完了 | switchSession |
-| セッションタイトル編集 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
-| ピン留め | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | UniversalSession.pinned型は定義済み |
+| セッションタイトル編集 | ✅ | ✅ | ✅ | ✅ | Phase 2-10 完了 | MobileSessionEditSheet + renameSession |
+| ピン留め | ✅ | ✅ | ✅ | ✅ | Phase 2-10 完了 | sortUniversalSessions + togglePinSession |
 | セッション削除 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | deleteSession |
 | 会話クリア | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | clearConversation |
 | 新しい問いを始める | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | createNewSession |
@@ -37,8 +37,8 @@
 | ローディング表示 | ✅ | ✅ | ✅ | ✅ | Phase 2-9 完了 | MobileLoadingOverlay + MobileStatusStrip |
 | 思考中表示 | ✅ | ✅ | ✅ | ✅ | 共通文言追加 / ローカルMVP完了 | getThinkingText → MobileThinkingIndicator |
 | 過去会話復元 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | loadMessages on switchSession |
-| コピー | ✅ | ⬜ | ⬜ | ⬜ | 未確認 | |
-| 共有 | ✅ | ⬜ | ⬜ | ⬜ | 未確認 | |
+| コピー | ✅ | ✅ | ✅ | ✅ | Phase 2-10 完了 | MobileCopyShareActions + sessionExport |
+| 共有 | ✅ | ✅ | ✅ | ✅ | Phase 2-10 完了 | mobileClipboardShare + fallback copy |
 | 入力欄を閉じる/開く | ✅ | ⬜ | ⬜ | ⬜ | 未確認 | |
 | FloatingAgentBar | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
 | Debug/Compare/Inspector | ✅ | 任意 | 任意 | 任意 | 開発用 | 本番では隠してよい |
