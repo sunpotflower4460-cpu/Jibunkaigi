@@ -16,7 +16,7 @@
 - FP-013: OTHERS / Reaction導線
 
 ## FP-001 初回オンボーディング
-状態: 未一致  
+状態: 実装済み / QA待ち  
 優先度: P0
 
 旧Vite Web:
@@ -25,13 +25,13 @@
 - `localStorage`の`jibunkaigi_intro_seen`で初回のみ表示する
 
 Expo Universal:
-- `MobileIntroScreen`はインラインカード＋ヒント一覧
-- 文言・レイアウト・CTA構成がWebと異なる
-- `showIntro`は永続化されず、新しい問い作成時にも再表示される
+- `MobileOnboardingScreen` でフルスクリーン導入を追加した
+- onboarding content は shared 化し、Web由来の文言を寄せて利用する
+- onboarding 完了状態は永続化し、`MobileIntroScreen` は会話前ヒント導線として分離した
 
 必要対応:
-- Expo Universal版に旧Vite Webと同等の初回オンボーディングを実装する
-- 文言・導線・表示タイミング・初回のみ表示の保存/復元を揃える
+- iOS / Android / Expo Web の実機QAで safe area、文言、初回のみ表示を確認する
+- 差分が見つかった場合は Gap Register へ追記する
 
 完了条件:
 - iOS / Android / Expo Webで旧Vite Web版と同等の初回体験になる
@@ -55,7 +55,7 @@ Expo Universal:
 - 3プラットフォームで本物のAI応答確認結果が残っている
 
 ## FP-003 ユーザー名変更
-状態: 未一致  
+状態: 実装済み / QA待ち  
 優先度: P0
 
 旧Vite Web:
@@ -63,13 +63,13 @@ Expo Universal:
 - Firestore profileへ`displayName`を保存し、会議メンバーからの呼称に使う
 
 Expo Universal:
-- ユーザー名変更UIがない
-- 会話stateにも`userName`がない
-- AI/OTHERSリクエストにユーザー名を渡していない
+- `MobileUserNameSheet` / `MobileUserNameTrigger` を追加した
+- `useUniversalOnboarding` と `userProfileRepository` で userName を保存・復元する
+- AI / OTHERS request と worker prompt builder に userName を渡す
 
 必要対応:
-- Expo Universal版にユーザー名変更UIを追加する
-- 保存/復元とAIリクエストへの反映を揃える
+- iOS / Android / Expo Web の実機QAで Header 導線、保存復元、呼称反映を確認する
+- 本番Firestore / Gemini Proxy env での実疎通結果を別フェーズで記録する
 
 完了条件:
 - iOS / Android / Expo Webで旧Vite Web版と同等にユーザー名変更・保存・呼称反映が動作する

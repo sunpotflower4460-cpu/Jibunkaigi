@@ -6,11 +6,11 @@
 
 | 機能 | Vite Web | Expo iOS | Expo Android | Expo Web | 状態 | 備考 |
 |---|---:|---:|---:|---:|---|---|
-| 初回オンボーディング | ✅ | ⬜ | ⬜ | ⬜ | 未一致 / FP-001 | Web `IntroOverlay` と同じ文言・導線・初回のみ表示の保存が必要 |
+| 初回オンボーディング | ✅ | ✅ | ✅ | ✅ | Phase 2-12 完了 / QA待ち | `MobileOnboardingScreen` + shared onboarding content + onboarding persistence |
 | ホーム/空状態 | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-006 / FP-007 | `MobileIntroScreen` / `MobileEmptyState` の文言・配置QAが残る |
 | 問いを書く | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-004 / FP-007 | Composerはあるが入力欄開閉・helper text parityが未完了 |
 | メッセージ送信 | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-002 | 送信土台はあるが本番実応答確認待ち |
-| AI応答 | ✅ | ⬜ | ⬜ | ⬜ | 本番実応答確認待ち / FP-002 | Proxy土台あり、env実確認が必要 |
+| AI応答 | ✅ | ⬜ | ⬜ | ⬜ | userName引き渡し対応 / 実応答確認待ち / FP-002 | reply / OTHERS request は userName 対応済み、env実確認は別フェーズ |
 | 一閃モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
 | 対話モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
 | 深淵モード | ✅ | ✅ | ✅ | ✅ | 共通定義追加 / ローカルMVP完了 | UNIVERSAL_MODES → MobileModeSelector |
@@ -30,7 +30,7 @@
 | セッション削除 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | deleteSession |
 | 会話クリア | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | clearConversation |
 | 新しい問いを始める | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | createNewSession |
-| ユーザー名変更 | ✅ | ⬜ | ⬜ | ⬜ | 未一致 / FP-003 | 保存 / 復元 / AI反映まで含めて未移植 |
+| ユーザー名変更 | ✅ | ✅ | ✅ | ✅ | Phase 2-12 完了 / QA待ち | `MobileUserNameSheet` + `MobileUserNameTrigger` + profile repository |
 | 会議メンバー説明 | ✅ | ✅ | ✅ | ✅ | 移植完了 | MobileMemberSheet / MobileMemberCard |
 | エラー表示 | ✅ | ✅ | ✅ | ✅ | Phase 2-9 完了 | MobileErrorNotice + shared status messages |
 | 設定不足表示 | ✅ | ✅ | ✅ | ✅ | Phase 2-9 完了 | MobileConfigNotice + runtimeStatus |

@@ -25,7 +25,7 @@ export function buildUniversalConversationPrompt(
   const history = historyMessages
     .map((msg) => {
       const speaker =
-        msg.role === 'user' ? (params.userName || 'ユーザー') : (msg.agentLabel || 'AI');
+        msg.role === 'user' ? (params.userName || 'あなた') : (msg.agentLabel || 'AI');
       return `${speaker}: ${sanitizePromptText(msg.text, 800)}`;
     })
     .join('\n');

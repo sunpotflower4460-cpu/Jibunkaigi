@@ -25,6 +25,7 @@ export function createOthersProxyClient() {
             modeId: request.modeId,
             messages: request.messages.slice(-20),
             targetAgentIds: request.targetAgentIds,
+            userName: request.userName,
           }),
           signal: controller.signal,
         });

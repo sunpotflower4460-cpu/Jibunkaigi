@@ -83,8 +83,15 @@ interface UseUniversalConversationReturn {
   shareCurrentSession: () => Promise<void>;
 }
 
-export function useUniversalConversation(): UseUniversalConversationReturn {
+interface UseUniversalConversationOptions {
+  userName?: string | null;
+}
+
+export function useUniversalConversation(
+  options: UseUniversalConversationOptions = {},
+): UseUniversalConversationReturn {
   const repoRef = useRef<UniversalSessionRepository>(getSessionRepository());
+  const resolvedUserName = options.userName?.trim() ? options.userName : 'あなた';
 
   const [session, setSession] = useState<UniversalSession>(() => createLocalSession());
   const [sessions, setSessions] = useState<UniversalSession[]>([]);
@@ -269,6 +276,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
             agentId,
             modeId,
             messages: messagesSnapshot,
+            userName: resolvedUserName,
           });
 
           if (sessionRef.current.id !== sessionId) return;
@@ -307,7 +315,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
         }
       })();
     },
-    [refreshSessions, runStorageTask, selectedAgent],
+    [refreshSessions, resolvedUserName, runStorageTask, selectedAgent],
   );
 
   const requestOthers = useCallback(async () => {
@@ -330,6 +338,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
         currentAgentId: selectedAgent,
         modeId: modeRef.current,
         messages: messagesSnapshot,
+        userName: resolvedUserName,
       });
 
       if (sessionRef.current.id !== originSessionId) return;
@@ -371,7 +380,7 @@ export function useUniversalConversation(): UseUniversalConversationReturn {
       isLoadingOthersRef.current = false;
       setIsLoadingOthers(false);
     }
-  }, [refreshSessions, runStorageTask, selectedAgent]);
+  }, [refreshSessions, resolvedUserName, runStorageTask, selectedAgent]);
 
   const selectAgent = useCallback((agentId: UniversalAgentId) => {
     setSelectedAgent(agentId);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   KeyboardAvoidingView,
@@ -11,6 +11,7 @@ import { MobileAppShell } from '../components/layout/MobileAppShell';
 import { MobileChatTimeline } from '../components/chat/MobileChatTimeline';
 import { MobileEmptyState } from '../components/chat/MobileEmptyState';
 import { MobileIntroScreen } from '../components/intro/MobileIntroScreen';
+import { MobileOnboardingScreen } from '../components/onboarding/MobileOnboardingScreen';
 import { MobileComposer } from '../components/composer/MobileComposer';
 import { MobileAgentControlBar } from '../components/composer/MobileAgentControlBar';
 import { MobileSessionHeader } from '../components/session/MobileSessionHeader';
@@ -22,9 +23,19 @@ import { MobileLoadingOverlay } from '../components/status/MobileLoadingOverlay'
 import { MobileStatusStrip } from '../components/status/MobileStatusStrip';
 import { MobileOthersTrigger } from '../components/others/MobileOthersTrigger';
 import { MobileMemberSheet } from '../components/members/MobileMemberSheet';
+import { MobileUserNameSheet } from '../components/user/MobileUserNameSheet';
 import { useUniversalConversation } from '../state/useUniversalConversation';
+import { useUniversalOnboarding } from '../state/useUniversalOnboarding';
+import { DEFAULT_USER_NAME } from '../../../packages/shared/src';
 
 export default function IndexScreen() {
+  const {
+    hasCompletedOnboarding,
+    userName,
+    setUserName,
+    completeOnboarding,
+    isLoadingProfile,
+  } = useUniversalOnboarding();
   const {
     session,
     sessions,
@@ -50,11 +61,26 @@ export default function IndexScreen() {
     shareMessage,
     copyCurrentSession,
     shareCurrentSession,
-  } = useUniversalConversation();
+  } = useUniversalConversation({ userName });
 
   const [showIntro, setShowIntro] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [memberSheetOpen, setMemberSheetOpen] = useState(false);
+  const [userNameSheetOpen, setUserNameSheetOpen] = useState(false);
+  const [userNameDraft, setUserNameDraft] = useState('');
+  const [onboardingUserName, setOnboardingUserName] = useState('');
+
+  useEffect(() => {
+    const nextDraft = userName === DEFAULT_USER_NAME ? '' : userName;
+    setUserNameDraft(nextDraft);
+    setOnboardingUserName(nextDraft);
+  }, [userName]);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      setShowIntro(false);
+    }
+  }, [messages.length]);
 
   function handleSend(text: string) {
     if (showIntro) setShowIntro(false);
@@ -86,6 +112,42 @@ export default function IndexScreen() {
     setShowIntro(true);
   }
 
+  async function handleCompleteOnboarding() {
+    await setUserName(onboardingUserName);
+    await completeOnboarding();
+  }
+
+  async function handleSaveUserName() {
+    await setUserName(userNameDraft);
+    setUserNameSheetOpen(false);
+  }
+
+  if (isLoadingProfile) {
+    return (
+      <MobileAppShell>
+        <MobileBackground>
+          <View style={styles.loadingScreen}>
+            <MobileLoadingOverlay visible />
+          </View>
+        </MobileBackground>
+      </MobileAppShell>
+    );
+  }
+
+  if (!hasCompletedOnboarding) {
+    return (
+      <MobileAppShell>
+        <MobileBackground>
+          <MobileOnboardingScreen
+            userName={onboardingUserName}
+            onChangeUserName={setOnboardingUserName}
+            onComplete={handleCompleteOnboarding}
+          />
+        </MobileBackground>
+      </MobileAppShell>
+    );
+  }
+
   return (
     <MobileAppShell>
       <MobileBackground>
@@ -102,6 +164,8 @@ export default function IndexScreen() {
               onClear={handleClear}
               onOpenDrawer={() => setDrawerOpen(true)}
               onOpenMembers={() => setMemberSheetOpen(true)}
+              userName={userName}
+              onOpenUserName={() => setUserNameSheetOpen(true)}
             />
 
             <MobileConfigNotice status={runtimeStatus} />
@@ -174,6 +238,13 @@ export default function IndexScreen() {
         visible={memberSheetOpen}
         onClose={() => setMemberSheetOpen(false)}
       />
+      <MobileUserNameSheet
+        visible={userNameSheetOpen}
+        userName={userNameDraft}
+        onChange={setUserNameDraft}
+        onClose={() => setUserNameSheetOpen(false)}
+        onSave={handleSaveUserName}
+      />
     </MobileAppShell>
   );
 }
@@ -191,5 +262,8 @@ const styles = StyleSheet.create({
   },
   bottom: {
     gap: 0,
+  },
+  loadingScreen: {
+    flex: 1,
   },
 });

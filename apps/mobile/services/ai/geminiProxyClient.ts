@@ -40,6 +40,7 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
             agentId: resolvedAgentId,
             modeId: request.modeId,
             messages: request.messages.slice(-20),
+            userName: request.userName,
           }),
           signal: controller.signal,
         });

@@ -12,6 +12,7 @@ export interface UniversalOthersAiRequest {
   modeId: UniversalModeId;
   messages: UniversalMessage[];
   targetAgentIds?: ConcreteAgentId[];
+  userName?: string | null;
 }
 
 export interface UniversalOthersAiReply {

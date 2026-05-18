@@ -27,10 +27,10 @@ export function buildUniversalOthersPrompt(request: UniversalOthersRequest): str
       : recentMessages;
   const history = historyMessages
     .map((msg) => {
-      const speaker =
-        msg.role === 'user'
-          ? request.userName || 'ユーザー'
-          : msg.agentLabel || 'AI';
+        const speaker =
+          msg.role === 'user'
+            ? request.userName || 'あなた'
+            : msg.agentLabel || 'AI';
       return `${speaker}: ${sanitizePromptText(msg.text, 700)}`;
     })
     .join('\n');
