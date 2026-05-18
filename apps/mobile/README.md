@@ -81,7 +81,7 @@ Expo側には `EXPO_PUBLIC_JIBUNKAIGI_API_BASE_URL` だけを設定します。
 Gemini API KeyはCloudflare Workerのsecretとして設定します。
 Proxy未設定時はmock fallbackで動作します。
 
-詳細は `docs/universal-gemini-proxy.md` を参照してください。
+詳細は `../../docs/universal-gemini-proxy.md` を参照してください。
 
 ---
 
@@ -100,7 +100,7 @@ Gemini API
 ```
 
 API Key はサーバー側（Cloudflare Worker）の環境変数で管理してください。
-詳細は `docs/expo-universal-plan.md` を参照してください。
+詳細は `../../docs/expo-universal-plan.md` を参照してください。
 
 ---
 
@@ -123,21 +123,33 @@ artifacts/{appId}/users/{uid}/sessions/{sessionId}/messages/{messageId}
 App Store版を主戦場としながら、Android / Web でも同じ体験を提供する。
 旧Vite Web版は、Expo Universal版が完全に追いつくまでの比較元・移行元・保険として扱う。
 
-詳細な方針・チェックリスト・UI対応表・デザイントークン対応は `docs/` を参照してください。
+## Full Parity Principle
 
-- `docs/universal-parity-contract.md` — Universal方針の憲法
-- `docs/universal-feature-parity-checklist.md` — 機能パリティチェックリスト
-- `docs/universal-ui-map.md` — Web UIとExpo UIの対応表
-- `docs/universal-design-tokens.md` — デザイントークン対応表
+`apps/mobile` は「モバイル用簡易版」ではありません。  
+最終目標は、旧Vite Web版じぶん会議をUI・機能・文言・導線・挙動まで可能な限り100%そのままExpo Universal化することです。
+
+- Web版にある導線を勝手に消さない
+- UIを簡略化しない
+- iOS / Android / Expo Webを別プロダクトとして扱わない
+- 未実装や未確認を隠さず、Gap Registerへ残す
+
+関連ドキュメント:
+
+- `../../docs/full-parity-audit.md`
+- `../../docs/full-parity-gap-register.md`
+- `../../docs/full-parity-implementation-roadmap.md`
+- `./docs/full-parity-notes.md`
+
+詳細な方針・チェックリスト・UI対応表・デザイントークン対応は `../../docs/` を参照してください。
+
+- `../../docs/universal-parity-contract.md` — Universal方針の憲法
+- `../../docs/universal-feature-parity-checklist.md` — 機能パリティチェックリスト
+- `../../docs/universal-ui-map.md` — Web UIとExpo UIの対応表
+- `../../docs/universal-design-tokens.md` — デザイントークン対応表
 
 ---
 
-## 現状（未実装）
+## 現状
 
-- Firebase / Firestore 接続
-- Gemini API Proxy 経由の実接続
-- セッション同期
-- App Store / EAS Build / Google Play 対応
-- OTHERS / Debug / Compare / Inspector
-
-まずは **iOS / Android / Expo Web で動く最小 UI の器** として使ってください。
+残タスクは「最小UIの器」ではなく、Full Parity基準で管理します。  
+未一致 / 部分一致 / 未確認の項目は `../../docs/full-parity-gap-register.md` を基準に消し込みます。
