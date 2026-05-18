@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   buildUniversalStatusItems,
   type UniversalRuntimeStatus,
@@ -18,24 +18,30 @@ export function MobileErrorNotice({ status }: MobileErrorNoticeProps) {
   if (items.length === 0) return null;
 
   return (
-    <View style={styles.wrap}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.wrap}
+    >
       {items.map((item) => (
         <View key={item.id} style={styles.notice}>
           <Text style={styles.label}>{item.label}</Text>
-          <Text style={styles.message}>{item.message}</Text>
+          <Text style={styles.message} numberOfLines={3}>{item.message}</Text>
         </View>
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    marginHorizontal: spacing.xl,
+    paddingHorizontal: spacing.xl,
     marginBottom: spacing.sm,
     gap: spacing.sm,
   },
   notice: {
+    width: 280,
+    maxWidth: 320,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,

@@ -6,7 +6,6 @@ import {
   type UniversalAgentId,
   type UniversalComposerVisibility,
 } from '../../../../packages/shared/src';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, spacing, shadow, type as typeScale } from '../../theme/tokens';
 
 interface MobileFloatingAgentBarProps {
@@ -14,6 +13,8 @@ interface MobileFloatingAgentBarProps {
   onSelectAgent: (agentId: UniversalAgentId) => void;
   hasMessages: boolean;
   composerVisibility: UniversalComposerVisibility;
+  bottomDockHeight: number;
+  onHeightChange?: (height: number) => void;
 }
 
 export function MobileFloatingAgentBar({
@@ -21,8 +22,9 @@ export function MobileFloatingAgentBar({
   onSelectAgent,
   hasMessages,
   composerVisibility,
+  bottomDockHeight,
+  onHeightChange,
 }: MobileFloatingAgentBarProps) {
-  const insets = useSafeAreaInsets();
   const [isOpen, setIsOpen] = useState(false);
   const [hasEverHadMessages, setHasEverHadMessages] = useState(hasMessages);
 
@@ -31,6 +33,12 @@ export function MobileFloatingAgentBar({
       setHasEverHadMessages(true);
     }
   }, [hasMessages]);
+
+  useEffect(() => {
+    if (!hasEverHadMessages) {
+      onHeightChange?.(0);
+    }
+  }, [hasEverHadMessages, onHeightChange]);
 
   const agents = useMemo(
     () => UNIVERSAL_AGENTS.filter((agent) => agent.shouldAppearInAgentBar),
@@ -42,12 +50,17 @@ export function MobileFloatingAgentBar({
     return null;
   }
 
-  const bottomOffset = insets.bottom + (composerVisibility === 'open' ? 236 : 176);
+  const bottomOffset = Math.max(bottomDockHeight, composerVisibility === 'open' ? 220 : 156) + spacing.sm;
 
   if (!isOpen) {
     return (
       <View pointerEvents="box-none" style={styles.portal}>
-        <View style={[styles.collapsedWrap, { bottom: bottomOffset }]}>
+        <View
+          style={[styles.collapsedWrap, { bottom: bottomOffset }]}
+          onLayout={(event) => {
+            onHeightChange?.(event.nativeEvent.layout.height);
+          }}
+        >
           <TouchableOpacity
             style={styles.collapsedToggle}
             onPress={() => setIsOpen(true)}
@@ -65,7 +78,12 @@ export function MobileFloatingAgentBar({
 
   return (
     <View pointerEvents="box-none" style={styles.portal}>
-      <View style={[styles.openWrap, { bottom: bottomOffset }]}>
+      <View
+        style={[styles.openWrap, { bottom: bottomOffset }]}
+        onLayout={(event) => {
+          onHeightChange?.(event.nativeEvent.layout.height);
+        }}
+      >
         <View style={styles.rail}>
           <View style={styles.railHeader}>
             <Text style={styles.railCaption}>現在: {selected?.label ?? 'レイ'}</Text>
@@ -119,11 +137,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
+    paddingHorizontal: spacing.lg,
   },
   collapsedToggle: {
     minHeight: 44,
+    minWidth: 132,
     borderRadius: radius.full,
     paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     backgroundColor: colors.surfaceStrong,
     borderWidth: 1,
     borderColor: colors.borderSoft,

@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ScrollView,
   View,
   Text,
   TouchableOpacity,
@@ -30,23 +31,33 @@ export function MobileSessionHeader({
   onOpenUserName,
 }: MobileSessionHeaderProps) {
   const { width } = useWindowDimensions();
-  const isCompact = width < 720;
+  const isCompact = width < 860;
+  const isNarrow = width < 420;
+  const newSessionLabel = isNarrow ? '新規' : '新しい問い';
 
   return (
     <View style={styles.header}>
-      <TouchableOpacity
-        style={styles.drawerBtn}
-        onPress={onOpenDrawer}
-        activeOpacity={0.7}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text style={styles.drawerBtnText}>≡</Text>
-      </TouchableOpacity>
-      <View style={styles.titleBlock}>
-        <Text style={styles.title}>じぶん会議</Text>
-        <Text style={styles.sessionTitle} numberOfLines={1}>{session.title}</Text>
+      <View style={[styles.topRow, isCompact && styles.topRowCompact]}>
+        <TouchableOpacity
+          style={styles.drawerBtn}
+          onPress={onOpenDrawer}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="セッション一覧を開く"
+        >
+          <Text style={styles.drawerBtnText}>≡</Text>
+        </TouchableOpacity>
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>じぶん会議</Text>
+          <Text style={styles.sessionTitle} numberOfLines={1}>{session.title}</Text>
+        </View>
       </View>
-      <View style={styles.actions}>
+      <ScrollView
+        horizontal={isCompact}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.actions}
+      >
         {onOpenUserName ? (
           <MobileUserNameTrigger
             userName={userName}
@@ -64,7 +75,7 @@ export function MobileSessionHeader({
         >
           <Text style={styles.btnText}>メンバー</Text>
         </TouchableOpacity>
-        {session.messages.length > 0 && (
+        {session.messages.length > 0 ? (
           <TouchableOpacity
             style={styles.btn}
             onPress={onClear}
@@ -73,36 +84,40 @@ export function MobileSessionHeader({
           >
             <Text style={styles.btnText}>クリア</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
         <TouchableOpacity
           style={[styles.btn, styles.btnPrimary]}
           onPress={onNewSession}
           activeOpacity={0.7}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={[styles.btnText, styles.btnTextPrimary]}>新しい問い</Text>
+          <Text style={[styles.btnText, styles.btnTextPrimary]}>{newSessionLabel}</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: spacing.md,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: spacing.sm,
   },
-  drawerBtn: {
-    marginTop: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    minWidth: 32,
+  topRowCompact: {
     alignItems: 'center',
+  },
+  drawerBtn: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   drawerBtnText: {
     fontSize: 22,
@@ -129,9 +144,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     alignItems: 'center',
-    justifyContent: 'flex-end',
     flexWrap: 'wrap',
-    flexShrink: 1,
+    paddingRight: spacing.xl,
   },
   btn: {
     paddingHorizontal: spacing.md,

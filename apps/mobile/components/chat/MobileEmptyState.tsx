@@ -1,25 +1,29 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, type as typeScale } from '../../theme/tokens';
 
 export function MobileEmptyState() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.icon}>🔮</Text>
-      <Text style={styles.heading}>まずは、ひとつ置いてみる。</Text>
-      <Text style={styles.sub}>まだ言葉になっていなくても、大丈夫です。</Text>
-    </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.icon}>🔮</Text>
+        <Text style={styles.heading}>まずは、ひとつ置いてみる。</Text>
+        <Text style={styles.sub}>まだ言葉になっていなくても、大丈夫です。</Text>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xxl,
-    gap: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  content: {
+    alignItems: 'center',
+    gap: spacing.lg,
   },
   icon: {
     fontSize: 40,

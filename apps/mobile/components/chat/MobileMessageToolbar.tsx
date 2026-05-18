@@ -71,10 +71,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
     marginTop: spacing.sm,
+    alignItems: 'stretch',
   },
   actionButton: {
     minHeight: 44,
-    minWidth: 44,
+    minWidth: 72,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
@@ -82,6 +83,7 @@ const styles = StyleSheet.create({
     borderColor: colors.borderSubtle,
     backgroundColor: colors.surfaceSoft,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   actionButtonDestructive: {
     backgroundColor: 'rgba(244,114,182,0.08)',
@@ -91,6 +93,7 @@ const styles = StyleSheet.create({
     fontSize: typeScale.tiny,
     fontWeight: '700',
     color: colors.inkMuted,
+    textAlign: 'center',
   },
   actionTextDestructive: {
     color: '#be123c',

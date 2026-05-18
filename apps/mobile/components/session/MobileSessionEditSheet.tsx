@@ -4,6 +4,7 @@ import {
   Modal,
   Platform,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -46,47 +47,55 @@ export function MobileSessionEditSheet({
     >
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboard}
+        >
           <SafeAreaView style={styles.safeArea}>
-            <View style={styles.sheet}>
-              <Text style={styles.title}>タイトルを編集</Text>
-              <Text style={styles.caption}>空欄のまま保存すると「新しい問い」になります。</Text>
-              <TextInput
-                style={styles.input}
-                value={draftTitle}
-                onChangeText={setDraftTitle}
-                placeholder="新しい問い"
-                placeholderTextColor={colors.inkFaint}
-                autoFocus
-                maxLength={80}
-                returnKeyType="done"
-                onSubmitEditing={() => {
-                  void handleSave();
-                }}
-              />
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={styles.secondaryButton}
-                  onPress={onClose}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="セッションタイトル編集をキャンセル"
-                >
-                  <Text style={styles.secondaryText}>キャンセル</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={() => {
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.scrollContent}
+            >
+              <View style={styles.sheet}>
+                <Text style={styles.title}>タイトルを編集</Text>
+                <Text style={styles.caption}>空欄のまま保存すると「新しい問い」になります。</Text>
+                <TextInput
+                  style={styles.input}
+                  value={draftTitle}
+                  onChangeText={setDraftTitle}
+                  placeholder="新しい問い"
+                  placeholderTextColor={colors.inkFaint}
+                  autoFocus
+                  maxLength={80}
+                  returnKeyType="done"
+                  onSubmitEditing={() => {
                     void handleSave();
                   }}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="セッションタイトルを保存"
-                >
-                  <Text style={styles.primaryText}>保存</Text>
-                </TouchableOpacity>
+                />
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={styles.secondaryButton}
+                    onPress={onClose}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="セッションタイトル編集をキャンセル"
+                  >
+                    <Text style={styles.secondaryText}>キャンセル</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.primaryButton}
+                    onPress={() => {
+                      void handleSave();
+                    }}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="セッションタイトルを保存"
+                  >
+                    <Text style={styles.primaryText}>保存</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            </ScrollView>
           </SafeAreaView>
         </KeyboardAvoidingView>
       </View>
@@ -107,6 +116,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
+  keyboard: {
+    justifyContent: 'flex-end',
+  },
+  scrollContent: {
+    justifyContent: 'flex-end',
+  },
   sheet: {
     borderRadius: radius.md,
     backgroundColor: colors.bgBase,
@@ -114,6 +129,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
     gap: spacing.md,
+    maxHeight: 420,
   },
   title: {
     fontSize: typeScale.heading,

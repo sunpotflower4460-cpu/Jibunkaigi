@@ -1,13 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import {
-  SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
-  View,
-  StyleSheet,
-} from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MobileBackground } from '../components/layout/MobileBackground';
 import { MobileAppShell } from '../components/layout/MobileAppShell';
+import { MobileSafeLayout } from '../components/layout/MobileSafeLayout';
 import { MobileChatTimeline } from '../components/chat/MobileChatTimeline';
 import { MobileEmptyState } from '../components/chat/MobileEmptyState';
 import { MobileIntroScreen } from '../components/intro/MobileIntroScreen';
@@ -28,8 +24,10 @@ import { MobileUserNameSheet } from '../components/user/MobileUserNameSheet';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 import { useUniversalOnboarding } from '../state/useUniversalOnboarding';
 import { DEFAULT_USER_NAME } from '../../../packages/shared/src';
+import { colors, spacing } from '../theme/tokens';
 
 export default function IndexScreen() {
+  const insets = useSafeAreaInsets();
   const {
     hasCompletedOnboarding,
     userName,
@@ -75,8 +73,12 @@ export default function IndexScreen() {
   const [userNameSheetOpen, setUserNameSheetOpen] = useState(false);
   const [userNameDraft, setUserNameDraft] = useState('');
   const [onboardingUserName, setOnboardingUserName] = useState('');
+  const [bottomDockHeight, setBottomDockHeight] = useState(0);
+  const [floatingBarHeight, setFloatingBarHeight] = useState(0);
 
   const hasUserMessages = messages.some((message) => message.role === 'user');
+  const floatingBarVisible = hasUserMessages;
+  const timelineBottomOffset = bottomDockHeight + floatingBarHeight + spacing.lg;
 
   useEffect(() => {
     const nextDraft = userName === DEFAULT_USER_NAME ? '' : userName;
@@ -134,9 +136,11 @@ export default function IndexScreen() {
     return (
       <MobileAppShell>
         <MobileBackground>
-          <View style={styles.loadingScreen}>
-            <MobileLoadingOverlay visible />
-          </View>
+          <MobileSafeLayout>
+            <View style={styles.loadingScreen}>
+              <MobileLoadingOverlay visible />
+            </View>
+          </MobileSafeLayout>
         </MobileBackground>
       </MobileAppShell>
     );
@@ -146,11 +150,13 @@ export default function IndexScreen() {
     return (
       <MobileAppShell>
         <MobileBackground>
-          <MobileOnboardingScreen
-            userName={onboardingUserName}
-            onChangeUserName={setOnboardingUserName}
-            onComplete={handleCompleteOnboarding}
-          />
+          <MobileSafeLayout>
+            <MobileOnboardingScreen
+              userName={onboardingUserName}
+              onChangeUserName={setOnboardingUserName}
+              onComplete={handleCompleteOnboarding}
+            />
+          </MobileSafeLayout>
         </MobileBackground>
       </MobileAppShell>
     );
@@ -159,12 +165,8 @@ export default function IndexScreen() {
   return (
     <MobileAppShell>
       <MobileBackground>
-        <SafeAreaView style={styles.safe}>
-          <KeyboardAvoidingView
-            style={styles.flex}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={0}
-          >
+        <MobileSafeLayout>
+          <View style={styles.flex}>
             <MobileSessionHeader
               session={session}
               onNewSession={handleNewSession}
@@ -198,46 +200,61 @@ export default function IndexScreen() {
                   onDeleteMessage={(messageId) => {
                     void deleteMessage(messageId);
                   }}
-                  onRequestOthers={(messageId) => {
-                    void requestOthers(messageId);
-                  }}
-                />
-              )}
+                    onRequestOthers={(messageId) => {
+                      void requestOthers(messageId);
+                    }}
+                    composerOpen={isComposerOpen}
+                    floatingBarVisible={floatingBarVisible}
+                    bottomOffset={timelineBottomOffset}
+                  />
+                )}
               <MobileFloatingAgentBar
                 selectedAgent={selectedAgent}
                 onSelectAgent={selectAgent}
                 hasMessages={hasUserMessages}
                 composerVisibility={composerVisibility}
+                bottomDockHeight={bottomDockHeight}
+                onHeightChange={setFloatingBarHeight}
               />
               <MobileLoadingOverlay visible={isLoadingSessions} />
             </View>
 
-            <View style={styles.bottom}>
-              <MobileModeSelector
-                selected={selectedMode}
-                onSelect={selectMode}
-              />
-              <MobileAgentControlBar
-                selected={selectedAgent}
-                onSelect={selectAgent}
-              />
-              <MobileOthersTrigger
-                disabled={!hasUserMessages || isThinking}
-                isLoading={isLoadingOthers}
-                onPress={() => {
-                  void requestOthers();
-                }}
-              />
-              <MobileComposer
-                visible={isComposerOpen}
-                onOpen={openComposer}
-                onClose={closeComposer}
-                onSend={handleSend}
-                isThinking={isThinking}
-              />
+            <View
+              style={[
+                styles.bottomDock,
+                { paddingBottom: Math.max(insets.bottom, spacing.sm) },
+              ]}
+              onLayout={(event) => {
+                setBottomDockHeight(event.nativeEvent.layout.height);
+              }}
+            >
+              <View style={styles.bottomPanel}>
+                <MobileModeSelector
+                  selected={selectedMode}
+                  onSelect={selectMode}
+                />
+                <MobileAgentControlBar
+                  selected={selectedAgent}
+                  onSelect={selectAgent}
+                />
+                <MobileOthersTrigger
+                  disabled={!hasUserMessages || isThinking}
+                  isLoading={isLoadingOthers}
+                  onPress={() => {
+                    void requestOthers();
+                  }}
+                />
+                <MobileComposer
+                  visible={isComposerOpen}
+                  onOpen={openComposer}
+                  onClose={closeComposer}
+                  onSend={handleSend}
+                  isThinking={isThinking}
+                />
+              </View>
             </View>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
+          </View>
+        </MobileSafeLayout>
       </MobileBackground>
 
       <MobileSessionDrawer
@@ -270,9 +287,6 @@ export default function IndexScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-  },
   flex: {
     flex: 1,
   },
@@ -280,8 +294,15 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  bottom: {
-    gap: 0,
+  bottomDock: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+  },
+  bottomPanel: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: spacing.sm,
+    backgroundColor: colors.bgBase,
   },
   loadingScreen: {
     flex: 1,

@@ -63,5 +63,6 @@ const styles = StyleSheet.create({
   message: {
     fontSize: typeScale.tiny,
     color: colors.inkMuted,
+    maxWidth: 180,
   },
 });
