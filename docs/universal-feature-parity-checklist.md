@@ -32,9 +32,9 @@
 | 新しい問いを始める | ✅ | ✅ | ✅ | ✅ | ローカルMVP完了 | createNewSession |
 | ユーザー名変更 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
 | 会議メンバー説明 | ✅ | ✅ | ✅ | ✅ | 移植完了 | MobileMemberSheet / MobileMemberCard |
-| エラー表示 | ✅ | ⬜ | ⬜ | ⬜ | AI error state土台追加 | aiError state追加 |
-| 設定不足表示 | ✅ | ⬜ | ⬜ | ⬜ | 未移植 | |
-| ローディング表示 | ✅ | ⬜ | ⬜ | ⬜ | Thinking表示 + remote AI待機対応 | isThinking + MobileAiStatusBadge |
+| エラー表示 | ✅ | ✅ | ✅ | ✅ | Phase 2-9 完了 | MobileErrorNotice + shared status messages |
+| 設定不足表示 | ✅ | ✅ | ✅ | ✅ | Phase 2-9 完了 | MobileConfigNotice + runtimeStatus |
+| ローディング表示 | ✅ | ✅ | ✅ | ✅ | Phase 2-9 完了 | MobileLoadingOverlay + MobileStatusStrip |
 | 思考中表示 | ✅ | ✅ | ✅ | ✅ | 共通文言追加 / ローカルMVP完了 | getThinkingText → MobileThinkingIndicator |
 | 過去会話復元 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | loadMessages on switchSession |
 | コピー | ✅ | ⬜ | ⬜ | ⬜ | 未確認 | |

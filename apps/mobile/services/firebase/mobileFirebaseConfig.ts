@@ -24,6 +24,10 @@ export function getMobileFirebaseConfig(): MobileFirebaseConfig | null {
   return hasConfig ? config : null;
 }
 
+export function isMobileFirebaseConfigured(): boolean {
+  return getMobileFirebaseConfig() !== null;
+}
+
 export function getUniversalAppId(): string {
   return process.env.EXPO_PUBLIC_JIBUNKAIGI_APP_ID || 'self-conf-v10-mobile-dev';
 }
