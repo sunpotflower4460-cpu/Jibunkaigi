@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ScrollView,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -36,47 +37,52 @@ export function MobileUserNameSheet({
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.keyboard}
           >
-            <View style={styles.sheet}>
-              <View style={styles.header}>
-                <Text style={styles.title}>お名前を教えてください</Text>
-                <Text style={styles.sub}>
-                  会議メンバーからの呼ばれ方に使われます。
-                </Text>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.scrollContent}
+            >
+              <View style={styles.sheet}>
+                <View style={styles.header}>
+                  <Text style={styles.title}>お名前を教えてください</Text>
+                  <Text style={styles.sub}>
+                    会議メンバーからの呼ばれ方に使われます。
+                  </Text>
+                </View>
+
+                <TextInput
+                  value={userName}
+                  onChangeText={onChange}
+                  placeholder="あなた"
+                  placeholderTextColor={colors.inkFaint}
+                  maxLength={24}
+                  autoFocus
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={onSave}
+                  style={styles.input}
+                />
+
+                <Text style={styles.help}>空欄のまま保存すると「あなた」になります。</Text>
+
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={styles.primaryButton}
+                    onPress={onSave}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.primaryButtonText}>保存する</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.secondaryButton}
+                    onPress={onClose}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.secondaryButtonText}>キャンセル</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-
-              <TextInput
-                value={userName}
-                onChangeText={onChange}
-                placeholder="あなた"
-                placeholderTextColor={colors.inkFaint}
-                maxLength={24}
-                autoFocus
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={onSave}
-                style={styles.input}
-              />
-
-              <Text style={styles.help}>空欄のまま保存すると「あなた」になります。</Text>
-
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={onSave}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.primaryButtonText}>保存する</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.secondaryButton}
-                  onPress={onClose}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.secondaryButtonText}>キャンセル</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
       </View>
@@ -99,6 +105,9 @@ const styles = StyleSheet.create({
   keyboard: {
     justifyContent: 'flex-end',
   },
+  scrollContent: {
+    justifyContent: 'flex-end',
+  },
   sheet: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
@@ -108,6 +117,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
     gap: spacing.lg,
     ...shadow.card,
+    maxHeight: 420,
   },
   header: {
     gap: spacing.xs,

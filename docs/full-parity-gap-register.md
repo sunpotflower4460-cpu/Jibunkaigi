@@ -16,7 +16,7 @@
 - FP-013: OTHERS / Reaction導線
 
 ## FP-001 初回オンボーディング
-状態: 実装済み / QA待ち  
+状態: 追加修正済み / 実機QA待ち  
 優先度: P0
 
 旧Vite Web:
@@ -87,14 +87,14 @@ Expo Universal:
 - `綴る / 閉じる / 問いを綴る` を shared label 化した
 
 必要対応:
-- iOS / Android / Expo Web の実機QAでキーボードと safe area を確認する
-- 細かな helper text 差分が見つかった場合は別 gap へ切り出す
+- `MobileSafeLayout` / bottom dock / bottom spacer 反映後の iOS / Android / Expo Web 実機QAで keyboard と safe area を確認する
+- `綴る / 閉じる` の表示文言と helper text 差分が残る場合は別 gap へ切り出す
 
 完了条件:
 - `綴る / 閉じる` 導線と collapsed hint が 3 プラットフォームで確認される
 
 ## FP-005 FloatingAgentBar
-状態: 実装済み / QA待ち  
+状態: 追加修正済み / 実機QA待ち  
 優先度: P0
 
 旧Vite Web:
@@ -104,14 +104,14 @@ Expo Universal:
 - `MobileFloatingAgentBar` を追加し、会話後に固定下部トグルと compact agent bar を表示する
 
 必要対応:
-- iOS / Android / Expo Web の実機QAで safe area / keyboard との重なりを確認する
+- `MobileFloatingAgentBar` を bottom dock 高さ基準へ寄せた後の iOS / Android / Expo Web 実機QAで safe area / keyboard との重なりを確認する
 - selection bar として残した意図的差分を必要に応じて再評価する
 
 完了条件:
 - 固定下部の折りたたみ導線と agent quick access が 3 プラットフォームで確認される
 
 ## FP-006 旧Vite Webとの文言差分確認
-状態: 未確認  
+状態: 一部修正済み / 文言棚卸し継続  
 優先度: P1
 
 旧Vite Web:
@@ -121,14 +121,14 @@ Expo Universal:
 - Intro、header、composer、OTHERS、status周りに別文言が残っている
 
 必要対応:
-- 画面単位で文言を棚卸しし、差分を一致 / 意図的差分に振り分ける
-- 未一致文言を修正する
+- Header / Intro / Empty / Status / Composer の文言を画面単位で棚卸しし、差分を一致 / 意図的差分に振り分ける
+- 今回のUI調整で未一致文言が見つかった場合は追加修正する
 
 完了条件:
 - ユーザー向け文言差分が全て解消されるか、理由付きで記録されている
 
 ## FP-007 旧Vite WebとのUI配置差分確認
-状態: 未確認  
+状態: 一部修正済み / 画面比較継続  
 優先度: P1
 
 旧Vite Web:
@@ -138,14 +138,14 @@ Expo Universal:
 - Header / Drawer / bottom controls構成が別で、導線密度や余白に差分がある
 
 必要対応:
-- 画面単位で配置差分を比較し、Parity必須UIを洗い出す
+- Header / Status / Timeline / Composer / FloatingAgentBar / Drawer / Sheet の配置差分を画面単位で比較する
 - 未一致UIを修正するか、意図的差分として理由を記録する
 
 完了条件:
 - 配置差分が未確認のまま残っていない
 
 ## FP-008 iOS/Android/Expo Web実機QA
-状態: Manual Gate後  
+状態: コード調整済み / 実機Manual Gate待ち  
 優先度: P0
 
 旧Vite Web:
@@ -156,6 +156,7 @@ Expo Universal:
 
 必要対応:
 - 3プラットフォームで導線、safe area、共有、入力、session操作、status表示を確認する
+- まず `docs/universal-ui-ux-bug-qa.md` の UI-001〜UI-010 を画面サイズ別に埋める
 - Firebase Remote保存とGemini Proxy応答の実機確認をManual Gate後に記録する
 - 差分はGap Registerへ反映する
 
@@ -218,7 +219,7 @@ Expo Universal:
 - App Store向けに境界文言が確認され、残課題が記録されている
 
 ## FP-012 メッセージ個別削除導線
-状態: 実装済み / QA待ち  
+状態: 追加修正済み / 実機QA待ち  
 優先度: P1
 
 旧Vite Web:
@@ -229,13 +230,13 @@ Expo Universal:
 
 必要対応:
 - Firestore / local fallback の両方で削除反映と session.updatedAt 更新を実機QAする
-- 誤操作時の confirm sheet 表示を 3 プラットフォームで確認する
+- toolbar tap target 調整後の誤操作しにくさと confirm sheet 表示を 3 プラットフォームで確認する
 
 完了条件:
 - message toolbar から個別削除でき、保存失敗時もアプリが落ちないことが確認される
 
 ## FP-013 OTHERS / Reaction導線
-状態: 実装済み / QA待ち  
+状態: 追加修正済み / 実機QA待ち  
 優先度: P1
 
 旧Vite Web:
@@ -248,6 +249,7 @@ Expo Universal:
 
 必要対応:
 - message context OTHERS と補助導線の両方を 3 プラットフォームでQAする
+- bottom trigger / composer / floating bar の重なり再発がないか確認する
 - reaction 表示や close 導線の追加要否は別フェーズで再評価する
 
 完了条件:

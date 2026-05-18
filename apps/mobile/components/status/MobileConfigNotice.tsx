@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   buildUniversalStatusItems,
   type UniversalRuntimeStatus,
@@ -17,21 +17,30 @@ export function MobileConfigNotice({ status }: MobileConfigNoticeProps) {
   if (items.length === 0) return null;
 
   return (
-    <View style={styles.notice}>
-      {items.map((item) => (
-        <View key={item.id} style={styles.row}>
-          <Text style={styles.label}>{item.label}</Text>
-          <Text style={styles.message}>{item.message}</Text>
-        </View>
-      ))}
-    </View>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.wrap}
+    >
+      <View style={styles.notice}>
+        {items.map((item) => (
+          <View key={item.id} style={styles.row}>
+            <Text style={styles.label}>{item.label}</Text>
+            <Text style={styles.message} numberOfLines={2}>{item.message}</Text>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  notice: {
-    marginHorizontal: spacing.xl,
+  wrap: {
+    paddingHorizontal: spacing.xl,
+    paddingRight: spacing.xxl,
     marginBottom: spacing.sm,
+  },
+  notice: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
@@ -54,5 +63,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: typeScale.small,
     color: colors.inkMuted,
+    maxWidth: 260,
   },
 });

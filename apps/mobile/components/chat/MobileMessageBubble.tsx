@@ -85,12 +85,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   column: {
-    maxWidth: '92%',
+    maxWidth: '100%',
   },
   bubble: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: radius.lg,
+    maxWidth: '100%',
   },
   bubbleUser: {
     backgroundColor: colors.accentIndigo,
@@ -133,6 +134,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: typeScale.body,
     lineHeight: 24,
+    flexShrink: 1,
   },
   textUser: {
     color: '#ffffff',

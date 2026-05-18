@@ -21,16 +21,17 @@ interface MobileIntroScreenProps {
 
 export function MobileIntroScreen({ onHintSelect }: MobileIntroScreenProps) {
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.card}>
         <Text style={styles.heading}>まずは、ひとつ置いてみる。</Text>
         <Text style={styles.sub}>まだ言葉になっていなくても、大丈夫です。</Text>
       </View>
       <Text style={styles.hintTitle}>ヒント</Text>
-      <ScrollView
-        contentContainerStyle={styles.hints}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.hints}>
         {HINTS.map((hint) => (
           <TouchableOpacity
             key={hint}
@@ -41,17 +42,20 @@ export function MobileIntroScreen({ onHintSelect }: MobileIntroScreenProps) {
             <Text style={styles.hintText}>{hint}</Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xxl,
     gap: spacing.xl,
+    paddingBottom: spacing.xxl,
   },
   card: {
     backgroundColor: colors.surfaceStrong,
@@ -83,7 +87,6 @@ const styles = StyleSheet.create({
   },
   hints: {
     gap: spacing.sm,
-    paddingBottom: spacing.xl,
   },
   hintChip: {
     backgroundColor: colors.surfaceSoft,

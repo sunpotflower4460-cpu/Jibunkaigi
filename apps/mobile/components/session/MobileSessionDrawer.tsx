@@ -8,6 +8,7 @@ import {
   Modal,
   SafeAreaView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import type { UniversalSession } from '../../state/mobileTypes';
 import { colors, spacing, type as typeScale, radius, shadow } from '../../theme/tokens';
@@ -43,6 +44,7 @@ export function MobileSessionDrawer({
   onShareCurrentSession,
 }: MobileSessionDrawerProps) {
   const [editingSession, setEditingSession] = useState<UniversalSession | null>(null);
+  const { width } = useWindowDimensions();
   const orderedSessions = useMemo(() => sortUniversalSessions(sessions), [sessions]);
 
   function handleSelect(id: string) {
@@ -71,7 +73,13 @@ export function MobileSessionDrawer({
       >
         <View style={styles.overlay}>
           <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-          <SafeAreaView style={[styles.drawer, Platform.OS === 'android' && styles.drawerAndroid]}>
+          <SafeAreaView
+            style={[
+              styles.drawer,
+              Platform.OS === 'android' && styles.drawerAndroid,
+              width < 420 && styles.drawerCompact,
+            ]}
+          >
             <View style={styles.drawerHeader}>
               <Text style={styles.drawerTitle}>会議の記録</Text>
               <TouchableOpacity
@@ -170,6 +178,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgBase,
     ...shadow.soft,
   },
+  drawerCompact: {
+    width: '92%',
+    maxWidth: 360,
+  },
   drawerAndroid: {
     paddingTop: spacing.xl,
   },
@@ -190,7 +202,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
   },
   closeBtn: {
-    padding: spacing.xs,
+    minHeight: 44,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeBtnText: {
     fontSize: typeScale.body,

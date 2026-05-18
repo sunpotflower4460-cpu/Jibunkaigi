@@ -7,7 +7,7 @@
 | 機能 | Vite Web | Expo iOS | Expo Android | Expo Web | 状態 | 備考 |
 |---|---:|---:|---:|---:|---|---|
 | 初回オンボーディング | ✅ | ✅ | ✅ | ✅ | Phase 2-12 完了 / QA待ち | `MobileOnboardingScreen` + shared onboarding content + onboarding persistence |
-| ホーム/空状態 | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-006 / FP-007 | `MobileIntroScreen` / `MobileEmptyState` の文言・配置QAが残る |
+| ホーム/空状態 | ✅ | ✅ | ✅ | ✅ | UI調整済み / 画面QA待ち / FP-006 / FP-007 | `MobileIntroScreen` / `MobileEmptyState` を scroll/compact 化。実画面比較は継続 |
 | 問いを書く | ✅ | ✅ | ✅ | ✅ | Phase 2-13 完了 / QA待ち | `綴る / 閉じる` 導線と composer collapse を追加 |
 | メッセージ送信 | ✅ | ✅ | ✅ | ✅ | 部分一致 / FP-002 | 送信土台はあるが実応答確認はManual Gate待ち |
 | AI応答 | ✅ | ⬜ | ⬜ | ⬜ | Manual Gate待ち / FP-002 | Proxy土台あり。Firebase/Gemini env手動設定後に実応答確認 |
@@ -39,10 +39,10 @@
 | 過去会話復元 | ✅ | ✅ | ✅ | ✅ | Adapter完了 | loadMessages on switchSession |
 | コピー | ✅ | ✅ | ✅ | ✅ | Phase 2-10 完了 | MobileCopyShareActions + sessionExport |
 | 共有 | ✅ | ✅ | ✅ | ✅ | 意図的差分 / FP-008 | OS共有シートの見た目差分は許容、導線と機能は揃える |
-| 入力欄を閉じる/開く | ✅ | ✅ | ✅ | ✅ | Phase 2-13 完了 / QA待ち | `綴る / 閉じる` 導線 + collapsed composer hint |
-| FloatingAgentBar | ✅ | ✅ | ✅ | ✅ | Phase 2-13 完了 / QA待ち | `MobileFloatingAgentBar` を追加 |
-| メッセージ個別削除 | ✅ | ✅ | ✅ | ✅ | Phase 2-13 完了 / QA待ち | `deleteMessage` + `MobileMessageToolbar` |
-| OTHERS表示導線 | ✅ | ✅ | ✅ | ✅ | Phase 2-13 完了 / QA待ち | message toolbar から `requestOthers(messageId)` を実行 |
+| 入力欄を閉じる/開く | ✅ | ✅ | ✅ | ✅ | UI調整済み / 実機QA待ち / FP-004 | `MobileSafeLayout` + bottom dock + bottom spacer で safe area / keyboard 重なりを補強 |
+| FloatingAgentBar | ✅ | ✅ | ✅ | ✅ | UI調整済み / 実機QA待ち / FP-005 | `MobileFloatingAgentBar` を bottom dock 高さ基準に再配置 |
+| メッセージ個別削除 | ✅ | ✅ | ✅ | ✅ | UI調整済み / 実機QA待ち / FP-012 | toolbar tap target 拡張 + confirm sheet 継続QA |
+| OTHERS表示導線 | ✅ | ✅ | ✅ | ✅ | UI調整済み / 実機QA待ち / FP-013 | bottom trigger / message toolbar 両方の重なりを補強 |
 | Debug/Compare/Inspector | ✅ | 任意 | 任意 | 任意 | 意図的差分 | 開発用。ストア向けユーザー体験の必須Parity対象外 |
 
 ## 完成条件

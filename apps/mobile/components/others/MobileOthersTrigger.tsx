@@ -45,6 +45,7 @@ export function MobileOthersTrigger({
 const styles = StyleSheet.create({
   button: {
     minHeight: 44,
+    minWidth: 132,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.sm,

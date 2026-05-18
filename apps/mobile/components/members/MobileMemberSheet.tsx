@@ -36,6 +36,8 @@ export function MobileMemberSheet({ visible, onClose }: MobileMemberSheetProps) 
               style={styles.closeBtn}
               onPress={onClose}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="会議メンバーを閉じる"
             >
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
@@ -91,7 +93,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
   },
   closeBtn: {
-    padding: spacing.xs,
+    minHeight: 44,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeBtnText: {
     fontSize: typeScale.body,

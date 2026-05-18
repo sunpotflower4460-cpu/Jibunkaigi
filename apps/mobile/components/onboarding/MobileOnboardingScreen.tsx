@@ -1,14 +1,12 @@
 import React from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { ChevronRight, Users } from 'lucide-react-native';
 import { UNIVERSAL_ONBOARDING_CONTENT } from '../../../../packages/shared/src';
@@ -26,90 +24,87 @@ export function MobileOnboardingScreen({
   onChangeUserName,
   onComplete,
 }: MobileOnboardingScreenProps) {
+  const { height } = useWindowDimensions();
+  const isCompactHeight = height < 760;
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <>
+      <View style={styles.background} />
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          isCompactHeight && styles.scrollContentCompact,
+        ]}
+        keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.background} />
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.panel}>
-            <View style={styles.iconWrap}>
-              <Users size={30} color="#fff" />
-            </View>
-
-            <View style={styles.titleBlock}>
-              {UNIVERSAL_ONBOARDING_CONTENT.eyebrow ? (
-                <Text style={styles.eyebrow}>{UNIVERSAL_ONBOARDING_CONTENT.eyebrow}</Text>
-              ) : null}
-              <Text style={styles.title}>{UNIVERSAL_ONBOARDING_CONTENT.title}</Text>
-              {UNIVERSAL_ONBOARDING_CONTENT.supportingText ? (
-                <Text style={styles.supportingText}>
-                  {UNIVERSAL_ONBOARDING_CONTENT.supportingText}
-                </Text>
-              ) : null}
-            </View>
-
-            <View style={styles.subtitleCard}>
-              <Text style={styles.subtitle}>{UNIVERSAL_ONBOARDING_CONTENT.subtitle}</Text>
-            </View>
-
-            <View style={styles.steps}>
-              {UNIVERSAL_ONBOARDING_CONTENT.steps.map((step, index) => (
-                <MobileOnboardingStep key={step.id} index={index} step={step} />
-              ))}
-            </View>
-
-            <View style={styles.nameSection}>
-              <Text style={styles.nameLabel}>
-                {UNIVERSAL_ONBOARDING_CONTENT.nameLabel ?? 'お名前'}
-              </Text>
-              <TextInput
-                value={userName}
-                onChangeText={onChangeUserName}
-                placeholder={UNIVERSAL_ONBOARDING_CONTENT.namePlaceholder ?? 'あなた'}
-                placeholderTextColor={colors.inkFaint}
-                maxLength={24}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                style={styles.nameInput}
-              />
-              <Text style={styles.nameHelp}>
-                {UNIVERSAL_ONBOARDING_CONTENT.nameHelp}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={onComplete}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel={UNIVERSAL_ONBOARDING_CONTENT.primaryCta}
-            >
-              <Text style={styles.primaryButtonText}>
-                {UNIVERSAL_ONBOARDING_CONTENT.primaryCta}
-              </Text>
-              <ChevronRight size={18} color="#fff" />
-            </TouchableOpacity>
+        <View style={[styles.panel, isCompactHeight && styles.panelCompact]}>
+          <View style={[styles.iconWrap, isCompactHeight && styles.iconWrapCompact]}>
+            <Users size={isCompactHeight ? 24 : 30} color="#fff" />
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+          <View style={styles.titleBlock}>
+            {UNIVERSAL_ONBOARDING_CONTENT.eyebrow ? (
+              <Text style={styles.eyebrow}>{UNIVERSAL_ONBOARDING_CONTENT.eyebrow}</Text>
+            ) : null}
+            <Text style={[styles.title, isCompactHeight && styles.titleCompact]}>
+              {UNIVERSAL_ONBOARDING_CONTENT.title}
+            </Text>
+            {UNIVERSAL_ONBOARDING_CONTENT.supportingText ? (
+              <Text style={styles.supportingText}>
+                {UNIVERSAL_ONBOARDING_CONTENT.supportingText}
+              </Text>
+            ) : null}
+          </View>
+
+          <View style={[styles.subtitleCard, isCompactHeight && styles.subtitleCardCompact]}>
+            <Text style={styles.subtitle}>{UNIVERSAL_ONBOARDING_CONTENT.subtitle}</Text>
+          </View>
+
+          <View style={styles.steps}>
+            {UNIVERSAL_ONBOARDING_CONTENT.steps.map((step, index) => (
+              <MobileOnboardingStep key={step.id} index={index} step={step} />
+            ))}
+          </View>
+
+          <View style={styles.nameSection}>
+            <Text style={styles.nameLabel}>
+              {UNIVERSAL_ONBOARDING_CONTENT.nameLabel ?? 'お名前'}
+            </Text>
+            <TextInput
+              value={userName}
+              onChangeText={onChangeUserName}
+              placeholder={UNIVERSAL_ONBOARDING_CONTENT.namePlaceholder ?? 'あなた'}
+              placeholderTextColor={colors.inkFaint}
+              maxLength={24}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              style={styles.nameInput}
+            />
+            <Text style={styles.nameHelp}>
+              {UNIVERSAL_ONBOARDING_CONTENT.nameHelp}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={onComplete}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={UNIVERSAL_ONBOARDING_CONTENT.primaryCta}
+          >
+            <Text style={styles.primaryButtonText}>
+              {UNIVERSAL_ONBOARDING_CONTENT.primaryCta}
+            </Text>
+            <ChevronRight size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  flex: {
-    flex: 1,
-  },
   background: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.bgBase,
@@ -119,6 +114,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xxl,
+  },
+  scrollContentCompact: {
+    justifyContent: 'flex-start',
+    paddingVertical: spacing.lg,
   },
   panel: {
     width: '100%',
@@ -133,6 +132,11 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
     ...shadow.card,
   },
+  panelCompact: {
+    borderRadius: 28,
+    paddingVertical: spacing.xl,
+    gap: spacing.lg,
+  },
   iconWrap: {
     width: 72,
     height: 72,
@@ -141,6 +145,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'center',
     backgroundColor: colors.inkStrong,
+  },
+  iconWrapCompact: {
+    width: 60,
+    height: 60,
+    borderRadius: 22,
   },
   titleBlock: {
     gap: spacing.xs,
@@ -159,6 +168,9 @@ const styles = StyleSheet.create({
     letterSpacing: -1.4,
     color: colors.inkStrong,
   },
+  titleCompact: {
+    fontSize: 30,
+  },
   supportingText: {
     fontSize: typeScale.small,
     fontWeight: '700',
@@ -172,6 +184,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.55)',
     borderWidth: 1,
     borderColor: colors.borderSoft,
+  },
+  subtitleCardCompact: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
   },
   subtitle: {
     textAlign: 'center',

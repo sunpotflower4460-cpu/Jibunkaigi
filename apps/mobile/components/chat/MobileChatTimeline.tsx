@@ -1,9 +1,10 @@
 // TODO: Consider migrating to FlatList for large conversation histories.
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { MobileMessageBubble, type MessageRole } from './MobileMessageBubble';
 import { MobileThinkingIndicator } from './MobileThinkingIndicator';
 import { MobileDeleteMessageSheet } from './MobileDeleteMessageSheet';
+import { MobileBottomSpacer } from '../layout/MobileBottomSpacer';
 import type { MobileAgentId } from '../../state/mobileTypes';
 import { spacing } from '../../theme/tokens';
 
@@ -24,6 +25,9 @@ interface MobileChatTimelineProps {
   onShareMessage?: (messageId: string) => void;
   onDeleteMessage?: (messageId: string) => void | Promise<void>;
   onRequestOthers?: (messageId?: string) => void | Promise<void>;
+  composerOpen: boolean;
+  floatingBarVisible: boolean;
+  bottomOffset?: number;
 }
 
 export function MobileChatTimeline({
@@ -34,6 +38,9 @@ export function MobileChatTimeline({
   onShareMessage,
   onDeleteMessage,
   onRequestOthers,
+  composerOpen,
+  floatingBarVisible,
+  bottomOffset,
 }: MobileChatTimelineProps) {
   const scrollRef = useRef<ScrollView>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -69,7 +76,11 @@ export function MobileChatTimeline({
           />
         ))}
         {isThinking && <MobileThinkingIndicator agentId={thinkingAgentId} />}
-        <View style={styles.bottomPad} />
+        <MobileBottomSpacer
+          composerOpen={composerOpen}
+          floatingBarVisible={floatingBarVisible}
+          height={bottomOffset}
+        />
       </ScrollView>
       <MobileDeleteMessageSheet
         visible={pendingDeleteId !== null}
@@ -91,9 +102,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-  },
-  bottomPad: {
-    height: 208,
+    paddingBottom: spacing.md,
   },
 });
