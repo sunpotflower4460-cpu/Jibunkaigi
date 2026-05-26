@@ -1,11 +1,22 @@
+type CryptoLike = {
+  randomUUID?: () => string;
+  getRandomValues?: (values: Uint8Array) => Uint8Array;
+};
+
+function getCrypto(): CryptoLike | undefined {
+  return (globalThis as typeof globalThis & { crypto?: CryptoLike }).crypto;
+}
+
 function createSecureIdSegment(): string {
-  if (typeof globalThis.crypto?.randomUUID === 'function') {
-    return globalThis.crypto.randomUUID().replace(/-/g, '');
+  const crypto = getCrypto();
+
+  if (typeof crypto?.randomUUID === 'function') {
+    return crypto.randomUUID().replace(/-/g, '');
   }
 
-  if (typeof globalThis.crypto?.getRandomValues === 'function') {
+  if (typeof crypto?.getRandomValues === 'function') {
     const values = new Uint8Array(16);
-    globalThis.crypto.getRandomValues(values);
+    crypto.getRandomValues(values);
     return Array.from(values, (value) => value.toString(16).padStart(2, '0')).join('');
   }
 
