@@ -6,7 +6,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { UNIVERSAL_AGENTS, type UniversalAgentId } from '../../../../packages/shared/src/index';
+import { UNIVERSAL_AGENTS, type UniversalAgentId } from '@jibunkaigi/shared';
 import {
   colors,
   mobileTouchTarget,

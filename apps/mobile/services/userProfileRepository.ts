@@ -4,7 +4,7 @@ import {
   createDefaultUserProfile,
   normalizeUserName,
   type UniversalUserProfile,
-} from '../../../packages/shared/src';
+} from '@jibunkaigi/shared';
 import { ensureAnonymousUser } from './firebase/mobileAuth';
 import { getMobileFirebaseServices } from './firebase/mobileFirebaseApp';
 import { getUniversalAppId } from './firebase/mobileFirebaseConfig';

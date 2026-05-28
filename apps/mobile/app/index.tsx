@@ -23,7 +23,7 @@ import { MobileMemberSheet } from '../components/members/MobileMemberSheet';
 import { MobileUserNameSheet } from '../components/user/MobileUserNameSheet';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 import { useUniversalOnboarding } from '../state/useUniversalOnboarding';
-import { DEFAULT_USER_NAME } from '../../../packages/shared/src';
+import { DEFAULT_USER_NAME } from '@jibunkaigi/shared';
 import { colors, spacing, mobileLayout, shadow } from '../theme/tokens';
 
 export default function IndexScreen() {

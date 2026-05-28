@@ -7,17 +7,22 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "backgroundColor": "#eef4fb"
+      "backgroundColor": "#eef4fb",
+      "image": "./assets/splash.png"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.jibunkaigi.mobile"
+      "bundleIdentifier": "com.jibunkaigi.mobile",
+      "buildNumber": "1",
+      "infoPlist": {}
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#eef4fb"
+        "backgroundColor": "#eef4fb",
+        "foregroundImage": "./assets/adaptive-icon.png"
       },
-      "package": "com.jibunkaigi.mobile"
+      "package": "com.jibunkaigi.mobile",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -26,6 +31,11 @@
     "experiments": {
       "typedRoutes": true
     },
-    "scheme": "jibunkaigi"
+    "scheme": "jibunkaigi",
+    "icon": "./assets/icon.png",
+    "plugins": [
+      "expo-router",
+      "expo-splash-screen"
+    ]
   }
 }

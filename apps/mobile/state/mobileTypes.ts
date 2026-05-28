@@ -2,7 +2,7 @@
 // UniversalAgentId and UniversalModeId are re-exported from @jibunkaigi/shared
 // so all platforms share the same canonical definitions.
 
-import type { UniversalAgentId, UniversalModeId } from '../../../packages/shared/src/index';
+import type { UniversalAgentId, UniversalModeId } from '@jibunkaigi/shared';
 
 export type { UniversalAgentId, UniversalModeId };
 

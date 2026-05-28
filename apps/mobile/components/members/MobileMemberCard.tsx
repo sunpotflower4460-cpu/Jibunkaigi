@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import type { MemberDisplayProfile } from '../../../../packages/shared/src/members/memberDisplayTypes';
+import type { MemberDisplayProfile } from '@jibunkaigi/shared/members/memberDisplayTypes';
 import { colors, mobileLineHeights, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileMemberCardProps {

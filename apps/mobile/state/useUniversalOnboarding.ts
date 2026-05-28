@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   createDefaultUserProfile,
   normalizeUserName,
-} from '../../../packages/shared/src';
+} from '@jibunkaigi/shared';
 import { createUserProfileRepository } from '../services/userProfileRepository';
 
 const ONBOARDING_COMPLETED_KEY = 'jibunkaigi:onboarding-complete';

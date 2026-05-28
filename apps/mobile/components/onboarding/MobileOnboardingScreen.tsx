@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { ChevronRight, Users } from 'lucide-react-native';
-import { UNIVERSAL_ONBOARDING_CONTENT } from '../../../../packages/shared/src';
+import { UNIVERSAL_ONBOARDING_CONTENT } from '@jibunkaigi/shared';
 import {
   colors,
   mobileLayout,

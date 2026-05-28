@@ -3,7 +3,7 @@ import type {
   UniversalMessage,
   UniversalModeId,
 } from '../../state/mobileTypes';
-import type { ConcreteAgentId } from '../../../../packages/shared/src';
+import type { ConcreteAgentId } from '@jibunkaigi/shared';
 
 export interface UniversalOthersAiRequest {
   sessionId: string;

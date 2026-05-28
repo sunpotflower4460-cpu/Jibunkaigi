@@ -10,7 +10,7 @@ import {
   createUniversalMockReply,
   getThinkingText,
   pickMockDelegatedAgent,
-} from '../../../packages/shared/src/index';
+} from '@jibunkaigi/shared';
 
 // Agent display labels derived from the shared canonical definitions.
 export const AGENT_LABELS: Record<UniversalAgentId, string> = Object.fromEntries(

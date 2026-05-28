@@ -19,7 +19,7 @@ import {
   spacing,
   type as typeScale,
 } from '../../theme/tokens';
-import { sortUniversalSessions } from '../../../../packages/shared/src';
+import { sortUniversalSessions } from '@jibunkaigi/shared';
 import { MobileSessionEditSheet } from './MobileSessionEditSheet';
 import { MobileSessionListItem } from './MobileSessionListItem';
 

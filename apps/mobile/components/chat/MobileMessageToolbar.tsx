@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { UNIVERSAL_MESSAGE_ACTIONS } from '../../../../packages/shared/src';
+import { UNIVERSAL_MESSAGE_ACTIONS } from '@jibunkaigi/shared';
 import {
   colors,
   mobileLineHeights,

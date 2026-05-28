@@ -45,7 +45,8 @@
 
 ## 技術スタック
 
-- **フロントエンド**: React 19 + Vite
+- **フロントエンド (Web)**: React 19 + Vite
+- **フロントエンド (ストア版)**: Expo Universal (React Native + Expo Router)
 - **スタイリング**: Tailwind CSS v4
 - **バックエンド / 認証**: Firebase (Authentication + Firestore)
 - **AI**: Google Gemini API (`gemini-2.5-flash`)
