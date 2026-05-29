@@ -77,7 +77,8 @@
   --jk-content-max: 720px;
 
   /* --- Type --- */
-  --jk-font-jp: 'Noto Sans JP', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --jk-font-jp: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI',
+    'Yu Gothic', 'Meiryo', 'MS PGothic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --jk-leading-prose: 1.85;
   --jk-leading-tight: 1.45;
   --jk-tracking-loose: 0.04em;

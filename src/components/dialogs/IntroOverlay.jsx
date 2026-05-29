@@ -8,7 +8,7 @@ import { Users, ChevronRight, Feather, Heart, Compass } from 'lucide-react';
  * - CTA は1つだけ強く ("会議をはじめる")。
  * - Escape でも開始できる。
  */
-const IntroOverlay = ({ visible, isHomeReady, onStart }) => {
+const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart }) => {
   const startBtnRef = useRef(null);
 
   useEffect(() => {
@@ -16,9 +16,14 @@ const IntroOverlay = ({ visible, isHomeReady, onStart }) => {
     // 開いた直後にフォーカスを CTA に移す（キーボード操作対応）
     const t = window.setTimeout(() => startBtnRef.current?.focus(), 220);
     const handleKey = (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        // CTA にフォーカスがある場合のみ
-        if (document.activeElement === startBtnRef.current) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onStart();
+        return;
+      }
+      if ((e.key === 'Enter' || e.key === ' ') && document.activeElement !== startBtnRef.current) {
+        e.preventDefault();
+        onStart();
       }
     };
     window.addEventListener('keydown', handleKey);
@@ -26,7 +31,7 @@ const IntroOverlay = ({ visible, isHomeReady, onStart }) => {
       window.clearTimeout(t);
       window.removeEventListener('keydown', handleKey);
     };
-  }, [visible]);
+  }, [visible, onStart]);
 
   if (!visible) return null;
 
@@ -59,7 +64,9 @@ const IntroOverlay = ({ visible, isHomeReady, onStart }) => {
           <h1 id="intro-title" className="text-[2.25rem] leading-tight font-black tracking-tighter text-slate-800">
             じぶん会議
           </h1>
-          <p className="text-[0.8rem] font-bold text-slate-500 tracking-wide">5つの視点で、じぶんに潜る</p>
+          <p className="text-[0.8rem] font-bold text-slate-500 tracking-wide">
+            {hasBlockingConfigIssue ? '設定を確認して、会議の準備を整える' : '5つの視点で、じぶんに潜る'}
+          </p>
         </div>
 
         {/* キャッチコピーカード */}
@@ -97,9 +104,14 @@ const IntroOverlay = ({ visible, isHomeReady, onStart }) => {
           onClick={onStart}
           className="action-primary w-full py-4 text-white rounded-2xl font-black text-sm active:scale-95 flex items-center justify-center gap-2 mt-2"
         >
-          会議をはじめる
+          {hasBlockingConfigIssue ? '設定を確認する' : '会議をはじめる'}
           <ChevronRight size={18} aria-hidden="true" />
         </button>
+        {hasBlockingConfigIssue && (
+          <p className="text-[11px] font-medium text-slate-500 leading-relaxed">
+            まずは不足している設定を確認できる画面へ進みます。
+          </p>
+        )}
       </div>
     </div>
   );
