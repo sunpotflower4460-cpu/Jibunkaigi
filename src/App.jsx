@@ -1491,6 +1491,7 @@ const App = () => {
       <IntroOverlay
         visible={showIntro}
         isHomeReady={isHomeReady}
+        hasBlockingConfigIssue={hasBlockingConfigIssue}
         onStart={handleStartIntro}
       />
 
