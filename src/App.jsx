@@ -391,6 +391,8 @@ const App = () => {
     const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'settings');
     getDoc(userRef).then(s => {
       if (s.exists() && s.data().displayName) setUserName(s.data().displayName);
+    }).catch(e => {
+      console.warn('[profile] Failed to load display name', e);
     });
     const sessionsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'sessions');
     return onSnapshot(

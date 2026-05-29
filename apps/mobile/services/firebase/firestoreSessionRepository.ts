@@ -33,14 +33,20 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
     return this.uid;
   }
 
+  private getServices(): MobileFirebaseServices {
+    const services = getMobileFirebaseServices();
+    if (!services) throw new Error('Firebase services are not available');
+    return services;
+  }
+
   private sessionsCol(uid: string) {
-    const services = getMobileFirebaseServices()!;
+    const services = this.getServices();
     const appId = getUniversalAppId();
     return collection(services.db, 'artifacts', appId, 'users', uid, 'sessions');
   }
 
   private messagesCol(uid: string, sessionId: string) {
-    const services = getMobileFirebaseServices()!;
+    const services = this.getServices();
     const appId = getUniversalAppId();
     return collection(
       services.db,
@@ -73,7 +79,7 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
   async deleteSession(sessionId: string): Promise<void> {
     const uid = await this.getCurrentUserId();
     if (!uid) return;
-    const services = getMobileFirebaseServices()!;
+    const services = this.getServices();
     const batch = writeBatch(services.db);
 
     // Delete all messages first
@@ -96,7 +102,7 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
   async deleteMessage(sessionId: string, messageId: string): Promise<void> {
     const uid = await this.getCurrentUserId();
     if (!uid) return;
-    const services = getMobileFirebaseServices()!;
+    const services = this.getServices();
     const appId = getUniversalAppId();
     await deleteDoc(doc(this.messagesCol(uid, sessionId), messageId));
     await setDoc(
@@ -109,7 +115,7 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
   async clearMessages(sessionId: string): Promise<void> {
     const uid = await this.getCurrentUserId();
     if (!uid) return;
-    const services = getMobileFirebaseServices()!;
+    const services = this.getServices();
     const batch = writeBatch(services.db);
     const msgSnap = await getDocs(this.messagesCol(uid, sessionId));
     msgSnap.docs.forEach((d) => batch.delete(d.ref));
