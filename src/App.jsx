@@ -1367,14 +1367,14 @@ const App = () => {
           />
 
           {errorMessage && (
-            <div className="mx-4 sm:mx-6 mt-3 p-3 rounded-xl glass-card border-rose-200/50 flex items-center justify-between animate-in fade-in slide-in-from-top-2 z-40">
+            <div className="mx-4 sm:mx-5 mt-3 p-3 rounded-xl glass-card border-rose-200/50 flex items-center justify-between animate-in fade-in slide-in-from-top-2 z-40">
               <div className="flex items-center gap-2 text-rose-600 text-xs font-bold"><AlertCircle size={14}/> {errorMessage}</div>
               <button aria-label="エラーメッセージを閉じる" title="閉じる" onClick={() => setErrorMessage(null)} className="p-1 hover:bg-rose-100 rounded-full text-rose-400"><X size={14}/></button>
             </div>
           )}
 
           {hasBlockingConfigIssue && (
-            <div className="mx-4 sm:mx-6 mt-3 rounded-3xl glass-card border border-amber-200/60 p-4 sm:p-5 relative z-20">
+            <div className="mx-4 sm:mx-5 mt-3 rounded-3xl glass-card border border-amber-200/60 p-4 sm:p-5 relative z-20">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 p-2 rounded-2xl bg-amber-100 text-amber-700 shrink-0"><AlertCircle size={16} /></div>
                 <div className="space-y-2.5">

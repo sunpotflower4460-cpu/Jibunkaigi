@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, Feather } from 'lucide-react';
+import { Feather } from 'lucide-react';
 
 /**
  * セッション内にメッセージが1件もないときの「空状態」。
@@ -16,32 +16,21 @@ const HINTS = [
 ];
 
 const EmptyState = ({ onHintClick }) => (
-  <div className="h-full flex flex-col items-center justify-center py-10 sm:py-14 animate-in fade-in duration-1000">
-    <section className="w-full max-w-md rounded-[2rem] glass-card px-5 py-6 sm:px-6 sm:py-7 text-center">
-      <div className="w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-slate-500 mx-auto mb-4 bg-white/55 border border-white/60">
-        <Feather size={28} aria-hidden="true" />
+  <div className="h-full flex flex-col items-center justify-center py-12 sm:py-16 animate-in fade-in duration-1000">
+    <section className="w-full max-w-md px-2 text-center">
+      <div className="w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-slate-600 mx-auto mb-6 bg-white/78 border border-white/85 shadow-[0_12px_34px_rgba(99,102,241,0.12)]">
+        <Feather size={27} aria-hidden="true" />
       </div>
-      <p className="text-[10px] font-black tracking-[0.28em] text-slate-400 uppercase mb-2">
-        Inner Conference Room
-      </p>
-      <h3 className="text-xl font-black text-slate-800 tracking-tight">
-        まずは、ひとつ置いてみる。
+      <h3 className="text-[1.78rem] leading-[1.45] font-semibold tracking-tight text-slate-800 [font-family:'Hiragino_Mincho_ProN','Yu_Mincho',serif]">
+        <span className="block">まずは、ひとつ</span>
+        <span className="block">置いてみる。</span>
       </h3>
-      <p className="text-xs text-slate-500 mt-2 mb-5 font-medium leading-relaxed">
+      <p className="text-sm text-slate-500 mt-4 font-medium leading-relaxed">
         まだ言葉になっていなくても、大丈夫です。
       </p>
-      <button
-        type="button"
-        onClick={() => onHintClick(HINTS[0])}
-        className="action-primary w-full py-3.5 text-white rounded-2xl font-black text-sm active:scale-95 inline-flex items-center justify-center gap-2"
-        aria-label="会議をはじめる"
-      >
-        会議をはじめる
-        <ChevronRight size={17} aria-hidden="true" />
-      </button>
     </section>
 
-    <div className="flex flex-col gap-3 w-full max-w-md px-2 mt-5">
+    <div className="flex flex-col gap-3 w-full max-w-md px-2 mt-8">
       {HINTS.map((hint, idx) => (
         <button
           type="button"
