@@ -1,5 +1,5 @@
 import React from 'react';
-import { Feather } from 'lucide-react';
+import { ChevronRight, Feather } from 'lucide-react';
 
 /**
  * セッション内にメッセージが1件もないときの「空状態」。
@@ -16,17 +16,32 @@ const HINTS = [
 ];
 
 const EmptyState = ({ onHintClick }) => (
-  <div className="h-full flex flex-col items-center justify-center py-14 sm:py-20 animate-in fade-in duration-1000">
-    <div className="w-20 h-20 rounded-[1.75rem] flex items-center justify-center text-slate-400 mb-6 glass-card shadow-xl shadow-indigo-950/5">
-      <Feather size={34} aria-hidden="true" />
-    </div>
-    <h3 className="text-lg font-black text-slate-800 mb-2 tracking-tight">
-      まずは、ひとつ置いてみる。
-    </h3>
-    <p className="text-xs text-slate-500 mb-10 text-center font-medium leading-relaxed">
-      まだ言葉になっていなくても、大丈夫です。
-    </p>
-    <div className="flex flex-col gap-3 w-full max-w-sm px-2">
+  <div className="h-full flex flex-col items-center justify-center py-10 sm:py-14 animate-in fade-in duration-1000">
+    <section className="w-full max-w-md rounded-[2rem] glass-card px-5 py-6 sm:px-6 sm:py-7 text-center">
+      <div className="w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-slate-500 mx-auto mb-4 bg-white/55 border border-white/60">
+        <Feather size={28} aria-hidden="true" />
+      </div>
+      <p className="text-[10px] font-black tracking-[0.28em] text-slate-400 uppercase mb-2">
+        Inner Conference Room
+      </p>
+      <h3 className="text-xl font-black text-slate-800 tracking-tight">
+        まずは、ひとつ置いてみる。
+      </h3>
+      <p className="text-xs text-slate-500 mt-2 mb-5 font-medium leading-relaxed">
+        まだ言葉になっていなくても、大丈夫です。
+      </p>
+      <button
+        type="button"
+        onClick={() => onHintClick(HINTS[0])}
+        className="action-primary w-full py-3.5 text-white rounded-2xl font-black text-sm active:scale-95 inline-flex items-center justify-center gap-2"
+        aria-label="会議をはじめる"
+      >
+        会議をはじめる
+        <ChevronRight size={17} aria-hidden="true" />
+      </button>
+    </section>
+
+    <div className="flex flex-col gap-3 w-full max-w-md px-2 mt-5">
       {HINTS.map((hint, idx) => (
         <button
           type="button"
