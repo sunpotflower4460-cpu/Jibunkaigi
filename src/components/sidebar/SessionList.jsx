@@ -20,14 +20,15 @@ const SessionList = ({
   if (sessions.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto no-scrollbar relative">
-        <div className="mt-2 mx-1 px-4 py-5 rounded-[1.5rem] bg-white/30 border border-white/40 text-center">
-          <div className="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/60 text-slate-400 mb-3">
-            <Feather size={16} aria-hidden="true" />
+        <div className="panel-surface relative overflow-hidden mt-2 mx-1 px-5 py-8 rounded-[1.75rem] text-center">
+          <span className="glass-flecks" aria-hidden="true" />
+          <div className="icon-tile icon-tile--round relative z-[1] inline-flex w-12 h-12 text-slate-400 mb-4">
+            <Feather size={18} strokeWidth={1.75} aria-hidden="true" />
           </div>
-          <p className="text-xs font-bold text-slate-500 leading-relaxed">
+          <p className="relative z-[1] text-[0.8rem] font-bold text-slate-700 leading-relaxed">
             まだ保存された問いはありません。
           </p>
-          <p className="text-[11px] font-medium text-slate-400 mt-1 leading-relaxed">
+          <p className="relative z-[1] text-[11px] font-medium text-slate-400 mt-1.5 leading-relaxed">
             最初の問いが、ここに残ります。
           </p>
         </div>

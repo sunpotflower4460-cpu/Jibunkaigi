@@ -24,6 +24,13 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* 明朝体ユーティリティ — 詩的な見出し・キャッチコピー用 */
+.jk-serif {
+  font-family: var(--jk-font-serif);
+  font-feature-settings: "palt" 1;
+  font-weight: 600;
+}
+
 /* Prose-style readability for AI messages */
 .jk-prose {
   line-height: var(--jk-leading-prose);

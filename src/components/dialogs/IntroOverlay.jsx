@@ -48,30 +48,31 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
       <div className="water-shimmer z-0" aria-hidden="true" />
       <div className="mesh-grid z-0" aria-hidden="true" />
 
-      <div className="hero-panel max-w-sm w-full text-center px-6 py-8 sm:px-8 sm:py-10 rounded-[2.5rem] relative z-10 space-y-6 anim-card-rise">
-        {/* アイコン */}
+      <div className="hero-panel max-w-sm w-full text-center px-6 py-9 sm:px-8 sm:py-11 rounded-[2.5rem] relative z-10 space-y-7 anim-card-rise">
+        {/* アイコン — 白い霧ガラスのタイルに、濃紺のラインアイコン */}
         <div className="anim-scale-in">
-          <div className="inline-flex items-center justify-center p-4 rounded-[1.75rem] bg-[#1e293b] text-white anim-float shadow-2xl">
-            <Users size={32} aria-hidden="true" />
+          <div className="icon-tile w-[5.5rem] h-[5.5rem] anim-float">
+            <Users size={34} strokeWidth={1.75} aria-hidden="true" />
           </div>
         </div>
 
         {/* タイトルブロック — アイコンとの一体感を高める */}
-        <div className="space-y-1.5">
-          <p className="text-[9px] font-black tracking-[0.35em] text-slate-400 uppercase">
+        <div className="space-y-2">
+          <p className="text-[9px] font-black tracking-[0.38em] text-slate-400 uppercase pl-[0.38em]">
             Inner Conference Room
           </p>
-          <h1 id="intro-title" className="text-[2.25rem] leading-tight font-black tracking-tighter text-slate-800">
+          <h1 id="intro-title" className="text-[2.45rem] leading-tight font-black tracking-tighter text-slate-900">
             じぶん会議
           </h1>
-          <p className="text-[0.8rem] font-bold text-slate-500 tracking-wide">
+          <p className="text-[0.82rem] font-bold text-slate-500 tracking-wide">
             {hasBlockingConfigIssue ? '設定を確認して、会議の準備を整える' : '5つの視点で、じぶんに潜る'}
           </p>
         </div>
 
-        {/* キャッチコピーカード */}
-        <div className="py-5 px-4 rounded-[1.5rem] bg-white/30 border border-white/50 shadow-inner flex justify-center items-center w-full">
-          <p className="text-[0.95rem] sm:text-base font-medium text-slate-700 leading-[2] tracking-[0.06em] text-center">
+        {/* キャッチコピーカード — 霧を閉じ込めたガラスに、明朝で静かに置く */}
+        <div className="keyline-card py-7 px-5 flex justify-center items-center w-full">
+          <span className="glass-flecks" aria-hidden="true" />
+          <p className="jk-serif relative z-[1] text-[1.05rem] sm:text-[1.15rem] text-slate-800 leading-[2.1] tracking-[0.04em] text-center">
             導かない。照らすだけ。
             <br />
             歩くのは、あなた自身。
@@ -102,7 +103,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           ref={startBtnRef}
           type="button"
           onClick={onStart}
-          className="action-primary w-full py-4 text-white rounded-2xl font-black text-sm active:scale-95 flex items-center justify-center gap-2 mt-2"
+          className="action-primary w-full py-4 text-white rounded-[1.6rem] font-black text-[0.95rem] tracking-wide active:scale-95 flex items-center justify-center gap-2 mt-2"
         >
           {hasBlockingConfigIssue ? '設定を確認する' : '会議をはじめる'}
           <ChevronRight size={18} aria-hidden="true" />
