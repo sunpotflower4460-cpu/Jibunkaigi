@@ -51,16 +51,15 @@ export function MobileOthersTrigger({
 const styles = StyleSheet.create({
   button: {
     minHeight: mobileTouchTarget.comfortable,
-    minWidth: 132,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
+    marginHorizontal: spacing.lg,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.accentIndigoSoft,
     backgroundColor: colors.surfaceSoft,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'center',
   },
   buttonDisabled: {
     borderColor: colors.borderSubtle,

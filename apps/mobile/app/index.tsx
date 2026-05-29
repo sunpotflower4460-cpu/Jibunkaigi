@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   bottomDock: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     alignItems: 'center',
   },
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderSoft,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
+    paddingBottom: spacing.sm,
     backgroundColor: colors.surfaceSoft,
     ...shadow.soft,
   },
