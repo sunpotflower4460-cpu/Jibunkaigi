@@ -17,13 +17,5 @@
       "autoIncrement": true,
       "node": "22.0.0"
     }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "ascAppId": "REPLACE_WITH_ASC_APP_ID",
-        "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID"
-      }
-    }
   }
 }

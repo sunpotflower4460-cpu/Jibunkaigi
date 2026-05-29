@@ -7,8 +7,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "backgroundColor": "#eef4fb",
-      "image": "./assets/splash.png"
+      "backgroundColor": "#eef4fb"
     },
     "ios": {
       "supportsTablet": false,
@@ -18,8 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#eef4fb",
-        "foregroundImage": "./assets/adaptive-icon.png"
+        "backgroundColor": "#eef4fb"
       },
       "package": "com.jibunkaigi.mobile",
       "versionCode": 1
@@ -32,7 +30,6 @@
       "typedRoutes": true
     },
     "scheme": "jibunkaigi",
-    "icon": "./assets/icon.png",
     "plugins": [
       "expo-router",
       "expo-splash-screen"

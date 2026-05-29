@@ -27,18 +27,19 @@ export function getMobileFirebaseServices(): MobileFirebaseServices | null {
     if (Platform.OS === 'web') {
       auth = getAuth(app);
     } else {
-      // firebase@^10.14 exposes getReactNativePersistence at runtime on firebase/auth in RN bundles.
       const authModule = FirebaseAuth as typeof FirebaseAuth & {
         getReactNativePersistence?: (storage: typeof AsyncStorage) => unknown;
       };
-      const persistence = authModule.getReactNativePersistence?.(AsyncStorage);
-      if (!persistence) {
+      const getPersistence = authModule.getReactNativePersistence;
+      if (!getPersistence) {
         auth = getAuth(app);
+        console.warn('[mobileFirebaseApp] React Native auth persistence is unavailable. Falling back to default auth persistence.');
       } else {
         try {
-          auth = initializeAuth(app, { persistence: persistence as never });
-        } catch {
+          auth = initializeAuth(app, { persistence: getPersistence(AsyncStorage) as never });
+        } catch (error) {
           auth = getAuth(app);
+          console.warn('[mobileFirebaseApp] Falling back to default auth persistence.', error);
         }
       }
     }

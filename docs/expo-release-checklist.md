@@ -4,7 +4,7 @@
 
 - [ ] `apps/mobile/app.json` の `ios.buildNumber` と `android.versionCode` を更新した
 - [ ] `eas.json` の `build.production` プロファイルでビルドできる
-- [ ] `eas.json` の `submit.production.ios` に App Store Connect 情報を設定した
+- [ ] App Store Connect 情報はローカル/CI の `eas.json` override または EAS secrets で設定した（リポジトリの `eas.json` にプレースホルダは置かない）
 
 ## 2. 環境変数
 
