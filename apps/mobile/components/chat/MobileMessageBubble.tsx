@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   bubble: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
     borderRadius: radius.lg,
     maxWidth: '100%',
   },

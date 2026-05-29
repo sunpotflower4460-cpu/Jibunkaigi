@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { UniversalAgentId, UniversalModeId } from '../../state/mobileTypes';
 import { getThinkingText } from '@jibunkaigi/shared';
-import { colors, spacing, type as typeScale } from '../../theme/tokens';
+import { colors, mobileLayout, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileThinkingIndicatorProps {
   agentId: UniversalAgentId;
@@ -21,6 +21,9 @@ export function MobileThinkingIndicator({ agentId, modeId = 'dialogue' }: Mobile
 
 const styles = StyleSheet.create({
   row: {
+    width: '100%',
+    maxWidth: mobileLayout.timelineMaxWidth,
+    alignSelf: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     alignItems: 'flex-start',

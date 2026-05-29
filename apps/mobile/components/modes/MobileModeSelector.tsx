@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { UNIVERSAL_MODES, type UniversalModeId } from '@jibunkaigi/shared';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import { colors, mobileTouchTarget, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileModeSelectorProps {
   selected: UniversalModeId;
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderSubtle,
     gap: spacing.xs,
-    minHeight: 40,
+    minHeight: mobileTouchTarget.minimum,
   },
   chipActive: {
     backgroundColor: colors.accentIndigoSoft,
