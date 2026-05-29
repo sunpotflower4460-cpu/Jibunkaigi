@@ -5,7 +5,7 @@ import { Users, ChevronRight, Feather, Heart, Compass } from 'lucide-react';
  * 初回画面オーバーレイ。
  * - 「導かない。照らすだけ。歩くのは、あなた自身。」を主役のまま。
  * - その下に、何をするアプリかが一瞬で分かる「3 ステップ」を控えめに添える。
- * - CTA は1つだけ強く ("会議をはじめる")。
+ * - CTA は押しつけず、静かに入る導線として置く。
  * - Escape でも開始できる。
  */
 const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart }) => {
@@ -48,20 +48,20 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
       <div className="water-shimmer z-0" aria-hidden="true" />
       <div className="mesh-grid z-0" aria-hidden="true" />
 
-      <div className="hero-panel max-w-sm w-full text-center px-6 py-8 sm:px-8 sm:py-10 rounded-[2.5rem] relative z-10 space-y-6 anim-card-rise">
+      <div className="max-w-sm w-full text-center px-2 sm:px-3 py-6 sm:py-8 relative z-10 space-y-7 anim-card-rise">
         {/* アイコン */}
         <div className="anim-scale-in">
-          <div className="inline-flex items-center justify-center p-4 rounded-[1.75rem] bg-[#1e293b] text-white anim-float shadow-2xl">
-            <Users size={32} aria-hidden="true" />
+          <div className="inline-flex items-center justify-center p-4 rounded-[1.75rem] bg-white/80 border border-white/90 text-slate-700 anim-float shadow-[0_14px_34px_rgba(99,102,241,0.14)]">
+            <Users size={30} aria-hidden="true" />
           </div>
         </div>
 
         {/* タイトルブロック — アイコンとの一体感を高める */}
-        <div className="space-y-1.5">
-          <p className="text-[9px] font-black tracking-[0.35em] text-slate-400 uppercase">
-            Inner Conference Room
-          </p>
-          <h1 id="intro-title" className="text-[2.25rem] leading-tight font-black tracking-tighter text-slate-800">
+        <div className="space-y-2">
+          <h1
+            id="intro-title"
+            className="text-[2.25rem] leading-tight font-semibold tracking-tight text-slate-800 [font-family:'Hiragino_Mincho_ProN','Yu_Mincho',serif]"
+          >
             じぶん会議
           </h1>
           <p className="text-[0.8rem] font-bold text-slate-500 tracking-wide">
@@ -70,7 +70,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
         </div>
 
         {/* キャッチコピーカード */}
-        <div className="py-5 px-4 rounded-[1.5rem] bg-white/30 border border-white/50 shadow-inner flex justify-center items-center w-full">
+        <div className="py-5 px-4 rounded-[1.5rem] glass-card flex justify-center items-center w-full">
           <p className="text-[0.95rem] sm:text-base font-medium text-slate-700 leading-[2] tracking-[0.06em] text-center">
             導かない。照らすだけ。
             <br />
@@ -102,9 +102,9 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           ref={startBtnRef}
           type="button"
           onClick={onStart}
-          className="action-primary w-full py-4 text-white rounded-2xl font-black text-sm active:scale-95 flex items-center justify-center gap-2 mt-2"
+          className="w-full min-h-12 py-3.5 rounded-2xl border border-white/80 bg-white/72 text-slate-700 shadow-[0_14px_30px_rgba(99,102,241,0.13)] font-bold text-sm active:scale-95 flex items-center justify-center gap-2 mt-2 backdrop-blur-[18px]"
         >
-          {hasBlockingConfigIssue ? '設定を確認する' : '会議をはじめる'}
+          {hasBlockingConfigIssue ? '設定を確認する' : '静かに始める'}
           <ChevronRight size={18} aria-hidden="true" />
         </button>
         {hasBlockingConfigIssue && (
