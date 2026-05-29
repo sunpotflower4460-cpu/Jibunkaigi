@@ -6,7 +6,7 @@ import type { UniversalSession } from '../state/mobileTypes';
 import {
   createUniversalId,
   createSessionTitleFromText,
-} from '../../../packages/shared/src/index';
+} from '@jibunkaigi/shared';
 
 export function createLocalSession(title = '新しい問い'): UniversalSession {
   const now = Date.now();

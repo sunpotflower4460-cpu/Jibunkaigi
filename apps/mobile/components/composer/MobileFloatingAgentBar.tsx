@@ -5,7 +5,7 @@ import {
   UNIVERSAL_AGENTS,
   type UniversalAgentId,
   type UniversalComposerVisibility,
-} from '../../../../packages/shared/src';
+} from '@jibunkaigi/shared';
 import {
   colors,
   mobileLayout,

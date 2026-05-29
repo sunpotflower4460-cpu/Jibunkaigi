@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { DEFAULT_USER_NAME, normalizeUserName } from '../../../../packages/shared/src';
+import { DEFAULT_USER_NAME, normalizeUserName } from '@jibunkaigi/shared';
 import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileUserNameTriggerProps {

@@ -1,4 +1,4 @@
-import { pickMockDelegatedAgent } from '../../../../packages/shared/src';
+import { pickMockDelegatedAgent } from '@jibunkaigi/shared';
 import { getJibunkaigiApiBaseUrl } from '../../config/mobileApiConfig';
 import type {
   UniversalAiClient,

@@ -11,13 +11,16 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.jibunkaigi.mobile"
+      "bundleIdentifier": "com.jibunkaigi.mobile",
+      "buildNumber": "1",
+      "infoPlist": {}
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#eef4fb"
       },
-      "package": "com.jibunkaigi.mobile"
+      "package": "com.jibunkaigi.mobile",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -26,6 +29,10 @@
     "experiments": {
       "typedRoutes": true
     },
-    "scheme": "jibunkaigi"
+    "scheme": "jibunkaigi",
+    "plugins": [
+      "expo-router",
+      "expo-splash-screen"
+    ]
   }
 }

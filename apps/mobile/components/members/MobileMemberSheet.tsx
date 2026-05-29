@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { MEMBER_DISPLAY_PROFILES } from '../../../../packages/shared/src/members/memberDisplayProfiles';
+import { MEMBER_DISPLAY_PROFILES } from '@jibunkaigi/shared/members/memberDisplayProfiles';
 import { MobileMemberCard } from './MobileMemberCard';
 import { colors, mobileLayout, shadow, spacing, type as typeScale } from '../../theme/tokens';
 

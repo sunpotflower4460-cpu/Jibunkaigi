@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { UniversalAgentId, UniversalModeId } from '../../state/mobileTypes';
-import { getThinkingText } from '../../../../packages/shared/src/index';
+import { getThinkingText } from '@jibunkaigi/shared';
 import { colors, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileThinkingIndicatorProps {

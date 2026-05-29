@@ -8,10 +8,10 @@
 
 | 用途 | 場所 | 技術 |
 |---|---|---|
-| **本番 Web（現行）** | リポジトリルート `src/` | Vite + Cloudflare Workers |
-| **iOS / Android / Expo Web** | この `apps/mobile/` | Expo + React Native |
+| **Web 版** | リポジトリルート `src/` | Vite + Cloudflare Workers |
+| **ストア提出対象（主戦場）** | この `apps/mobile/` | Expo + React Native |
 
-**既存 Web 版（ルートの `src/` / `package.json`）は本番環境です。このディレクトリは触りません。**
+**ストア提出対象は `apps/mobile` です。Web版（ルート `src/`）は並行運用中のプロダクトです。**
 
 ---
 

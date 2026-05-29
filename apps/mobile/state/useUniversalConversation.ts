@@ -30,7 +30,7 @@ import {
   sortUniversalSessions,
   type UniversalComposerVisibility,
   type UniversalRuntimeStatus,
-} from '../../../packages/shared/src';
+} from '@jibunkaigi/shared';
 
 async function initRepository(): Promise<UniversalSessionRepository> {
   const firestoreRepo = createFirestoreRepository();

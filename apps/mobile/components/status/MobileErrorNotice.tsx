@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   buildUniversalStatusItems,
   type UniversalRuntimeStatus,
-} from '../../../../packages/shared/src';
+} from '@jibunkaigi/shared';
 import { colors, mobileLayout, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileErrorNoticeProps {

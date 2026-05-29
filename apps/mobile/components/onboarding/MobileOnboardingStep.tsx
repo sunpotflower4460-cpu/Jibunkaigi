@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import type { UniversalOnboardingStep } from '../../../../packages/shared/src';
+import type { UniversalOnboardingStep } from '@jibunkaigi/shared';
 import { colors, mobileLineHeights, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileOnboardingStepProps {

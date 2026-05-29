@@ -1,6 +1,8 @@
 name: _verify
 
 on:
+  push:
+  pull_request:
   workflow_call:
     inputs:
       phase:
@@ -14,7 +16,7 @@ permissions:
 
 jobs:
   verify:
-    name: Verify (${{ inputs.phase }})
+    name: Verify (${{ inputs.phase || 'default' }})
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,3 +39,42 @@ jobs:
 
       - name: Test
         run: npm test
+
+  verify-mobile:
+    name: Verify Mobile
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            packages/shared/package-lock.json
+            apps/mobile/package-lock.json
+
+      - name: Install shared dependencies
+        working-directory: packages/shared
+        run: npm ci
+
+      - name: Typecheck shared
+        working-directory: packages/shared
+        run: npm run typecheck
+
+      - name: Install mobile dependencies
+        run: npm ci
+
+      - name: Lint mobile
+        run: npm run lint
+
+      - name: Typecheck mobile
+        run: npm run typecheck
+
+      - name: Build check mobile
+        run: npm run build:check

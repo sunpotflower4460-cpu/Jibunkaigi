@@ -1,4 +1,4 @@
-import { createUniversalOthersMockResponse } from '../../../../packages/shared/src';
+import { createUniversalOthersMockResponse } from '@jibunkaigi/shared';
 import type {
   UniversalOthersAiRequest,
   UniversalOthersAiResponse,

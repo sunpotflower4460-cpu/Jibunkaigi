@@ -8,7 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { Send, X } from 'lucide-react-native';
-import { UNIVERSAL_COMPOSER_LABELS } from '../../../../packages/shared/src';
+import { UNIVERSAL_COMPOSER_LABELS } from '@jibunkaigi/shared';
 import {
   colors,
   mobileLineHeights,

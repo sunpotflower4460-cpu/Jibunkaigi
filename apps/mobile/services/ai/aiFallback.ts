@@ -1,4 +1,4 @@
-import { createUniversalMockReply } from '../../../../packages/shared/src';
+import { createUniversalMockReply } from '@jibunkaigi/shared';
 import type {
   UniversalAiClient,
   UniversalAiRequest,
