@@ -14,8 +14,8 @@ const TopHeader = ({
   onChangeMode,
 }) => (
   <header
-    className="header-shell safe-top flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 gap-2 mx-4 sm:mx-5 mt-0 sm:mt-1"
-    style={{ borderRadius: '24px', zIndex: 10 }}
+    className="header-shell soft-panel safe-top flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 gap-2 mx-4 sm:mx-5 mt-0 sm:mt-1"
+    style={{ zIndex: 10 }}
   >
     <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
       <button
@@ -27,10 +27,7 @@ const TopHeader = ({
       >
         <Menu size={18} aria-hidden="true" />
       </button>
-      <h2
-        className="font-bold text-sm tracking-tight truncate text-slate-800"
-        title={title}
-      >
+      <h2 className="typo-screen-title truncate text-slate-800" title={title}>
         {title}
       </h2>
     </div>
