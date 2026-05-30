@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Compass, Flame, ChevronUp, Users, Heart, ShieldAlert, X } from 'lucide-react';
+import { useT } from '../i18n';
 
 /**
  * FloatingAgentBar — 下部に控えめに浮かぶエージェント操作バー。
@@ -31,6 +32,7 @@ const FloatingAgentBar = ({
   onScrollToOthers,
   agents = [],
 }) => {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [hasEverHadMessages, setHasEverHadMessages] = useState(false);
 
@@ -62,7 +64,7 @@ const FloatingAgentBar = ({
     return (
       <div
         role="complementary"
-        aria-label="下部エージェント操作バー（たたみ中）"
+        aria-label={t('floating.collapsed.aria')}
         style={{
           position: 'fixed',
           bottom: bottomOffset,
@@ -74,12 +76,12 @@ const FloatingAgentBar = ({
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          aria-label="視点を開く"
-          title="視点を開く"
+          aria-label={t('floating.open')}
+          title={t('floating.open')}
           className="floating-agent-toggle"
         >
           <ChevronUp size={14} aria-hidden="true" />
-          <span>視点を開く</span>
+          <span>{t('floating.open')}</span>
         </button>
       </div>
     );
@@ -89,7 +91,7 @@ const FloatingAgentBar = ({
   return (
     <div
       role="complementary"
-      aria-label="下部エージェント操作バー"
+      aria-label={t('floating.expanded.aria')}
       style={{
         position: 'fixed',
         bottom: bottomOffset,
@@ -107,12 +109,12 @@ const FloatingAgentBar = ({
           type="button"
           onClick={() => onAgentClick('master', true)}
           disabled={disabled}
-          aria-label="心の鏡を呼び出す"
-          title="心の鏡"
+          aria-label={t('floating.mirror.aria')}
+          title={t('agentbar.mirror.name')}
           className="floating-agent-btn floating-agent-btn--dark"
         >
           <Compass size={13} aria-hidden="true" style={{ color: '#a5b4fc', flexShrink: 0 }} />
-          <span>心の鏡</span>
+          <span>{t('agentbar.mirror.name')}</span>
         </button>
 
         {/* 委ねる */}
@@ -120,12 +122,12 @@ const FloatingAgentBar = ({
           type="button"
           onClick={() => onRandomResponse()}
           disabled={disabled}
-          aria-label="委ねる（ランダムエージェント）"
-          title="委ねる"
+          aria-label={t('floating.delegate.aria')}
+          title={t('agentbar.delegate.name')}
           className="floating-agent-btn floating-agent-btn--gradient"
         >
           <Sparkles size={13} aria-hidden="true" style={{ flexShrink: 0 }} />
-          <span>委ねる</span>
+          <span>{t('agentbar.delegate.name')}</span>
         </button>
 
         {/* ジョー（creative） */}
@@ -133,7 +135,7 @@ const FloatingAgentBar = ({
           type="button"
           onClick={() => onAgentClick('creative')}
           disabled={disabled}
-          aria-label="ジョーを呼び出す"
+          aria-label={t('floating.summon.aria', { name: 'ジョー' })}
           title="ジョー"
           className="floating-agent-btn floating-agent-btn--orange"
         >
@@ -147,7 +149,7 @@ const FloatingAgentBar = ({
             type="button"
             onClick={() => onAgentClick('soul')}
             disabled={disabled}
-            aria-label="レイを呼び出す"
+            aria-label={t('floating.summon.aria', { name: 'レイ' })}
             title="レイ"
             className="floating-agent-btn floating-agent-btn--light"
           >
@@ -164,7 +166,7 @@ const FloatingAgentBar = ({
             type="button"
             onClick={() => onAgentClick('strategist')}
             disabled={disabled}
-            aria-label="ケンを呼び出す"
+            aria-label={t('floating.summon.aria', { name: 'ケン' })}
             title="ケン"
             className="floating-agent-btn floating-agent-btn--light"
           >
@@ -181,7 +183,7 @@ const FloatingAgentBar = ({
             type="button"
             onClick={() => onAgentClick('empath')}
             disabled={disabled}
-            aria-label="ミナを呼び出す"
+            aria-label={t('floating.summon.aria', { name: 'ミナ' })}
             title="ミナ"
             className="floating-agent-btn floating-agent-btn--light"
           >
@@ -196,7 +198,7 @@ const FloatingAgentBar = ({
             type="button"
             onClick={() => onAgentClick('critic')}
             disabled={disabled}
-            aria-label="サトウを呼び出す"
+            aria-label={t('floating.summon.aria', { name: 'サトウ' })}
             title="サトウ"
             className="floating-agent-btn floating-agent-btn--light"
           >
@@ -209,7 +211,7 @@ const FloatingAgentBar = ({
         <button
           type="button"
           onClick={handleScrollToOthers}
-          aria-label="OTHERSセクションへスクロール"
+          aria-label={t('floating.others.aria')}
           title="OTHERS"
           className="floating-agent-btn floating-agent-btn--ghost"
         >
@@ -223,8 +225,8 @@ const FloatingAgentBar = ({
         <button
           type="button"
           onClick={() => setIsOpen(false)}
-          aria-label="下部バーを閉じる"
-          title="閉じる"
+          aria-label={t('floating.close.aria')}
+          title={t('common.close')}
           className="floating-agent-btn floating-agent-btn--ghost floating-agent-btn--icon"
         >
           <X size={14} aria-hidden="true" />

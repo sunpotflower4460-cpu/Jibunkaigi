@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
+import { useT } from '../../i18n';
 
 /**
  * 会議メンバーの「魂」(belief) を一覧表示するモーダル。
@@ -7,6 +8,7 @@ import { X } from 'lucide-react';
  * - 開いた直後に閉じるボタンへフォーカス
  */
 const BeliefsDialog = ({ open, agents, onClose }) => {
+  const t = useT();
   const closeBtnRef = useRef(null);
 
   useEffect(() => {
@@ -42,20 +44,20 @@ const BeliefsDialog = ({ open, agents, onClose }) => {
         <div className="p-6 sm:p-8 pb-4 flex items-center justify-between border-b border-white/10">
           <div className="min-w-0 pr-2">
             <p className="text-[10px] font-black tracking-[0.32em] text-slate-400 uppercase mb-1">
-              Inner Voices
+              {t('beliefs.tagline')}
             </p>
             <h3 id="beliefs-dialog-title" className="text-xl font-black tracking-tight">
-              会議メンバーの魂
+              {t('beliefs.title')}
             </h3>
             <p className="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed">
-              それぞれの視点が、どんな角度からあなたを見るか。
+              {t('beliefs.desc')}
             </p>
           </div>
           <button
             ref={closeBtnRef}
             type="button"
-            aria-label="会議メンバーの魂を閉じる"
-            title="閉じる"
+            aria-label={t('beliefs.close.aria')}
+            title={t('common.close')}
             onClick={onClose}
             className="p-3 hover:bg-white/40 rounded-full inline-flex items-center justify-center"
             style={{ minWidth: 'var(--jk-tap-min)', minHeight: 'var(--jk-tap-min)' }}

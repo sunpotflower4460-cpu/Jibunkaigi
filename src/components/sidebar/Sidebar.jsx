@@ -1,7 +1,8 @@
 import React from 'react';
-import { Users, Plus, Info } from 'lucide-react';
+import { Users, Plus, Info, Languages } from 'lucide-react';
 import UserProfileButton from './UserProfileButton';
 import SessionList from './SessionList';
+import { useT, useLang } from '../../i18n';
 
 /**
  * サイドバー全体。モバイルでは overlay、デスクトップでは固定。
@@ -24,7 +25,10 @@ const Sidebar = ({
   onCommitEditTitle,
   onTogglePin,
   onRequestDelete,
-}) => (
+}) => {
+  const t = useT();
+  const { lang, setLang } = useLang();
+  return (
   <>
     {isOpen && (
       <div
@@ -34,7 +38,7 @@ const Sidebar = ({
       />
     )}
     <aside
-      aria-label="セッション一覧"
+      aria-label={t('sidebar.sessions.aria')}
       className={`sidebar-shell fixed md:relative inset-y-0 left-0 w-72 z-[70] transition-transform duration-300 flex flex-col ${
         isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}
@@ -43,17 +47,17 @@ const Sidebar = ({
         <button
           type="button"
           onClick={onOpenBeliefs}
-          aria-label="会議メンバーの魂を見る"
-          className="flex items-center gap-3 mb-8 px-2 py-1 cursor-pointer text-left rounded-2xl"
+          aria-label={t('sidebar.members.aria')}
+          className="flex items-center gap-3 mb-10 px-2 cursor-pointer text-left rounded-2xl"
         >
           <div className="icon-tile w-10 h-10 rounded-2xl text-slate-700">
             <Users size={19} strokeWidth={1.75} aria-hidden="true" />
           </div>
-          <div className="flex flex-col gap-0.5 leading-tight">
-            <span className="text-[10px] font-semibold tracking-[0.14em] text-slate-400">
-              内なる会議
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[11px] font-black tracking-[0.12em] text-slate-400">
+              {t('app.subtitleInner')}
             </span>
-            <h1 className="title-ink text-[1.05rem] font-bold tracking-tight">じぶん会議</h1>
+            <h1 className="title-ink text-lg font-black tracking-tighter">{t('app.name')}</h1>
           </div>
         </button>
 
@@ -62,10 +66,10 @@ const Sidebar = ({
         <button
           type="button"
           onClick={onNewSession}
-          aria-label="新しい問いを始める"
-          className="action-primary action-primary-soft flex items-center justify-center gap-2 w-full min-h-[48px] px-4 py-3 text-white rounded-[1.35rem] font-semibold text-sm mb-6 shrink-0"
+          aria-label={t('sidebar.newQuestion.aria')}
+          className="action-primary flex items-center justify-center gap-2 w-full py-4 text-white rounded-[1.5rem] font-bold text-xs mb-6 shrink-0"
         >
-          <Plus size={16} aria-hidden="true" /> 新しい問い
+          <Plus size={16} aria-hidden="true" /> {t('sidebar.newQuestion')}
         </button>
 
         <SessionList
@@ -81,19 +85,50 @@ const Sidebar = ({
           onRequestDelete={onRequestDelete}
         />
 
-        <div className="mt-3 pt-3 border-t border-slate-300/20 shrink-0">
+        <div className="mt-4 pt-4 border-t border-slate-300/30 shrink-0 space-y-1">
           <button
             type="button"
             onClick={onOpenBeliefs}
             className="flex items-center justify-center gap-2 text-[10px] font-medium text-slate-500 hover:text-slate-700 transition-colors w-full p-2 rounded-xl hover:bg-white/25"
           >
-            <Info size={13} className="text-slate-400" aria-hidden="true" />
-            エージェントの役割
+            <Info size={14} className="text-slate-400" aria-hidden="true" />
+            {t('sidebar.agentRoles')}
           </button>
+          <div
+            role="group"
+            aria-label={t('lang.toggleLabel')}
+            className="flex items-center justify-center gap-1.5 w-full p-1"
+          >
+            <Languages size={14} className="text-slate-400 shrink-0 mr-0.5" aria-hidden="true" />
+            <div className="flex items-center gap-0.5 p-0.5 rounded-full neu-concave">
+              {[
+                { code: 'ja', label: '日本語' },
+                { code: 'en', label: 'English' },
+              ].map(({ code, label }) => {
+                const active = lang === code;
+                return (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => setLang(code)}
+                    aria-pressed={active}
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-black transition-all ${
+                      active
+                        ? 'bg-white/80 text-slate-800 shadow-sm border border-white/70'
+                        : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </aside>
   </>
-);
+  );
+};
 
 export default Sidebar;

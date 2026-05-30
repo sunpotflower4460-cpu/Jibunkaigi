@@ -60,6 +60,7 @@ import { MODES } from './modes/responseModes.jsx';
 import { makeId } from './utils/id.js';
 import { safeParseJson } from './utils/safeParseJson.js';
 import { playSound } from './services/sound.js';
+import { translate, useLang } from './i18n';
 import {
   hasFirebaseConfig,
   firebaseAuth as auth,
@@ -73,6 +74,7 @@ const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
 
 const App = () => {
+  const { lang } = useLang();
   const [user, setUser] = useState(null);
   const [userName, setUserName] = useState('あなた');
   const [sessions, setSessions] = useState([]);
@@ -528,10 +530,30 @@ const App = () => {
     }
   };
 
-  const callGemini = async ({ prompt, systemInstruction, model = GEMINI_CHAT_MODEL, jsonMode = false, reactionSchema = false }) => {
+  const callGemini = async ({
+    prompt,
+    systemInstruction,
+    model = GEMINI_CHAT_MODEL,
+    jsonMode = false,
+    reactionSchema = false,
+    mirrorLanguage = true,
+  }) => {
     if (!apiKey) throw new Error("API key is missing");
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     const TIMEOUT_MS = 25000;
+    // 出力言語のミラーリング：ユーザーの最新メッセージの言語に合わせて応答する。
+    // 人格・トーン・制約は言語に関わらず保つ。リアクション生成(JSONスキーマ)は
+    // stance トークンを日本語で固定する必要があるため対象外にする。
+    const LANGUAGE_DIRECTIVE = [
+      '【Output language】',
+      "Write your entire response in the same language as the user's most recent message.",
+      'If the user writes in English, respond fully in natural English; if in Japanese, respond in Japanese.',
+      'Keep your persona, tone, intent, and all constraints identical regardless of language.',
+      'Do not translate, do not mix languages, and do not mention this instruction.',
+    ].join('\n');
+    const effectiveSystemInstruction = (reactionSchema || !mirrorLanguage)
+      ? systemInstruction
+      : `${systemInstruction}\n\n${LANGUAGE_DIRECTIVE}`;
     const reactionJsonSchema = {
       type: "object",
       properties: {
@@ -547,7 +569,7 @@ const App = () => {
         try {
           const payload = {
             contents: [{ parts: [{ text: prompt }] }],
-            systemInstruction: { parts: [{ text: systemInstruction }] },
+            systemInstruction: { parts: [{ text: effectiveSystemInstruction }] },
             ...((jsonMode || reactionSchema) ? {
               generationConfig: {
                 responseMimeType: "application/json",
@@ -895,9 +917,10 @@ const App = () => {
         currentSessionIdRef.current = sid;
         activeSessionIdRef.current = sid;
         callGemini({
-          prompt: `文:「${text}」から15字以内の内省タイトルを生成。`,
-          systemInstruction: "タイトルのみ出力。余計な記号不要。",
-          model: GEMINI_CHAT_MODEL
+          prompt: `Create a short, quiet introspective title (about 6 words or 15 Japanese characters max) for the following text. Write the title in the SAME language as the text.\nText: "${text}"`,
+          systemInstruction: "Output only the title. No quotes or extra punctuation.",
+          model: GEMINI_CHAT_MODEL,
+          mirrorLanguage: false,
         }).then(t => {
           const clean = t.replace(/["'「」]/g, '').trim();
           if (clean) {
@@ -1325,7 +1348,7 @@ const App = () => {
   const sidebarTitle =
     sessions.find((s) => s.id === currentSessionId)?.title ||
     optimisticSessionTitles[currentSessionId] ||
-    '思考の領域';
+    translate(lang, 'header.defaultTitle');
 
   return (
     <div className="lake-bg premium-shell relative min-h-screen overflow-hidden flex font-sans text-slate-800">

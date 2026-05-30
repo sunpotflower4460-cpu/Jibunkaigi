@@ -3,6 +3,7 @@ import { Loader2, Compass } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import EmptyState from './EmptyState';
 import ThinkingIndicator from './ThinkingIndicator';
+import { useT } from '../../i18n';
 
 /**
  * メッセージ列のタイムライン全体。
@@ -39,6 +40,7 @@ const ChatTimeline = React.forwardRef(function ChatTimeline(
   },
   scrollRef,
 ) {
+  const t = useT();
   return (
     <main
       ref={scrollRef}
@@ -48,7 +50,7 @@ const ChatTimeline = React.forwardRef(function ChatTimeline(
         {showFullLoading ? (
           <div className="flex justify-center py-20" role="status" aria-live="polite">
             <Loader2 className="animate-spin text-slate-400" size={32} aria-hidden="true" />
-            <span className="sr-only">読み込み中</span>
+            <span className="sr-only">{t('timeline.loading')}</span>
           </div>
         ) : (
           <>
@@ -59,7 +61,7 @@ const ChatTimeline = React.forwardRef(function ChatTimeline(
             {messages.map((msg, i) => {
               const agent =
                 agents.find((a) => a.id === msg.agentId) ||
-                (msg.agentId === 'master' ? { name: '心の鏡' } : null);
+                (msg.agentId === 'master' ? { name: t('agentbar.mirror.name') } : null);
               const othersState = getOthersState(msg);
               return (
                 <MessageBubble
@@ -97,7 +99,7 @@ const ChatTimeline = React.forwardRef(function ChatTimeline(
                   type="button"
                   onClick={onMasterClick}
                   disabled={!canUseAgents}
-                  aria-label="心の鏡で、ここまでの声を映す"
+                  aria-label={t('timeline.mirrorInvite.aria')}
                   className="mirror-invite group disabled:opacity-30"
                 >
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-105 transition-transform">
@@ -105,10 +107,10 @@ const ChatTimeline = React.forwardRef(function ChatTimeline(
                   </div>
                   <div className="flex flex-col text-left">
                     <span className="text-sm font-black text-slate-700">
-                      ここまでの声を映してみますか？
+                      {t('timeline.mirrorInvite.title')}
                     </span>
                     <span className="text-[10px] font-bold text-slate-400">
-                      心の鏡が、散らばった思考を総括します
+                      {t('timeline.mirrorInvite.subtitle')}
                     </span>
                   </div>
                 </button>
@@ -118,7 +120,7 @@ const ChatTimeline = React.forwardRef(function ChatTimeline(
         )}
         {isMessagesLoading && messages.length > 0 && !showFullLoading && (
           <span className="sr-only" role="status" aria-live="polite">
-            メッセージを同期しています
+            {t('timeline.syncing')}
           </span>
         )}
       </div>

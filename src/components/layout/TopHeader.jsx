@@ -1,5 +1,6 @@
 import React from 'react';
 import { Menu } from 'lucide-react';
+import { useT } from '../../i18n';
 
 /**
  * 上部ヘッダー: メニュー / セッションタイトル / モード選択。
@@ -12,7 +13,9 @@ const TopHeader = ({
   modes,
   selectedMode,
   onChangeMode,
-}) => (
+}) => {
+  const t = useT();
+  return (
   <header
     className="header-shell soft-panel safe-top flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 gap-2 mx-4 sm:mx-5 mt-0 sm:mt-1"
     style={{ zIndex: 10 }}
@@ -20,8 +23,8 @@ const TopHeader = ({
     <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
       <button
         type="button"
-        aria-label="メニューを開く"
-        title="メニューを開く"
+        aria-label={t('header.openMenu.aria')}
+        title={t('header.openMenu.aria')}
         onClick={onOpenSidebar}
         className="md:hidden p-2 -ml-2 text-slate-500 shrink-0 rounded-xl hover:bg-white/40"
       >
@@ -35,7 +38,7 @@ const TopHeader = ({
     <div
       className="flex p-1 rounded-2xl neu-concave shrink-0"
       role="group"
-      aria-label="応答モード"
+      aria-label={t('header.mode.group.aria')}
     >
       {Object.entries(modes).map(([key, m]) => {
         const isActive = selectedMode === key;
@@ -43,7 +46,7 @@ const TopHeader = ({
           <button
             type="button"
             key={key}
-            aria-label={`応答モード: ${m.label}`}
+            aria-label={t('header.mode.aria', { label: m.label })}
             aria-pressed={isActive}
             title={m.label}
             onClick={() => onChangeMode(key)}
@@ -60,6 +63,7 @@ const TopHeader = ({
       })}
     </div>
   </header>
-);
+  );
+};
 
 export default TopHeader;

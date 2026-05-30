@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Users, ChevronRight, Feather, Heart, Compass } from 'lucide-react';
+import { useT } from '../../i18n';
 
 /**
  * 初回画面オーバーレイ。
@@ -12,6 +13,7 @@ import { Users, ChevronRight, Feather, Heart, Compass } from 'lucide-react';
  */
 const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart }) => {
   const startBtnRef = useRef(null);
+  const t = useT();
 
   useEffect(() => {
     if (!visible) return undefined;
@@ -73,17 +75,17 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
         {/* タイトルブロック — アイコンとの一体感を高める */}
         <div className="space-y-1.5">
           <p className="typo-label-small uppercase pl-[0.32em]">
-            Inner Conference Room
+            {t('app.tagline')}
           </p>
           <h1
             id="intro-title"
             className="title-ink leading-tight font-black tracking-tighter"
             style={{ fontSize: 'clamp(2.1rem, 5.5vh, 2.8rem)' }}
           >
-            じぶん会議
+            {t('app.name')}
           </h1>
           <p className="typo-body-secondary font-semibold tracking-wide leading-relaxed">
-            {hasBlockingConfigIssue ? '設定を確認して、会議の準備を整える' : '5つの視点で、じぶんに潜る'}
+            {hasBlockingConfigIssue ? t('intro.subtitle.config') : t('intro.subtitle.default')}
           </p>
         </div>
 
@@ -98,9 +100,9 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
             className="jk-serif typo-body relative z-[1] font-medium tracking-[0.05em] text-center"
             style={{ fontSize: 'clamp(1.02rem, 2.5vh, 1.2rem)' }}
           >
-            導かない。照らすだけ。
+            {t('intro.keyline.line1')}
             <br />
-            歩くのは、あなた自身。
+            {t('intro.keyline.line2')}
           </p>
         </div>
 
@@ -109,17 +111,17 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           <li className="intro-step">
             <span className="intro-step__num" aria-hidden="true">1</span>
             <Feather size={12} className="text-slate-500" aria-hidden="true" />
-            <span>問いを書く</span>
+            <span>{t('intro.step.write')}</span>
           </li>
           <li className="intro-step">
             <span className="intro-step__num" aria-hidden="true">2</span>
             <Heart size={12} className="text-slate-500" aria-hidden="true" />
-            <span>視点を呼ぶ</span>
+            <span>{t('intro.step.summon')}</span>
           </li>
           <li className="intro-step">
             <span className="intro-step__num" aria-hidden="true">3</span>
             <Compass size={12} className="text-slate-500" aria-hidden="true" />
-            <span>心の鏡で映す</span>
+            <span>{t('intro.step.mirror')}</span>
           </li>
         </ol>
 
@@ -130,12 +132,12 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           onClick={onStart}
           className="cta-primary-surface w-full py-4 rounded-[1.6rem] font-black text-[0.95rem] tracking-wide active:scale-95 flex items-center justify-center gap-2"
         >
-          {hasBlockingConfigIssue ? '設定を確認する' : '会議をはじめる'}
+          {hasBlockingConfigIssue ? t('intro.cta.config') : t('intro.cta.start')}
           <ChevronRight size={18} aria-hidden="true" />
         </button>
         {hasBlockingConfigIssue && (
           <p className="typo-helper-muted font-medium leading-relaxed text-center w-full">
-            まずは不足している設定を確認できる画面へ進みます。
+            {t('intro.config.note')}
           </p>
         )}
       </div>

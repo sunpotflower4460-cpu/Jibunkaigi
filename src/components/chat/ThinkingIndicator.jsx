@@ -1,5 +1,6 @@
 import React from 'react';
 import { getThinkingPhrase } from '../../agents/agentDefinitions.jsx';
+import { useT, getLang } from '../../i18n';
 
 /**
  * AI 応答生成中のローディング表示。
@@ -9,11 +10,17 @@ import { getThinkingPhrase } from '../../agents/agentDefinitions.jsx';
  * テキストでも伝わるようにする。
  */
 const ThinkingIndicator = ({ agentName, agentId }) => {
-  const phrase = agentId
-    ? getThinkingPhrase(agentId)
-    : agentName
-      ? `${agentName} が、静かに見ています…`
-      : '視点が立ち上がっています…';
+  const t = useT();
+  // 日本語のときだけエージェント固有の余韻フレーズを使う。
+  // 英語UIでは言語に合わせた汎用フレーズに切り替える。
+  let phrase;
+  if (getLang() === 'ja' && agentId) {
+    phrase = getThinkingPhrase(agentId);
+  } else if (agentName) {
+    phrase = t('thinking.named', { name: agentName });
+  } else {
+    phrase = t('thinking.generic');
+  }
 
   return (
     <div
