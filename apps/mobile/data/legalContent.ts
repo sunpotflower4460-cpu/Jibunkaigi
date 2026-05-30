@@ -8,7 +8,7 @@ export interface MobileLegalSection {
 export const MOBILE_LEGAL_SECTIONS: MobileLegalSection[] = [
   {
     id: 'terms',
-    title: '利用規約（仮文）',
+    title: '利用規約',
     summary: '内省のための補助ツールとして、落ち着いて使うための前提です。',
     body: [
       'じぶん会議は、あなた自身の言葉や問いを整理するための対話補助アプリです。',
@@ -18,7 +18,7 @@ export const MOBILE_LEGAL_SECTIONS: MobileLegalSection[] = [
   },
   {
     id: 'privacy',
-    title: 'プライバシーポリシー（仮文）',
+    title: 'プライバシーポリシー',
     summary: '会話データの扱いと、利用時に確認してほしい点を示します。',
     body: [
       '入力した内容は、機能提供や品質改善のために処理される場合があります。',

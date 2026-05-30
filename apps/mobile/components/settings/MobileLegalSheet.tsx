@@ -43,7 +43,7 @@ export function MobileLegalSheet({ visible, onClose }: MobileLegalSheetProps) {
             </TouchableOpacity>
           </View>
           <Text style={styles.description}>
-            App Store 初回版に向けた仮文です。必要に応じて、いつでも見返してください。
+            利用前の前提と安全に関わる案内を、必要なときにいつでも見返せます。
           </Text>
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             {MOBILE_LEGAL_SECTIONS.map((section) => (
