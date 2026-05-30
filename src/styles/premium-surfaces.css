@@ -446,6 +446,21 @@
 .action-primary:active:not(:disabled),
 .cta-primary-surface:active:not(:disabled) { transform: translateY(0); }
 
+.action-primary-soft {
+  box-shadow:
+    0 14px 28px rgba(6, 12, 34, 0.24),
+    0 7px 20px rgba(99, 102, 241, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+.action-primary-soft:hover:not(:disabled) {
+  box-shadow:
+    0 16px 32px rgba(6, 12, 34, 0.24),
+    0 10px 24px rgba(99, 102, 241, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
 /* ===== Session cards ===== */
 .session-card-active {
   background: linear-gradient(150deg, rgba(255, 255, 255, 0.96) 0%, rgba(242, 247, 255, 0.86) 50%, rgba(232, 241, 255, 0.82) 100%);
