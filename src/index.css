@@ -24,6 +24,22 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* 明朝体ユーティリティ — 詩的な見出し・キャッチコピー用。
+   太さは利用箇所側の Tailwind ユーティリティ(font-medium/semibold/bold)で調整する。 */
+.jk-serif {
+  font-family: var(--jk-font-serif);
+  font-feature-settings: "palt" 1;
+}
+
+/* 見出しの濃紺インク（ごく僅かなグラデで奥行きを与える） */
+.title-ink {
+  background: linear-gradient(168deg, #1f2a44 0%, #0f172a 58%, #1c2748 100%);
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
 /* Prose-style readability for AI messages */
 .jk-prose {
   line-height: var(--jk-leading-prose);

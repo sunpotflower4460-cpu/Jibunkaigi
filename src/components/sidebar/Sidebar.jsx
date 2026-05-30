@@ -46,14 +46,14 @@ const Sidebar = ({
           aria-label="会議メンバーの魂を見る"
           className="flex items-center gap-3 mb-10 px-2 cursor-pointer text-left rounded-2xl"
         >
-          <div className="p-2.5 rounded-2xl bg-[#1e293b] text-white flex items-center justify-center shadow-lg shadow-slate-900/20">
-            <Users size={18} aria-hidden="true" />
+          <div className="icon-tile w-11 h-11 rounded-2xl text-slate-800">
+            <Users size={19} strokeWidth={1.75} aria-hidden="true" />
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] font-black tracking-[0.12em] text-slate-400">
               内なる会議
             </span>
-            <h1 className="text-lg font-black tracking-tighter text-slate-800">じぶん会議</h1>
+            <h1 className="title-ink text-lg font-black tracking-tighter">じぶん会議</h1>
           </div>
         </button>
 
@@ -63,7 +63,7 @@ const Sidebar = ({
           type="button"
           onClick={onNewSession}
           aria-label="新しい問いを始める"
-          className="action-primary flex items-center justify-center gap-2 w-full py-4 text-white rounded-2xl font-bold text-xs mb-6 shrink-0"
+          className="action-primary flex items-center justify-center gap-2 w-full py-4 text-white rounded-[1.5rem] font-bold text-xs mb-6 shrink-0"
         >
           <Plus size={16} aria-hidden="true" /> 新しい問い
         </button>

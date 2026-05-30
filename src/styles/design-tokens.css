@@ -54,6 +54,10 @@
   --jk-shadow-deep: 0 32px 90px rgba(15, 23, 42, 0.18);
   --jk-shadow-pressed: inset 4px 4px 11px rgba(158, 172, 196, 0.24),
                        inset -4px -4px 11px rgba(255, 255, 255, 0.7);
+  /* 主ボタンの周囲に灯る、やわらかな藍色の光暈 */
+  --jk-glow-indigo: 0 0 0 1px rgba(99, 102, 241, 0.10),
+                    0 16px 48px rgba(99, 102, 241, 0.30),
+                    0 6px 18px rgba(99, 102, 241, 0.18);
 
   /* --- Inner highlight (the “glass top edge”) --- */
   --jk-inner-top: inset 0 1px 0 rgba(255, 255, 255, 0.9);
@@ -79,6 +83,10 @@
   /* --- Type --- */
   --jk-font-jp: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI',
     'Yu Gothic', 'Meiryo', 'MS PGothic', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  /* 詩的な見出し・キャッチコピー専用の明朝体。Apple 端末は内蔵明朝を即時使用し、
+     非 Apple 端末は Noto Serif JP（web フォント）でフォールバックする。 */
+  --jk-font-serif: 'Hiragino Mincho ProN', 'Hiragino Mincho Pro', 'YuMincho', 'Yu Mincho',
+    'Noto Serif JP', 'Songti SC', serif;
   --jk-leading-prose: 1.85;
   --jk-leading-tight: 1.45;
   --jk-tracking-loose: 0.04em;

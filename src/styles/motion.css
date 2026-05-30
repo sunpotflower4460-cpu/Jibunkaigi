@@ -64,6 +64,10 @@
   0%, 100% { opacity: 0.82; transform: scale(1); }
   50%      { opacity: 1;    transform: scale(1.18); }
 }
+@keyframes jk-twinkle {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.95; }
+}
 
 /* ===== Composite helpers ===== */
 .anim-float     { animation: jk-float 5.6s ease-in-out infinite; }
@@ -126,6 +130,7 @@
   .anim-scale-in,
   .anim-card-rise,
   .hero-panel::after,
+  .glass-flecks,
   .thinking-dot {
     animation: none !important;
   }

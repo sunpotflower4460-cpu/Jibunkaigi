@@ -16,21 +16,19 @@ const HINTS = [
 ];
 
 const EmptyState = ({ onHintClick }) => (
-  <div className="h-full flex flex-col items-center justify-center py-12 sm:py-16 animate-in fade-in duration-1000">
-    <section className="w-full max-w-md px-2 text-center">
-      <div className="w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-slate-600 mx-auto mb-6 bg-white/78 border border-white/85 shadow-[0_12px_34px_rgba(99,102,241,0.12)]">
-        <Feather size={27} aria-hidden="true" />
-      </div>
-      <h3 className="text-[1.78rem] leading-[1.45] font-semibold tracking-tight text-slate-800 [font-family:'Hiragino_Mincho_ProN','Yu_Mincho',serif]">
-        <span className="block">まずは、ひとつ</span>
-        <span className="block">置いてみる。</span>
-      </h3>
-      <p className="text-sm text-slate-500 mt-4 font-medium leading-relaxed">
-        まだ言葉になっていなくても、大丈夫です。
-      </p>
-    </section>
-
-    <div className="flex flex-col gap-3 w-full max-w-md px-2 mt-8">
+  <div className="h-full flex flex-col items-center justify-center py-14 sm:py-20 animate-in fade-in duration-1000">
+    <div className="icon-tile w-[5.5rem] h-[5.5rem] text-slate-400 mb-7">
+      <Feather size={34} strokeWidth={1.75} aria-hidden="true" />
+    </div>
+    <h3 className="jk-serif title-ink text-[1.8rem] sm:text-[2.1rem] font-bold mb-3.5 tracking-tight leading-[1.4] text-center">
+      まずは、ひとつ
+      <br />
+      置いてみる。
+    </h3>
+    <p className="text-[0.8rem] text-slate-500 mb-11 text-center font-medium leading-relaxed">
+      まだ言葉になっていなくても、大丈夫です。
+    </p>
+    <div className="flex flex-col gap-4 w-full max-w-sm px-2">
       {HINTS.map((hint, idx) => (
         <button
           type="button"
@@ -39,8 +37,9 @@ const EmptyState = ({ onHintClick }) => (
           className="hint-card"
           aria-label={`例として入力: ${hint}`}
         >
+          <span className="glass-flecks" aria-hidden="true" />
           <span className="hint-card__dot" aria-hidden="true" />
-          <span className="text-xs text-slate-600 leading-relaxed">{hint}</span>
+          <span className="relative z-[1] text-[0.82rem] text-slate-600 leading-relaxed">{hint}</span>
         </button>
       ))}
     </div>
