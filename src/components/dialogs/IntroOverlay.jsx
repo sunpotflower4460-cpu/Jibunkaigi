@@ -75,6 +75,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
 
         {/* キャッチコピーカード — 霧を閉じ込めたガラスに、明朝で静かに置く */}
         <div className="keyline-card py-6 px-6 flex justify-center items-center w-full">
+          <span className="glass-bloom" aria-hidden="true" />
           <span className="glass-flecks" aria-hidden="true" />
           <p className="jk-serif font-medium relative z-[1] text-[1.05rem] sm:text-[1.12rem] text-slate-700 leading-[1.95] tracking-[0.05em] text-center">
             導かない。照らすだけ。
