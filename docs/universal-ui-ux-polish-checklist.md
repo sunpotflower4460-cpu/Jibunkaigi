@@ -17,3 +17,4 @@
 | UX-014 | Motion | 動きが軽く、過剰ではない | 一部確認 | motion token を追加。Modal/OS標準挙動中心 |
 | UX-015 | Accessibility | 文字サイズ・コントラスト・タップ領域が適切 | 一部確認 | 44px基準を token 化。実機最終確認待ち |
 | UX-016 | Entry screen | 設定確認画面が既存導線のまま読みやすく整っている | 実施済み | keyline-card shadow を soften、支援コピー weight 調整（font-semibold + leading-relaxed）、helper テキストを text-center 化、mobile panel の borderRadius を 40→28 に縮小してカード感を軽減 |
+| UX-017 | Intro screen | 問い導入画面が既存体験のまま読みやすく整っている | 実施済み | 「ヒント」ラベルを「たとえば、こんな問いから」に変更しリスト感を解消。hintChip を surfaceStrong + radius.lg に変更し prompt card 感に。paddingVertical / minHeight を拡大してタップ領域を改善（52→56px）。iconWrap のボーダーを削除しシンプル化。heading に lineHeight を追加。content の gap を xl→lg に調整し縦リズムを整える。 |
