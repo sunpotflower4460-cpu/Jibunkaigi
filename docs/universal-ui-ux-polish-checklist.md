@@ -16,3 +16,4 @@
 | UX-013 | Onboarding | 初回体験がじぶん会議らしい | 一部確認 | onboarding card / step / CTA の温度を調整 |
 | UX-014 | Motion | 動きが軽く、過剰ではない | 一部確認 | motion token を追加。Modal/OS標準挙動中心 |
 | UX-015 | Accessibility | 文字サイズ・コントラスト・タップ領域が適切 | 一部確認 | 44px基準を token 化。実機最終確認待ち |
+| UX-016 | Entry screen | 設定確認画面が既存導線のまま読みやすく整っている | 実施済み | keyline-card shadow を soften、支援コピー weight 調整（font-semibold + leading-relaxed）、helper テキストを text-center 化、mobile panel の borderRadius を 40→28 に縮小してカード感を軽減 |

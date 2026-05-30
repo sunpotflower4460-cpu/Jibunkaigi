@@ -339,13 +339,13 @@
   border-radius: var(--jk-radius-lg);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.45),
-    0 28px 64px rgba(99, 102, 241, 0.12),
-    0 12px 30px rgba(148, 163, 184, 0.14),
+    0 18px 44px rgba(99, 102, 241, 0.09),
+    0 8px 22px rgba(148, 163, 184, 0.10),
     inset 0 2px 1px rgba(255, 255, 255, 0.98),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5),
-    inset 0 -2px 6px rgba(148, 163, 184, 0.1);
-  -webkit-backdrop-filter: blur(24px) saturate(1.36);
-          backdrop-filter: blur(24px) saturate(1.36);
+    inset 0 -2px 6px rgba(148, 163, 184, 0.08);
+  -webkit-backdrop-filter: blur(20px) saturate(1.28);
+          backdrop-filter: blur(20px) saturate(1.28);
   overflow: hidden;
 }
 /* 上端で光を受けるベベルの艶（鏡の面の反射） */
