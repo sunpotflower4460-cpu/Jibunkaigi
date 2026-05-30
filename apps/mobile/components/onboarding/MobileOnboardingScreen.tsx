@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     maxWidth: mobileLayout.onboardingMaxWidth,
-    borderRadius: 40,
+    borderRadius: 28,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xxl,
     backgroundColor: colors.surfaceStrong,

@@ -82,7 +82,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           >
             じぶん会議
           </h1>
-          <p className="typo-body-secondary font-bold tracking-wide">
+          <p className="typo-body-secondary font-semibold tracking-wide leading-relaxed">
             {hasBlockingConfigIssue ? '設定を確認して、会議の準備を整える' : '5つの視点で、じぶんに潜る'}
           </p>
         </div>
@@ -134,7 +134,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           <ChevronRight size={18} aria-hidden="true" />
         </button>
         {hasBlockingConfigIssue && (
-          <p className="typo-helper-muted font-medium leading-relaxed">
+          <p className="typo-helper-muted font-medium leading-relaxed text-center w-full">
             まずは不足している設定を確認できる画面へ進みます。
           </p>
         )}
