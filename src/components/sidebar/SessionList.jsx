@@ -1,5 +1,6 @@
 import React from 'react';
 import { Edit3, Pin, Trash2, Feather } from 'lucide-react';
+import { useT } from '../../i18n';
 
 /**
  * セッション一覧。ピン留め・タイトル編集・削除を提供する。
@@ -17,6 +18,7 @@ const SessionList = ({
   onTogglePin,
   onRequestDelete,
 }) => {
+  const t = useT();
   if (sessions.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto no-scrollbar relative">
@@ -27,10 +29,10 @@ const SessionList = ({
             <Feather size={18} strokeWidth={1.75} aria-hidden="true" />
           </div>
           <p className="relative z-[1] text-[0.8rem] font-bold text-slate-700 leading-relaxed">
-            まだ保存された問いはありません。
+            {t('session.empty.title')}
           </p>
           <p className="relative z-[1] text-[11px] font-medium text-slate-400 mt-1.5 leading-relaxed">
-            最初の問いが、ここに残ります。
+            {t('session.empty.subtitle')}
           </p>
         </div>
       </div>
@@ -38,7 +40,7 @@ const SessionList = ({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto no-scrollbar space-y-1 relative" role="list" aria-label="過去のセッション">
+    <div className="flex-1 overflow-y-auto no-scrollbar space-y-1 relative" role="list" aria-label={t('session.list.aria')}>
       {sessions.map((s) => {
         const isActive = currentSessionId === s.id;
         const isEditing = editingSessionId === s.id;
@@ -63,12 +65,12 @@ const SessionList = ({
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0 flex items-center gap-1.5">
                 {s.isPinned && (
-                  <Pin size={10} className="text-amber-500 shrink-0 fill-amber-500" aria-label="ピン留め中" />
+                  <Pin size={10} className="text-amber-500 shrink-0 fill-amber-500" aria-label={t('session.pinned.aria')} />
                 )}
                 {isEditing ? (
                   <input
                     autoFocus
-                    aria-label="セッションタイトル"
+                    aria-label={t('session.title.aria')}
                     className="flex-1 bg-white border border-indigo-200 rounded px-1 py-0.5 text-xs font-bold outline-none"
                     value={editSessionTitle}
                     onChange={(e) => onChangeEditTitle(e.target.value)}
@@ -82,14 +84,14 @@ const SessionList = ({
                     }}
                   />
                 ) : (
-                  <span className="text-xs font-bold truncate">{s.title || '無題'}</span>
+                  <span className="text-xs font-bold truncate">{s.title || t('session.untitled')}</span>
                 )}
               </div>
               <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                 <button
                   type="button"
-                  aria-label="タイトルを編集"
-                  title="タイトルを編集"
+                  aria-label={t('session.edit.aria')}
+                  title={t('session.edit.aria')}
                   onClick={(e) => {
                     e.stopPropagation();
                     onStartEdit(s.id, s.title || '');
@@ -100,8 +102,8 @@ const SessionList = ({
                 </button>
                 <button
                   type="button"
-                  aria-label={s.isPinned ? 'ピン留めを外す' : 'ピン留めする'}
-                  title={s.isPinned ? 'ピン留めを外す' : 'ピン留めする'}
+                  aria-label={s.isPinned ? t('session.pin.off') : t('session.pin.on')}
+                  title={s.isPinned ? t('session.pin.off') : t('session.pin.on')}
                   onClick={(e) => {
                     e.stopPropagation();
                     onTogglePin(s);
@@ -112,8 +114,8 @@ const SessionList = ({
                 </button>
                 <button
                   type="button"
-                  aria-label="セッションを削除"
-                  title="セッションを削除"
+                  aria-label={t('session.delete.aria')}
+                  title={t('session.delete.aria')}
                   onClick={(e) => {
                     e.stopPropagation();
                     onRequestDelete(s.id);
