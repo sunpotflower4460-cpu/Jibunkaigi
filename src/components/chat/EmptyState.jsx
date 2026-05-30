@@ -20,12 +20,12 @@ const EmptyState = ({ onHintClick }) => (
     <div className="icon-tile w-[5.5rem] h-[5.5rem] text-slate-400 mb-7">
       <Feather size={34} strokeWidth={1.75} aria-hidden="true" />
     </div>
-    <h3 className="jk-serif title-ink text-[1.8rem] sm:text-[2.1rem] font-bold mb-3.5 tracking-tight leading-[1.4] text-center">
+    <h3 className="jk-serif title-ink typo-hero-title mb-3.5 text-center">
       まずは、ひとつ
       <br />
       置いてみる。
     </h3>
-    <p className="text-[0.8rem] text-slate-500 mb-11 text-center font-medium leading-relaxed">
+    <p className="typo-body-secondary mb-11 text-center font-medium leading-relaxed">
       まだ言葉になっていなくても、大丈夫です。
     </p>
     <div className="flex flex-col gap-4 w-full max-w-sm px-2">
@@ -40,7 +40,7 @@ const EmptyState = ({ onHintClick }) => (
           <span className="glass-bloom" aria-hidden="true" />
           <span className="glass-flecks" aria-hidden="true" />
           <span className="hint-card__dot" aria-hidden="true" />
-          <span className="relative z-[1] text-[0.82rem] text-slate-600 leading-relaxed">{hint}</span>
+          <span className="typo-body-secondary relative z-[1] leading-relaxed">{hint}</span>
         </button>
       ))}
     </div>
