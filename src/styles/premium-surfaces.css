@@ -15,6 +15,17 @@
     linear-gradient(176deg, #f8fafd 0%, #f2f5fc 28%, #eaeff8 56%, #e3e9f6 80%, #dce4f3 100%);
   min-height: 100vh;
   min-height: 100dvh;
+  position: relative;
+}
+
+.lake-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(148, 163, 184, 0.09) 0.45px, transparent 0.45px);
+  background-size: 3px 3px;
+  opacity: 0.16;
 }
 
 /* ===== Grain (紙のような、ごく微かな粒子) ===== */
