@@ -22,6 +22,9 @@ import { MobileSaveStatusBadge } from '../components/status/MobileSaveStatusBadg
 import { MobileOthersTrigger } from '../components/others/MobileOthersTrigger';
 import { MobileMemberSheet } from '../components/members/MobileMemberSheet';
 import { MobileUserNameSheet } from '../components/user/MobileUserNameSheet';
+import { ReflectionShelfTrigger } from '../components/reflection/ReflectionShelfTrigger';
+import { ReflectionShelfPanel } from '../components/reflection/ReflectionShelfPanel';
+import { useReflectionShelf } from '../state/useReflectionShelf';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 import { useUniversalOnboarding } from '../state/useUniversalOnboarding';
 import { DEFAULT_USER_NAME } from '@jibunkaigi/shared';
@@ -67,6 +70,8 @@ export default function IndexScreen() {
     copyCurrentSession,
     shareCurrentSession,
   } = useUniversalConversation({ userName });
+
+  const { isOpen: reflectionShelfOpen, openShelf: openReflectionShelf, closeShelf: closeReflectionShelf } = useReflectionShelf();
 
   const [showIntro, setShowIntro] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -253,6 +258,7 @@ export default function IndexScreen() {
                   onSend={handleSend}
                   isThinking={isThinking}
                 />
+                <ReflectionShelfTrigger onPress={openReflectionShelf} />
               </View>
             </View>
           </View>
@@ -284,6 +290,10 @@ export default function IndexScreen() {
         onChange={setUserNameDraft}
         onClose={() => setUserNameSheetOpen(false)}
         onSave={handleSaveUserName}
+      />
+      <ReflectionShelfPanel
+        visible={reflectionShelfOpen}
+        onClose={closeReflectionShelf}
       />
     </MobileAppShell>
   );
