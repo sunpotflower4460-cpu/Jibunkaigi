@@ -24,6 +24,7 @@ import { MobileMemberSheet } from '../components/members/MobileMemberSheet';
 import { MobileUserNameSheet } from '../components/user/MobileUserNameSheet';
 import { ReflectionShelfTrigger } from '../components/reflection/ReflectionShelfTrigger';
 import { ReflectionShelfPanel } from '../components/reflection/ReflectionShelfPanel';
+import { StickyNotesSheet } from '../components/reflection/StickyNotesSheet';
 import { useReflectionShelf } from '../state/useReflectionShelf';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 import { useUniversalOnboarding } from '../state/useUniversalOnboarding';
@@ -71,7 +72,22 @@ export default function IndexScreen() {
     shareCurrentSession,
   } = useUniversalConversation({ userName });
 
-  const { isOpen: reflectionShelfOpen, openShelf: openReflectionShelf, closeShelf: closeReflectionShelf } = useReflectionShelf();
+  const {
+    isOpen: reflectionShelfOpen,
+    activePanel: reflectionShelfPanel,
+    selectedKind,
+    draftContent,
+    stickyNotes,
+    isSavingStickyNote,
+    openShelf: openReflectionShelf,
+    closeShelf: closeReflectionShelf,
+    backToMenu: backToReflectionShelfMenu,
+    openStickyNote,
+    setSelectedKind,
+    setDraftContent,
+    createStickyNote,
+    deleteStickyNote,
+  } = useReflectionShelf();
 
   const [showIntro, setShowIntro] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -292,8 +308,29 @@ export default function IndexScreen() {
         onSave={handleSaveUserName}
       />
       <ReflectionShelfPanel
-        visible={reflectionShelfOpen}
+        visible={reflectionShelfOpen && reflectionShelfPanel === 'menu'}
         onClose={closeReflectionShelf}
+        onOpenStickyNotes={() => {
+          void openStickyNote({ sessionId: session.id, kind: 'question' });
+        }}
+      />
+      <StickyNotesSheet
+        visible={reflectionShelfOpen && reflectionShelfPanel === 'stickyNotes'}
+        sessionTitle={session.title}
+        selectedKind={selectedKind}
+        draftContent={draftContent}
+        stickyNotes={stickyNotes}
+        isSaving={isSavingStickyNote}
+        onBack={backToReflectionShelfMenu}
+        onClose={closeReflectionShelf}
+        onSelectKind={setSelectedKind}
+        onChangeDraft={setDraftContent}
+        onCreate={() => {
+          void createStickyNote();
+        }}
+        onDelete={(noteId) => {
+          void deleteStickyNote(noteId);
+        }}
       />
     </MobileAppShell>
   );

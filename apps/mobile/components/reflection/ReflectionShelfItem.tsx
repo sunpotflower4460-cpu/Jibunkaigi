@@ -6,7 +6,9 @@ interface ReflectionShelfItemProps {
   emoji: string;
   title: string;
   description: string;
-  comingSoonLabel: string;
+  comingSoonLabel?: string;
+  disabled?: boolean;
+  onPress?: () => void;
 }
 
 export function ReflectionShelfItem({
@@ -14,15 +16,18 @@ export function ReflectionShelfItem({
   title,
   description,
   comingSoonLabel,
+  disabled = true,
+  onPress,
 }: ReflectionShelfItemProps) {
   return (
     <TouchableOpacity
-      style={styles.card}
-      disabled
+      style={[styles.card, !disabled && styles.cardEnabled]}
+      disabled={disabled}
+      onPress={onPress}
       activeOpacity={0.85}
       accessibilityRole="button"
       accessibilityLabel={title}
-      accessibilityState={{ disabled: true }}
+      accessibilityState={{ disabled }}
       accessibilityHint={comingSoonLabel}
     >
       <View style={styles.header}>
@@ -32,9 +37,11 @@ export function ReflectionShelfItem({
           <Text style={styles.description}>{description}</Text>
         </View>
       </View>
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>{comingSoonLabel}</Text>
-      </View>
+      {comingSoonLabel ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{comingSoonLabel}</Text>
+        </View>
+      ) : null}
     </TouchableOpacity>
   );
 }
@@ -49,6 +56,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     gap: spacing.sm,
     opacity: 0.72,
+  },
+  cardEnabled: {
+    opacity: 1,
   },
   header: {
     flexDirection: 'row',
