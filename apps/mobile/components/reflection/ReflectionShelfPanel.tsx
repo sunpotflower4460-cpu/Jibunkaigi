@@ -60,9 +60,14 @@ const SHELF_ITEMS = [
 interface ReflectionShelfPanelProps {
   visible: boolean;
   onClose: () => void;
+  onOpenStickyNotes: () => void;
 }
 
-export function ReflectionShelfPanel({ visible, onClose }: ReflectionShelfPanelProps) {
+export function ReflectionShelfPanel({
+  visible,
+  onClose,
+  onOpenStickyNotes,
+}: ReflectionShelfPanelProps) {
   return (
     <Modal
       visible={visible}
@@ -106,7 +111,9 @@ export function ReflectionShelfPanel({ visible, onClose }: ReflectionShelfPanelP
                 emoji={item.emoji}
                 title={item.title}
                 description={item.description}
-                comingSoonLabel={item.comingSoonLabel}
+                comingSoonLabel={item.id === 'sticky' ? '開く' : item.comingSoonLabel}
+                disabled={item.id !== 'sticky'}
+                onPress={item.id === 'sticky' ? onOpenStickyNotes : undefined}
               />
             ))}
           </ScrollView>
