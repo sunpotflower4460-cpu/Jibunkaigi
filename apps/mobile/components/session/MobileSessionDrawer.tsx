@@ -22,6 +22,8 @@ import {
 import { sortUniversalSessions } from '@jibunkaigi/shared';
 import { MobileSessionEditSheet } from './MobileSessionEditSheet';
 import { MobileSessionListItem } from './MobileSessionListItem';
+import { MobileLegalLinks } from '../settings/MobileLegalLinks';
+import { MobileLegalSheet } from '../settings/MobileLegalSheet';
 
 interface MobileSessionDrawerProps {
   visible: boolean;
@@ -51,6 +53,7 @@ export function MobileSessionDrawer({
   onShareCurrentSession,
 }: MobileSessionDrawerProps) {
   const [editingSession, setEditingSession] = useState<UniversalSession | null>(null);
+  const [legalSheetOpen, setLegalSheetOpen] = useState(false);
   const { width } = useWindowDimensions();
   const orderedSessions = useMemo(() => sortUniversalSessions(sessions), [sessions]);
 
@@ -135,6 +138,8 @@ export function MobileSessionDrawer({
               </TouchableOpacity>
             </View>
 
+            <MobileLegalLinks onOpenLegal={() => setLegalSheetOpen(true)} />
+
             <FlatList
               data={orderedSessions}
               keyExtractor={(item) => item.id}
@@ -164,6 +169,10 @@ export function MobileSessionDrawer({
         title={editingSession?.title ?? ''}
         onClose={() => setEditingSession(null)}
         onSave={handleSaveTitle}
+      />
+      <MobileLegalSheet
+        visible={legalSheetOpen}
+        onClose={() => setLegalSheetOpen(false)}
       />
     </>
   );
