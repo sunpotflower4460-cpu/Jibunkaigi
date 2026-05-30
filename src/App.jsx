@@ -60,6 +60,7 @@ import { MODES } from './modes/responseModes.jsx';
 import { makeId } from './utils/id.js';
 import { safeParseJson } from './utils/safeParseJson.js';
 import { playSound } from './services/sound.js';
+import { translate, getLang } from './i18n';
 import {
   hasFirebaseConfig,
   firebaseAuth as auth,
@@ -532,6 +533,19 @@ const App = () => {
     if (!apiKey) throw new Error("API key is missing");
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     const TIMEOUT_MS = 25000;
+    // 出力言語のミラーリング：ユーザーの最新メッセージの言語に合わせて応答する。
+    // 人格・トーン・制約は言語に関わらず保つ。リアクション生成(JSONスキーマ)は
+    // stance トークンを日本語で固定する必要があるため対象外にする。
+    const LANGUAGE_DIRECTIVE = [
+      '【Output language】',
+      "Write your entire response in the same language as the user's most recent message.",
+      'If the user writes in English, respond fully in natural English; if in Japanese, respond in Japanese.',
+      'Keep your persona, tone, intent, and all constraints identical regardless of language.',
+      'Do not translate, do not mix languages, and do not mention this instruction.',
+    ].join('\n');
+    const effectiveSystemInstruction = reactionSchema
+      ? systemInstruction
+      : `${systemInstruction}\n\n${LANGUAGE_DIRECTIVE}`;
     const reactionJsonSchema = {
       type: "object",
       properties: {
@@ -547,7 +561,7 @@ const App = () => {
         try {
           const payload = {
             contents: [{ parts: [{ text: prompt }] }],
-            systemInstruction: { parts: [{ text: systemInstruction }] },
+            systemInstruction: { parts: [{ text: effectiveSystemInstruction }] },
             ...((jsonMode || reactionSchema) ? {
               generationConfig: {
                 responseMimeType: "application/json",
@@ -1325,7 +1339,7 @@ const App = () => {
   const sidebarTitle =
     sessions.find((s) => s.id === currentSessionId)?.title ||
     optimisticSessionTitles[currentSessionId] ||
-    '思考の領域';
+    translate(getLang(), 'header.defaultTitle');
 
   return (
     <div className="lake-bg premium-shell relative min-h-screen overflow-hidden flex font-sans text-slate-800">
