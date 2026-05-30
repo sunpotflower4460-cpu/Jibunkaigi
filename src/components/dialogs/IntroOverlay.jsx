@@ -7,6 +7,8 @@ import { Users, ChevronRight, Feather, Heart, Compass } from 'lucide-react';
  * - その下に、何をするアプリかが一瞬で分かる「3 ステップ」を控えめに添える。
  * - CTA は1つだけ強く ("会議をはじめる")。
  * - Escape でも開始できる。
+ *
+ * モックアップに寄せ、外枠カードは置かず、白く澄んだ背景に要素を浮かべる。
  */
 const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart }) => {
   const startBtnRef = useRef(null);
@@ -44,11 +46,13 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
         isHomeReady ? 'opacity-0' : 'opacity-100'
       }`}
     >
-      <div className="absolute inset-0 bg-[#eef2f7] z-0" />
+      <div className="absolute inset-0 lake-bg z-0" aria-hidden="true" />
+      <div className="aurora-orb aurora-orb-top z-0" aria-hidden="true" />
       <div className="water-shimmer z-0" aria-hidden="true" />
       <div className="mesh-grid z-0" aria-hidden="true" />
+      <div className="grain-overlay z-0" aria-hidden="true" />
 
-      <div className="hero-panel max-w-sm w-full text-center px-6 py-9 sm:px-8 sm:py-11 rounded-[2.5rem] relative z-10 space-y-7 anim-card-rise">
+      <div className="max-w-sm w-full text-center px-6 py-8 relative z-10 space-y-8 anim-card-rise">
         {/* アイコン — 白い霧ガラスのタイルに、濃紺のラインアイコン */}
         <div className="anim-scale-in">
           <div className="icon-tile w-[5.5rem] h-[5.5rem] anim-float">
@@ -80,20 +84,20 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
         </div>
 
         {/* 3 ステップ */}
-        <ol className="flex flex-wrap items-center justify-center gap-2" aria-label="使い方の流れ">
+        <ol className="flex flex-wrap items-center justify-center gap-2.5" aria-label="使い方の流れ">
           <li className="intro-step">
             <span className="intro-step__num" aria-hidden="true">1</span>
-            <Feather size={11} className="text-slate-500" aria-hidden="true" />
+            <Feather size={12} className="text-slate-500" aria-hidden="true" />
             <span>問いを書く</span>
           </li>
           <li className="intro-step">
             <span className="intro-step__num" aria-hidden="true">2</span>
-            <Heart size={11} className="text-slate-500" aria-hidden="true" />
+            <Heart size={12} className="text-slate-500" aria-hidden="true" />
             <span>視点を呼ぶ</span>
           </li>
           <li className="intro-step">
             <span className="intro-step__num" aria-hidden="true">3</span>
-            <Compass size={11} className="text-slate-500" aria-hidden="true" />
+            <Compass size={12} className="text-slate-500" aria-hidden="true" />
             <span>心の鏡で映す</span>
           </li>
         </ol>
