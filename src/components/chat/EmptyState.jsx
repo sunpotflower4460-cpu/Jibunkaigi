@@ -37,6 +37,7 @@ const EmptyState = ({ onHintClick }) => (
           className="hint-card"
           aria-label={`例として入力: ${hint}`}
         >
+          <span className="glass-bloom" aria-hidden="true" />
           <span className="glass-flecks" aria-hidden="true" />
           <span className="hint-card__dot" aria-hidden="true" />
           <span className="relative z-[1] text-[0.82rem] text-slate-600 leading-relaxed">{hint}</span>

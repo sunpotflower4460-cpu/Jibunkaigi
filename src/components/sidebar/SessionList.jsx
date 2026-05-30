@@ -21,6 +21,7 @@ const SessionList = ({
     return (
       <div className="flex-1 overflow-y-auto no-scrollbar relative">
         <div className="panel-surface relative overflow-hidden mt-2 mx-1 px-5 py-8 rounded-[1.75rem] text-center">
+          <span className="glass-bloom" aria-hidden="true" />
           <span className="glass-flecks" aria-hidden="true" />
           <div className="icon-tile icon-tile--round relative z-[1] inline-flex w-12 h-12 text-slate-400 mb-4">
             <Feather size={18} strokeWidth={1.75} aria-hidden="true" />
