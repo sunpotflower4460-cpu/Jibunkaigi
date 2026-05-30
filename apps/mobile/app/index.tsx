@@ -18,6 +18,7 @@ import { MobileConfigNotice } from '../components/status/MobileConfigNotice';
 import { MobileErrorNotice } from '../components/status/MobileErrorNotice';
 import { MobileLoadingOverlay } from '../components/status/MobileLoadingOverlay';
 import { MobileStatusStrip } from '../components/status/MobileStatusStrip';
+import { MobileSaveStatusBadge } from '../components/status/MobileSaveStatusBadge';
 import { MobileOthersTrigger } from '../components/others/MobileOthersTrigger';
 import { MobileMemberSheet } from '../components/members/MobileMemberSheet';
 import { MobileUserNameSheet } from '../components/user/MobileUserNameSheet';
@@ -180,6 +181,7 @@ export default function IndexScreen() {
             <MobileConfigNotice status={runtimeStatus} />
             <MobileErrorNotice status={runtimeStatus} />
             <MobileStatusStrip status={runtimeStatus} />
+            <MobileSaveStatusBadge status={runtimeStatus} />
 
             <View style={styles.content}>
               {showIntro ? (
@@ -261,6 +263,7 @@ export default function IndexScreen() {
         visible={drawerOpen}
         sessions={sessions}
         activeSessionId={session.id}
+        runtimeStatus={runtimeStatus}
         onClose={() => setDrawerOpen(false)}
         onSelect={handleSwitchSession}
         onDelete={handleDeleteSession}
