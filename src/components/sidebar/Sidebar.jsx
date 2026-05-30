@@ -27,7 +27,7 @@ const Sidebar = ({
   onRequestDelete,
 }) => {
   const t = useT();
-  const { lang, toggleLang } = useLang();
+  const { lang, setLang } = useLang();
   return (
   <>
     {isOpen && (
@@ -94,17 +94,36 @@ const Sidebar = ({
             <Info size={14} className="text-slate-400" aria-hidden="true" />
             {t('sidebar.agentRoles')}
           </button>
-          <button
-            type="button"
-            onClick={toggleLang}
+          <div
+            role="group"
             aria-label={t('lang.toggleLabel')}
-            className="flex items-center justify-center gap-2 text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors w-full p-2 rounded-xl hover:bg-white/30"
+            className="flex items-center justify-center gap-1.5 w-full p-1"
           >
-            <Languages size={14} className="text-slate-400" aria-hidden="true" />
-            <span>{lang === 'ja' ? '日本語' : 'English'}</span>
-            <span className="text-slate-300" aria-hidden="true">/</span>
-            <span className="text-slate-400">{lang === 'ja' ? 'English' : '日本語'}</span>
-          </button>
+            <Languages size={14} className="text-slate-400 shrink-0 mr-0.5" aria-hidden="true" />
+            <div className="flex items-center gap-0.5 p-0.5 rounded-full neu-concave">
+              {[
+                { code: 'ja', label: '日本語' },
+                { code: 'en', label: 'English' },
+              ].map(({ code, label }) => {
+                const active = lang === code;
+                return (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => setLang(code)}
+                    aria-pressed={active}
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-black transition-all ${
+                      active
+                        ? 'bg-white/80 text-slate-800 shadow-sm border border-white/70'
+                        : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </aside>
