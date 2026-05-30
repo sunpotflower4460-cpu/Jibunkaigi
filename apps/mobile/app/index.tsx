@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MobileBackground } from '../components/layout/MobileBackground';
@@ -26,12 +26,14 @@ import { ReflectionShelfTrigger } from '../components/reflection/ReflectionShelf
 import { ReflectionShelfPanel } from '../components/reflection/ReflectionShelfPanel';
 import { ConferenceRecordSheet } from '../components/reflection/ConferenceRecordSheet';
 import { StickyNotesSheet } from '../components/reflection/StickyNotesSheet';
+import { FloatingKeywordsSheet } from '../components/reflection/FloatingKeywordsSheet';
 import { useReflectionShelf } from '../state/useReflectionShelf';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 import { useUniversalOnboarding } from '../state/useUniversalOnboarding';
 import { DEFAULT_USER_NAME } from '@jibunkaigi/shared';
 import { colors, spacing, mobileLayout, shadow } from '../theme/tokens';
 import { createSelfReturnSeed } from '../utils/selfReturn';
+import { buildKeywordField } from '../services/keywordField';
 
 export default function IndexScreen() {
   const insets = useSafeAreaInsets();
@@ -83,12 +85,16 @@ export default function IndexScreen() {
     conferenceRecords,
     isSavingStickyNote,
     isSavingConferenceRecord,
+    isRefreshingFloatingKeywords,
     openShelf: openReflectionShelf,
     closeShelf: closeReflectionShelf,
     backToMenu: backToReflectionShelfMenu,
     openStickyNote,
     openConferenceRecords,
+    openFloatingKeywords,
     selectConferenceSession,
+    selectFloatingKeywordSession,
+    refreshFloatingKeywords,
     setSelectedKind,
     setDraftContent,
     createStickyNote,
@@ -111,6 +117,12 @@ export default function IndexScreen() {
   const selectedShelfSession = sessions.find((item) => item.id === selectedSessionId) ?? session;
   const canCreateConferenceRecord = selectedShelfSession.messages
     .some((message) => message.role === 'user' && message.text.trim());
+  const floatingKeywords = useMemo(() => buildKeywordField({
+    messages: selectedShelfSession.messages,
+    conferenceRecords,
+    stickyNotes,
+  }), [conferenceRecords, selectedShelfSession.messages, stickyNotes]);
+  const floatingKeywordSeed = floatingKeywords.slice(0, 6).map((item) => item.text).join(' / ');
   const floatingBarVisible = hasUserMessages;
   const timelineBottomOffset = bottomDockHeight + floatingBarHeight + spacing.lg;
 
@@ -328,6 +340,9 @@ export default function IndexScreen() {
         onOpenConferenceRecords={() => {
           void openConferenceRecords({ sessionId: session.id });
         }}
+        onOpenFloatingKeywords={() => {
+          void openFloatingKeywords({ sessionId: session.id });
+        }}
       />
       <ConferenceRecordSheet
         visible={reflectionShelfOpen && reflectionShelfPanel === 'conferenceRecords'}
@@ -354,9 +369,34 @@ export default function IndexScreen() {
         canCreate={canCreateConferenceRecord}
         isSaving={isSavingConferenceRecord}
       />
+      <FloatingKeywordsSheet
+        visible={reflectionShelfOpen && reflectionShelfPanel === 'floatingKeywords'}
+        onClose={closeReflectionShelf}
+        onBack={backToReflectionShelfMenu}
+        sessions={sessions}
+        selectedSessionId={selectedSessionId}
+        onSelectSession={(sessionId) => {
+          void selectFloatingKeywordSession(sessionId);
+        }}
+        keywords={floatingKeywords}
+        onRefresh={() => {
+          void refreshFloatingKeywords();
+        }}
+        isRefreshing={isRefreshingFloatingKeywords}
+        onOpenStickyNote={() => {
+          const seedText = floatingKeywordSeed
+            ? `この言葉の水面を見て、私はどう思う？\n\n浮かんだ言葉: ${floatingKeywordSeed}`
+            : 'この言葉の水面を見て、私はどう思う？';
+          void openStickyNote({
+            sessionId: selectedShelfSession.id,
+            kind: 'question',
+            seedText,
+          });
+        }}
+      />
       <StickyNotesSheet
         visible={reflectionShelfOpen && reflectionShelfPanel === 'stickyNotes'}
-        sessionTitle={session.title}
+        sessionTitle={selectedShelfSession.title}
         selectedKind={selectedKind}
         draftContent={draftContent}
         stickyNotes={stickyNotes}
