@@ -45,7 +45,7 @@ const SHELF_ITEMS = [
     id: 'theme',
     emoji: '🔭',
     title: '自分の輪郭',
-    description: 'くり返し出てくるテーマを見返す',
+    description: 'くり返し浮かぶテーマを、静かに見返す',
     comingSoonLabel: 'ここに、会話後のメモが置かれる予定です',
   },
   {
@@ -63,6 +63,7 @@ interface ReflectionShelfPanelProps {
   onOpenStickyNotes: () => void;
   onOpenConferenceRecords: () => void;
   onOpenFloatingKeywords: () => void;
+  onOpenThemeArchive: () => void;
 }
 
 export function ReflectionShelfPanel({
@@ -71,6 +72,7 @@ export function ReflectionShelfPanel({
   onOpenStickyNotes,
   onOpenConferenceRecords,
   onOpenFloatingKeywords,
+  onOpenThemeArchive,
 }: ReflectionShelfPanelProps) {
   return (
     <Modal
@@ -116,11 +118,11 @@ export function ReflectionShelfPanel({
                 title={item.title}
                 description={item.description}
                 comingSoonLabel={
-                  item.id === 'sticky' || item.id === 'record' || item.id === 'keywords'
+                  item.id === 'sticky' || item.id === 'record' || item.id === 'keywords' || item.id === 'theme'
                     ? '開く'
                     : item.comingSoonLabel
                 }
-                disabled={item.id !== 'sticky' && item.id !== 'record' && item.id !== 'keywords'}
+                disabled={item.id !== 'sticky' && item.id !== 'record' && item.id !== 'keywords' && item.id !== 'theme'}
                 onPress={
                   item.id === 'sticky'
                     ? onOpenStickyNotes
@@ -128,6 +130,8 @@ export function ReflectionShelfPanel({
                       ? onOpenConferenceRecords
                       : item.id === 'keywords'
                         ? onOpenFloatingKeywords
+                        : item.id === 'theme'
+                          ? onOpenThemeArchive
                         : undefined
                 }
               />

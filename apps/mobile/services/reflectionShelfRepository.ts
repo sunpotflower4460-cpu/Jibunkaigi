@@ -36,9 +36,11 @@ export interface ReflectionShelfRepository {
   sanitizeStickyNote(content: string): string;
   loadNotes(sessionId: string): Promise<StickyNote[]>;
   listNotesBySession(sessionId: string): Promise<StickyNote[]>;
+  listAllNotes(): Promise<StickyNote[]>;
   createNote(input: CreateStickyNoteInput): Promise<StickyNote | null>;
   deleteNote(sessionId: string, noteId: string): Promise<void>;
   loadConferenceRecords(sessionId: string): Promise<ConferenceRecord[]>;
+  listAllConferenceRecords(): Promise<ConferenceRecord[]>;
   createConferenceRecord(record: ConferenceRecord): Promise<ConferenceRecord | null>;
   deleteConferenceRecord(sessionId: string, recordId: string): Promise<void>;
 }
@@ -72,6 +74,10 @@ export class LocalReflectionShelfRepository implements ReflectionShelfRepository
 
   async listNotesBySession(sessionId: string): Promise<StickyNote[]> {
     return sortByUpdatedAtDesc(this.notesBySession.get(sessionId) ?? []);
+  }
+
+  async listAllNotes(): Promise<StickyNote[]> {
+    return sortByUpdatedAtDesc([...this.notesBySession.values()].flat());
   }
 
   async createNote(input: CreateStickyNoteInput): Promise<StickyNote | null> {
@@ -109,6 +115,10 @@ export class LocalReflectionShelfRepository implements ReflectionShelfRepository
 
   async loadConferenceRecords(sessionId: string): Promise<ConferenceRecord[]> {
     return sortByUpdatedAtDesc(this.conferenceRecordsBySession.get(sessionId) ?? []);
+  }
+
+  async listAllConferenceRecords(): Promise<ConferenceRecord[]> {
+    return sortByUpdatedAtDesc([...this.conferenceRecordsBySession.values()].flat());
   }
 
   async createConferenceRecord(record: ConferenceRecord): Promise<ConferenceRecord | null> {
