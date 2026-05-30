@@ -8,7 +8,7 @@ import {
 } from '../services/reflectionShelfRepository';
 import { buildConferenceRecord } from '../services/conferenceRecordBuilder';
 
-type ReflectionShelfPanel = 'menu' | 'stickyNotes' | 'conferenceRecords';
+type ReflectionShelfPanel = 'menu' | 'stickyNotes' | 'conferenceRecords' | 'floatingKeywords';
 
 interface OpenStickyNoteOptions {
   sessionId: string;
@@ -17,6 +17,10 @@ interface OpenStickyNoteOptions {
 }
 
 interface OpenConferenceRecordOptions {
+  sessionId: string;
+}
+
+interface OpenFloatingKeywordsOptions {
   sessionId: string;
 }
 
@@ -36,6 +40,7 @@ export function useReflectionShelf() {
   const [conferenceRecords, setConferenceRecords] = useState<ConferenceRecord[]>([]);
   const [isSavingStickyNote, setIsSavingStickyNote] = useState(false);
   const [isSavingConferenceRecord, setIsSavingConferenceRecord] = useState(false);
+  const [isRefreshingFloatingKeywords, setIsRefreshingFloatingKeywords] = useState(false);
 
   function openShelf() {
     setIsOpen(true);
@@ -55,6 +60,20 @@ export function useReflectionShelf() {
   const loadConferenceRecords = useCallback(async (sessionId: string) => {
     const records = await repositoryRef.current.loadConferenceRecords(sessionId);
     setConferenceRecords(records);
+  }, []);
+
+  const loadFloatingKeywordSources = useCallback(async (sessionId: string) => {
+    setIsRefreshingFloatingKeywords(true);
+    try {
+      const [notes, records] = await Promise.all([
+        repositoryRef.current.loadNotes(sessionId),
+        repositoryRef.current.loadConferenceRecords(sessionId),
+      ]);
+      setStickyNotes(notes);
+      setConferenceRecords(records);
+    } finally {
+      setIsRefreshingFloatingKeywords(false);
+    }
   }, []);
 
   const openStickyNote = useCallback(async ({
@@ -78,6 +97,15 @@ export function useReflectionShelf() {
     setSelectedSessionId(sessionId);
     await loadConferenceRecords(sessionId);
   }, [loadConferenceRecords]);
+
+  const openFloatingKeywords = useCallback(async ({
+    sessionId,
+  }: OpenFloatingKeywordsOptions) => {
+    setIsOpen(true);
+    setActivePanel('floatingKeywords');
+    setSelectedSessionId(sessionId);
+    await loadFloatingKeywordSources(sessionId);
+  }, [loadFloatingKeywordSources]);
 
   const backToMenu = useCallback(() => {
     setActivePanel('menu');
@@ -111,6 +139,16 @@ export function useReflectionShelf() {
     setSelectedSessionId(sessionId);
     await loadConferenceRecords(sessionId);
   }, [loadConferenceRecords]);
+
+  const selectFloatingKeywordSession = useCallback(async (sessionId: string) => {
+    setSelectedSessionId(sessionId);
+    await loadFloatingKeywordSources(sessionId);
+  }, [loadFloatingKeywordSources]);
+
+  const refreshFloatingKeywords = useCallback(async () => {
+    if (!selectedSessionId) return;
+    await loadFloatingKeywordSources(selectedSessionId);
+  }, [loadFloatingKeywordSources, selectedSessionId]);
 
   const createConferenceRecord = useCallback(async (input: CreateConferenceRecordInput) => {
     if (!selectedSessionId) return null;
@@ -147,12 +185,16 @@ export function useReflectionShelf() {
     conferenceRecords,
     isSavingStickyNote,
     isSavingConferenceRecord,
+    isRefreshingFloatingKeywords,
     openShelf,
     closeShelf,
     backToMenu,
     openStickyNote,
     openConferenceRecords,
+    openFloatingKeywords,
     selectConferenceSession,
+    selectFloatingKeywordSession,
+    refreshFloatingKeywords,
     setSelectedKind,
     setDraftContent,
     createStickyNote,

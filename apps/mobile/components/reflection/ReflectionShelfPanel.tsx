@@ -62,6 +62,7 @@ interface ReflectionShelfPanelProps {
   onClose: () => void;
   onOpenStickyNotes: () => void;
   onOpenConferenceRecords: () => void;
+  onOpenFloatingKeywords: () => void;
 }
 
 export function ReflectionShelfPanel({
@@ -69,6 +70,7 @@ export function ReflectionShelfPanel({
   onClose,
   onOpenStickyNotes,
   onOpenConferenceRecords,
+  onOpenFloatingKeywords,
 }: ReflectionShelfPanelProps) {
   return (
     <Modal
@@ -114,15 +116,19 @@ export function ReflectionShelfPanel({
                 title={item.title}
                 description={item.description}
                 comingSoonLabel={
-                  item.id === 'sticky' || item.id === 'record' ? '開く' : item.comingSoonLabel
+                  item.id === 'sticky' || item.id === 'record' || item.id === 'keywords'
+                    ? '開く'
+                    : item.comingSoonLabel
                 }
-                disabled={item.id !== 'sticky' && item.id !== 'record'}
+                disabled={item.id !== 'sticky' && item.id !== 'record' && item.id !== 'keywords'}
                 onPress={
                   item.id === 'sticky'
                     ? onOpenStickyNotes
                     : item.id === 'record'
                       ? onOpenConferenceRecords
-                      : undefined
+                      : item.id === 'keywords'
+                        ? onOpenFloatingKeywords
+                        : undefined
                 }
               />
             ))}
