@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { Users, Copy, Check, Trash2 } from 'lucide-react';
 import ReactionPanel from './ReactionPanel';
 import OthersPanel from './OthersPanel';
+import { useT } from '../../i18n';
 
 /**
  * 単一メッセージのバブル + ツールバー + OTHERS タブ + 個別 reaction の集合体。
@@ -28,6 +29,7 @@ const MessageBubble = ({
   isCompareModeEnabled,
   isDebugVisible,
 }) => {
+  const t = useT();
   const isUser = msg.role === 'user';
   const isMaster = msg.agentId === 'master';
 
@@ -54,7 +56,7 @@ const MessageBubble = ({
             </span>
             {isMaster && (
               <span className="bg-indigo-50/70 text-indigo-500 text-[8px] font-black px-1.5 py-0.5 rounded border border-indigo-100/60">
-                総括
+                {t('message.master.badge')}
               </span>
             )}
           </div>
@@ -79,8 +81,8 @@ const MessageBubble = ({
             >
               <button
                 type="button"
-                aria-label="メッセージをコピー"
-                title="メッセージをコピー"
+                aria-label={t('message.copy.aria')}
+                title={t('message.copy.aria')}
                 onClick={() => {
                   onCopy(msg.id, msg.content);
                   onToggleToolbar(null);
@@ -91,8 +93,8 @@ const MessageBubble = ({
               </button>
               <button
                 type="button"
-                aria-label="メッセージを削除"
-                title="メッセージを削除"
+                aria-label={t('message.delete.aria')}
+                title={t('message.delete.aria')}
                 onClick={() => {
                   onDelete(msg.id);
                   onToggleToolbar(null);
@@ -138,7 +140,7 @@ const MessageBubble = ({
                       onSelectReaction(msg.id, rId);
                     }}
                     aria-pressed={isSelected}
-                    aria-label={`${rAgent.name} の反応を見る`}
+                    aria-label={t('message.reaction.aria', { name: rAgent.name })}
                     className={`px-3 py-1.5 rounded-full border text-[10px] font-black transition-all flex items-center gap-1.5 ${
                       isSelected
                         ? 'bg-slate-800 text-white border-slate-900'
@@ -160,7 +162,7 @@ const MessageBubble = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 italic">
-                まだ比較対象がありません
+                {t('message.others.empty')}
               </p>
             </div>
           )}

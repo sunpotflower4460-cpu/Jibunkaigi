@@ -909,8 +909,8 @@ const App = () => {
         currentSessionIdRef.current = sid;
         activeSessionIdRef.current = sid;
         callGemini({
-          prompt: `文:「${text}」から15字以内の内省タイトルを生成。`,
-          systemInstruction: "タイトルのみ出力。余計な記号不要。",
+          prompt: `Create a short, quiet introspective title (about 6 words or 15 Japanese characters max) for the following text. Write the title in the SAME language as the text.\nText: "${text}"`,
+          systemInstruction: "Output only the title. No quotes or extra punctuation.",
           model: GEMINI_CHAT_MODEL
         }).then(t => {
           const clean = t.replace(/["'「」]/g, '').trim();

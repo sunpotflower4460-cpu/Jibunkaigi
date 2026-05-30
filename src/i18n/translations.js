@@ -57,6 +57,69 @@ export const translations = {
     // ヘッダー（TopHeader）
     'header.openMenu.aria': 'メニューを開く',
     'header.defaultTitle': '思考の領域',
+    'header.mode.group.aria': '応答モード',
+    'header.mode.aria': '応答モード: {label}',
+
+    // 入力欄（Composer）
+    'composer.input.aria': '相談内容の入力欄',
+    'composer.send.aria': 'メッセージを送信',
+    'composer.close.aria': '入力欄を閉じる',
+
+    // エージェント操作バー（AgentControlBar / FloatingAgentBar）
+    'agentbar.group.aria': '会議メンバーの呼び出し',
+    'agentbar.mirror.name': '心の鏡',
+    'agentbar.mirror.role': '思考を総括する',
+    'agentbar.mirror.aria': '心の鏡: ここまでの思考を総括する',
+    'agentbar.delegate.name': '委ねる',
+    'agentbar.delegate.aria': '委ねる: 場に応じた視点に任せる',
+    'agentbar.write': '綴る',
+    'agentbar.openInput.aria': '入力欄を開く',
+    'agentbar.closeInput.aria': '入力欄を閉じる',
+    'agentbar.summon.aria': '{name}（{role}）を呼び出す',
+    'floating.open': '視点を開く',
+    'floating.collapsed.aria': '下部エージェント操作バー（たたみ中）',
+    'floating.expanded.aria': '下部エージェント操作バー',
+    'floating.mirror.aria': '心の鏡を呼び出す',
+    'floating.delegate.aria': '委ねる（ランダムエージェント）',
+    'floating.summon.aria': '{name}を呼び出す',
+    'floating.others.aria': 'OTHERSセクションへスクロール',
+    'floating.close.aria': '下部バーを閉じる',
+
+    // メッセージ（MessageBubble）
+    'message.master.badge': '総括',
+    'message.copy.aria': 'メッセージをコピー',
+    'message.delete.aria': 'メッセージを削除',
+    'message.reaction.aria': '{name} の反応を見る',
+    'message.others.empty': 'まだ比較対象がありません',
+
+    // タイムライン（ChatTimeline）
+    'timeline.loading': '読み込み中',
+    'timeline.syncing': 'メッセージを同期しています',
+    'timeline.mirrorInvite.aria': '心の鏡で、ここまでの声を映す',
+    'timeline.mirrorInvite.title': 'ここまでの声を映してみますか？',
+    'timeline.mirrorInvite.subtitle': '心の鏡が、散らばった思考を総括します',
+
+    // 名前編集（UserNameDialog）
+    'dialog.name.title': 'お名前を教えてください',
+    'dialog.name.desc': '会議メンバーからの呼ばれ方に使われます。',
+    'dialog.name.maxLength': '24文字まで',
+    'dialog.name.apply': '変更を適用',
+    'common.cancel': 'キャンセル',
+
+    // セッション削除（DeleteSessionDialog）
+    'dialog.delete.title': 'この思考を消去しますか？',
+    'dialog.delete.desc': 'このセッション内のすべてのメッセージが失われます。',
+    'dialog.delete.confirm': '消去する',
+
+    // 魂の一覧（BeliefsDialog）
+    'beliefs.tagline': 'Inner Voices',
+    'beliefs.title': '会議メンバーの魂',
+    'beliefs.desc': 'それぞれの視点が、どんな角度からあなたを見るか。',
+    'beliefs.close.aria': '会議メンバーの魂を閉じる',
+
+    // 生成中（ThinkingIndicator）
+    'thinking.named': '{name} が、静かに見ています…',
+    'thinking.generic': '視点が立ち上がっています…',
   },
 
   en: {
@@ -112,6 +175,69 @@ export const translations = {
     // header (TopHeader)
     'header.openMenu.aria': 'Open menu',
     'header.defaultTitle': 'Space of thought',
+    'header.mode.group.aria': 'Response mode',
+    'header.mode.aria': 'Response mode: {label}',
+
+    // composer (Composer)
+    'composer.input.aria': 'Message input field',
+    'composer.send.aria': 'Send message',
+    'composer.close.aria': 'Close input field',
+
+    // agent bar (AgentControlBar / FloatingAgentBar)
+    'agentbar.group.aria': 'Summon members',
+    'agentbar.mirror.name': 'Mind Mirror',
+    'agentbar.mirror.role': 'Sum up the thinking',
+    'agentbar.mirror.aria': 'Mind Mirror: sum up the thinking so far',
+    'agentbar.delegate.name': 'Entrust',
+    'agentbar.delegate.aria': 'Entrust: let the moment choose a perspective',
+    'agentbar.write': 'Write',
+    'agentbar.openInput.aria': 'Open input field',
+    'agentbar.closeInput.aria': 'Close input field',
+    'agentbar.summon.aria': 'Summon {name} ({role})',
+    'floating.open': 'Open perspectives',
+    'floating.collapsed.aria': 'Bottom agent bar (collapsed)',
+    'floating.expanded.aria': 'Bottom agent bar',
+    'floating.mirror.aria': 'Summon the Mind Mirror',
+    'floating.delegate.aria': 'Entrust (random agent)',
+    'floating.summon.aria': 'Summon {name}',
+    'floating.others.aria': 'Scroll to the OTHERS section',
+    'floating.close.aria': 'Close bottom bar',
+
+    // message (MessageBubble)
+    'message.master.badge': 'Summary',
+    'message.copy.aria': 'Copy message',
+    'message.delete.aria': 'Delete message',
+    'message.reaction.aria': "See {name}'s reaction",
+    'message.others.empty': 'No comparison yet',
+
+    // timeline (ChatTimeline)
+    'timeline.loading': 'Loading',
+    'timeline.syncing': 'Syncing messages',
+    'timeline.mirrorInvite.aria': 'Reflect the voices so far in the Mind Mirror',
+    'timeline.mirrorInvite.title': 'Shall we reflect the voices so far?',
+    'timeline.mirrorInvite.subtitle': 'The Mind Mirror sums up your scattered thoughts',
+
+    // name dialog (UserNameDialog)
+    'dialog.name.title': 'What should we call you?',
+    'dialog.name.desc': 'This is how the members will address you.',
+    'dialog.name.maxLength': 'Up to 24 characters',
+    'dialog.name.apply': 'Apply changes',
+    'common.cancel': 'Cancel',
+
+    // delete session (DeleteSessionDialog)
+    'dialog.delete.title': 'Erase this thought?',
+    'dialog.delete.desc': 'All messages in this session will be lost.',
+    'dialog.delete.confirm': 'Erase',
+
+    // beliefs (BeliefsDialog)
+    'beliefs.tagline': 'Inner Voices',
+    'beliefs.title': 'The souls of the members',
+    'beliefs.desc': 'How each perspective looks at you, and from what angle.',
+    'beliefs.close.aria': 'Close the souls of the members',
+
+    // generating (ThinkingIndicator)
+    'thinking.named': '{name} is quietly watching…',
+    'thinking.generic': 'A perspective is rising…',
   },
 };
 

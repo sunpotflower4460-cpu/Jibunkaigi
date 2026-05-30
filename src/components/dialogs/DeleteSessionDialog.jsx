@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useT } from '../../i18n';
 
 /**
  * セッション削除の確認モーダル。
@@ -6,6 +7,7 @@ import React, { useEffect, useRef } from 'react';
  * - 開いた直後にキャンセルへフォーカス（誤操作防止）
  */
 const DeleteSessionDialog = ({ open, isDeleting, onConfirm, onCancel }) => {
+  const t = useT();
   const cancelBtnRef = useRef(null);
 
   useEffect(() => {
@@ -39,10 +41,10 @@ const DeleteSessionDialog = ({ open, isDeleting, onConfirm, onCancel }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <h3 id="delete-session-dialog-title" className="text-lg font-black mb-3">
-          この思考を消去しますか？
+          {t('dialog.delete.title')}
         </h3>
         <p className="text-xs font-medium text-slate-500 mb-8">
-          このセッション内のすべてのメッセージが失われます。
+          {t('dialog.delete.desc')}
         </p>
         <div className="flex flex-col gap-2">
           <button
@@ -51,7 +53,7 @@ const DeleteSessionDialog = ({ open, isDeleting, onConfirm, onCancel }) => {
             disabled={isDeleting}
             className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs disabled:opacity-50"
           >
-            消去する
+            {t('dialog.delete.confirm')}
           </button>
           <button
             ref={cancelBtnRef}
@@ -60,7 +62,7 @@ const DeleteSessionDialog = ({ open, isDeleting, onConfirm, onCancel }) => {
             disabled={isDeleting}
             className="w-full py-4 text-slate-500 font-black text-xs hover:bg-white/50 rounded-2xl transition-all"
           >
-            キャンセル
+            {t('common.cancel')}
           </button>
         </div>
       </div>

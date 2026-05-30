@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import { Send, X } from 'lucide-react';
+import { useT } from '../../i18n';
 
 /**
  * 入力欄 (綴る) — 初回は「主役」として、強い影と大きめの角丸で目立たせる。
@@ -21,6 +22,7 @@ const Composer = forwardRef(function Composer(
   },
   textareaRef,
 ) {
+  const t = useT();
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -52,15 +54,15 @@ const Composer = forwardRef(function Composer(
             }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            aria-label="相談内容の入力欄"
+            aria-label={t('composer.input.aria')}
             aria-describedby="composer-helper-text"
             className={`w-full rounded-[1.75rem] px-5 py-4 ${textareaPaddingClass} text-base font-medium outline-none resize-none transition-all bg-transparent placeholder:text-[15px] sm:placeholder:text-base placeholder:text-slate-400/80 disabled:opacity-60 disabled:cursor-not-allowed jk-prose`}
           />
           {!disabled && (
             <button
               type="button"
-              aria-label="メッセージを送信"
-              title="メッセージを送信"
+              aria-label={t('composer.send.aria')}
+              title={t('composer.send.aria')}
               onClick={onSend}
               disabled={!canSend}
               className="action-primary !absolute right-2.5 bottom-2.5 p-2.5 rounded-xl text-white transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed jk-no-min-tap"
@@ -73,8 +75,8 @@ const Composer = forwardRef(function Composer(
       {showCloseButton && (
         <button
           type="button"
-          aria-label="入力欄を閉じる"
-          title="入力欄を閉じる"
+          aria-label={t('composer.close.aria')}
+          title={t('composer.close.aria')}
           onClick={onClose}
           className="p-2 mb-2 text-slate-400 hover:text-slate-600 rounded-xl jk-no-min-tap flex-shrink-0"
         >

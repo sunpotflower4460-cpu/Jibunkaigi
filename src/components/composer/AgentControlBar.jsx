@@ -1,5 +1,6 @@
 import React from 'react';
 import { Compass, Sparkles, Feather, X } from 'lucide-react';
+import { useT } from '../../i18n';
 
 /**
  * 「綴る入力欄」のすぐ下に並ぶ、エージェント呼び出しバー。
@@ -23,15 +24,16 @@ const AgentControlBar = ({
   onMasterClick,
   onRandomResponse,
 }) => {
+  const t = useT();
   const toggleProps = showInput
-    ? { onClick: () => onToggleShowInput(false), icon: <X size={14} aria-hidden="true" />, label: '閉じる' }
-    : { onClick: () => onToggleShowInput(true), icon: <Feather size={14} aria-hidden="true" />, label: '綴る' };
+    ? { onClick: () => onToggleShowInput(false), icon: <X size={14} aria-hidden="true" />, label: t('common.close') }
+    : { onClick: () => onToggleShowInput(true), icon: <Feather size={14} aria-hidden="true" />, label: t('agentbar.write') };
 
   return (
     <div
       className="relative flex flex-col animate-in fade-in slide-in-from-bottom-2 w-full gap-2"
       role="group"
-      aria-label="会議メンバーの呼び出し"
+      aria-label={t('agentbar.group.aria')}
     >
       <div className="flex items-center w-full">
         <div className="flex-1 flex gap-2 py-2 px-1 overflow-x-auto no-scrollbar items-center w-full" style={{ scrollSnapType: 'x proximity' }}>
@@ -39,14 +41,14 @@ const AgentControlBar = ({
             type="button"
             onClick={onMasterClick}
             disabled={!canUseAgents || isBusy}
-            aria-label="心の鏡: ここまでの思考を総括する"
+            aria-label={t('agentbar.mirror.aria')}
             className="agent-chip mirror-chip shrink-0"
             style={{ scrollSnapAlign: 'start' }}
           >
             <Compass size={14} className="text-indigo-300" aria-hidden="true" />
             <div className="flex flex-col min-w-0">
-              <span className="agent-chip__name">心の鏡</span>
-              <span className="agent-chip__role">思考を総括する</span>
+              <span className="agent-chip__name">{t('agentbar.mirror.name')}</span>
+              <span className="agent-chip__role">{t('agentbar.mirror.role')}</span>
             </div>
           </button>
 
@@ -54,11 +56,11 @@ const AgentControlBar = ({
             type="button"
             onClick={onRandomResponse}
             disabled={!canUseAgents || isBusy}
-            aria-label="委ねる: 場に応じた視点に任せる"
+            aria-label={t('agentbar.delegate.aria')}
             className="agent-chip delegate-chip shrink-0"
           >
             <Sparkles size={14} aria-hidden="true" />
-            <span className="agent-chip__name">委ねる</span>
+            <span className="agent-chip__name">{t('agentbar.delegate.name')}</span>
           </button>
 
           <div className="w-px h-6 bg-slate-300/60 self-center mx-1 shrink-0" aria-hidden="true" />
@@ -66,7 +68,7 @@ const AgentControlBar = ({
           <button
             type="button"
             onClick={toggleProps.onClick}
-            aria-label={showInput ? '入力欄を閉じる' : '入力欄を開く'}
+            aria-label={showInput ? t('agentbar.closeInput.aria') : t('agentbar.openInput.aria')}
             className="agent-chip shrink-0 text-slate-600"
           >
             {toggleProps.icon}
@@ -79,7 +81,7 @@ const AgentControlBar = ({
               key={a.id}
               onClick={() => onAgentClick(a.id)}
               disabled={!canUseAgents || isBusy}
-              aria-label={`${a.name} (${a.role}) を呼び出す`}
+              aria-label={t('agentbar.summon.aria', { name: a.name, role: a.role })}
               className={`agent-chip shrink-0 ${a.color} ${a.accentColor} ${a.borderColor}`}
             >
               {a.icon}

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useT } from '../../i18n';
 
 /**
  * クライアント名 (お名前) を編集するモーダル。
@@ -7,6 +8,7 @@ import React, { useEffect, useRef } from 'react';
  * - 開いた直後にフォーカスが input に当たる
  */
 const UserNameDialog = ({ open, tempName, onChange, onConfirm, onCancel }) => {
+  const t = useT();
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -40,10 +42,10 @@ const UserNameDialog = ({ open, tempName, onChange, onConfirm, onCancel }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <h3 id="user-name-dialog-title" className="text-lg font-black mb-3">
-          お名前を教えてください
+          {t('dialog.name.title')}
         </h3>
         <p className="text-xs font-medium text-slate-500 mb-6">
-          会議メンバーからの呼ばれ方に使われます。
+          {t('dialog.name.desc')}
         </p>
         <input
           ref={inputRef}
@@ -58,7 +60,7 @@ const UserNameDialog = ({ open, tempName, onChange, onConfirm, onCancel }) => {
           className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-3 neu-concave bg-transparent"
         />
         <p id="user-name-dialog-help" className="text-[11px] font-bold text-slate-400 mb-8">
-          24文字まで
+          {t('dialog.name.maxLength')}
         </p>
         <div className="flex flex-col gap-2">
           <button
@@ -66,14 +68,14 @@ const UserNameDialog = ({ open, tempName, onChange, onConfirm, onCancel }) => {
             onClick={onConfirm}
             className="action-primary w-full py-4 text-white rounded-2xl font-black text-xs"
           >
-            変更を適用
+            {t('dialog.name.apply')}
           </button>
           <button
             type="button"
             onClick={onCancel}
             className="w-full py-4 text-slate-500 font-black text-xs hover:bg-white/50 rounded-2xl transition-all"
           >
-            キャンセル
+            {t('common.cancel')}
           </button>
         </div>
       </div>
