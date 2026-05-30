@@ -42,7 +42,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
       role="dialog"
       aria-modal="true"
       aria-labelledby="intro-title"
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 sm:p-6 safe-bottom safe-top overflow-y-auto transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[100] flex flex-col items-center px-4 sm:px-6 safe-bottom safe-top overflow-y-auto transition-opacity duration-500 ${
         isHomeReady ? 'opacity-0' : 'opacity-100'
       }`}
     >
@@ -52,7 +52,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
       <div className="mesh-grid z-0" aria-hidden="true" />
       <div className="grain-overlay z-0" aria-hidden="true" />
 
-      <div className="max-w-sm w-full text-center px-6 py-5 relative z-10 space-y-5 anim-card-rise">
+      <div className="max-w-sm w-full text-center px-2 py-6 my-auto relative z-10 space-y-5 anim-card-rise">
         {/* アイコン — 白い霧ガラスのタイルに、濃紺のラインアイコン */}
         <div className="anim-scale-in">
           <div className="icon-tile w-[4.75rem] h-[4.75rem] anim-float">
