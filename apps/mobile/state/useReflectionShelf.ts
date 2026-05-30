@@ -8,7 +8,7 @@ import {
 } from '../services/reflectionShelfRepository';
 import { buildConferenceRecord } from '../services/conferenceRecordBuilder';
 
-type ReflectionShelfPanel = 'menu' | 'stickyNotes' | 'conferenceRecords' | 'floatingKeywords';
+type ReflectionShelfPanel = 'menu' | 'stickyNotes' | 'conferenceRecords' | 'floatingKeywords' | 'themeArchive';
 
 interface OpenStickyNoteOptions {
   sessionId: string;
@@ -21,6 +21,10 @@ interface OpenConferenceRecordOptions {
 }
 
 interface OpenFloatingKeywordsOptions {
+  sessionId: string;
+}
+
+interface OpenThemeArchiveOptions {
   sessionId: string;
 }
 
@@ -41,6 +45,9 @@ export function useReflectionShelf() {
   const [isSavingStickyNote, setIsSavingStickyNote] = useState(false);
   const [isSavingConferenceRecord, setIsSavingConferenceRecord] = useState(false);
   const [isRefreshingFloatingKeywords, setIsRefreshingFloatingKeywords] = useState(false);
+  const [themeArchiveNotes, setThemeArchiveNotes] = useState<StickyNote[]>([]);
+  const [themeArchiveConferenceRecords, setThemeArchiveConferenceRecords] = useState<ConferenceRecord[]>([]);
+  const [isRefreshingThemeArchive, setIsRefreshingThemeArchive] = useState(false);
 
   function openShelf() {
     setIsOpen(true);
@@ -76,6 +83,20 @@ export function useReflectionShelf() {
     }
   }, []);
 
+  const loadThemeArchiveSources = useCallback(async () => {
+    setIsRefreshingThemeArchive(true);
+    try {
+      const [notes, records] = await Promise.all([
+        repositoryRef.current.listAllNotes(),
+        repositoryRef.current.listAllConferenceRecords(),
+      ]);
+      setThemeArchiveNotes(notes);
+      setThemeArchiveConferenceRecords(records);
+    } finally {
+      setIsRefreshingThemeArchive(false);
+    }
+  }, []);
+
   const openStickyNote = useCallback(async ({
     sessionId,
     kind = 'question',
@@ -106,6 +127,15 @@ export function useReflectionShelf() {
     setSelectedSessionId(sessionId);
     await loadFloatingKeywordSources(sessionId);
   }, [loadFloatingKeywordSources]);
+
+  const openThemeArchive = useCallback(async ({
+    sessionId,
+  }: OpenThemeArchiveOptions) => {
+    setIsOpen(true);
+    setActivePanel('themeArchive');
+    setSelectedSessionId(sessionId);
+    await loadThemeArchiveSources();
+  }, [loadThemeArchiveSources]);
 
   const backToMenu = useCallback(() => {
     setActivePanel('menu');
@@ -150,6 +180,10 @@ export function useReflectionShelf() {
     await loadFloatingKeywordSources(selectedSessionId);
   }, [loadFloatingKeywordSources, selectedSessionId]);
 
+  const refreshThemeArchive = useCallback(async () => {
+    await loadThemeArchiveSources();
+  }, [loadThemeArchiveSources]);
+
   const createConferenceRecord = useCallback(async (input: CreateConferenceRecordInput) => {
     if (!selectedSessionId) return null;
     setIsSavingConferenceRecord(true);
@@ -183,18 +217,23 @@ export function useReflectionShelf() {
     draftContent,
     stickyNotes,
     conferenceRecords,
+    themeArchiveNotes,
+    themeArchiveConferenceRecords,
     isSavingStickyNote,
     isSavingConferenceRecord,
     isRefreshingFloatingKeywords,
+    isRefreshingThemeArchive,
     openShelf,
     closeShelf,
     backToMenu,
     openStickyNote,
     openConferenceRecords,
     openFloatingKeywords,
+    openThemeArchive,
     selectConferenceSession,
     selectFloatingKeywordSession,
     refreshFloatingKeywords,
+    refreshThemeArchive,
     setSelectedKind,
     setDraftContent,
     createStickyNote,
