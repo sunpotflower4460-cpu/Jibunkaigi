@@ -248,3 +248,11 @@ Jibunkaigi らしい置き換え例:
 3. 端末内削除 / クラウド削除
 4. AI 接続状態の説明
 5. Reflection Shelf データ削除方針
+
+## 10. RS-1A 進捗メモ（2026-05-30）
+
+- `apps/mobile/data/legalContent.ts` を追加し、利用規約・プライバシー・非医療注意・緊急時案内の仮文を一元管理した。
+- `apps/mobile/components/settings/MobileLegalSheet.tsx` と `apps/mobile/components/settings/MobileLegalLinks.tsx` を追加し、法務・注意文言をアプリ内シートで再確認できる導線を作成した。
+- `apps/mobile/components/session/MobileSessionDrawer.tsx` から法務シートを開けるようにし、設定導線で再確認できる状態にした。
+- `apps/mobile/components/onboarding/MobileOnboardingScreen.tsx` に初回導線のボタンを追加し、オンボーディング中にも同じ法務シートを開けるようにした。
+- 文言は「治療・診断の代替」を避ける方針で調整し、危機時は身近な人・専門機関へ相談する案内を含めた。
