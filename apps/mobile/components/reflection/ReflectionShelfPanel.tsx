@@ -61,12 +61,14 @@ interface ReflectionShelfPanelProps {
   visible: boolean;
   onClose: () => void;
   onOpenStickyNotes: () => void;
+  onOpenConferenceRecords: () => void;
 }
 
 export function ReflectionShelfPanel({
   visible,
   onClose,
   onOpenStickyNotes,
+  onOpenConferenceRecords,
 }: ReflectionShelfPanelProps) {
   return (
     <Modal
@@ -111,9 +113,17 @@ export function ReflectionShelfPanel({
                 emoji={item.emoji}
                 title={item.title}
                 description={item.description}
-                comingSoonLabel={item.id === 'sticky' ? '開く' : item.comingSoonLabel}
-                disabled={item.id !== 'sticky'}
-                onPress={item.id === 'sticky' ? onOpenStickyNotes : undefined}
+                comingSoonLabel={
+                  item.id === 'sticky' || item.id === 'record' ? '開く' : item.comingSoonLabel
+                }
+                disabled={item.id !== 'sticky' && item.id !== 'record'}
+                onPress={
+                  item.id === 'sticky'
+                    ? onOpenStickyNotes
+                    : item.id === 'record'
+                      ? onOpenConferenceRecords
+                      : undefined
+                }
               />
             ))}
           </ScrollView>

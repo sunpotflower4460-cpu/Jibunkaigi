@@ -24,12 +24,14 @@ import { MobileMemberSheet } from '../components/members/MobileMemberSheet';
 import { MobileUserNameSheet } from '../components/user/MobileUserNameSheet';
 import { ReflectionShelfTrigger } from '../components/reflection/ReflectionShelfTrigger';
 import { ReflectionShelfPanel } from '../components/reflection/ReflectionShelfPanel';
+import { ConferenceRecordSheet } from '../components/reflection/ConferenceRecordSheet';
 import { StickyNotesSheet } from '../components/reflection/StickyNotesSheet';
 import { useReflectionShelf } from '../state/useReflectionShelf';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 import { useUniversalOnboarding } from '../state/useUniversalOnboarding';
 import { DEFAULT_USER_NAME } from '@jibunkaigi/shared';
 import { colors, spacing, mobileLayout, shadow } from '../theme/tokens';
+import { createSelfReturnSeed } from '../utils/selfReturn';
 
 export default function IndexScreen() {
   const insets = useSafeAreaInsets();
@@ -78,15 +80,22 @@ export default function IndexScreen() {
     selectedKind,
     draftContent,
     stickyNotes,
+    conferenceRecords,
     isSavingStickyNote,
+    isSavingConferenceRecord,
     openShelf: openReflectionShelf,
     closeShelf: closeReflectionShelf,
     backToMenu: backToReflectionShelfMenu,
     openStickyNote,
+    openConferenceRecords,
+    selectConferenceSession,
     setSelectedKind,
     setDraftContent,
     createStickyNote,
     deleteStickyNote,
+    createConferenceRecord,
+    deleteConferenceRecord,
+    selectedSessionId,
   } = useReflectionShelf();
 
   const [showIntro, setShowIntro] = useState(true);
@@ -99,6 +108,9 @@ export default function IndexScreen() {
   const [floatingBarHeight, setFloatingBarHeight] = useState(0);
 
   const hasUserMessages = messages.some((message) => message.role === 'user');
+  const selectedShelfSession = sessions.find((item) => item.id === selectedSessionId) ?? session;
+  const canCreateConferenceRecord = selectedShelfSession.messages
+    .some((message) => message.role === 'user' && message.text.trim());
   const floatingBarVisible = hasUserMessages;
   const timelineBottomOffset = bottomDockHeight + floatingBarHeight + spacing.lg;
 
@@ -313,6 +325,34 @@ export default function IndexScreen() {
         onOpenStickyNotes={() => {
           void openStickyNote({ sessionId: session.id, kind: 'question' });
         }}
+        onOpenConferenceRecords={() => {
+          void openConferenceRecords({ sessionId: session.id });
+        }}
+      />
+      <ConferenceRecordSheet
+        visible={reflectionShelfOpen && reflectionShelfPanel === 'conferenceRecords'}
+        onClose={closeReflectionShelf}
+        onBack={backToReflectionShelfMenu}
+        sessions={sessions}
+        selectedSessionId={selectedSessionId}
+        onSelectSession={(sessionId) => {
+          void selectConferenceSession(sessionId);
+        }}
+        onCreate={async () => createConferenceRecord({
+          sessionTitle: selectedShelfSession.title,
+          messages: selectedShelfSession.messages,
+        })}
+        records={conferenceRecords}
+        onDelete={deleteConferenceRecord}
+        onOpenStickyNote={(record) => {
+          void openStickyNote({
+            sessionId: record.sessionId,
+            kind: 'question',
+            seedText: createSelfReturnSeed(record),
+          });
+        }}
+        canCreate={canCreateConferenceRecord}
+        isSaving={isSavingConferenceRecord}
       />
       <StickyNotesSheet
         visible={reflectionShelfOpen && reflectionShelfPanel === 'stickyNotes'}
