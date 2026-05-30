@@ -12,6 +12,10 @@ import {
 } from 'react-native';
 import type { UniversalSession } from '../../state/mobileTypes';
 import {
+  sortUniversalSessions,
+  type UniversalRuntimeStatus,
+} from '@jibunkaigi/shared';
+import {
   colors,
   mobileLayout,
   radius,
@@ -19,16 +23,17 @@ import {
   spacing,
   type as typeScale,
 } from '../../theme/tokens';
-import { sortUniversalSessions } from '@jibunkaigi/shared';
 import { MobileSessionEditSheet } from './MobileSessionEditSheet';
 import { MobileSessionListItem } from './MobileSessionListItem';
 import { MobileLegalLinks } from '../settings/MobileLegalLinks';
 import { MobileLegalSheet } from '../settings/MobileLegalSheet';
+import { MobileStorageSheet } from '../settings/MobileStorageSheet';
 
 interface MobileSessionDrawerProps {
   visible: boolean;
   sessions: UniversalSession[];
   activeSessionId: string;
+  runtimeStatus: UniversalRuntimeStatus;
   onClose: () => void;
   onSelect: (sessionId: string) => void;
   onDelete: (sessionId: string) => void;
@@ -43,6 +48,7 @@ export function MobileSessionDrawer({
   visible,
   sessions,
   activeSessionId,
+  runtimeStatus,
   onClose,
   onSelect,
   onDelete,
@@ -54,6 +60,7 @@ export function MobileSessionDrawer({
 }: MobileSessionDrawerProps) {
   const [editingSession, setEditingSession] = useState<UniversalSession | null>(null);
   const [legalSheetOpen, setLegalSheetOpen] = useState(false);
+  const [storageSheetOpen, setStorageSheetOpen] = useState(false);
   const { width } = useWindowDimensions();
   const orderedSessions = useMemo(() => sortUniversalSessions(sessions), [sessions]);
 
@@ -139,6 +146,15 @@ export function MobileSessionDrawer({
             </View>
 
             <MobileLegalLinks onOpenLegal={() => setLegalSheetOpen(true)} />
+            <TouchableOpacity
+              style={styles.storageButton}
+              onPress={() => setStorageSheetOpen(true)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="保存状態とデータ削除の案内を開く"
+            >
+              <Text style={styles.storageButtonText}>保存状態 / データ削除</Text>
+            </TouchableOpacity>
 
             <FlatList
               data={orderedSessions}
@@ -173,6 +189,11 @@ export function MobileSessionDrawer({
       <MobileLegalSheet
         visible={legalSheetOpen}
         onClose={() => setLegalSheetOpen(false)}
+      />
+      <MobileStorageSheet
+        visible={storageSheetOpen}
+        status={runtimeStatus}
+        onClose={() => setStorageSheetOpen(false)}
       />
     </>
   );
@@ -265,6 +286,25 @@ const styles = StyleSheet.create({
     fontSize: typeScale.tiny,
     fontWeight: '600',
     color: colors.inkMuted,
+  },
+  storageButton: {
+    minHeight: 44,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+    backgroundColor: colors.surfaceFaint,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  storageButtonText: {
+    fontSize: typeScale.tiny,
+    fontWeight: '700',
+    color: colors.inkMuted,
+    textAlign: 'center',
   },
   list: {
     paddingHorizontal: spacing.xl,
