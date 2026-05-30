@@ -61,7 +61,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           <p className="text-[9px] font-black tracking-[0.38em] text-slate-400 uppercase pl-[0.38em]">
             Inner Conference Room
           </p>
-          <h1 id="intro-title" className="text-[2.45rem] leading-tight font-black tracking-tighter text-slate-900">
+          <h1 id="intro-title" className="title-ink text-[2.5rem] leading-tight font-black tracking-tighter">
             じぶん会議
           </h1>
           <p className="text-[0.82rem] font-bold text-slate-500 tracking-wide">
@@ -70,9 +70,9 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
         </div>
 
         {/* キャッチコピーカード — 霧を閉じ込めたガラスに、明朝で静かに置く */}
-        <div className="keyline-card py-7 px-5 flex justify-center items-center w-full">
+        <div className="keyline-card py-8 px-6 flex justify-center items-center w-full">
           <span className="glass-flecks" aria-hidden="true" />
-          <p className="jk-serif relative z-[1] text-[1.05rem] sm:text-[1.15rem] text-slate-800 leading-[2.1] tracking-[0.04em] text-center">
+          <p className="jk-serif font-medium relative z-[1] text-[1.08rem] sm:text-[1.18rem] text-slate-700 leading-[2.15] tracking-[0.05em] text-center">
             導かない。照らすだけ。
             <br />
             歩くのは、あなた自身。

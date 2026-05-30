@@ -20,7 +20,7 @@ const EmptyState = ({ onHintClick }) => (
     <div className="icon-tile w-[5.5rem] h-[5.5rem] text-slate-400 mb-7">
       <Feather size={34} strokeWidth={1.75} aria-hidden="true" />
     </div>
-    <h3 className="jk-serif text-[1.7rem] sm:text-[2rem] font-bold text-slate-900 mb-3 tracking-tight leading-[1.35] text-center">
+    <h3 className="jk-serif title-ink text-[1.8rem] sm:text-[2.1rem] font-bold mb-3.5 tracking-tight leading-[1.4] text-center">
       まずは、ひとつ
       <br />
       置いてみる。

@@ -53,7 +53,7 @@ const Sidebar = ({
             <span className="text-[11px] font-black tracking-[0.12em] text-slate-400">
               内なる会議
             </span>
-            <h1 className="text-lg font-black tracking-tighter text-slate-900">じぶん会議</h1>
+            <h1 className="title-ink text-lg font-black tracking-tighter">じぶん会議</h1>
           </div>
         </button>
 
