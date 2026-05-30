@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MobileBackground } from '../components/layout/MobileBackground';
@@ -18,13 +18,24 @@ import { MobileConfigNotice } from '../components/status/MobileConfigNotice';
 import { MobileErrorNotice } from '../components/status/MobileErrorNotice';
 import { MobileLoadingOverlay } from '../components/status/MobileLoadingOverlay';
 import { MobileStatusStrip } from '../components/status/MobileStatusStrip';
+import { MobileSaveStatusBadge } from '../components/status/MobileSaveStatusBadge';
 import { MobileOthersTrigger } from '../components/others/MobileOthersTrigger';
 import { MobileMemberSheet } from '../components/members/MobileMemberSheet';
 import { MobileUserNameSheet } from '../components/user/MobileUserNameSheet';
+import { ReflectionShelfTrigger } from '../components/reflection/ReflectionShelfTrigger';
+import { ReflectionShelfPanel } from '../components/reflection/ReflectionShelfPanel';
+import { ConferenceRecordSheet } from '../components/reflection/ConferenceRecordSheet';
+import { StickyNotesSheet } from '../components/reflection/StickyNotesSheet';
+import { FloatingKeywordsSheet } from '../components/reflection/FloatingKeywordsSheet';
+import { ThemeArchiveSheet } from '../components/reflection/ThemeArchiveSheet';
+import { useReflectionShelf } from '../state/useReflectionShelf';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 import { useUniversalOnboarding } from '../state/useUniversalOnboarding';
 import { DEFAULT_USER_NAME } from '@jibunkaigi/shared';
 import { colors, spacing, mobileLayout, shadow } from '../theme/tokens';
+import { createSelfReturnSeed } from '../utils/selfReturn';
+import { buildKeywordField } from '../services/keywordField';
+import { buildThemeArchive } from '../services/themeArchive';
 
 export default function IndexScreen() {
   const insets = useSafeAreaInsets();
@@ -67,6 +78,39 @@ export default function IndexScreen() {
     shareCurrentSession,
   } = useUniversalConversation({ userName });
 
+  const {
+    isOpen: reflectionShelfOpen,
+    activePanel: reflectionShelfPanel,
+    selectedKind,
+    draftContent,
+    stickyNotes,
+    conferenceRecords,
+    themeArchiveNotes,
+    themeArchiveConferenceRecords,
+    isSavingStickyNote,
+    isSavingConferenceRecord,
+    isRefreshingFloatingKeywords,
+    isRefreshingThemeArchive,
+    openShelf: openReflectionShelf,
+    closeShelf: closeReflectionShelf,
+    backToMenu: backToReflectionShelfMenu,
+    openStickyNote,
+    openConferenceRecords,
+    openFloatingKeywords,
+    openThemeArchive,
+    selectConferenceSession,
+    selectFloatingKeywordSession,
+    refreshFloatingKeywords,
+    refreshThemeArchive,
+    setSelectedKind,
+    setDraftContent,
+    createStickyNote,
+    deleteStickyNote,
+    createConferenceRecord,
+    deleteConferenceRecord,
+    selectedSessionId,
+  } = useReflectionShelf();
+
   const [showIntro, setShowIntro] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [memberSheetOpen, setMemberSheetOpen] = useState(false);
@@ -77,6 +121,21 @@ export default function IndexScreen() {
   const [floatingBarHeight, setFloatingBarHeight] = useState(0);
 
   const hasUserMessages = messages.some((message) => message.role === 'user');
+  const selectedShelfSession = sessions.find((item) => item.id === selectedSessionId) ?? session;
+  const canCreateConferenceRecord = selectedShelfSession.messages
+    .some((message) => message.role === 'user' && message.text.trim());
+  const floatingKeywords = useMemo(() => buildKeywordField({
+    messages: selectedShelfSession.messages,
+    conferenceRecords,
+    stickyNotes,
+  }), [conferenceRecords, selectedShelfSession.messages, stickyNotes]);
+  const themeArchive = useMemo(() => buildThemeArchive({
+    sessions,
+    conferenceRecords: themeArchiveConferenceRecords,
+    stickyNotes: themeArchiveNotes,
+  }), [sessions, themeArchiveConferenceRecords, themeArchiveNotes]);
+  const floatingKeywordSeed = floatingKeywords.slice(0, 6).map((item) => item.text).join(' / ');
+  const themeArchiveSeed = themeArchive.themes.slice(0, 6).map((item) => item.keyword).join(' / ');
   const floatingBarVisible = hasUserMessages;
   const timelineBottomOffset = bottomDockHeight + floatingBarHeight + spacing.lg;
 
@@ -180,6 +239,7 @@ export default function IndexScreen() {
             <MobileConfigNotice status={runtimeStatus} />
             <MobileErrorNotice status={runtimeStatus} />
             <MobileStatusStrip status={runtimeStatus} />
+            <MobileSaveStatusBadge status={runtimeStatus} />
 
             <View style={styles.content}>
               {showIntro ? (
@@ -251,6 +311,7 @@ export default function IndexScreen() {
                   onSend={handleSend}
                   isThinking={isThinking}
                 />
+                <ReflectionShelfTrigger onPress={openReflectionShelf} />
               </View>
             </View>
           </View>
@@ -261,6 +322,7 @@ export default function IndexScreen() {
         visible={drawerOpen}
         sessions={sessions}
         activeSessionId={session.id}
+        runtimeStatus={runtimeStatus}
         onClose={() => setDrawerOpen(false)}
         onSelect={handleSwitchSession}
         onDelete={handleDeleteSession}
@@ -281,6 +343,110 @@ export default function IndexScreen() {
         onChange={setUserNameDraft}
         onClose={() => setUserNameSheetOpen(false)}
         onSave={handleSaveUserName}
+      />
+      <ReflectionShelfPanel
+        visible={reflectionShelfOpen && reflectionShelfPanel === 'menu'}
+        onClose={closeReflectionShelf}
+        onOpenStickyNotes={() => {
+          void openStickyNote({ sessionId: session.id, kind: 'question' });
+        }}
+        onOpenConferenceRecords={() => {
+          void openConferenceRecords({ sessionId: session.id });
+        }}
+        onOpenFloatingKeywords={() => {
+          void openFloatingKeywords({ sessionId: session.id });
+        }}
+        onOpenThemeArchive={() => {
+          void openThemeArchive({ sessionId: session.id });
+        }}
+      />
+      <ConferenceRecordSheet
+        visible={reflectionShelfOpen && reflectionShelfPanel === 'conferenceRecords'}
+        onClose={closeReflectionShelf}
+        onBack={backToReflectionShelfMenu}
+        sessions={sessions}
+        selectedSessionId={selectedSessionId}
+        onSelectSession={(sessionId) => {
+          void selectConferenceSession(sessionId);
+        }}
+        onCreate={async () => createConferenceRecord({
+          sessionTitle: selectedShelfSession.title,
+          messages: selectedShelfSession.messages,
+        })}
+        records={conferenceRecords}
+        onDelete={deleteConferenceRecord}
+        onOpenStickyNote={(record) => {
+          void openStickyNote({
+            sessionId: record.sessionId,
+            kind: 'question',
+            seedText: createSelfReturnSeed(record),
+          });
+        }}
+        canCreate={canCreateConferenceRecord}
+        isSaving={isSavingConferenceRecord}
+      />
+      <FloatingKeywordsSheet
+        visible={reflectionShelfOpen && reflectionShelfPanel === 'floatingKeywords'}
+        onClose={closeReflectionShelf}
+        onBack={backToReflectionShelfMenu}
+        sessions={sessions}
+        selectedSessionId={selectedSessionId}
+        onSelectSession={(sessionId) => {
+          void selectFloatingKeywordSession(sessionId);
+        }}
+        keywords={floatingKeywords}
+        onRefresh={() => {
+          void refreshFloatingKeywords();
+        }}
+        isRefreshing={isRefreshingFloatingKeywords}
+        onOpenStickyNote={() => {
+          const seedText = floatingKeywordSeed
+            ? `この言葉の水面を見て、私はどう思う？\n\n浮かんだ言葉: ${floatingKeywordSeed}`
+            : 'この言葉の水面を見て、私はどう思う？';
+          void openStickyNote({
+            sessionId: selectedShelfSession.id,
+            kind: 'question',
+            seedText,
+          });
+        }}
+      />
+      <StickyNotesSheet
+        visible={reflectionShelfOpen && reflectionShelfPanel === 'stickyNotes'}
+        sessionTitle={selectedShelfSession.title}
+        selectedKind={selectedKind}
+        draftContent={draftContent}
+        stickyNotes={stickyNotes}
+        isSaving={isSavingStickyNote}
+        onBack={backToReflectionShelfMenu}
+        onClose={closeReflectionShelf}
+        onSelectKind={setSelectedKind}
+        onChangeDraft={setDraftContent}
+        onCreate={() => {
+          void createStickyNote();
+        }}
+        onDelete={(noteId) => {
+          void deleteStickyNote(noteId);
+        }}
+      />
+      <ThemeArchiveSheet
+        visible={reflectionShelfOpen && reflectionShelfPanel === 'themeArchive'}
+        onClose={closeReflectionShelf}
+        onBack={backToReflectionShelfMenu}
+        archive={themeArchive}
+        onRefresh={() => {
+          void refreshThemeArchive();
+        }}
+        isRefreshing={isRefreshingThemeArchive}
+        onOpenStickyNote={() => {
+          const seedText = themeArchiveSeed
+            ? `この輪郭を見て、私はどう思う？\n\n浮かんでいるテーマ: ${themeArchiveSeed}`
+            : 'この輪郭を見て、私はどう思う？';
+          void openStickyNote({
+            sessionId: selectedShelfSession.id,
+            kind: 'question',
+            seedText,
+          });
+        }}
       />
     </MobileAppShell>
   );

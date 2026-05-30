@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -20,6 +20,7 @@ import {
   type as typeScale,
 } from '../../theme/tokens';
 import { MobileOnboardingStep } from './MobileOnboardingStep';
+import { MobileLegalSheet } from '../settings/MobileLegalSheet';
 
 interface MobileOnboardingScreenProps {
   userName: string;
@@ -32,11 +33,12 @@ export function MobileOnboardingScreen({
   onChangeUserName,
   onComplete,
 }: MobileOnboardingScreenProps) {
+  const [legalSheetOpen, setLegalSheetOpen] = useState(false);
   const { height } = useWindowDimensions();
   const isCompactHeight = height < 760;
 
   return (
-    <>
+    <View style={styles.container}>
       <View style={styles.background} />
       <ScrollView
         contentContainerStyle={[
@@ -106,13 +108,28 @@ export function MobileOnboardingScreen({
             </Text>
             <ChevronRight size={18} color={colors.textOnAccent} />
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.legalButton}
+            onPress={() => setLegalSheetOpen(true)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="利用規約とプライバシーの案内を開く"
+          >
+            <Text style={styles.legalButtonText}>
+              利用規約 / プライバシー / 非医療・緊急時の案内を見る
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
-    </>
+      <MobileLegalSheet visible={legalSheetOpen} onClose={() => setLegalSheetOpen(false)} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   background: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.bgBase,
@@ -131,7 +148,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     maxWidth: mobileLayout.onboardingMaxWidth,
-    borderRadius: 40,
+    borderRadius: 28,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xxl,
     backgroundColor: colors.surfaceStrong,
@@ -250,5 +267,23 @@ const styles = StyleSheet.create({
     color: colors.textOnAccent,
     fontSize: typeScale.small,
     fontWeight: '700',
+  },
+  legalButton: {
+    minHeight: 44,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+    backgroundColor: colors.surfaceSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  legalButtonText: {
+    color: colors.inkMuted,
+    fontSize: typeScale.tiny,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: mobileLineHeights.tiny,
   },
 });

@@ -42,14 +42,14 @@ export function MobileIntroScreen({ onHintSelect }: MobileIntroScreenProps) {
         <Text style={styles.heading}>まずは、ひとつ置いてみる。</Text>
         <Text style={styles.sub}>まだ言葉になっていなくても、大丈夫です。</Text>
       </View>
-      <Text style={styles.hintTitle}>ヒント</Text>
+      <Text style={styles.hintTitle}>たとえば、こんな問いから</Text>
       <View style={styles.hints}>
         {HINTS.map((hint) => (
           <TouchableOpacity
             key={hint}
             style={styles.hintChip}
             onPress={() => onHintSelect(hint)}
-            activeOpacity={0.7}
+            activeOpacity={0.6}
           >
             <Text style={styles.hintText}>{hint}</Text>
           </TouchableOpacity>
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xxl,
-    gap: spacing.xl,
+    gap: spacing.lg,
     paddingBottom: spacing.xxl,
     alignItems: 'center',
   },
@@ -83,19 +83,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surfaceFaint,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
   },
   heading: {
     fontSize: typeScale.heading,
     fontWeight: '600',
     color: colors.inkStrong,
+    lineHeight: mobileLineHeights.heading,
     letterSpacing: -0.3,
     textAlign: 'center',
   },
@@ -108,10 +107,12 @@ const styles = StyleSheet.create({
   hintTitle: {
     fontSize: typeScale.small,
     color: colors.inkFaint,
-    fontWeight: '600',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    fontWeight: '400',
+    letterSpacing: 0.4,
     paddingHorizontal: spacing.xs,
+    alignSelf: 'flex-start',
+    maxWidth: mobileLayout.onboardingMaxWidth,
+    width: '100%',
   },
   hints: {
     width: '100%',
@@ -119,18 +120,18 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   hintChip: {
-    backgroundColor: colors.surfaceSoft,
-    borderRadius: radius.md,
+    backgroundColor: colors.surfaceStrong,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    minHeight: 52,
+    borderColor: colors.borderSoft,
+    minHeight: 56,
     justifyContent: 'center',
   },
   hintText: {
     fontSize: typeScale.body,
     color: colors.inkSoft,
-    lineHeight: 22,
+    lineHeight: mobileLineHeights.body,
   },
 });

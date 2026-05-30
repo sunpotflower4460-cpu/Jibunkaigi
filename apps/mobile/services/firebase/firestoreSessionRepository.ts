@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore';
 import type { UniversalMessage, UniversalSession } from '../../state/mobileTypes';
 import type { UniversalSessionRepository } from '../sessionRepository';
-import { getMobileFirebaseServices } from './mobileFirebaseApp';
+import { getMobileFirebaseServices, type MobileFirebaseServices } from './mobileFirebaseApp';
 import { ensureAnonymousUser } from './mobileAuth';
 import { getUniversalAppId } from './mobileFirebaseConfig';
 

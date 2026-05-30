@@ -74,7 +74,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
 
         {/* タイトルブロック — アイコンとの一体感を高める */}
         <div className="space-y-1.5">
-          <p className="text-[9px] font-black tracking-[0.38em] text-slate-400 uppercase pl-[0.38em]">
+          <p className="typo-label-small uppercase pl-[0.32em]">
             {t('app.tagline')}
           </p>
           <h1
@@ -84,7 +84,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           >
             {t('app.name')}
           </h1>
-          <p className="text-[0.82rem] font-bold text-slate-500 tracking-wide">
+          <p className="typo-body-secondary font-semibold tracking-wide leading-relaxed">
             {hasBlockingConfigIssue ? t('intro.subtitle.config') : t('intro.subtitle.default')}
           </p>
         </div>
@@ -97,7 +97,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           <span className="glass-bloom" aria-hidden="true" />
           <span className="glass-flecks" aria-hidden="true" />
           <p
-            className="jk-serif font-medium relative z-[1] text-slate-700 leading-[1.95] tracking-[0.05em] text-center"
+            className="jk-serif typo-body relative z-[1] font-medium tracking-[0.05em] text-center"
             style={{ fontSize: 'clamp(1.02rem, 2.5vh, 1.2rem)' }}
           >
             {t('intro.keyline.line1')}
@@ -130,13 +130,13 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           ref={startBtnRef}
           type="button"
           onClick={onStart}
-          className="action-primary w-full py-4 text-white rounded-[1.6rem] font-black text-[0.95rem] tracking-wide active:scale-95 flex items-center justify-center gap-2"
+          className="cta-primary-surface w-full py-4 rounded-[1.6rem] font-black text-[0.95rem] tracking-wide active:scale-95 flex items-center justify-center gap-2"
         >
           {hasBlockingConfigIssue ? t('intro.cta.config') : t('intro.cta.start')}
           <ChevronRight size={18} aria-hidden="true" />
         </button>
         {hasBlockingConfigIssue && (
-          <p className="text-[11px] font-medium text-slate-500 leading-relaxed">
+          <p className="typo-helper-muted font-medium leading-relaxed text-center w-full">
             {t('intro.config.note')}
           </p>
         )}

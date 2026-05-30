@@ -22,16 +22,14 @@ const SessionList = ({
   if (sessions.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto no-scrollbar relative">
-        <div className="panel-surface relative overflow-hidden mt-2 mx-1 px-5 py-8 rounded-[1.75rem] text-center">
-          <span className="glass-bloom" aria-hidden="true" />
-          <span className="glass-flecks" aria-hidden="true" />
-          <div className="icon-tile icon-tile--round relative z-[1] inline-flex w-12 h-12 text-slate-400 mb-4">
+        <div className="panel-surface mt-2 mx-1 px-5 py-7 rounded-[1.65rem] text-center">
+          <div className="icon-tile icon-tile--round inline-flex w-11 h-11 text-slate-400 mb-4">
             <Feather size={18} strokeWidth={1.75} aria-hidden="true" />
           </div>
-          <p className="relative z-[1] text-[0.8rem] font-bold text-slate-700 leading-relaxed">
+          <p className="text-[0.84rem] font-semibold text-slate-700 leading-relaxed">
             {t('session.empty.title')}
           </p>
-          <p className="relative z-[1] text-[11px] font-medium text-slate-400 mt-1.5 leading-relaxed">
+          <p className="text-[11px] font-medium text-slate-500 mt-2 leading-relaxed">
             {t('session.empty.subtitle')}
           </p>
         </div>

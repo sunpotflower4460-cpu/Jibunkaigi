@@ -50,7 +50,7 @@ const Sidebar = ({
           aria-label={t('sidebar.members.aria')}
           className="flex items-center gap-3 mb-10 px-2 cursor-pointer text-left rounded-2xl"
         >
-          <div className="icon-tile w-11 h-11 rounded-2xl text-slate-800">
+          <div className="icon-tile w-10 h-10 rounded-2xl text-slate-700">
             <Users size={19} strokeWidth={1.75} aria-hidden="true" />
           </div>
           <div className="flex flex-col gap-0.5">
@@ -89,7 +89,7 @@ const Sidebar = ({
           <button
             type="button"
             onClick={onOpenBeliefs}
-            className="flex items-center justify-center gap-2 text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors w-full p-2 rounded-xl hover:bg-white/30"
+            className="flex items-center justify-center gap-2 text-[10px] font-medium text-slate-500 hover:text-slate-700 transition-colors w-full p-2 rounded-xl hover:bg-white/25"
           >
             <Info size={14} className="text-slate-400" aria-hidden="true" />
             {t('sidebar.agentRoles')}

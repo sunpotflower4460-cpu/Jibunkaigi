@@ -37,7 +37,7 @@ const Composer = forwardRef(function Composer(
       <div className="flex-1 min-w-0">
         <p
           id="composer-helper-text"
-          className="mb-1.5 px-1 text-[11px] font-bold text-slate-400"
+          className="typo-helper-muted mb-1.5 px-1 font-bold"
           aria-live="polite"
         >
           {helperText}
@@ -65,7 +65,7 @@ const Composer = forwardRef(function Composer(
               title={t('composer.send.aria')}
               onClick={onSend}
               disabled={!canSend}
-              className="action-primary !absolute right-2.5 bottom-2.5 p-2.5 rounded-xl text-white transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed jk-no-min-tap"
+              className="cta-primary-surface !absolute right-2.5 bottom-2.5 p-2.5 rounded-xl transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed jk-no-min-tap"
             >
               <Send aria-hidden="true" size={17} />
             </button>
