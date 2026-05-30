@@ -60,7 +60,7 @@ import { MODES } from './modes/responseModes.jsx';
 import { makeId } from './utils/id.js';
 import { safeParseJson } from './utils/safeParseJson.js';
 import { playSound } from './services/sound.js';
-import { translate, getLang } from './i18n';
+import { translate, useLang } from './i18n';
 import {
   hasFirebaseConfig,
   firebaseAuth as auth,
@@ -74,6 +74,7 @@ const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 const GEMINI_REACTIONS_MODEL = 'gemini-2.5-flash-lite';
 
 const App = () => {
+  const { lang } = useLang();
   const [user, setUser] = useState(null);
   const [userName, setUserName] = useState('あなた');
   const [sessions, setSessions] = useState([]);
@@ -529,7 +530,14 @@ const App = () => {
     }
   };
 
-  const callGemini = async ({ prompt, systemInstruction, model = GEMINI_CHAT_MODEL, jsonMode = false, reactionSchema = false }) => {
+  const callGemini = async ({
+    prompt,
+    systemInstruction,
+    model = GEMINI_CHAT_MODEL,
+    jsonMode = false,
+    reactionSchema = false,
+    mirrorLanguage = true,
+  }) => {
     if (!apiKey) throw new Error("API key is missing");
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     const TIMEOUT_MS = 25000;
@@ -543,7 +551,7 @@ const App = () => {
       'Keep your persona, tone, intent, and all constraints identical regardless of language.',
       'Do not translate, do not mix languages, and do not mention this instruction.',
     ].join('\n');
-    const effectiveSystemInstruction = reactionSchema
+    const effectiveSystemInstruction = (reactionSchema || !mirrorLanguage)
       ? systemInstruction
       : `${systemInstruction}\n\n${LANGUAGE_DIRECTIVE}`;
     const reactionJsonSchema = {
@@ -911,7 +919,8 @@ const App = () => {
         callGemini({
           prompt: `Create a short, quiet introspective title (about 6 words or 15 Japanese characters max) for the following text. Write the title in the SAME language as the text.\nText: "${text}"`,
           systemInstruction: "Output only the title. No quotes or extra punctuation.",
-          model: GEMINI_CHAT_MODEL
+          model: GEMINI_CHAT_MODEL,
+          mirrorLanguage: false,
         }).then(t => {
           const clean = t.replace(/["'「」]/g, '').trim();
           if (clean) {
@@ -1339,7 +1348,7 @@ const App = () => {
   const sidebarTitle =
     sessions.find((s) => s.id === currentSessionId)?.title ||
     optimisticSessionTitles[currentSessionId] ||
-    translate(getLang(), 'header.defaultTitle');
+    translate(lang, 'header.defaultTitle');
 
   return (
     <div className="lake-bg premium-shell relative min-h-screen overflow-hidden flex font-sans text-slate-800">
