@@ -1,30 +1,22 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { useT } from '../../i18n';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 /**
  * セッション削除の確認モーダル。
- * - Escape で閉じる
+ * - Escape で閉じる（削除中は無効）
  * - 開いた直後にキャンセルへフォーカス（誤操作防止）
  */
 const DeleteSessionDialog = ({ open, isDeleting, onConfirm, onCancel }) => {
   const t = useT();
   const cancelBtnRef = useRef(null);
+  const containerRef = useRef(null);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const t = window.setTimeout(() => cancelBtnRef.current?.focus(), 40);
-    const handleKey = (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        if (!isDeleting) onCancel();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => {
-      window.clearTimeout(t);
-      window.removeEventListener('keydown', handleKey);
-    };
-  }, [open, isDeleting, onCancel]);
+  const handleEscape = useCallback(() => {
+    if (!isDeleting) onCancel();
+  }, [isDeleting, onCancel]);
+
+  useFocusTrap(open, containerRef, { onEscape: handleEscape, initialFocusRef: cancelBtnRef });
 
   if (!open) return null;
 
@@ -34,6 +26,7 @@ const DeleteSessionDialog = ({ open, isDeleting, onConfirm, onCancel }) => {
       onClick={() => !isDeleting && onCancel()}
     >
       <div
+        ref={containerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-session-dialog-title"

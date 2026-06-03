@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { X } from 'lucide-react';
 import { useT } from '../../i18n';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 /**
  * 会議メンバーの「魂」(belief) を一覧表示するモーダル。
@@ -10,22 +11,9 @@ import { useT } from '../../i18n';
 const BeliefsDialog = ({ open, agents, onClose }) => {
   const t = useT();
   const closeBtnRef = useRef(null);
+  const containerRef = useRef(null);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const t = window.setTimeout(() => closeBtnRef.current?.focus(), 40);
-    const handleKey = (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => {
-      window.clearTimeout(t);
-      window.removeEventListener('keydown', handleKey);
-    };
-  }, [open, onClose]);
+  useFocusTrap(open, containerRef, { onEscape: onClose, initialFocusRef: closeBtnRef });
 
   if (!open) return null;
 
@@ -35,6 +23,7 @@ const BeliefsDialog = ({ open, agents, onClose }) => {
       onClick={onClose}
     >
       <div
+        ref={containerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="beliefs-dialog-title"

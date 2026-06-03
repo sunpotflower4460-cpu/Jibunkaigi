@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { useT } from '../../i18n';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 /**
  * クライアント名 (お名前) を編集するモーダル。
@@ -10,22 +11,9 @@ import { useT } from '../../i18n';
 const UserNameDialog = ({ open, tempName, onChange, onConfirm, onCancel }) => {
   const t = useT();
   const inputRef = useRef(null);
+  const containerRef = useRef(null);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const t = window.setTimeout(() => inputRef.current?.focus(), 40);
-    const handleKey = (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onCancel();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => {
-      window.clearTimeout(t);
-      window.removeEventListener('keydown', handleKey);
-    };
-  }, [open, onCancel]);
+  useFocusTrap(open, containerRef, { onEscape: onCancel, initialFocusRef: inputRef });
 
   if (!open) return null;
 
@@ -35,6 +23,7 @@ const UserNameDialog = ({ open, tempName, onChange, onConfirm, onCancel }) => {
       onClick={onCancel}
     >
       <div
+        ref={containerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="user-name-dialog-title"
