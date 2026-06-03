@@ -163,6 +163,11 @@ export const translations = {
     'config.gemini.detail': 'VITE_GEMINI_API_KEY を設定すると、各エージェントの応答を生成できます。',
     'config.card.title': 'この環境では、まだ会議を開始できません',
     'config.card.subtitle': '不足している設定を補うと、そのままこの画面から対話を始められます。',
+
+    // OTHERS パネル
+    'others.close.aria': 'Othersを閉じる',
+    'others.empty.compare': 'まだ比較対象がありません',
+    'others.empty.default': '他の声はまだありません',
   },
 
   en: {
@@ -324,6 +329,11 @@ export const translations = {
     'config.gemini.detail': "Set VITE_GEMINI_API_KEY to generate each agent's responses.",
     'config.card.title': "You can't start a meeting in this environment yet",
     'config.card.subtitle': 'Fill in the missing settings and you can start the dialogue right from this screen.',
+
+    // OTHERS panel
+    'others.close.aria': 'Close Others',
+    'others.empty.compare': 'No comparison yet',
+    'others.empty.default': 'No other voices yet',
   },
 };
 
