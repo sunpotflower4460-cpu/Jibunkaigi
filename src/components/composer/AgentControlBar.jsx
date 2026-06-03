@@ -94,7 +94,7 @@ const AgentControlBar = ({
           <div className="w-4 md:w-0 shrink-0" aria-hidden="true" />
         </div>
       </div>
-      <p className="px-2 text-[11px] font-bold text-slate-400" aria-live="polite">
+      <p className="typo-hint px-2 font-bold" aria-live="polite">
         {helperText}
       </p>
       {isDebugMode && agentDisabledReason && (
