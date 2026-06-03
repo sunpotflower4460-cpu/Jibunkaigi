@@ -120,6 +120,54 @@ export const translations = {
     // 生成中（ThinkingIndicator）
     'thinking.named': '{name} が、静かに見ています…',
     'thinking.generic': '視点が立ち上がっています…',
+
+    // エラートースト（App.jsx）
+    'error.config.firebase': '設定が整うと、ここから会議を始められます。',
+    'error.config.apiKey': '設定が整うと、視点が応答できるようになります。',
+    'error.sessions.load': 'セッション一覧をうまく読み込めませんでした。少し時間を置いてお試しください。',
+    'error.messages.load': 'メッセージをうまく読み込めませんでした。少し時間を置いてお試しください。',
+    'error.session.update': 'セッションの更新がうまくいきませんでした。',
+    'error.delegate.failed': '「委ねる」がうまく動きませんでした。もう一度お試しください。',
+    'error.message.delete': 'メッセージをうまく消せませんでした。',
+    'error.send.notReady': '接続を準備しています。少しだけお待ちください。',
+    'error.send.failed': 'うまく送信できませんでした。少し時間を置いて、もう一度お試しください。',
+    'error.agent.needPrompt': 'まずは「綴る」から、ひとこと置いてみてください。',
+    'error.agent.startFailed': '応答をうまく始められませんでした。もう一度お試しください。',
+    'error.agent.summonFailed': '視点をうまく呼び出せませんでした。もう一度お試しください。',
+    'error.session.delete': 'うまく消せませんでした。もう一度お試しください。',
+    'error.name.empty': 'お名前を入力してください。そのままでも大丈夫です。',
+    'error.name.save': 'お名前の保存に失敗しました。',
+    'error.ai.timeout': '応答に少し時間がかかりすぎたようです。少し時間を置いて、もう一度お試しください。',
+    'error.ai.empty': 'うまく応答を受け取れませんでした。少し時間を置いて、もう一度お試しください。',
+    'error.ai.malformed': '応答の形が少し乱れてしまいました。もう一度お試しください。',
+    'error.dismiss.aria': 'エラーメッセージを閉じる',
+
+    // 入力欄（プレースホルダー / ヘルパー）
+    'composer.placeholder.default': '今ある言葉を、そのまま置いてみてください',
+    'composer.placeholder.config': '設定が整うと、ここから問いを綴れます',
+    'composer.helper.default': 'Enterで送信 / Shift+Enterで改行',
+    'composer.helper.config': '設定が整うと、この画面から対話を始められます。',
+
+    // エージェント操作のヘルパー文（状況別）
+    'agent.helper.config': '設定が整うと、会議メンバーを呼び出せます。',
+    'agent.helper.connecting': '接続を準備しています…',
+    'agent.helper.noSession': 'まずは「綴る」から、今ある言葉を置いてください。',
+    'agent.helper.noPrompt': '最初の一文を送ると、会議メンバーが応答します。',
+    'agent.helper.generating': '声が立ち上がっています…',
+    'agent.helper.ready': '気になる視点を選ぶか、「委ねる」で流れに任せられます。',
+
+    // 設定不備カード
+    'config.firebase.title': 'Firebase設定が未完了です',
+    'config.firebase.detail': 'VITE_FIREBASE_* を設定すると、セッション保存と会議開始が有効にできます。',
+    'config.gemini.title': 'Gemini APIキーが未設定です',
+    'config.gemini.detail': 'VITE_GEMINI_API_KEY を設定すると、各エージェントの応答を生成できます。',
+    'config.card.title': 'この環境では、まだ会議を開始できません',
+    'config.card.subtitle': '不足している設定を補うと、そのままこの画面から対話を始められます。',
+
+    // OTHERS パネル
+    'others.close.aria': 'Othersを閉じる',
+    'others.empty.compare': 'まだ比較対象がありません',
+    'others.empty.default': '他の声はまだありません',
   },
 
   en: {
@@ -238,6 +286,54 @@ export const translations = {
     // generating (ThinkingIndicator)
     'thinking.named': '{name} is quietly watching…',
     'thinking.generic': 'A perspective is rising…',
+
+    // error toasts (App.jsx)
+    'error.config.firebase': 'Once setup is complete, you can begin the meeting here.',
+    'error.config.apiKey': 'Once setup is complete, the perspectives can respond.',
+    'error.sessions.load': "We couldn't load your session list. Please try again in a little while.",
+    'error.messages.load': "We couldn't load the messages. Please try again in a little while.",
+    'error.session.update': "We couldn't update the session.",
+    'error.delegate.failed': '"Entrust" didn\'t work. Please try again.',
+    'error.message.delete': "We couldn't delete the message.",
+    'error.send.notReady': 'Preparing the connection. Please wait a moment.',
+    'error.send.failed': "We couldn't send your message. Please wait a little and try again.",
+    'error.agent.needPrompt': 'Start by writing a few words with "Compose."',
+    'error.agent.startFailed': "We couldn't start the response. Please try again.",
+    'error.agent.summonFailed': "We couldn't summon the perspective. Please try again.",
+    'error.session.delete': "We couldn't delete it. Please try again.",
+    'error.name.empty': "Please enter your name. It's okay to leave it as is.",
+    'error.name.save': "We couldn't save your name.",
+    'error.ai.timeout': 'The response took a little too long. Please wait a little and try again.',
+    'error.ai.empty': "We couldn't receive a response. Please wait a little and try again.",
+    'error.ai.malformed': 'The response came out a little malformed. Please try again.',
+    'error.dismiss.aria': 'Dismiss error message',
+
+    // composer (placeholder / helper)
+    'composer.placeholder.default': 'Set down the words you have right now, just as they are',
+    'composer.placeholder.config': 'Once setup is complete, you can compose your question here',
+    'composer.helper.default': 'Enter to send / Shift+Enter for a new line',
+    'composer.helper.config': 'Once setup is complete, you can start the dialogue from this screen.',
+
+    // agent control helper text (by state)
+    'agent.helper.config': 'Once setup is complete, you can summon the members.',
+    'agent.helper.connecting': 'Preparing the connection…',
+    'agent.helper.noSession': 'Start by setting down your words with "Compose."',
+    'agent.helper.noPrompt': 'Send your first sentence and the members will respond.',
+    'agent.helper.generating': 'A voice is rising…',
+    'agent.helper.ready': 'Choose a perspective that draws you, or let the flow decide with "Entrust."',
+
+    // config issue cards
+    'config.firebase.title': 'Firebase setup is incomplete',
+    'config.firebase.detail': 'Set VITE_FIREBASE_* to enable session saving and starting a meeting.',
+    'config.gemini.title': 'The Gemini API key is not set',
+    'config.gemini.detail': "Set VITE_GEMINI_API_KEY to generate each agent's responses.",
+    'config.card.title': "You can't start a meeting in this environment yet",
+    'config.card.subtitle': 'Fill in the missing settings and you can start the dialogue right from this screen.',
+
+    // OTHERS panel
+    'others.close.aria': 'Close Others',
+    'others.empty.compare': 'No comparison yet',
+    'others.empty.default': 'No other voices yet',
   },
 };
 

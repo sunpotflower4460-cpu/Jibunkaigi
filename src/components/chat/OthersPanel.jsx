@@ -1,6 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { getStancePillClass } from '../agents/agentTheme';
+import { getStancePillClass, getStanceLabel } from '../agents/agentTheme';
+import { useT, useLang } from '../../i18n';
 
 /**
  * OTHERS パネル: 一気に全エージェントの反応を眺める表示。
@@ -14,6 +15,8 @@ const OthersPanel = ({
   isCompareModeEnabled,
   onClose,
 }) => {
+  const t = useT();
+  const { lang } = useLang();
   const entries = reactions ? Object.entries(reactions) : [];
 
   return (
@@ -35,8 +38,8 @@ const OthersPanel = ({
         </div>
         <button
           type="button"
-          aria-label="Othersを閉じる"
-          title="閉じる"
+          aria-label={t('others.close.aria')}
+          title={t('common.close')}
           onClick={(e) => {
             e.stopPropagation();
             onClose();
@@ -78,7 +81,7 @@ const OthersPanel = ({
                   <span className="text-[8px] px-1.5 py-0.5 bg-white/80 text-slate-500 rounded italic font-bold">
                     {data.posture}
                   </span>
-                  <span className={getStancePillClass(data.stance)}>{data.stance}</span>
+                  <span className={getStancePillClass(data.stance)}>{getStanceLabel(data.stance, lang)}</span>
                 </div>
                 <p className="text-[12px] font-medium text-slate-600 leading-relaxed jk-prose">
                   「{data.comment}」
@@ -90,7 +93,7 @@ const OthersPanel = ({
       ) : (
         <div className="py-4 flex flex-col items-center justify-center opacity-70">
           <p className="text-[11px] text-slate-400 italic">
-            {isCompareModeEnabled ? 'まだ比較対象がありません' : '他の声はまだありません'}
+            {isCompareModeEnabled ? t('others.empty.compare') : t('others.empty.default')}
           </p>
         </div>
       )}

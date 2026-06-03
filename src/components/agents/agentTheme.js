@@ -56,3 +56,16 @@ export const STANCE_PILL_CLASS = {
 
 export const getStancePillClass = (stance) =>
   STANCE_PILL_CLASS[stance] || 'stance-pill stance-pill--neutral';
+
+/**
+ * stance トークンは保存時に日本語固定（賛成 / 反対 / どちらでもない）。
+ * AI 応答が英語のときに stance だけ日本語で残るのを防ぐため、表示時のみ
+ * 言語に合わせたラベルへ写像する。保存データ・プロンプトは変更しない。
+ */
+const STANCE_LABEL = Object.freeze({
+  ja: { 賛成: '賛成', 反対: '反対', どちらでもない: 'どちらでもない' },
+  en: { 賛成: 'Agree', 反対: 'Disagree', どちらでもない: 'Neither' },
+});
+
+export const getStanceLabel = (stance, lang = 'ja') =>
+  STANCE_LABEL[lang]?.[stance] ?? stance;

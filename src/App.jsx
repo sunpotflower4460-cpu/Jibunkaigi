@@ -60,7 +60,7 @@ import { MODES } from './modes/responseModes.jsx';
 import { makeId } from './utils/id.js';
 import { safeParseJson } from './utils/safeParseJson.js';
 import { playSound } from './services/sound.js';
-import { translate, useLang } from './i18n';
+import { translate, useLang, getLang } from './i18n';
 import {
   hasFirebaseConfig,
   firebaseAuth as auth,
@@ -340,8 +340,10 @@ const App = () => {
   };
 
   useEffect(() => {
-    if (!hasFirebaseConfig) { setErrorWithAutoDismiss("設定が整うと、ここから会議を始められます。", 10000); return; }
-    if (!apiKey) { setErrorWithAutoDismiss("設定が整うと、視点が応答できるようになります。", 10000); }
+    // mount 時のみ実行。言語切替時の再翻訳は不要（設定不備は常時リアクティブな
+    // config カードでも表示されるため）。exhaustive-deps 警告回避に getLang() を使う。
+    if (!hasFirebaseConfig) { setErrorWithAutoDismiss(translate(getLang(), 'error.config.firebase'), 10000); return; }
+    if (!apiKey) { setErrorWithAutoDismiss(translate(getLang(), 'error.config.apiKey'), 10000); }
   }, []);
 
   useEffect(() => {
@@ -432,7 +434,7 @@ const App = () => {
       },
       (error) => {
         console.error("Sessions snapshot failed:", error);
-        setErrorWithAutoDismiss("セッション一覧をうまく読み込めませんでした。少し時間を置いてお試しください。");
+        setErrorWithAutoDismiss(translate(getLang(), 'error.sessions.load'));
       }
     );
   }, [user]);
@@ -465,7 +467,7 @@ const App = () => {
       (error) => {
         if (activeSessionIdRef.current !== capturedSessionId) return;
         console.error("Messages snapshot failed:", error);
-        setErrorWithAutoDismiss("メッセージをうまく読み込めませんでした。少し時間を置いてお試しください。");
+        setErrorWithAutoDismiss(translate(getLang(), 'error.messages.load'));
         setIsMessagesLoading(false);
       }
     );
@@ -767,7 +769,7 @@ const App = () => {
       return true;
     } catch (e) {
       console.error("Session update failed:", e);
-      setErrorWithAutoDismiss("セッションの更新がうまくいきませんでした。");
+      setErrorWithAutoDismiss(translate(getLang(), 'error.session.update'));
       return false;
     }
   };
@@ -861,7 +863,7 @@ const App = () => {
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
-      setErrorWithAutoDismiss("「委ねる」がうまく動きませんでした。もう一度お試しください。");
+      setErrorWithAutoDismiss(translate(getLang(), 'error.delegate.failed'));
     }
   };
 
@@ -875,14 +877,14 @@ const App = () => {
       await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'sessions', currentSessionId, 'messages', msgId));
     } catch (error) {
       console.error("Failed to delete message", error);
-      setErrorWithAutoDismiss("メッセージをうまく消せませんでした。");
+      setErrorWithAutoDismiss(translate(getLang(), 'error.message.delete'));
     }
   };
 
   const handleSend = async (overrideText = null) => {
     const text = (overrideText || userInput).trim();
     if (!text || isSending || isGenerating) return;
-    if (!db || !user) { setErrorWithAutoDismiss("接続を準備しています。少しだけお待ちください。"); return; }
+    if (!db || !user) { setErrorWithAutoDismiss(translate(getLang(), 'error.send.notReady')); return; }
 
     playSound('send');
     setUserInput('');
@@ -969,7 +971,7 @@ const App = () => {
     } catch (e) {
       console.error("[send:error]", e);
       pushAgentDebugEvent({ tag: 'send:error', error: e instanceof Error ? e.message : String(e) });
-      setErrorWithAutoDismiss("うまく送信できませんでした。少し時間を置いて、もう一度お試しください。");
+      setErrorWithAutoDismiss(translate(getLang(), 'error.send.failed'));
       setUserInput(text);
       setShowInput(true);
     } finally {
@@ -1024,13 +1026,13 @@ const App = () => {
     if (!hasUserMessageInThisSession) {
       console.warn("[agent-click:blocked]", { reason: 'no-prompt', ...debugState });
       pushAgentDebugEvent({ tag: 'agent-click:blocked', reason: 'no-prompt', agentId, sessionId: effectiveSessionId, messagesCount: messages.length, visibleMessagesCount: messages.filter(m => m.role === 'user' || m.role === 'assistant').length });
-      setErrorWithAutoDismiss("まずは「綴る」から、ひとこと置いてみてください。");
+      setErrorWithAutoDismiss(translate(getLang(), 'error.agent.needPrompt'));
       return;
     }
 
     try {
       playSound('click');
-      const agentInfo = isMaster ? { name: '心の鏡', id: 'master' } : AGENTS.find(a => a.id === agentId);
+      const agentInfo = isMaster ? { name: translate(getLang(), 'agentbar.mirror.name'), id: 'master' } : AGENTS.find(a => a.id === agentId);
       const mid = lastSubmittedUserMessageRef.current?.sessionId === effectiveSessionId
         ? lastSubmittedUserMessageRef.current?.messageId : null;
       const messagesAtClick = [...messages];
@@ -1058,7 +1060,7 @@ const App = () => {
           setIsGenerating(false);
           setGeneratingAgent(null);
           setShowInput(true);
-          setErrorWithAutoDismiss("応答をうまく始められませんでした。もう一度お試しください。");
+          setErrorWithAutoDismiss(translate(getLang(), 'error.agent.startFailed'));
         });
       });
     } catch (error) {
@@ -1067,7 +1069,7 @@ const App = () => {
       setIsGenerating(false);
       setGeneratingAgent(null);
       setShowInput(true);
-      setErrorWithAutoDismiss("視点をうまく呼び出せませんでした。もう一度お試しください。");
+      setErrorWithAutoDismiss(translate(getLang(), 'error.agent.summonFailed'));
     } finally {
       console.info("[agent-click:finally]", { agentId, effectiveSessionId });
     }
@@ -1212,15 +1214,15 @@ const App = () => {
       if (currentlyActiveSession) {
         const debugSuffix = isAgentDebugEnabled() ? ` (msg-preview)` : '';
         if (msg.includes("API key is missing")) {
-          setErrorWithAutoDismiss("設定が整うと、視点が応答できるようになります。", 10000);
+          setErrorWithAutoDismiss(translate(getLang(), 'error.config.apiKey'), 10000);
         } else if (msg.includes("timeout")) {
-          setErrorWithAutoDismiss(`応答に少し時間がかかりすぎたようです。少し時間を置いて、もう一度お試しください。${debugSuffix}`);
+          setErrorWithAutoDismiss(`${translate(getLang(), 'error.ai.timeout')}${debugSuffix}`);
         } else if (msg.includes("response_check:empty") || msg.includes("Empty response")) {
-          setErrorWithAutoDismiss(`うまく応答を受け取れませんでした。少し時間を置いて、もう一度お試しください。${debugSuffix}`);
+          setErrorWithAutoDismiss(`${translate(getLang(), 'error.ai.empty')}${debugSuffix}`);
         } else if (msg.includes("response_check:json_leak")) {
-          setErrorWithAutoDismiss(`応答の形が少し乱れてしまいました。もう一度お試しください。${debugSuffix}`);
+          setErrorWithAutoDismiss(`${translate(getLang(), 'error.ai.malformed')}${debugSuffix}`);
         } else {
-          setErrorWithAutoDismiss(`うまく応答を受け取れませんでした。少し時間を置いて、もう一度お試しください。${debugSuffix}`);
+          setErrorWithAutoDismiss(`${translate(getLang(), 'error.ai.empty')}${debugSuffix}`);
         }
       }
     } finally {
@@ -1244,7 +1246,7 @@ const App = () => {
       setDeleteTargetId(null);
     } catch (error) {
       console.error("Failed to delete session", error);
-      setErrorWithAutoDismiss("うまく消せませんでした。もう一度お試しください。");
+      setErrorWithAutoDismiss(translate(getLang(), 'error.session.delete'));
     }
     setIsDeletingSession(false);
   };
@@ -1265,7 +1267,7 @@ const App = () => {
 
   const handleUpdateUserName = async () => {
     const name = tempName.trim();
-    if (!name) { setErrorWithAutoDismiss("お名前を入力してください。そのままでも大丈夫です。"); return; }
+    if (!name) { setErrorWithAutoDismiss(translate(getLang(), 'error.name.empty')); return; }
     if (!user || !db) { setUserName(name); setIsEditingUserName(false); setTempName(''); return; }
 
     // Optimistic update: UI を即座に更新
@@ -1280,7 +1282,7 @@ const App = () => {
       );
     } catch (e) {
       console.error("Update user name failed:", e);
-      setErrorWithAutoDismiss("お名前の保存に失敗しました。");
+      setErrorWithAutoDismiss(translate(getLang(), 'error.name.save'));
       // エラー時は入力欄を再表示して編集を継続可能に
       setIsEditingUserName(true);
       setTempName(name);
@@ -1303,36 +1305,36 @@ const App = () => {
   if (!hasFirebaseConfig) {
     configIssues.push({
       id: 'firebase',
-      title: 'Firebase設定が未完了です',
-      detail: 'VITE_FIREBASE_* を設定すると、セッション保存と会議開始が有効にできます。',
+      title: translate(lang, 'config.firebase.title'),
+      detail: translate(lang, 'config.firebase.detail'),
     });
   }
   if (!apiKey) {
     configIssues.push({
       id: 'gemini',
-      title: 'Gemini APIキーが未設定です',
-      detail: 'VITE_GEMINI_API_KEY を設定すると、各エージェントの応答を生成できます。',
+      title: translate(lang, 'config.gemini.title'),
+      detail: translate(lang, 'config.gemini.detail'),
     });
   }
   const hasBlockingConfigIssue = configIssues.length > 0;
   const inputPlaceholder = hasBlockingConfigIssue
-    ? '設定が整うと、ここから問いを綴れます'
-    : '今ある言葉を、そのまま置いてみてください';
+    ? translate(lang, 'composer.placeholder.config')
+    : translate(lang, 'composer.placeholder.default');
   const composerHelperText = hasBlockingConfigIssue
-    ? '設定が整うと、この画面から対話を始められます。'
-    : 'Enterで送信 / Shift+Enterで改行';
+    ? translate(lang, 'composer.helper.config')
+    : translate(lang, 'composer.helper.default');
   const agentHelperText =
     hasBlockingConfigIssue
-      ? '設定が整うと、会議メンバーを呼び出せます。'
+      ? translate(lang, 'agent.helper.config')
       : !user
-        ? '接続を準備しています…'
+        ? translate(lang, 'agent.helper.connecting')
         : !activeSessionId
-          ? 'まずは「綴る」から、今ある言葉を置いてください。'
+          ? translate(lang, 'agent.helper.noSession')
           : !hasPromptForActiveSession
-            ? '最初の一文を送ると、会議メンバーが応答します。'
+            ? translate(lang, 'agent.helper.noPrompt')
             : isGenerating
-              ? '声が立ち上がっています…'
-              : '気になる視点を選ぶか、「委ねる」で流れに任せられます。';
+              ? translate(lang, 'agent.helper.generating')
+              : translate(lang, 'agent.helper.ready');
 
   const getAgentDisabledReason = () => {
     if (!isAppReady) return 'app-not-ready';
@@ -1392,7 +1394,7 @@ const App = () => {
           {errorMessage && (
             <div className="mx-4 sm:mx-5 mt-3 p-3 rounded-xl glass-card border-rose-200/50 flex items-center justify-between animate-in fade-in slide-in-from-top-2 z-40">
               <div className="flex items-center gap-2 text-rose-600 text-xs font-bold"><AlertCircle size={14}/> {errorMessage}</div>
-              <button aria-label="エラーメッセージを閉じる" title="閉じる" onClick={() => setErrorMessage(null)} className="p-1 hover:bg-rose-100 rounded-full text-rose-400"><X size={14}/></button>
+              <button aria-label={translate(lang, 'error.dismiss.aria')} title={translate(lang, 'common.close')} onClick={() => setErrorMessage(null)} className="p-1 hover:bg-rose-100 rounded-full text-rose-400"><X size={14}/></button>
             </div>
           )}
 
@@ -1402,8 +1404,8 @@ const App = () => {
                 <div className="mt-0.5 p-2 rounded-2xl bg-amber-100 text-amber-700 shrink-0"><AlertCircle size={16} /></div>
                 <div className="space-y-2.5">
                   <div>
-                    <h3 className="text-sm font-black text-slate-800">この環境では、まだ会議を開始できません</h3>
-                    <p className="text-xs font-medium text-slate-500 mt-0.5">不足している設定を補うと、そのままこの画面から対話を始められます。</p>
+                    <h3 className="text-sm font-black text-slate-800">{translate(lang, 'config.card.title')}</h3>
+                    <p className="text-xs font-medium text-slate-500 mt-0.5">{translate(lang, 'config.card.subtitle')}</p>
                   </div>
                   <ul className="space-y-1.5">
                     {configIssues.map((issue) => (

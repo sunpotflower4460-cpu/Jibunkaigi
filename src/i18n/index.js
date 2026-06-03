@@ -5,10 +5,10 @@
 // プロバイダ不要（useSyncExternalStore でモジュールストアを購読）。
 
 import { useSyncExternalStore, useCallback } from 'react';
-import { getLang, setLang, toggleLang, subscribe, SUPPORTED_LANGS } from './store';
-import { translations } from './translations';
+import { getLang, setLang, toggleLang, subscribe, SUPPORTED_LANGS } from './store.js';
+import { translations } from './translations.js';
 
-export { SUPPORTED_LANGS, setLang, toggleLang, getLang } from './store';
+export { SUPPORTED_LANGS, setLang, toggleLang, getLang } from './store.js';
 
 export const useLang = () => {
   const lang = useSyncExternalStore(subscribe, getLang, getLang);

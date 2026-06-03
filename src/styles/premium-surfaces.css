@@ -162,6 +162,12 @@
   font-weight: 800;
   color: var(--jk-text-muted);
 }
+/* 入力欄・操作バー直下の、ごく控えめなヒント／補助テキスト */
+.typo-hint {
+  font-size: var(--jk-type-helper);
+  line-height: var(--jk-leading-caption);
+  color: var(--jk-text-helper);
+}
 
 /* ===== Glass / Panel ===== */
 .glass-card {
