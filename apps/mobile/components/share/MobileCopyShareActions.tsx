@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useT } from '../../i18n';
 import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileCopyShareActionsProps {
@@ -11,6 +12,7 @@ export function MobileCopyShareActions({
   onCopy,
   onShare,
 }: MobileCopyShareActionsProps) {
+  const t = useT();
   return (
     <View style={styles.row}>
       <TouchableOpacity
@@ -18,18 +20,18 @@ export function MobileCopyShareActions({
         onPress={onCopy}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel="このテキストをコピー"
+        accessibilityLabel={t('share.copy.aria')}
       >
-        <Text style={styles.actionText}>コピー</Text>
+        <Text style={styles.actionText}>{t('share.copy')}</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.actionButton}
         onPress={onShare}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel="このテキストを共有"
+        accessibilityLabel={t('share.share.aria')}
       >
-        <Text style={styles.actionText}>共有</Text>
+        <Text style={styles.actionText}>{t('share.share')}</Text>
       </TouchableOpacity>
     </View>
   );

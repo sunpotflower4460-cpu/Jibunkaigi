@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useT } from '../../i18n';
 import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileSessionEditSheetProps {
@@ -26,6 +27,7 @@ export function MobileSessionEditSheet({
   onClose,
   onSave,
 }: MobileSessionEditSheetProps) {
+  const t = useT();
   const [draftTitle, setDraftTitle] = useState(title);
 
   useEffect(() => {
@@ -57,13 +59,13 @@ export function MobileSessionEditSheet({
               contentContainerStyle={styles.scrollContent}
             >
               <View style={styles.sheet}>
-                <Text style={styles.title}>タイトルを編集</Text>
-                <Text style={styles.caption}>空欄のまま保存すると「新しい問い」になります。</Text>
+                <Text style={styles.title}>{t('sessionEdit.title')}</Text>
+                <Text style={styles.caption}>{t('sessionEdit.caption')}</Text>
                 <TextInput
                   style={styles.input}
                   value={draftTitle}
                   onChangeText={setDraftTitle}
-                  placeholder="新しい問い"
+                  placeholder={t('sessionEdit.placeholder')}
                   placeholderTextColor={colors.inkFaint}
                   autoFocus
                   maxLength={80}
@@ -78,9 +80,9 @@ export function MobileSessionEditSheet({
                     onPress={onClose}
                     activeOpacity={0.7}
                     accessibilityRole="button"
-                    accessibilityLabel="セッションタイトル編集をキャンセル"
+                    accessibilityLabel={t('sessionEdit.cancel.aria')}
                   >
-                    <Text style={styles.secondaryText}>キャンセル</Text>
+                    <Text style={styles.secondaryText}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.primaryButton}
@@ -89,9 +91,9 @@ export function MobileSessionEditSheet({
                     }}
                     activeOpacity={0.7}
                     accessibilityRole="button"
-                    accessibilityLabel="セッションタイトルを保存"
+                    accessibilityLabel={t('sessionEdit.save.aria')}
                   >
-                    <Text style={styles.primaryText}>保存</Text>
+                    <Text style={styles.primaryText}>{t('sessionEdit.save')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>

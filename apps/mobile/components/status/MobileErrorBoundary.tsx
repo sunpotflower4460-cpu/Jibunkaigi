@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { getLang, translate } from '../../i18n';
 import { colors, radius, shadow, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileErrorBoundaryProps {
@@ -42,16 +43,17 @@ export class MobileErrorBoundary extends React.Component<
   render() {
     if (!this.state.hasError) return this.props.children;
 
+    // 非 React フックの class なので、その時点の言語で素の translate を使う。
+    const lang = getLang();
+    const retryLabel = translate(lang, 'errorBoundary.retry');
+
     return (
       <View style={styles.root}>
         <View style={styles.card}>
           <Text style={styles.title} accessibilityRole="header">
-            予期せぬエラーが発生しました
+            {translate(lang, 'errorBoundary.title')}
           </Text>
-          <Text style={styles.body}>
-            アプリの表示中に問題が起きました。{'\n'}
-            もう一度ひらくと、ほとんどの場合は元に戻ります。
-          </Text>
+          <Text style={styles.body}>{translate(lang, 'errorBoundary.body')}</Text>
           {this.state.error?.message ? (
             <Text style={styles.detail} numberOfLines={4}>
               {this.state.error.message}
@@ -61,9 +63,9 @@ export class MobileErrorBoundary extends React.Component<
             style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
             onPress={this.handleRetry}
             accessibilityRole="button"
-            accessibilityLabel="もう一度ひらく"
+            accessibilityLabel={retryLabel}
           >
-            <Text style={styles.buttonLabel}>もう一度ひらく</Text>
+            <Text style={styles.buttonLabel}>{retryLabel}</Text>
           </Pressable>
         </View>
       </View>

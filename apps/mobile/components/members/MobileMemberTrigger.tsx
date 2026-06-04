@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
+import { useT } from '../../i18n';
 import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileMemberTriggerProps {
@@ -11,6 +12,7 @@ interface MobileMemberTriggerProps {
 }
 
 export function MobileMemberTrigger({ onPress }: MobileMemberTriggerProps) {
+  const t = useT();
   return (
     <TouchableOpacity
       style={styles.btn}
@@ -18,9 +20,9 @@ export function MobileMemberTrigger({ onPress }: MobileMemberTriggerProps) {
       activeOpacity={0.7}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       accessibilityRole="button"
-      accessibilityLabel="会議メンバーを見る"
+      accessibilityLabel={t('members.trigger.aria')}
     >
-      <Text style={styles.label}>メンバー</Text>
+      <Text style={styles.label}>{t('members.trigger')}</Text>
     </TouchableOpacity>
   );
 }

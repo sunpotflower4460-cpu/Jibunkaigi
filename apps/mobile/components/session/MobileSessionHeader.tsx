@@ -17,6 +17,7 @@ import {
   type as typeScale,
 } from '../../theme/tokens';
 import { MobileUserNameTrigger } from '../user/MobileUserNameTrigger';
+import { useT } from '../../i18n';
 
 interface MobileSessionHeaderProps {
   session: MobileSession;
@@ -37,10 +38,11 @@ export function MobileSessionHeader({
   userName,
   onOpenUserName,
 }: MobileSessionHeaderProps) {
+  const t = useT();
   const { width } = useWindowDimensions();
   const isCompact = width < mobileLayout.mediumViewport;
   const isNarrow = width < mobileLayout.compactViewport;
-  const newSessionLabel = isNarrow ? '新規' : '新しい問い';
+  const newSessionLabel = isNarrow ? t('header.new.short') : t('header.new');
 
   return (
     <View style={styles.header}>
@@ -51,12 +53,12 @@ export function MobileSessionHeader({
           activeOpacity={0.7}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
-          accessibilityLabel="セッション一覧を開く"
+          accessibilityLabel={t('header.drawer.aria')}
         >
           <Text style={styles.drawerBtnText}>≡</Text>
         </TouchableOpacity>
         <View style={styles.titleBlock}>
-          <Text style={styles.title}>じぶん会議</Text>
+          <Text style={styles.title}>{t('app.name')}</Text>
           <Text style={styles.sessionTitle} numberOfLines={1}>{session.title}</Text>
         </View>
       </View>
@@ -78,9 +80,9 @@ export function MobileSessionHeader({
           activeOpacity={0.7}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
-          accessibilityLabel="会議メンバーを見る"
+          accessibilityLabel={t('header.members.aria')}
         >
-          <Text style={styles.btnText}>メンバー</Text>
+          <Text style={styles.btnText}>{t('header.members')}</Text>
         </TouchableOpacity>
         {session.messages.length > 0 ? (
           <TouchableOpacity
@@ -89,7 +91,7 @@ export function MobileSessionHeader({
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.btnText}>クリア</Text>
+            <Text style={styles.btnText}>{t('header.clear')}</Text>
           </TouchableOpacity>
         ) : null}
         <TouchableOpacity

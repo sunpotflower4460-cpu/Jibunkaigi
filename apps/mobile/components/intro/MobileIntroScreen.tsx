@@ -16,19 +16,16 @@ import {
   type as typeScale,
   shadow,
 } from '../../theme/tokens';
+import { useT } from '../../i18n';
 
-const HINTS = [
-  '言葉にならないけど、ずっと胸にあるもの',
-  '最近、少しだけ引っかかっていること',
-  '誰にも言っていない、小さな違和感',
-  '今の自分を、少しだけ見てみたい',
-] as const;
+const HINT_KEYS = ['intro.hint.1', 'intro.hint.2', 'intro.hint.3', 'intro.hint.4'] as const;
 
 interface MobileIntroScreenProps {
   onHintSelect: (hint: string) => void;
 }
 
 export function MobileIntroScreen({ onHintSelect }: MobileIntroScreenProps) {
+  const t = useT();
   return (
     <ScrollView
       style={styles.container}
@@ -39,21 +36,24 @@ export function MobileIntroScreen({ onHintSelect }: MobileIntroScreenProps) {
         <View style={styles.iconWrap}>
           <Feather size={24} color={colors.inkFaint} />
         </View>
-        <Text style={styles.heading}>まずは、ひとつ置いてみる。</Text>
-        <Text style={styles.sub}>まだ言葉になっていなくても、大丈夫です。</Text>
+        <Text style={styles.heading}>{t('empty.heading')}</Text>
+        <Text style={styles.sub}>{t('empty.sub')}</Text>
       </View>
-      <Text style={styles.hintTitle}>たとえば、こんな問いから</Text>
+      <Text style={styles.hintTitle}>{t('intro.hintTitle')}</Text>
       <View style={styles.hints}>
-        {HINTS.map((hint) => (
-          <TouchableOpacity
-            key={hint}
-            style={styles.hintChip}
-            onPress={() => onHintSelect(hint)}
-            activeOpacity={0.6}
-          >
-            <Text style={styles.hintText}>{hint}</Text>
-          </TouchableOpacity>
-        ))}
+        {HINT_KEYS.map((key) => {
+          const hint = t(key);
+          return (
+            <TouchableOpacity
+              key={key}
+              style={styles.hintChip}
+              onPress={() => onHintSelect(hint)}
+              activeOpacity={0.6}
+            >
+              <Text style={styles.hintText}>{hint}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </ScrollView>
   );

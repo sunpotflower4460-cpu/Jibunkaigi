@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { UniversalRuntimeStatus } from '@jibunkaigi/shared';
 import { getMobileStorageStatusSummary } from '../../services/storageStatus';
+import { useT } from '../../i18n';
 import { colors, mobileLayout, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileSaveStatusBadgeProps {
@@ -9,6 +10,7 @@ interface MobileSaveStatusBadgeProps {
 }
 
 export function MobileSaveStatusBadge({ status }: MobileSaveStatusBadgeProps) {
+  const t = useT();
   const summary = getMobileStorageStatusSummary(status);
 
   return (
@@ -20,9 +22,7 @@ export function MobileSaveStatusBadge({ status }: MobileSaveStatusBadgeProps) {
       </View>
       <Text style={styles.title}>{summary.title}</Text>
       <Text style={styles.message}>{summary.summary}</Text>
-      <Text style={styles.caption}>
-        詳しくは会議一覧の「保存状態 / データ削除」で確認できます。
-      </Text>
+      <Text style={styles.caption}>{t('saveBadge.hint')}</Text>
     </View>
   );
 }

@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
+import { useT } from '../../i18n';
 import {
   colors,
   mobileTouchTarget,
@@ -25,6 +26,7 @@ export function MobileOthersTrigger({
   isLoading = false,
   disabled = false,
 }: MobileOthersTriggerProps) {
+  const t = useT();
   const isDisabled = disabled || isLoading;
 
   return (
@@ -33,7 +35,7 @@ export function MobileOthersTrigger({
       onPress={onPress}
       disabled={isDisabled}
       accessibilityRole="button"
-      accessibilityLabel="他のメンバーの視点を見る"
+      accessibilityLabel={t('others.trigger.aria')}
       accessibilityState={{ disabled: isDisabled, busy: isLoading }}
     >
       {isLoading ? (
@@ -41,7 +43,7 @@ export function MobileOthersTrigger({
       ) : (
         <View style={styles.inner}>
           <Text style={[styles.label, isDisabled && styles.labelDisabled]}>OTHERS</Text>
-          <Text style={[styles.sub, isDisabled && styles.subDisabled]}>ほかの視点をひらく</Text>
+          <Text style={[styles.sub, isDisabled && styles.subDisabled]}>{t('others.trigger.sub')}</Text>
         </View>
       )}
     </TouchableOpacity>

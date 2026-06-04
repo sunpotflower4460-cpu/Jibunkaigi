@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { DEFAULT_USER_NAME, normalizeUserName } from '@jibunkaigi/shared';
+import { useT } from '../../i18n';
 import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileUserNameTriggerProps {
@@ -14,8 +15,9 @@ export function MobileUserNameTrigger({
   compact = false,
   onPress,
 }: MobileUserNameTriggerProps) {
+  const t = useT();
   const resolvedUserName = normalizeUserName(userName ?? DEFAULT_USER_NAME);
-  const label = compact ? '名前' : resolvedUserName;
+  const label = compact ? t('user.trigger.name') : resolvedUserName;
 
   return (
     <TouchableOpacity
@@ -23,7 +25,7 @@ export function MobileUserNameTrigger({
       onPress={onPress}
       activeOpacity={0.85}
       accessibilityRole="button"
-      accessibilityLabel="名前を変更する"
+      accessibilityLabel={t('user.trigger.edit.aria')}
     >
       <Text style={styles.triggerText} numberOfLines={1}>
         {label}

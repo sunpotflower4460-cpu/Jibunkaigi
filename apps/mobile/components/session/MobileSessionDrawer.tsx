@@ -28,6 +28,8 @@ import { MobileSessionListItem } from './MobileSessionListItem';
 import { MobileLegalLinks } from '../settings/MobileLegalLinks';
 import { MobileLegalSheet } from '../settings/MobileLegalSheet';
 import { MobileStorageSheet } from '../settings/MobileStorageSheet';
+import { MobileLanguageToggle } from '../settings/MobileLanguageToggle';
+import { useT } from '../../i18n';
 
 interface MobileSessionDrawerProps {
   visible: boolean;
@@ -58,6 +60,7 @@ export function MobileSessionDrawer({
   onCopyCurrentSession,
   onShareCurrentSession,
 }: MobileSessionDrawerProps) {
+  const t = useT();
   const [editingSession, setEditingSession] = useState<UniversalSession | null>(null);
   const [legalSheetOpen, setLegalSheetOpen] = useState(false);
   const [storageSheetOpen, setStorageSheetOpen] = useState(false);
@@ -98,16 +101,20 @@ export function MobileSessionDrawer({
             ]}
           >
             <View style={styles.drawerHeader}>
-              <Text style={styles.drawerTitle}>会議の記録</Text>
+              <Text style={styles.drawerTitle}>{t('drawer.title')}</Text>
               <TouchableOpacity
                 style={styles.closeBtn}
                 onPress={onClose}
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 accessibilityRole="button"
-                accessibilityLabel="セッション一覧を閉じる"
+                accessibilityLabel={t('drawer.close.aria')}
               >
                 <Text style={styles.closeBtnText}>✕</Text>
               </TouchableOpacity>
+            </View>
+
+            <View style={styles.langRow}>
+              <MobileLanguageToggle />
             </View>
 
             <TouchableOpacity
@@ -115,9 +122,9 @@ export function MobileSessionDrawer({
               onPress={handleNewSession}
               activeOpacity={0.75}
               accessibilityRole="button"
-              accessibilityLabel="新しい問いを始める"
+              accessibilityLabel={t('drawer.new.aria')}
             >
-              <Text style={styles.newBtnText}>＋ 新しい問いを始める</Text>
+              <Text style={styles.newBtnText}>{t('drawer.new')}</Text>
             </TouchableOpacity>
 
             <View style={styles.exportRow}>
@@ -128,9 +135,9 @@ export function MobileSessionDrawer({
                 }}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel="会話全体をコピー"
+                accessibilityLabel={t('drawer.copyAll.aria')}
               >
-                <Text style={styles.exportButtonText}>会話全体をコピー</Text>
+                <Text style={styles.exportButtonText}>{t('drawer.copyAll')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.exportButton}
@@ -139,9 +146,9 @@ export function MobileSessionDrawer({
                 }}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel="会話全体を共有"
+                accessibilityLabel={t('drawer.shareAll.aria')}
               >
-                <Text style={styles.exportButtonText}>会話全体を共有</Text>
+                <Text style={styles.exportButtonText}>{t('drawer.shareAll')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -151,9 +158,9 @@ export function MobileSessionDrawer({
               onPress={() => setStorageSheetOpen(true)}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel="保存状態とデータ削除の案内を開く"
+              accessibilityLabel={t('drawer.storage.aria')}
             >
-              <Text style={styles.storageButtonText}>保存状態 / データ削除</Text>
+              <Text style={styles.storageButtonText}>{t('drawer.storage')}</Text>
             </TouchableOpacity>
 
             <FlatList
@@ -173,7 +180,7 @@ export function MobileSessionDrawer({
                 />
               )}
               ListEmptyComponent={
-                <Text style={styles.emptyText}>まだ会議がありません</Text>
+                <Text style={styles.emptyText}>{t('drawer.empty')}</Text>
               }
             />
           </SafeAreaView>
@@ -237,6 +244,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.inkStrong,
     letterSpacing: -0.4,
+  },
+  langRow: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
   },
   closeBtn: {
     minHeight: 44,

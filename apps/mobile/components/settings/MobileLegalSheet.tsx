@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { MOBILE_LEGAL_SECTIONS } from '../../data/legalContent';
+import { useT } from '../../i18n';
 import {
   colors,
   mobileLayout,
@@ -25,26 +26,25 @@ interface MobileLegalSheetProps {
 }
 
 export function MobileLegalSheet({ visible, onClose }: MobileLegalSheetProps) {
+  const t = useT();
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
         <SafeAreaView style={[styles.sheet, Platform.OS === 'android' && styles.sheetAndroid]}>
           <View style={styles.header}>
-            <Text style={styles.title}>利用規約・プライバシー・注意事項</Text>
+            <Text style={styles.title}>{t('legal.sheet.title')}</Text>
             <TouchableOpacity
               style={styles.closeBtn}
               onPress={onClose}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               accessibilityRole="button"
-              accessibilityLabel="法務と安全の案内を閉じる"
+              accessibilityLabel={t('legal.sheet.close.aria')}
             >
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.description}>
-            利用前の前提と安全に関わる案内を、必要なときにいつでも見返せます。
-          </Text>
+          <Text style={styles.description}>{t('legal.sheet.intro')}</Text>
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             {MOBILE_LEGAL_SECTIONS.map((section) => (
               <View key={section.id} style={styles.section}>

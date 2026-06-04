@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { MEMBER_DISPLAY_PROFILES } from '@jibunkaigi/shared/members/memberDisplayProfiles';
 import { MobileMemberCard } from './MobileMemberCard';
+import { useT } from '../../i18n';
 import { colors, mobileLayout, shadow, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileMemberSheetProps {
@@ -19,6 +20,7 @@ interface MobileMemberSheetProps {
 }
 
 export function MobileMemberSheet({ visible, onClose }: MobileMemberSheetProps) {
+  const t = useT();
   return (
     <Modal
       visible={visible}
@@ -31,18 +33,18 @@ export function MobileMemberSheet({ visible, onClose }: MobileMemberSheetProps) 
         <SafeAreaView style={[styles.sheet, Platform.OS === 'android' && styles.sheetAndroid]}>
           {/* Header */}
           <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>会議メンバー</Text>
+            <Text style={styles.sheetTitle}>{t('members.sheet.title')}</Text>
             <TouchableOpacity
               style={styles.closeBtn}
               onPress={onClose}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               accessibilityRole="button"
-              accessibilityLabel="会議メンバーを閉じる"
+              accessibilityLabel={t('members.sheet.close.aria')}
             >
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.sheetSub}>各メンバーをタップすると詳細を見られます</Text>
+          <Text style={styles.sheetSub}>{t('members.sheet.sub')}</Text>
 
           {/* Member list */}
           <ScrollView

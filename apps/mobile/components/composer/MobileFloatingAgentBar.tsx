@@ -6,6 +6,7 @@ import {
   type UniversalAgentId,
   type UniversalComposerVisibility,
 } from '@jibunkaigi/shared';
+import { useT } from '../../i18n';
 import {
   colors,
   mobileLayout,
@@ -33,6 +34,7 @@ export function MobileFloatingAgentBar({
   bottomDockHeight,
   onHeightChange,
 }: MobileFloatingAgentBarProps) {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [hasEverHadMessages, setHasEverHadMessages] = useState(hasMessages);
 
@@ -74,10 +76,10 @@ export function MobileFloatingAgentBar({
             onPress={() => setIsOpen(true)}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="視点を開く"
+            accessibilityLabel={t('agentbar.open')}
           >
             <ChevronUp size={14} color={colors.inkMuted} />
-            <Text style={styles.collapsedToggleText}>視点を開く</Text>
+            <Text style={styles.collapsedToggleText}>{t('agentbar.open')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -94,13 +96,15 @@ export function MobileFloatingAgentBar({
       >
         <View style={styles.rail}>
           <View style={styles.railHeader}>
-            <Text style={styles.railCaption}>現在: {selected?.label ?? 'レイ'}</Text>
+            <Text style={styles.railCaption}>
+              {t('agentbar.current', { name: selected?.label ?? 'レイ' })}
+            </Text>
             <TouchableOpacity
               style={styles.closeToggle}
               onPress={() => setIsOpen(false)}
               activeOpacity={0.75}
               accessibilityRole="button"
-              accessibilityLabel="視点を閉じる"
+              accessibilityLabel={t('agentbar.close.aria')}
             >
               <X size={14} color={colors.inkMuted} />
             </TouchableOpacity>
@@ -119,7 +123,7 @@ export function MobileFloatingAgentBar({
                   onPress={() => onSelectAgent(agent.id)}
                   activeOpacity={0.75}
                   accessibilityRole="button"
-                  accessibilityLabel={`${agent.label}を選ぶ`}
+                  accessibilityLabel={t('agentbar.select.aria', { name: agent.label })}
                 >
                   <Text style={styles.agentEmoji}>{agent.emoji}</Text>
                   <Text style={[styles.agentLabel, isActive && styles.agentLabelActive]}>

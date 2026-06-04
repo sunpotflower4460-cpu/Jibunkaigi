@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Send, X } from 'lucide-react-native';
 import { UNIVERSAL_COMPOSER_LABELS } from '@jibunkaigi/shared';
+import { useT } from '../../i18n';
 import {
   colors,
   mobileLineHeights,
@@ -39,6 +40,7 @@ export function MobileComposer({
   onOpen,
   onClose,
 }: MobileComposerProps) {
+  const t = useT();
   const [text, setText] = useState('');
   const inputRef = useRef<TextInput>(null);
 
@@ -84,7 +86,7 @@ export function MobileComposer({
           onPress={onClose}
           activeOpacity={0.75}
           accessibilityRole="button"
-          accessibilityLabel="入力欄を閉じる"
+          accessibilityLabel={t('composer.close.aria')}
         >
           <X size={16} color={colors.inkMuted} />
           <Text style={styles.closeLabel}>{UNIVERSAL_COMPOSER_LABELS.close}</Text>
@@ -96,7 +98,7 @@ export function MobileComposer({
           style={styles.input}
           value={text}
           onChangeText={setText}
-          placeholder={isThinking ? '応答を待っています…' : placeholder}
+          placeholder={isThinking ? t('composer.waiting') : placeholder}
           placeholderTextColor={colors.inkFaint}
           multiline
           returnKeyType="default"
@@ -110,7 +112,7 @@ export function MobileComposer({
           activeOpacity={0.75}
           disabled={!canSend}
           accessibilityRole="button"
-          accessibilityLabel="メッセージを送信"
+          accessibilityLabel={t('composer.send.aria')}
         >
           <Send size={18} color={colors.textOnAccent} />
         </TouchableOpacity>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useT } from '../../i18n';
 import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileLegalLinksProps {
@@ -7,6 +8,7 @@ interface MobileLegalLinksProps {
 }
 
 export function MobileLegalLinks({ onOpenLegal }: MobileLegalLinksProps) {
+  const t = useT();
   return (
     <View style={styles.wrap}>
       <TouchableOpacity
@@ -14,9 +16,9 @@ export function MobileLegalLinks({ onOpenLegal }: MobileLegalLinksProps) {
         onPress={onOpenLegal}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel="利用規約やプライバシーの案内を開く"
+        accessibilityLabel={t('legal.links.aria')}
       >
-        <Text style={styles.buttonText}>利用規約 / プライバシー / 注意事項</Text>
+        <Text style={styles.buttonText}>{t('legal.links.label')}</Text>
       </TouchableOpacity>
     </View>
   );

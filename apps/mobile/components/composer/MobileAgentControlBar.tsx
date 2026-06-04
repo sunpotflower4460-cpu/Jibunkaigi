@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { UNIVERSAL_AGENTS, type UniversalAgentId } from '@jibunkaigi/shared';
+import { useT } from '../../i18n';
 import {
   colors,
   mobileTouchTarget,
@@ -27,11 +28,12 @@ export function MobileAgentControlBar({
   selected,
   onSelect,
 }: MobileAgentControlBarProps) {
+  const t = useT();
   const agents = UNIVERSAL_AGENTS.filter((a) => a.shouldAppearInAgentBar);
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.caption}>視点を選ぶ</Text>
+      <Text style={styles.caption}>{t('agentcontrol.caption')}</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

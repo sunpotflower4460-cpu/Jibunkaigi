@@ -21,6 +21,7 @@ import {
 } from '../../theme/tokens';
 import { MobileOnboardingStep } from './MobileOnboardingStep';
 import { MobileLegalSheet } from '../settings/MobileLegalSheet';
+import { useT } from '../../i18n';
 
 interface MobileOnboardingScreenProps {
   userName: string;
@@ -33,6 +34,7 @@ export function MobileOnboardingScreen({
   onChangeUserName,
   onComplete,
 }: MobileOnboardingScreenProps) {
+  const t = useT();
   const [legalSheetOpen, setLegalSheetOpen] = useState(false);
   const { height } = useWindowDimensions();
   const isCompactHeight = height < 760;
@@ -113,11 +115,9 @@ export function MobileOnboardingScreen({
             onPress={() => setLegalSheetOpen(true)}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="利用規約とプライバシーの案内を開く"
+            accessibilityLabel={t('onboarding.legal.aria')}
           >
-            <Text style={styles.legalButtonText}>
-              利用規約 / プライバシー / 非医療・緊急時の案内を見る
-            </Text>
+            <Text style={styles.legalButtonText}>{t('onboarding.legal.label')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

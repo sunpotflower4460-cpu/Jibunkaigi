@@ -19,6 +19,7 @@ import {
   MOBILE_STORAGE_EXPLANATIONS,
   getMobileStorageStatusSummary,
 } from '../../services/storageStatus';
+import { useT } from '../../i18n';
 import {
   colors,
   mobileLayout,
@@ -35,6 +36,7 @@ interface MobileStorageSheetProps {
 }
 
 export function MobileStorageSheet({ visible, status, onClose }: MobileStorageSheetProps) {
+  const t = useT();
   const summary = getMobileStorageStatusSummary(status);
 
   return (
@@ -43,20 +45,18 @@ export function MobileStorageSheet({ visible, status, onClose }: MobileStorageSh
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
         <SafeAreaView style={[styles.sheet, Platform.OS === 'android' && styles.sheetAndroid]}>
           <View style={styles.header}>
-            <Text style={styles.title}>保存状態とデータ削除</Text>
+            <Text style={styles.title}>{t('storage.title')}</Text>
             <TouchableOpacity
               style={styles.closeBtn}
               onPress={onClose}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               accessibilityRole="button"
-              accessibilityLabel="保存状態とデータ削除の案内を閉じる"
+              accessibilityLabel={t('storage.close.aria')}
             >
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.description}>
-            いまの保存先と、どこまで削除できるかをまとめて確認できます。
-          </Text>
+          <Text style={styles.description}>{t('storage.intro')}</Text>
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <View style={[styles.section, getSectionToneStyle(summary.tone)]}>
               <View style={[styles.badge, getBadgeToneStyle(summary.tone)]}>
@@ -70,7 +70,7 @@ export function MobileStorageSheet({ visible, status, onClose }: MobileStorageSh
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>保存先の違い</Text>
+              <Text style={styles.sectionTitle}>{t('storage.section.where')}</Text>
               {MOBILE_STORAGE_EXPLANATIONS.map((item) => (
                 <View key={item.id} style={styles.innerCard}>
                   <Text style={styles.innerTitle}>{item.title}</Text>
@@ -84,10 +84,8 @@ export function MobileStorageSheet({ visible, status, onClose }: MobileStorageSh
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>削除できること / これから分けること</Text>
-              <Text style={styles.sectionSummary}>
-                セッション削除、端末内全削除、クラウド全削除は別の操作として扱います。
-              </Text>
+              <Text style={styles.sectionTitle}>{t('storage.section.delete')}</Text>
+              <Text style={styles.sectionSummary}>{t('storage.section.deleteNote')}</Text>
               {MOBILE_DATA_DELETION_ACTIONS.map((item) => (
                 <View key={item.id} style={[styles.innerCard, getDeletionToneStyle(item.tone)]}>
                   <View style={styles.actionHeader}>
@@ -98,7 +96,7 @@ export function MobileStorageSheet({ visible, status, onClose }: MobileStorageSh
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.scopeLabel}>対象: {item.scope}</Text>
+                  <Text style={styles.scopeLabel}>{t('storage.scope', { scope: item.scope })}</Text>
                   <Text style={styles.sectionLine}>・{item.description}</Text>
                   <Text style={styles.sectionLine}>・{item.detail}</Text>
                 </View>

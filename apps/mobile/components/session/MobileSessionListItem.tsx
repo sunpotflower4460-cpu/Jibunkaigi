@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { UniversalSession } from '../../state/mobileTypes';
+import { useT } from '../../i18n';
 import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileSessionListItemProps {
@@ -29,6 +30,7 @@ export function MobileSessionListItem({
   onTogglePin,
   onDelete,
 }: MobileSessionListItemProps) {
+  const t = useT();
   return (
     <View style={[styles.card, isActive && styles.cardActive]}>
       <View style={styles.metaRow}>
@@ -43,48 +45,56 @@ export function MobileSessionListItem({
           ) : null}
           {isActive ? (
             <View style={[styles.badge, styles.badgeActive]}>
-              <Text style={[styles.badgeText, styles.badgeActiveText]}>表示中</Text>
+              <Text style={[styles.badgeText, styles.badgeActiveText]}>{t('sessionItem.active')}</Text>
             </View>
           ) : null}
         </View>
       </View>
-      <Text style={styles.updatedAt}>更新: {formatUpdatedAt(session.updatedAt)}</Text>
+      <Text style={styles.updatedAt}>
+        {t('sessionItem.updated', { time: formatUpdatedAt(session.updatedAt) })}
+      </Text>
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={onOpen}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel={`${session.title}を開く`}
+          accessibilityLabel={t('sessionItem.open.aria', { title: session.title })}
         >
-          <Text style={styles.actionText}>開く</Text>
+          <Text style={styles.actionText}>{t('sessionItem.open')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={onEdit}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel={`${session.title}を編集`}
+          accessibilityLabel={t('sessionItem.edit.aria', { title: session.title })}
         >
-          <Text style={styles.actionText}>編集</Text>
+          <Text style={styles.actionText}>{t('sessionItem.edit')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={onTogglePin}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel={session.pinned ? `${session.title}のピン留めを外す` : `${session.title}をピン留めする`}
+          accessibilityLabel={
+            session.pinned
+              ? t('sessionItem.pin.remove.aria', { title: session.title })
+              : t('sessionItem.pin.add.aria', { title: session.title })
+          }
         >
-          <Text style={styles.actionText}>{session.pinned ? 'ピン解除' : 'ピン'}</Text>
+          <Text style={styles.actionText}>
+            {session.pinned ? t('sessionItem.unpin') : t('sessionItem.pin')}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, styles.actionButtonDanger]}
           onPress={onDelete}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel={`${session.title}を削除`}
+          accessibilityLabel={t('sessionItem.delete.aria', { title: session.title })}
         >
-          <Text style={[styles.actionText, styles.actionTextDanger]}>削除</Text>
+          <Text style={[styles.actionText, styles.actionTextDanger]}>{t('sessionItem.delete')}</Text>
         </TouchableOpacity>
       </View>
     </View>

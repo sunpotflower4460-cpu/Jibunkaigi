@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { UNIVERSAL_MESSAGE_ACTIONS } from '@jibunkaigi/shared';
+import { useT } from '../../i18n';
 import {
   colors,
   mobileLineHeights,
@@ -27,6 +28,7 @@ export function MobileMessageToolbar({
   onDelete,
   onRequestOthers,
 }: MobileMessageToolbarProps) {
+  const t = useT();
   const actions = UNIVERSAL_MESSAGE_ACTIONS.filter((action) => {
     if (action.id === 'others') {
       return canRequestOthers && Boolean(onRequestOthers);
@@ -60,7 +62,7 @@ export function MobileMessageToolbar({
             }}
             activeOpacity={0.75}
             accessibilityRole="button"
-            accessibilityLabel={`${action.label}を実行`}
+            accessibilityLabel={t('messageToolbar.action.aria', { name: action.label })}
           >
             <Text style={[styles.actionText, isDestructive && styles.actionTextDestructive]}>
               {action.label}

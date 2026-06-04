@@ -6,6 +6,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import type { MemberDisplayProfile } from '@jibunkaigi/shared/members/memberDisplayTypes';
+import { useT } from '../../i18n';
 import { colors, mobileLineHeights, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileMemberCardProps {
@@ -13,6 +14,7 @@ interface MobileMemberCardProps {
 }
 
 export function MobileMemberCard({ profile }: MobileMemberCardProps) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -21,7 +23,10 @@ export function MobileMemberCard({ profile }: MobileMemberCardProps) {
       onPress={() => setExpanded((v) => !v)}
       activeOpacity={0.85}
       accessibilityRole="button"
-      accessibilityLabel={`${profile.label}の詳細を${expanded ? '閉じる' : '開く'}`}
+      accessibilityLabel={t(
+        expanded ? 'members.card.collapse.aria' : 'members.card.expand.aria',
+        { name: profile.label },
+      )}
     >
       {/* Header row */}
       <View style={styles.header}>
@@ -36,10 +41,10 @@ export function MobileMemberCard({ profile }: MobileMemberCardProps) {
       {/* Expanded detail */}
       {expanded && (
         <View style={styles.detail}>
-          <DetailRow label="何を見るか" value={profile.sees} />
-          <DetailRow label="核心" value={profile.core} />
-          <DetailRow label="声の温度" value={profile.tone} />
-          <DetailRow label="しないこと" value={profile.avoids} />
+          <DetailRow label={t('members.card.sees')} value={profile.sees} />
+          <DetailRow label={t('members.card.core')} value={profile.core} />
+          <DetailRow label={t('members.card.tone')} value={profile.tone} />
+          <DetailRow label={t('members.card.avoids')} value={profile.avoids} />
           <View style={styles.hintBlock}>
             <Text style={styles.hintText}>{profile.userFacingHint}</Text>
           </View>

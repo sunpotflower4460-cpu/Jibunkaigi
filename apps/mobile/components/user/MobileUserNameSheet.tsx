@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useT } from '../../i18n';
 import {
   colors,
   mobileLayout,
@@ -35,6 +36,7 @@ export function MobileUserNameSheet({
   onClose,
   onSave,
 }: MobileUserNameSheetProps) {
+  const t = useT();
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -50,16 +52,14 @@ export function MobileUserNameSheet({
             >
               <View style={styles.sheet}>
                 <View style={styles.header}>
-                  <Text style={styles.title}>名前を整える</Text>
-                  <Text style={styles.sub}>
-                    会議メンバーからの呼ばれ方に使われます。
-                  </Text>
+                  <Text style={styles.title}>{t('user.sheet.title')}</Text>
+                  <Text style={styles.sub}>{t('user.sheet.desc')}</Text>
                 </View>
 
                 <TextInput
                   value={userName}
                   onChangeText={onChange}
-                  placeholder="あなた"
+                  placeholder={t('user.sheet.placeholder')}
                   placeholderTextColor={colors.inkFaint}
                   maxLength={24}
                   autoFocus
@@ -70,7 +70,7 @@ export function MobileUserNameSheet({
                   style={styles.input}
                 />
 
-                <Text style={styles.help}>空欄のまま保存すると「あなた」になります。</Text>
+                <Text style={styles.help}>{t('user.sheet.help')}</Text>
 
                 <View style={styles.actions}>
                   <TouchableOpacity
@@ -78,14 +78,14 @@ export function MobileUserNameSheet({
                     onPress={onSave}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.primaryButtonText}>保存する</Text>
+                    <Text style={styles.primaryButtonText}>{t('common.save')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.secondaryButton}
                     onPress={onClose}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.secondaryButtonText}>キャンセル</Text>
+                    <Text style={styles.secondaryButtonText}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>

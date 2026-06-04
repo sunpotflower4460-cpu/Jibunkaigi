@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useT } from '../../i18n';
 import { colors, mobileLayout, radius, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileDeleteMessageSheetProps {
@@ -20,20 +21,21 @@ export function MobileDeleteMessageSheet({
   onCancel,
   onConfirm,
 }: MobileDeleteMessageSheetProps) {
+  const t = useT();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onCancel} />
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.sheet}>
-            <Text style={styles.title}>このメッセージを手放しますか？</Text>
-            <Text style={styles.caption}>会話の表示から取り除かれます。</Text>
+            <Text style={styles.title}>{t('deleteMsg.title')}</Text>
+            <Text style={styles.caption}>{t('deleteMsg.caption')}</Text>
             <View style={styles.actions}>
               <TouchableOpacity style={styles.cancelButton} onPress={onCancel} activeOpacity={0.75}>
-                <Text style={styles.cancelText}>キャンセル</Text>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.deleteButton} onPress={onConfirm} activeOpacity={0.75}>
-                <Text style={styles.deleteText}>手放す</Text>
+                <Text style={styles.deleteText}>{t('deleteMsg.confirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>
