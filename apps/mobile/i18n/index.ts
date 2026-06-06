@@ -5,7 +5,7 @@
 // translate(): 非 React 文脈でも使える素の翻訳関数。
 // Web 版（src/i18n/index.js）と同じ API を RN(TypeScript) に移植したもの。
 import { useCallback, useSyncExternalStore } from 'react';
-import { getLang, setLang, subscribe, toggleLang } from './store';
+import { getLang, getServerSnapshot, setLang, subscribe, toggleLang } from './store';
 import type { Lang } from './store';
 import { translations } from './translations';
 
@@ -27,12 +27,12 @@ export const translate = (lang: Lang, key: string, vars?: Vars): string => {
 };
 
 export const useLang = () => {
-  const lang = useSyncExternalStore(subscribe, getLang, getLang);
+  const lang = useSyncExternalStore(subscribe, getLang, getServerSnapshot);
   return { lang, setLang, toggleLang };
 };
 
 export const useT = () => {
-  const lang = useSyncExternalStore(subscribe, getLang, getLang);
+  const lang = useSyncExternalStore(subscribe, getLang, getServerSnapshot);
   return useCallback((key: string, vars?: Vars) => translate(lang, key, vars), [lang]);
 };
 

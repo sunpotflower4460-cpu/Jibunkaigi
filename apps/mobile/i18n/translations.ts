@@ -7,9 +7,7 @@
 // AI の応答はユーザーの入力言語に自動追従するため、ここには含めない。
 import type { Lang } from './store';
 
-type Dictionary = Record<string, string>;
-
-const ja: Dictionary = {
+const ja = {
   // 共通
   'app.name': 'じぶん会議',
   'common.save': '保存する',
@@ -149,9 +147,9 @@ const ja: Dictionary = {
 
   // 言語トグル
   'lang.toggle.aria': '言語を切り替える（日本語 / English）',
-};
+} satisfies Record<string, string>;
 
-const en: Dictionary = {
+const en = {
   // common
   'app.name': 'Jibun Kaigi',
   'common.save': 'Save',
@@ -293,8 +291,14 @@ const en: Dictionary = {
 
   // language toggle
   'lang.toggle.aria': 'Switch language (日本語 / English)',
-};
+} satisfies Record<string, string>;
 
-export const translations: Record<Lang, Dictionary> = { ja, en };
+// コンパイル時に ja / en のキー集合が完全一致することを強制する（実行時コードなし）。
+// 片方だけキーを足す／消すと typecheck が失敗する。
+type Eq<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+type Expect<T extends true> = T;
+type _KeyParity = Expect<Eq<keyof typeof ja, keyof typeof en>>;
+
+export const translations: Record<Lang, Record<string, string>> = { ja, en };
 
 export default translations;
