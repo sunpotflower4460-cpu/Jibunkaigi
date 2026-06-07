@@ -102,7 +102,7 @@ const ChatTimeline = React.forwardRef(function ChatTimeline(
                   aria-label={t('timeline.mirrorInvite.aria')}
                   className="mirror-invite group disabled:opacity-30"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-105 transition-transform">
+                  <div className="mirror-invite-orb w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-105 transition-transform">
                     <Compass size={18} aria-hidden="true" />
                   </div>
                   <div className="flex flex-col text-left">

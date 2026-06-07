@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, Text, View, StyleSheet } from 'react-native';
 import {
   colors,
   mobileLayout,
@@ -9,6 +9,7 @@ import {
   type as typeScale,
 } from '../../theme/tokens';
 import { MobileMessageToolbar } from './MobileMessageToolbar';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 export type MessageRole = 'user' | 'agent';
 
@@ -39,8 +40,35 @@ export function MobileMessageBubble({
   const isOthers = origin === 'others';
   const hasToolbar = Boolean(onCopy && onShare && onDelete);
 
+  // 声がそっと立ち上がるように、マウント時だけ淡く浮かび上がる。
+  const reduced = useReducedMotion();
+  const enter = useRef(new Animated.Value(reduced ? 1 : 0)).current;
+
+  useEffect(() => {
+    if (reduced) {
+      enter.setValue(1);
+      return undefined;
+    }
+    const anim = Animated.timing(enter, {
+      toValue: 1,
+      duration: 360,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [reduced, enter]);
+
+  const translateY = enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] });
+
   return (
-    <View style={[styles.row, isUser ? styles.rowUser : styles.rowAgent]}>
+    <Animated.View
+      style={[
+        styles.row,
+        isUser ? styles.rowUser : styles.rowAgent,
+        { opacity: enter, transform: [{ translateY }] },
+      ]}
+    >
       <View style={styles.column}>
         <View
           style={[
@@ -76,7 +104,7 @@ export function MobileMessageBubble({
           />
         ) : null}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

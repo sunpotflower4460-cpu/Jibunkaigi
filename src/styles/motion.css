@@ -68,6 +68,15 @@
   0%, 100% { opacity: 0.55; }
   50%      { opacity: 0.95; }
 }
+/* 心の鏡への誘い: 静止時にやわらかな光の輪がゆっくり呼吸する（hover の transform とは
+   干渉しないよう box-shadow のみを動かす）。 */
+@keyframes jk-mirror-breath {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  50%      { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.07); }
+}
+.mirror-invite-orb {
+  animation: jk-mirror-breath 5.2s var(--jk-ease-in-out) infinite;
+}
 
 /* ===== Composite helpers ===== */
 .anim-float     { animation: jk-float 5.6s ease-in-out infinite; }
@@ -131,7 +140,8 @@
   .anim-card-rise,
   .hero-panel::after,
   .glass-flecks,
-  .thinking-dot {
+  .thinking-dot,
+  .mirror-invite-orb {
     animation: none !important;
   }
   .water-shimmer { opacity: 0.4; }
