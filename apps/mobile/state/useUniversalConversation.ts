@@ -131,7 +131,11 @@ export function useUniversalConversation(
   const [sessions, setSessions] = useState<UniversalSession[]>([]);
   const [composerVisibility, setComposerVisibility] =
     useState<UniversalComposerVisibility>('open');
-  const [selectedAgent, setSelectedAgent] = useState<UniversalAgentId>('ray');
+  // Phase 2: 'delegate' ('委ねる') is the default entry point. The user can
+  // still pick a concrete voice, but by default the system reads context and
+  // chooses for them. Kept consistent with the new-session / clear resets below
+  // so the entry point is never a mix of 'ray' (first run) and 'delegate'.
+  const [selectedAgent, setSelectedAgent] = useState<UniversalAgentId>('delegate');
   const [selectedMode, setSelectedMode] = useState<UniversalModeId>('dialogue');
   // Resolved-voice state. Kept separate from selectedAgent (the user's entry
   // point) so UI / AI / OTHERS can all reference the same actual speaker.
@@ -503,6 +507,8 @@ export function useUniversalConversation(
     setIsThinking(false);
     setPendingResolvedAgentId(null);
     setLastResolvedAgentId(null);
+    // Phase 2: return the entry point to the default ('委ねる') on clear.
+    setSelectedAgent('delegate');
     openComposer();
     const cleared: UniversalSession = {
       ...sessionRef.current,
@@ -524,6 +530,8 @@ export function useUniversalConversation(
     setIsThinking(false);
     setPendingResolvedAgentId(null);
     setLastResolvedAgentId(null);
+    // Phase 2: a brand-new session starts from the default entry point ('委ねる').
+    setSelectedAgent('delegate');
     openComposer();
     setSession(newSession);
     setShareError(null);
@@ -550,6 +558,10 @@ export function useUniversalConversation(
       openComposer();
       setSession({ ...target, messages: msgs });
       setSessions(list);
+      // Phase 2: opening a session returns the entry point to the default
+      // ('委ねる'). The actual most-recent speaker is restored independently
+      // into lastResolvedAgentId below, so OTHERS exclusion stays correct.
+      setSelectedAgent('delegate');
       // Restore the last resolved speaker for the opened session so the OTHERS
       // exclusion basis does not carry over from the previous session.
       setPendingResolvedAgentId(null);
@@ -587,6 +599,8 @@ export function useUniversalConversation(
           setSessions(sortUniversalSessions([newSession]));
           setPendingResolvedAgentId(null);
           setLastResolvedAgentId(null);
+          // Phase 2: fresh fallback session starts from the default entry point.
+          setSelectedAgent('delegate');
         }
       } else {
         setSessions(list);
