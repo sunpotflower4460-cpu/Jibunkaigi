@@ -28,6 +28,12 @@ interface MobileComposerProps {
   visible: boolean;
   onOpen?: () => void;
   onClose?: () => void;
+  // Phase 2.5: lets the caller frame the send action as "委ねる" (entrust)
+  // rather than a plain chat send, without restructuring the input.
+  sendAccessibilityLabel?: string;
+  // Phase 2.5: a small status line shown above the input (e.g. when the entry
+  // point is '委ねる', "場にまかせる" so the user senses this is not a normal send).
+  composerStatusLabel?: string;
 }
 
 export function MobileComposer({
@@ -38,6 +44,8 @@ export function MobileComposer({
   visible,
   onOpen,
   onClose,
+  sendAccessibilityLabel = 'メッセージを送信',
+  composerStatusLabel,
 }: MobileComposerProps) {
   const [text, setText] = useState('');
   const inputRef = useRef<TextInput>(null);
@@ -90,6 +98,11 @@ export function MobileComposer({
           <Text style={styles.closeLabel}>{UNIVERSAL_COMPOSER_LABELS.close}</Text>
         </TouchableOpacity>
       </View>
+      {composerStatusLabel ? (
+        <Text style={styles.statusLabel} accessibilityRole="text">
+          {composerStatusLabel}
+        </Text>
+      ) : null}
       <View style={styles.row}>
         <TextInput
           ref={inputRef}
@@ -110,7 +123,7 @@ export function MobileComposer({
           activeOpacity={0.75}
           disabled={!canSend}
           accessibilityRole="button"
-          accessibilityLabel="メッセージを送信"
+          accessibilityLabel={sendAccessibilityLabel}
         >
           <Send size={18} color={colors.textOnAccent} />
         </TouchableOpacity>
@@ -145,6 +158,13 @@ const styles = StyleSheet.create({
     fontSize: typeScale.small,
     fontWeight: '600',
     color: colors.inkMuted,
+  },
+  statusLabel: {
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    fontSize: typeScale.tiny,
+    color: colors.inkMuted,
+    letterSpacing: 0.4,
   },
   collapsedButton: {
     minHeight: mobileTouchTarget.comfortable,

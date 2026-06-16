@@ -56,6 +56,7 @@ export default function IndexScreen() {
     isComposerOpen,
     selectedAgent,
     selectedMode,
+    pendingResolvedAgentId,
     isThinking,
     isLoadingOthers,
     isLoadingSessions,
@@ -169,15 +170,22 @@ export default function IndexScreen() {
 
   function handleNewSession() {
     setShowIntro(true);
+    // Phase 2.5: a new question returns the screen to the quiet '委ねる' entry,
+    // so collapse the manual controls if the user had opened them.
+    setManualControlsExpanded(false);
     createNewSession();
   }
 
   function handleClear() {
     setShowIntro(false);
+    // Phase 2.5: same as new session — go back to the calm default surface.
+    setManualControlsExpanded(false);
     clearConversation();
   }
 
   async function handleSwitchSession(sessionId: string) {
+    // Phase 2.5: opening another session also returns to the collapsed default.
+    setManualControlsExpanded(false);
     await switchSession(sessionId);
     setShowIntro(false);
   }
@@ -256,7 +264,9 @@ export default function IndexScreen() {
                 <MobileChatTimeline
                   messages={messages}
                   isThinking={isThinking}
-                  thinkingAgentId={selectedAgent}
+                  // Phase 2.5: prefer the concrete voice resolved at send time so
+                  // the Thinking UI shows the actual speaker, not 'delegate'.
+                  thinkingAgentId={pendingResolvedAgentId ?? selectedAgent}
                   onCopyMessage={(messageId) => {
                     void copyMessage(messageId);
                   }}
@@ -325,6 +335,18 @@ export default function IndexScreen() {
                   onClose={closeComposer}
                   onSend={handleSend}
                   isThinking={isThinking}
+                  // Phase 2.5: when the entry point is '委ねる', frame the send as
+                  // entrusting the question to the room rather than a plain send.
+                  sendAccessibilityLabel={
+                    selectedAgent === 'delegate'
+                      ? '問いを置いて委ねる'
+                      : 'メッセージを送信'
+                  }
+                  composerStatusLabel={
+                    selectedAgent === 'delegate'
+                      ? '場にまかせる ― 問いを置くと、場に合う視点が応えます'
+                      : undefined
+                  }
                 />
                 <ReflectionShelfTrigger onPress={openReflectionShelf} />
               </View>
