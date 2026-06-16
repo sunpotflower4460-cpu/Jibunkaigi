@@ -17,6 +17,9 @@ export function MobileAppShell({ children }: MobileAppShellProps) {
 const styles = StyleSheet.create({
   shell: {
     flex: 1,
+    width: '100%',
+    maxWidth: '100%',
+    overflow: 'hidden',
     backgroundColor: colors.bgBase,
   },
 });
