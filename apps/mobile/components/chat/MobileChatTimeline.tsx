@@ -66,6 +66,7 @@ export function MobileChatTimeline({
             messageId={msg.id}
             role={msg.role}
             text={msg.text}
+            agentId={msg.agentId}
             agentLabel={msg.agentLabel}
             origin={msg.origin}
             isThinking={isThinking}

@@ -31,6 +31,34 @@ export const mobileColors = {
   overlayStrong: 'rgba(15,23,42,0.35)',
 } as const;
 
+export const mobileAgentPalette = {
+  ray: {
+    surface: 'rgba(147,197,253,0.13)',
+    border: 'rgba(96,165,250,0.20)',
+    label: '#3b6f9f',
+  },
+  joe: {
+    surface: 'rgba(251,191,36,0.12)',
+    border: 'rgba(217,119,6,0.18)',
+    label: '#8a5a16',
+  },
+  ken: {
+    surface: 'rgba(148,163,184,0.13)',
+    border: 'rgba(100,116,139,0.18)',
+    label: '#526173',
+  },
+  mina: {
+    surface: 'rgba(251,207,232,0.18)',
+    border: 'rgba(244,114,182,0.16)',
+    label: '#9d5576',
+  },
+  satou: {
+    surface: 'rgba(187,247,208,0.15)',
+    border: 'rgba(74,222,128,0.18)',
+    label: '#4f7f5f',
+  },
+} as const;
+
 export const mobileRadius = {
   xs: 10,
   sm: 14,
@@ -59,6 +87,7 @@ export const mobileShadow = {
 
 export const mobileTheme = {
   colors: mobileColors,
+  agentPalette: mobileAgentPalette,
   radius: mobileRadius,
   spacing: mobileSpacing,
   typography: mobileTypography,
