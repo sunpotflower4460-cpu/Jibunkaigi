@@ -44,7 +44,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
       role="dialog"
       aria-modal="true"
       aria-labelledby="intro-title"
-      className={`fixed inset-0 z-[100] flex flex-col items-center px-4 sm:px-6 safe-bottom safe-top overflow-y-auto transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[100] flex flex-col items-center px-4 sm:px-6 safe-bottom safe-top overflow-y-auto overflow-x-hidden transition-opacity duration-500 ${
         isHomeReady ? 'opacity-0' : 'opacity-100'
       }`}
     >
@@ -55,7 +55,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
       <div className="grain-overlay z-0" aria-hidden="true" />
 
       <div
-        className="max-w-sm w-full text-center px-2 my-auto relative z-10 flex flex-col items-center anim-card-rise"
+        className="max-w-sm w-full min-w-0 text-center px-2 my-auto relative z-10 flex flex-col items-center anim-card-rise overflow-x-hidden"
         style={{
           gap: 'clamp(0.85rem, 3vh, 1.6rem)',
           paddingTop: 'clamp(1rem, 4vh, 2.25rem)',
@@ -63,7 +63,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
         }}
       >
         {/* アイコン — 白い霧ガラスのタイルに、濃紺のラインアイコン */}
-        <div className="anim-scale-in">
+        <div className="anim-scale-in max-w-full">
           <div
             className="icon-tile anim-float"
             style={{ width: 'clamp(4.25rem, 11vh, 5.5rem)', height: 'clamp(4.25rem, 11vh, 5.5rem)' }}
@@ -73,13 +73,13 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
         </div>
 
         {/* タイトルブロック — アイコンとの一体感を高める */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 max-w-full min-w-0">
           <p className="typo-label-small uppercase pl-[0.32em]">
             {t('app.tagline')}
           </p>
           <h1
             id="intro-title"
-            className="title-ink leading-tight font-black tracking-tighter"
+            className="title-ink leading-tight font-black tracking-tighter max-w-full"
             style={{ fontSize: 'clamp(2.1rem, 5.5vh, 2.8rem)' }}
           >
             {t('app.name')}
@@ -91,13 +91,13 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
 
         {/* キャッチコピーカード — 霧を閉じ込めたガラスに、明朝で静かに置く */}
         <div
-          className="keyline-card px-6 flex justify-center items-center w-full"
+          className="keyline-card px-6 flex justify-center items-center w-full min-w-0 max-w-full overflow-hidden"
           style={{ paddingTop: 'clamp(1.15rem, 3.4vh, 1.9rem)', paddingBottom: 'clamp(1.15rem, 3.4vh, 1.9rem)' }}
         >
           <span className="glass-bloom" aria-hidden="true" />
           <span className="glass-flecks" aria-hidden="true" />
           <p
-            className="jk-serif typo-body relative z-[1] font-medium tracking-[0.05em] text-center"
+            className="jk-serif typo-body relative z-[1] font-medium tracking-[0.05em] text-center max-w-full"
             style={{ fontSize: 'clamp(1.02rem, 2.5vh, 1.2rem)' }}
           >
             {t('intro.keyline.line1')}
@@ -107,7 +107,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
         </div>
 
         {/* 3 ステップ — 横並びでコンパクトに（2＋1 で折り返す） */}
-        <ol className="w-full flex flex-wrap items-center justify-center gap-2" aria-label="使い方の流れ">
+        <ol className="w-full min-w-0 max-w-full flex flex-wrap items-center justify-center gap-2" aria-label="使い方の流れ">
           <li className="intro-step">
             <span className="intro-step__num" aria-hidden="true">1</span>
             <Feather size={12} className="text-slate-500" aria-hidden="true" />
@@ -130,13 +130,13 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           ref={startBtnRef}
           type="button"
           onClick={onStart}
-          className="cta-primary-surface w-full py-4 rounded-[1.6rem] font-black text-[0.95rem] tracking-wide active:scale-95 flex items-center justify-center gap-2"
+          className="cta-primary-surface w-full max-w-full py-4 rounded-[1.6rem] font-black text-[0.95rem] tracking-wide active:scale-95 flex items-center justify-center gap-2"
         >
           {hasBlockingConfigIssue ? t('intro.cta.config') : t('intro.cta.start')}
           <ChevronRight size={18} aria-hidden="true" />
         </button>
         {hasBlockingConfigIssue && (
-          <p className="typo-helper-muted font-medium leading-relaxed text-center w-full">
+          <p className="typo-helper-muted font-medium leading-relaxed text-center w-full max-w-full">
             {t('intro.config.note')}
           </p>
         )}
