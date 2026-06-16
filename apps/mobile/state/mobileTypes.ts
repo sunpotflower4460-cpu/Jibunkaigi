@@ -20,6 +20,12 @@ export interface UniversalMessage {
   model?: string;
   origin?: 'direct' | 'others';
   groupId?: string;
+  // Delegate provenance (Phase 0-1):
+  // requestedAgentId is the user's entry-point selection at send time
+  // (e.g. 'delegate'); resolvedFromDelegate flags that the concrete agentId
+  // above was chosen by context selection rather than directly requested.
+  requestedAgentId?: UniversalAgentId;
+  resolvedFromDelegate?: boolean;
 }
 
 export interface UniversalSession {

@@ -3,6 +3,7 @@ export * from './modes';
 export * from './thinking';
 export * from './ids';
 export * from './mockReply';
+export * from './delegate/delegateSelection';
 export * from './parityFeatures';
 export * from './onboarding/onboardingTypes';
 export * from './onboarding/onboardingContent';

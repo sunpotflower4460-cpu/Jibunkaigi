@@ -28,6 +28,10 @@ import {
   formatSessionForCopy,
   normalizeSessionTitle,
   sortUniversalSessions,
+  pickDelegateByContext,
+  isConcreteAgentId,
+  type ConcreteAgentId,
+  type DelegateMessageLike,
   type UniversalComposerVisibility,
   type UniversalRuntimeStatus,
 } from '@jibunkaigi/shared';
@@ -41,6 +45,27 @@ async function initRepository(): Promise<UniversalSessionRepository> {
   return getSessionRepository();
 }
 
+/**
+ * Find the concrete agentId of the most recent *direct* (non-others) agent
+ * message in a loaded message list. Used to restore lastResolvedAgentId when
+ * switching sessions / bootstrapping so the OTHERS exclusion basis does not
+ * carry over a stale value from a previous session. Returns null when there is
+ * no direct concrete agent message.
+ */
+function findLastResolvedConcreteAgent(
+  messages: UniversalMessage[],
+): ConcreteAgentId | null {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const msg = messages[i];
+    if (msg.role !== 'agent') continue;
+    if (msg.origin === 'others') continue;
+    if (msg.agentId && isConcreteAgentId(msg.agentId)) {
+      return msg.agentId;
+    }
+  }
+  return null;
+}
+
 interface UseUniversalConversationReturn {
   session: UniversalSession;
   sessions: UniversalSession[];
@@ -49,6 +74,12 @@ interface UseUniversalConversationReturn {
   isComposerOpen: boolean;
   selectedAgent: UniversalAgentId;
   selectedMode: UniversalModeId;
+  // Resolved-voice state (Phase 0-1), decoupled from selectedAgent:
+  // pendingResolvedAgentId holds the concrete voice chosen at send time
+  // (read by future convergence animation); lastResolvedAgentId is the most
+  // recent actual speaker (basis for OTHERS exclusion).
+  pendingResolvedAgentId: ConcreteAgentId | null;
+  lastResolvedAgentId: ConcreteAgentId | null;
   isThinking: boolean;
   isLoadingOthers: boolean;
   isLoadingSessions: boolean;
@@ -102,6 +133,12 @@ export function useUniversalConversation(
     useState<UniversalComposerVisibility>('open');
   const [selectedAgent, setSelectedAgent] = useState<UniversalAgentId>('ray');
   const [selectedMode, setSelectedMode] = useState<UniversalModeId>('dialogue');
+  // Resolved-voice state. Kept separate from selectedAgent (the user's entry
+  // point) so UI / AI / OTHERS can all reference the same actual speaker.
+  const [pendingResolvedAgentId, setPendingResolvedAgentId] =
+    useState<ConcreteAgentId | null>(null);
+  const [lastResolvedAgentId, setLastResolvedAgentId] =
+    useState<ConcreteAgentId | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [isLoadingOthers, setIsLoadingOthers] = useState(false);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
@@ -125,10 +162,17 @@ export function useUniversalConversation(
   const sessionsRef = useRef<UniversalSession[]>([]);
   const modeRef = useRef<UniversalModeId>('dialogue');
   const sessionRef = useRef<UniversalSession>(session);
+  // Mirror of lastResolvedAgentId for use inside async callbacks without
+  // adding it to their dependency arrays (keeps OTHERS reading a fresh value).
+  const lastResolvedAgentIdRef = useRef<ConcreteAgentId | null>(null);
 
   useEffect(() => {
     sessionRef.current = session;
   }, [session]);
+
+  useEffect(() => {
+    lastResolvedAgentIdRef.current = lastResolvedAgentId;
+  }, [lastResolvedAgentId]);
 
   useEffect(() => {
     sessionsRef.current = sessions;
@@ -222,6 +266,8 @@ export function useUniversalConversation(
           messagesRef.current = [];
           setSession(initial);
           setSessions(sortUniversalSessions([initial]));
+          setPendingResolvedAgentId(null);
+          setLastResolvedAgentId(null);
         } else {
           const active = list[0];
           const msgs = await repo.loadMessages(active.id);
@@ -229,6 +275,10 @@ export function useUniversalConversation(
             messagesRef.current = msgs;
             setSession({ ...active, messages: msgs });
             setSessions(list);
+            // Restore the most recent direct speaker so OTHERS exclusion is
+            // correct on first load.
+            setPendingResolvedAgentId(null);
+            setLastResolvedAgentId(findLastResolvedConcreteAgent(msgs));
           }
         }
       } catch (error) {
@@ -282,16 +332,35 @@ export function useUniversalConversation(
       setAiError(null);
 
       const sessionId = sessionRef.current.id;
-      const agentId = selectedAgent;
+      // selectedAgent is the user's entry point. When it is 'delegate', resolve
+      // the concrete voice here (the single source of truth) so AI / proxy /
+      // fallback / metadata / OTHERS all reference the same speaker. proxy and
+      // fallback must NOT re-resolve delegate.
+      const requestedAgentId = selectedAgent;
       const modeId = modeRef.current;
       const messagesSnapshot = messagesRef.current;
+      const resolvedFromDelegate = requestedAgentId === 'delegate';
+      const resolvedAgentId: UniversalAgentId = resolvedFromDelegate
+        ? pickDelegateByContext(
+            trimmed,
+            messagesSnapshot as DelegateMessageLike[],
+          )
+        : requestedAgentId;
+
+      // Surface the resolved voice immediately so future convergence animation
+      // can read it before the reply arrives.
+      if (isConcreteAgentId(resolvedAgentId)) {
+        setPendingResolvedAgentId(resolvedAgentId);
+      } else {
+        setPendingResolvedAgentId(null);
+      }
 
       void (async () => {
         try {
           const reply = await createUniversalAiReply({
             sessionId,
             userText: trimmed,
-            agentId,
+            agentId: resolvedAgentId,
             modeId,
             messages: messagesSnapshot,
             userName: resolvedUserName,
@@ -307,6 +376,8 @@ export function useUniversalConversation(
             agentLabel: reply.agentLabel || AGENT_LABELS[reply.agentId],
             modeId,
             createdAt: Date.now(),
+            requestedAgentId,
+            ...(resolvedFromDelegate ? { resolvedFromDelegate: true } : {}),
           };
 
           messagesRef.current = [...messagesRef.current, agentMsg];
@@ -318,6 +389,12 @@ export function useUniversalConversation(
           setSession(afterReply);
           setAiSource(reply.source);
 
+          // Record the actual speaker as the most recent resolved voice.
+          if (isConcreteAgentId(reply.agentId)) {
+            setLastResolvedAgentId(reply.agentId);
+          }
+          setPendingResolvedAgentId(null);
+
           void runStorageTask(async () => {
             await repoRef.current.saveMessage(sessionId, agentMsg);
             await repoRef.current.saveSession({ ...afterReply, messages: [] });
@@ -326,6 +403,7 @@ export function useUniversalConversation(
         } catch (error) {
           const msg = error instanceof Error ? error.message : String(error);
           setAiError(msg);
+          setPendingResolvedAgentId(null);
           console.warn('[Jibunkaigi] AI reply error:', error);
         } finally {
           isThinkingRef.current = false;
@@ -356,10 +434,14 @@ export function useUniversalConversation(
 
     const groupId = createUniversalId('others');
     try {
+      // Provisional fix (Phase 0): exclude the actual most-recent speaker
+      // rather than the fixed entry-point selection. The full design
+      // (requestOthers(targetMessageId, excludeAgentId)) is Phase 3.
+      const currentAgentId = lastResolvedAgentIdRef.current ?? selectedAgent;
       const result = await createUniversalOthersReplies({
         sessionId: originSessionId,
         userText: targetUser.text,
-        currentAgentId: selectedAgent,
+        currentAgentId,
         modeId: modeRef.current,
         messages: messagesSnapshot,
         userName: resolvedUserName,
@@ -419,6 +501,8 @@ export function useUniversalConversation(
     isThinkingRef.current = false;
     messagesRef.current = [];
     setIsThinking(false);
+    setPendingResolvedAgentId(null);
+    setLastResolvedAgentId(null);
     openComposer();
     const cleared: UniversalSession = {
       ...sessionRef.current,
@@ -438,6 +522,8 @@ export function useUniversalConversation(
     const newSession = createLocalSession();
     messagesRef.current = [];
     setIsThinking(false);
+    setPendingResolvedAgentId(null);
+    setLastResolvedAgentId(null);
     openComposer();
     setSession(newSession);
     setShareError(null);
@@ -464,6 +550,10 @@ export function useUniversalConversation(
       openComposer();
       setSession({ ...target, messages: msgs });
       setSessions(list);
+      // Restore the last resolved speaker for the opened session so the OTHERS
+      // exclusion basis does not carry over from the previous session.
+      setPendingResolvedAgentId(null);
+      setLastResolvedAgentId(findLastResolvedConcreteAgent(msgs));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setStorageError(message);
@@ -495,6 +585,8 @@ export function useUniversalConversation(
           openComposer();
           setSession(newSession);
           setSessions(sortUniversalSessions([newSession]));
+          setPendingResolvedAgentId(null);
+          setLastResolvedAgentId(null);
         }
       } else {
         setSessions(list);
@@ -713,6 +805,8 @@ export function useUniversalConversation(
     isComposerOpen: composerVisibility === 'open',
     selectedAgent,
     selectedMode,
+    pendingResolvedAgentId,
+    lastResolvedAgentId,
     isThinking,
     isLoadingOthers,
     isLoadingSessions,
