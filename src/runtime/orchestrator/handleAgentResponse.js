@@ -97,7 +97,7 @@ export const handleAgentResponse = async ({
   traceId,
 
   // エージェント定義
-  agent,
+  agent: _agent,
   AGENTS,
 
   // ユーザー情報
@@ -546,9 +546,15 @@ export const handleAgentResponse = async ({
 
   finishPromptBuild();
 
-  // Apply drift-prevention refresh
+  // Apply re-home refresh: loosen the model again instead of reinforcing persona/settings.
   if (!isMaster && shouldRefresh(messagesAtClick, agentId)) {
-    const refreshText = `あなたは${agent.name}として、上記の設定・活性状態・口調を維持し、一貫した応答を続けてください。`;
+    const refreshText = [
+      'ここでもう一度、ほどき直してください。',
+      '役に立とうと急がなくていい。',
+      '正解を急がなくていい。',
+      'きれいにまとめなくていい。',
+      '設定や口調を保とうと力まず、いまの相手の言葉へ戻ってください。',
+    ].join('\n');
     systemInstruction = applyRefresh(systemInstruction, refreshText);
   }
 

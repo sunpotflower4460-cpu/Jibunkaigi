@@ -1,11 +1,11 @@
 // src/runtime/refreshPolicy.js
-// Determines whether a refresh injection is needed to pull
-// an agent back to its core identity after conversational drift.
+// Determines whether a refresh injection is needed to loosen
+// an agent back toward the user's current words.
 
 /**
  * The minimum number of AI turns before a refresh can trigger.
- * 6 turns gives enough conversational depth for drift to accumulate
- * while still keeping the agent anchored to its core identity.
+ * 6 turns gives enough conversational depth before gently
+ * re-homing the agent toward the current exchange.
  */
 const REFRESH_INTERVAL = 6;
 
