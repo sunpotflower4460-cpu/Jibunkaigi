@@ -60,7 +60,7 @@ export function MobileMessageToolbar({
             }}
             activeOpacity={0.75}
             accessibilityRole="button"
-            accessibilityLabel={`${action.label}を実行`}
+            accessibilityLabel={action.id === 'others' ? 'ほかの声も聴く' : `${action.label}を実行`}
           >
             <Text style={[styles.actionText, isDestructive && styles.actionTextDestructive]}>
               {action.label}

@@ -58,7 +58,7 @@ export const UNIVERSAL_PARITY_FEATURES: UniversalParityFeature[] = [
   { id: 'agent_satou', label: 'サトウ', userFacing: true, requiredForParity: true },
   { id: 'delegate', label: '委ねる', userFacing: true, requiredForParity: true },
   { id: 'mirror', label: '心の鏡', userFacing: true, requiredForParity: true },
-  { id: 'others', label: 'OTHERS', userFacing: true, requiredForParity: true },
+  { id: 'others', label: 'ほかの声', userFacing: true, requiredForParity: true },
   { id: 'session_save', label: 'セッション保存', userFacing: true, requiredForParity: true },
   { id: 'session_list', label: 'セッション一覧', userFacing: true, requiredForParity: true },
   { id: 'session_switch', label: 'セッション切り替え', userFacing: true, requiredForParity: true },

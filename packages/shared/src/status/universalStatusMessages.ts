@@ -74,7 +74,7 @@ export function buildUniversalStatusItems(
   if (status.isLoadingOthers) {
     items.push({
       id: 'others-loading',
-      label: 'OTHERS',
+      label: 'ほかの声',
       message: '他の視点を集めています',
       severity: 'info',
       visibleInProduction: true,
@@ -104,7 +104,7 @@ export function buildUniversalStatusItems(
   if (status.othersError) {
     items.push({
       id: 'others-error',
-      label: 'OTHERS',
+      label: 'ほかの声',
       message: '他の視点の取得に一時的に失敗しました。ローカル応答に切り替えています。',
       severity: 'warning',
       visibleInProduction: true,
