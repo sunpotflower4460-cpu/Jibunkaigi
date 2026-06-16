@@ -262,6 +262,66 @@ describe('activateFeelings', () => {
     // Dominant axes should be limited to top 3
     assert.ok(result.activationMeta.dominantAxes.length <= 3);
   });
+
+  it('should prefer focusPoints over attentionTargets for trigger and anti-trigger matching', () => {
+    const baseEmergingField = {
+      resonanceAxes: [],
+      bodySignals: { tension: 0.5, softness: 0.5, hesitation: 0.5, urgency: 0.5, warmth: 0.5, contraction: 0.5 },
+      atmosphere: [],
+    };
+    const findScore = (result, nodeId) => result.activatedFeelings.find((item) => item.nodeId === nodeId)?.score ?? 0;
+
+    const fallbackResult = activateFeelings({
+      agentId: 'ken',
+      userText: 'neutral',
+      topN: 20,
+      emergingField: {
+        ...baseEmergingField,
+        attentionTargets: ['unrelated-legacy-target'],
+      },
+    });
+    const focusTriggerResult = activateFeelings({
+      agentId: 'ken',
+      userText: 'neutral',
+      topN: 20,
+      emergingField: {
+        ...baseEmergingField,
+        focusPoints: [{ signal: '絡ま', intensity: 0.6, sources: ['somatic'] }],
+        attentionTargets: ['unrelated-legacy-target'],
+      },
+    });
+
+    assert.ok(
+      findScore(focusTriggerResult, 'ken-feeling-001') > findScore(fallbackResult, 'ken-feeling-001'),
+      'focusPoints should drive trigger matching when attentionTargets do not match',
+    );
+
+    const attentionTriggerResult = activateFeelings({
+      agentId: 'ken',
+      userText: 'neutral',
+      topN: 20,
+      emergingField: {
+        ...baseEmergingField,
+        attentionTargets: ['絡ま'],
+      },
+    });
+    const focusAntiTriggerResult = activateFeelings({
+      agentId: 'ken',
+      userText: 'neutral',
+      topN: 20,
+      emergingField: {
+        ...baseEmergingField,
+        focusPoints: [{ signal: '気にしない', intensity: 0.6, sources: ['somatic'] }],
+        attentionTargets: ['絡ま'],
+      },
+    });
+
+    assert.ok(
+      findScore(focusAntiTriggerResult, 'ken-feeling-001') < findScore(attentionTriggerResult, 'ken-feeling-001'),
+      'focusPoints should be preferred over attentionTargets for anti-trigger matching',
+    );
+  });
+
 });
 
 describe('formatActivatedFeelingsForDebug', () => {
