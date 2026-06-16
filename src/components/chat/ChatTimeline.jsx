@@ -44,9 +44,9 @@ const ChatTimeline = React.forwardRef(function ChatTimeline(
   return (
     <main
       ref={scrollRef}
-      className="flex-1 overflow-y-auto px-4 sm:px-5 pt-4 sm:pt-5 no-scrollbar relative z-10"
+      className="flex-1 min-w-0 max-w-full overflow-y-auto overflow-x-hidden px-4 sm:px-5 pt-4 sm:pt-5 no-scrollbar relative z-10"
     >
-      <div className="max-w-2xl mx-auto pb-4 sm:pb-6">
+      <div className="max-w-2xl w-full min-w-0 mx-auto pb-4 sm:pb-6">
         {showFullLoading ? (
           <div className="flex justify-center py-20" role="status" aria-live="polite">
             <Loader2 className="animate-spin text-slate-400" size={32} aria-hidden="true" />
@@ -94,22 +94,22 @@ const ChatTimeline = React.forwardRef(function ChatTimeline(
             )}
 
             {showMirrorInvite && (
-              <div className="flex justify-center mt-12 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
+              <div className="flex justify-center mt-12 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-700 max-w-full overflow-hidden">
                 <button
                   type="button"
                   onClick={onMasterClick}
                   disabled={!canUseAgents}
                   aria-label={t('timeline.mirrorInvite.aria')}
-                  className="mirror-invite group disabled:opacity-30"
+                  className="mirror-invite group disabled:opacity-30 max-w-full"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-105 transition-transform">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border border-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-105 transition-transform shrink-0">
                     <Compass size={18} aria-hidden="true" />
                   </div>
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-black text-slate-700">
+                  <div className="flex flex-col text-left min-w-0">
+                    <span className="text-sm font-black text-slate-700 truncate">
                       {t('timeline.mirrorInvite.title')}
                     </span>
-                    <span className="text-[10px] font-bold text-slate-400">
+                    <span className="text-[10px] font-bold text-slate-400 truncate">
                       {t('timeline.mirrorInvite.subtitle')}
                     </span>
                   </div>
