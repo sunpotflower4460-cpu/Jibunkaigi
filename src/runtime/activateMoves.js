@@ -24,6 +24,7 @@ import {
   OTHER_AGENT_AFFINITY,
 } from './config/scoringWeights.js';
 import { toCanonicalAgentId, CANONICAL_AGENT_IDS } from './agentIdentity.js';
+import { getPrimaryAttentionSignals } from './attention/focusPointSignals.js';
 
 /**
  * Normalize string for matching (lowercase, trim)
@@ -336,7 +337,7 @@ const calculateActivationScore = (node, agentId, context) => {
 
   const triggerMatch = calculateTriggerMatch(node.triggers, {
     userText: context.userText,
-    attentionTargets: context.emergingField?.attentionTargets || [],
+    attentionTargets: getPrimaryAttentionSignals(context.emergingField),
     atmosphere: context.emergingField?.atmosphere || [],
   });
 
@@ -355,7 +356,7 @@ const calculateActivationScore = (node, agentId, context) => {
 
   const antiTriggerMatch = calculateAntiTriggerMatch(node.antiTriggers, {
     userText: context.userText,
-    attentionTargets: context.emergingField?.attentionTargets || [],
+    attentionTargets: getPrimaryAttentionSignals(context.emergingField),
     atmosphere: context.emergingField?.atmosphere || [],
     bodySignals: context.emergingField?.bodySignals || {},
   });

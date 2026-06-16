@@ -72,6 +72,25 @@ test('buildConsciousIntent - userSense: builds from attentionTargets', () => {
   assert.ok(result.userSense.includes('comparison-pain'));
 });
 
+test('buildConsciousIntent - userSense: prefers focusPoints over attentionTargets', () => {
+  const input = {
+    agentId: 'joe',
+    emergingField: {
+      focusPoints: [{ signal: '怖い', intensity: 0.6, sources: ['somatic'] }],
+      attentionTargets: ['比較'],
+      resonanceAxes: [],
+      bodySignals: {},
+      atmosphere: [],
+    },
+    selectedThoughts: null,
+  };
+
+  const result = buildConsciousIntent(input);
+
+  assert.ok(result.userSense.includes('afraid-of-losing-footing'));
+  assert.ok(!result.userSense.includes('comparison-pain'));
+});
+
 test('buildConsciousIntent - selfFeeling: builds from bodySignals', () => {
   const input = {
     agentId: 'joe',

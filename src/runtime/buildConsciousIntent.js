@@ -15,6 +15,8 @@
  * 4. まだ発話生成の主役にしすぎない - internal state に入るだけで十分
  */
 
+import { getPrimaryAttentionSignals } from './attention/focusPointSignals.js';
+
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 
 /**
@@ -337,7 +339,7 @@ export const buildConsciousIntent = (input = {}) => {
   } = input;
 
   // Extract context
-  const attentionTargets = emergingField?.attentionTargets ?? [];
+  const attentionTargets = getPrimaryAttentionSignals(emergingField);
   const bodySignals = emergingField?.bodySignals ?? {};
 
   // Priority: read dominantSelectedAxis from selectedMixedClusters if available
