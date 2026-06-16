@@ -46,16 +46,16 @@ const MessageBubble = ({
 
   return (
     <div
-      className="group/msg mb-10 sm:mb-12 animate-in fade-in slide-in-from-bottom-2 flex flex-col items-start"
+      className="group/msg mb-10 sm:mb-12 animate-in fade-in slide-in-from-bottom-2 flex flex-col items-start w-full min-w-0 max-w-full overflow-x-hidden"
     >
-      <div className={`flex flex-col w-full ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex flex-col w-full min-w-0 max-w-full ${isUser ? 'items-end' : 'items-start'}`}>
         {!isUser && (
-          <div className="flex items-center gap-2 mb-2 ml-1">
-            <span className="text-[10px] font-black text-slate-500 tracking-[0.18em] uppercase">
+          <div className="flex items-center gap-2 mb-2 ml-1 max-w-full min-w-0">
+            <span className="text-[10px] font-black text-slate-500 tracking-[0.18em] uppercase truncate">
               {agent?.name || '—'}
             </span>
             {isMaster && (
-              <span className="bg-indigo-50/70 text-indigo-500 text-[8px] font-black px-1.5 py-0.5 rounded border border-indigo-100/60">
+              <span className="bg-indigo-50/70 text-indigo-500 text-[8px] font-black px-1.5 py-0.5 rounded border border-indigo-100/60 shrink-0">
                 {t('message.master.badge')}
               </span>
             )}
@@ -64,7 +64,7 @@ const MessageBubble = ({
 
         <div
           onClick={() => onToggleToolbar(msg.id)}
-          className={`relative px-5 sm:px-6 py-4 sm:py-5 whitespace-pre-wrap text-[15px] leading-[1.85] rounded-[1.75rem] transition-all cursor-pointer border jk-prose ${
+          className={`relative px-5 sm:px-6 py-4 sm:py-5 whitespace-pre-wrap text-[15px] leading-[1.85] rounded-[1.75rem] transition-all cursor-pointer border jk-prose min-w-0 overflow-hidden ${
             isUser
               ? 'message-user text-slate-100 max-w-[88%] sm:max-w-[78%]'
               : 'message-agent mirror-reflection text-slate-700 max-w-full sm:max-w-[92%]'
@@ -107,7 +107,7 @@ const MessageBubble = ({
           )}
 
           {showOthersTabs && (
-            <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-white/30">
+            <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-white/30 max-w-full min-w-0">
               <button
                 type="button"
                 onClick={(e) => {
@@ -115,13 +115,13 @@ const MessageBubble = ({
                   onOpenOthers(msg.id);
                 }}
                 aria-pressed={autoExpandReactions?.msgId === msg.id && !activeReaction}
-                className={`px-3 py-1.5 rounded-full border text-[10px] font-black transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-full border text-[10px] font-black transition-all flex items-center gap-1.5 min-w-0 ${
                   autoExpandReactions?.msgId === msg.id && !activeReaction
                     ? 'bg-slate-800 text-white border-slate-900 shadow-md'
                     : 'bg-white/50 text-slate-500 border-white/70 hover:bg-white/75'
                 }`}
               >
-                <Users size={11} aria-hidden="true" /> OTHERS
+                <Users size={11} aria-hidden="true" className="shrink-0" /> OTHERS
                 {isDebugVisible && (
                   <span className="text-[8px] opacity-60 ml-0.5">({othersState.othersCount})</span>
                 )}
@@ -141,13 +141,14 @@ const MessageBubble = ({
                     }}
                     aria-pressed={isSelected}
                     aria-label={t('message.reaction.aria', { name: rAgent.name })}
-                    className={`px-3 py-1.5 rounded-full border text-[10px] font-black transition-all flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-full border text-[10px] font-black transition-all flex items-center gap-1.5 min-w-0 ${
                       isSelected
                         ? 'bg-slate-800 text-white border-slate-900'
                         : 'bg-white/50 text-slate-500 border-white/70 hover:bg-white/75'
                     }`}
                   >
-                    {rAgent.icon} {rAgent.name}
+                    <span className="shrink-0">{rAgent.icon}</span>
+                    <span className="truncate">{rAgent.name}</span>
                   </button>
                 );
               })}
@@ -155,10 +156,10 @@ const MessageBubble = ({
           )}
 
           {showOthersEmpty && (
-            <div className="mt-4 pt-3 border-t border-white/20">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                  <Users size={10} aria-hidden="true" /> OTHERS
+            <div className="mt-4 pt-3 border-t border-white/20 max-w-full min-w-0">
+              <div className="flex items-center gap-2 mb-2 min-w-0">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 min-w-0 truncate">
+                  <Users size={10} aria-hidden="true" className="shrink-0" /> OTHERS
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 italic">
