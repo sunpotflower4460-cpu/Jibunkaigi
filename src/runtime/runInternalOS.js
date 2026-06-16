@@ -1167,9 +1167,8 @@ export function runInternalOS(input, options = {}) {
   });
   preconditionTrace.push('dynamic:after-final-decision-substrate');
 
-  const freshLatentState = {
-    ...initialState,
-    // Raw latent layers (live latent substrate) — preserved as-is, not compressed
+  // Raw latent layers (live latent substrate) — preserved as-is, not compressed
+  const rawLatentLayers = {
     makerSeed,
     home: effectiveHome,
     homeNeutralization,
@@ -1179,19 +1178,28 @@ export function runInternalOS(input, options = {}) {
     beliefBranch,
     beliefLeaf,
     beliefTension,
-    // Derived helper views from raw latent layers
+  };
+
+  // Derived helper views from raw latent layers
+  const derivedHelperLayers = {
     preconditionFilter,
     preconditionBias,
     microSignals,
     fusedState,
     protoMeaning,
-    // Post-precondition dynamic layers
+  };
+
+  // Post-precondition dynamic layers
+  const dynamicLatentLayers = {
     field,
     reaction,
     stance,
     permission,
     // P-6: bodySignals with external/internal separation
     bodySignals: bodySignalsSnapshot,
+  };
+
+  const decisionAndMaterialLayers = {
     // Decision layer
     decision,
     // Activated thoughts (Phase 4)
@@ -1216,12 +1224,28 @@ export function runInternalOS(input, options = {}) {
     surfacePlan,
     // Final Decision Substrate (v0.1)
     finalDecisionSubstrate,
-    // Legacy/backward compatibility
+  };
+
+  // Legacy/backward compatibility
+  const legacyCompatibilityLayers = {
     existence: {
       layer1: existenceLayer1,
       layer2: existenceLayer2,
     },
     belief,
+  };
+
+  const liveLatentLayers = {
+    ...rawLatentLayers,
+    ...derivedHelperLayers,
+    ...dynamicLatentLayers,
+    ...decisionAndMaterialLayers,
+    ...legacyCompatibilityLayers,
+  };
+
+  const freshLatentState = {
+    ...initialState,
+    ...liveLatentLayers,
   };
 
   const previousLatentState = normalizeLatentState(safePreviousLatentState);
@@ -1231,38 +1255,7 @@ export function runInternalOS(input, options = {}) {
   const latentState = previousLatentState
     ? {
         ...blendedBase,
-        makerSeed,
-        home: effectiveHome,
-        homeNeutralization,
-        existence1,
-        existence2,
-        beliefCore,
-        beliefBranch,
-        beliefLeaf,
-        beliefTension,
-        preconditionFilter,
-        preconditionBias,
-        microSignals,
-        fusedState,
-        protoMeaning,
-        bodySignals: bodySignalsSnapshot,
-        decision,
-        activatedThoughts,
-        activatedFeelings,
-        activatedMoves,
-        boundThoughts,
-        boundMixedNodes,
-        selectedThoughts,
-        selectedMixedClusters,
-        consciousIntent,
-        lengthPlan,
-        surfacePlan,
-        finalDecisionSubstrate,
-        existence: {
-          layer1: existenceLayer1,
-          layer2: existenceLayer2,
-        },
-        belief,
+        ...liveLatentLayers,
       }
     : freshLatentState;
 
