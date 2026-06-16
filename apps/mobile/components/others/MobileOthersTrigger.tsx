@@ -33,15 +33,15 @@ export function MobileOthersTrigger({
       onPress={onPress}
       disabled={isDisabled}
       accessibilityRole="button"
-      accessibilityLabel="他のメンバーの視点を見る"
+      accessibilityLabel="ほかの視点をひらく"
       accessibilityState={{ disabled: isDisabled, busy: isLoading }}
     >
       {isLoading ? (
         <ActivityIndicator size="small" color={colors.accentIndigo} />
       ) : (
         <View style={styles.inner}>
-          <Text style={[styles.label, isDisabled && styles.labelDisabled]}>OTHERS</Text>
-          <Text style={[styles.sub, isDisabled && styles.subDisabled]}>ほかの視点をひらく</Text>
+          <Text style={[styles.label, isDisabled && styles.labelDisabled]}>ほかの視点</Text>
+          <Text style={[styles.sub, isDisabled && styles.subDisabled]}>いまの問いを別角度で見る</Text>
         </View>
       )}
     </TouchableOpacity>

@@ -13,7 +13,7 @@ export interface UniversalExportSessionLike {
 
 export function formatMessageForCopy(message: UniversalExportMessageLike): string {
   const speaker = message.role === 'user' ? 'あなた' : message.agentLabel || 'AI';
-  const prefix = message.origin === 'others' ? `${speaker} / OTHERS` : speaker;
+  const prefix = message.origin === 'others' ? `${speaker} / ほかの声` : speaker;
   return `${prefix}:\n${message.text.trim()}`;
 }
 

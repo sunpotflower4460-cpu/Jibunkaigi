@@ -74,7 +74,7 @@ export function MobileMessageBubble({
               ) : null}
               {isOthers && (
                 <View style={styles.othersBadge}>
-                  <Text style={styles.othersBadgeText}>OTHERS</Text>
+                  <Text style={styles.othersBadgeText}>ほかの声</Text>
                 </View>
               )}
             </View>

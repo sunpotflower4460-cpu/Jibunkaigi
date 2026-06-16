@@ -14,5 +14,5 @@ export const UNIVERSAL_MESSAGE_ACTIONS: UniversalMessageActionDefinition[] = [
   { id: 'copy', label: 'コピー' },
   { id: 'share', label: '共有' },
   { id: 'delete', label: '削除', destructive: true },
-  { id: 'others', label: 'OTHERS' },
+  { id: 'others', label: 'ほかの声' },
 ];
