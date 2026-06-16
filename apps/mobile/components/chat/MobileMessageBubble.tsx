@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { isConcreteAgentId } from '@jibunkaigi/shared';
 import {
+  agentPalette,
   colors,
   mobileLayout,
   mobileLineHeights,
@@ -10,6 +12,7 @@ import {
 } from '../../theme/tokens';
 import { MobileMessageToolbar } from './MobileMessageToolbar';
 import { MobileAgentOthersTrigger } from '../others/MobileAgentOthersTrigger';
+import type { MobileAgentId } from '../../state/mobileTypes';
 
 export type MessageRole = 'user' | 'agent';
 
@@ -17,6 +20,7 @@ interface MobileMessageBubbleProps {
   messageId: string;
   role: MessageRole;
   text: string;
+  agentId?: MobileAgentId;
   agentLabel?: string;
   origin?: 'direct' | 'others';
   /** Thinking 中は agent 直下導線を非表示にする */
@@ -33,6 +37,7 @@ export function MobileMessageBubble({
   messageId,
   role,
   text,
+  agentId,
   agentLabel,
   origin,
   isThinking = false,
@@ -44,6 +49,9 @@ export function MobileMessageBubble({
 }: MobileMessageBubbleProps) {
   const isUser = role === 'user';
   const isOthers = origin === 'others';
+  const palette = !isUser && !isOthers && agentId && isConcreteAgentId(agentId)
+    ? agentPalette[agentId]
+    : null;
   const hasToolbar = Boolean(onCopy && onShare && onDelete);
 
   // Phase 3A: agent message 直下「ほかの声も聴く」導線の表示条件
@@ -64,13 +72,19 @@ export function MobileMessageBubble({
           style={[
             styles.bubble,
             isUser ? styles.bubbleUser : styles.bubbleAgent,
+            palette && {
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+            },
             isOthers && styles.bubbleOthers,
           ]}
         >
           {!isUser && (agentLabel || isOthers) && (
             <View style={styles.labelRow}>
               {agentLabel ? (
-                <Text style={styles.agentLabel}>{agentLabel}</Text>
+                <Text style={[styles.agentLabel, palette && { color: palette.label }]}>
+                  {agentLabel}
+                </Text>
               ) : null}
               {isOthers && (
                 <View style={styles.othersBadge}>

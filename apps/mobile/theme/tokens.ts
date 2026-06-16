@@ -34,6 +34,8 @@ export const colors = {
   overlayStrong: mobileTheme.colors.overlayStrong,
 };
 
+export const agentPalette = mobileTheme.agentPalette;
+
 export const radius = mobileTheme.radius;
 
 export const spacing = {
