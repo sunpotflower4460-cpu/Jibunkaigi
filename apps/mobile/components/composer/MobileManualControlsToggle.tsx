@@ -1,7 +1,8 @@
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import {
   colors,
+  mobileMotion,
   mobileTouchTarget,
   radius,
   spacing,
@@ -18,11 +19,30 @@ interface MobileManualControlsToggleProps {
  * controls (mode selector / agent control bar / OTHERS) are no longer permanent
  * fixtures in the bottom dock. This small toggle demotes them behind a single
  * opt-in trigger, so the default surface stays focused on '委ねる' + composer.
+ *
+ * The chevron rotates smoothly (0° → 90°) to mirror the expand/collapse of the
+ * panel, instead of swapping glyphs abruptly.
  */
 export function MobileManualControlsToggle({
   expanded,
   onToggle,
 }: MobileManualControlsToggleProps) {
+  // Animated value: 0 = collapsed (▸ points right), 1 = expanded (▾ points down).
+  const rotation = useRef(new Animated.Value(expanded ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(rotation, {
+      toValue: expanded ? 1 : 0,
+      duration: mobileMotion.duration.quick,
+      useNativeDriver: true,
+    }).start();
+  }, [expanded, rotation]);
+
+  const rotate = rotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '90deg'],
+  });
+
   return (
     <TouchableOpacity
       style={styles.button}
@@ -32,7 +52,9 @@ export function MobileManualControlsToggle({
       accessibilityState={{ expanded }}
       accessibilityLabel={expanded ? '手動で選ぶをとじる' : '手動で選ぶをひらく'}
     >
-      <Text style={styles.chevron}>{expanded ? '▾' : '▸'}</Text>
+      <Animated.Text style={[styles.chevron, { transform: [{ rotate }] }]}>
+        ▸
+      </Animated.Text>
       <Text style={styles.label}>
         {expanded ? '自分で選ぶ（とじる）' : '自分で選ぶ（視点・モード）'}
       </Text>

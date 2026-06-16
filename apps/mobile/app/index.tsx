@@ -11,6 +11,7 @@ import { MobileOnboardingScreen } from '../components/onboarding/MobileOnboardin
 import { MobileComposer } from '../components/composer/MobileComposer';
 import { MobileAgentControlBar } from '../components/composer/MobileAgentControlBar';
 import { MobileManualControlsToggle } from '../components/composer/MobileManualControlsToggle';
+import { MobileCollapsible } from '../components/composer/MobileCollapsible';
 import { MobileFloatingAgentBar } from '../components/composer/MobileFloatingAgentBar';
 import { MobileSessionHeader } from '../components/session/MobileSessionHeader';
 import { MobileSessionDrawer } from '../components/session/MobileSessionDrawer';
@@ -301,25 +302,23 @@ export default function IndexScreen() {
                   expanded={manualControlsExpanded}
                   onToggle={() => setManualControlsExpanded((prev) => !prev)}
                 />
-                {manualControlsExpanded ? (
-                  <>
-                    <MobileModeSelector
-                      selected={selectedMode}
-                      onSelect={selectMode}
-                    />
-                    <MobileAgentControlBar
-                      selected={selectedAgent}
-                      onSelect={selectAgent}
-                    />
-                    <MobileOthersTrigger
-                      disabled={!hasUserMessages || isThinking}
-                      isLoading={isLoadingOthers}
-                      onPress={() => {
-                        void requestOthers();
-                      }}
-                    />
-                  </>
-                ) : null}
+                <MobileCollapsible expanded={manualControlsExpanded}>
+                  <MobileModeSelector
+                    selected={selectedMode}
+                    onSelect={selectMode}
+                  />
+                  <MobileAgentControlBar
+                    selected={selectedAgent}
+                    onSelect={selectAgent}
+                  />
+                  <MobileOthersTrigger
+                    disabled={!hasUserMessages || isThinking}
+                    isLoading={isLoadingOthers}
+                    onPress={() => {
+                      void requestOthers();
+                    }}
+                  />
+                </MobileCollapsible>
                 <MobileComposer
                   visible={isComposerOpen}
                   onOpen={openComposer}
