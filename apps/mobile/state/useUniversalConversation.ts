@@ -30,6 +30,7 @@ import {
   sortUniversalSessions,
   pickDelegateByContext,
   isConcreteAgentId,
+  resolveOthersTarget,
   type ConcreteAgentId,
   type DelegateMessageLike,
   type UniversalComposerVisibility,
@@ -420,14 +421,13 @@ export function useUniversalConversation(
 
   const requestOthers = useCallback(async (messageId?: string) => {
     if (isThinkingRef.current || isLoadingOthersRef.current) return;
-    const lastUser = [...messagesRef.current].reverse().find((message) => message.role === 'user');
-    const requestedMessage = messageId
-      ? messagesRef.current.find((message) => message.id === messageId)
-      : null;
-    const targetUser = requestedMessage?.role === 'user'
-      ? requestedMessage
-      : lastUser;
-    if (!targetUser) return;
+
+    // Phase 3A: resolveOthersTarget で対象を解決する。
+    // - user message 直下 / agent message 直下 / 手動パネル（messageId なし）
+    //   の 3 ケースを一元処理する。
+    // - others origin の message からは null が返るので早期リターン。
+    const othersTarget = resolveOthersTarget(messagesRef.current, messageId);
+    if (!othersTarget) return;
 
     const originSessionId = sessionRef.current.id;
     const messagesSnapshot = messagesRef.current;
@@ -438,13 +438,17 @@ export function useUniversalConversation(
 
     const groupId = createUniversalId('others');
     try {
-      // Provisional fix (Phase 0): exclude the actual most-recent speaker
-      // rather than the fixed entry-point selection. The full design
-      // (requestOthers(targetMessageId, excludeAgentId)) is Phase 3.
-      const currentAgentId = lastResolvedAgentIdRef.current ?? selectedAgent;
+      // Phase 3A: excludeAgentId の優先順位
+      //   1. agent message 直下から呼ばれた場合: そのメッセージの agentId
+      //   2. それ以外（user message / 手動パネル）: lastResolvedAgentIdRef ?? selectedAgent
+      const currentAgentId =
+        othersTarget.excludeAgentId ??
+        lastResolvedAgentIdRef.current ??
+        selectedAgent;
+
       const result = await createUniversalOthersReplies({
         sessionId: originSessionId,
-        userText: targetUser.text,
+        userText: othersTarget.userText,
         currentAgentId,
         modeId: modeRef.current,
         messages: messagesSnapshot,

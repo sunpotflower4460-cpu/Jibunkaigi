@@ -20,6 +20,8 @@ export interface ChatMessage {
 interface MobileChatTimelineProps {
   messages: ChatMessage[];
   isThinking?: boolean;
+  /** Phase 3A: OTHERS 読み込み中フラグ。各 bubble に渡して導線を disabled / loading 表示にする */
+  isLoadingOthers?: boolean;
   thinkingAgentId?: MobileAgentId;
   onCopyMessage?: (messageId: string) => void;
   onShareMessage?: (messageId: string) => void;
@@ -33,6 +35,7 @@ interface MobileChatTimelineProps {
 export function MobileChatTimeline({
   messages,
   isThinking = false,
+  isLoadingOthers = false,
   thinkingAgentId = 'ray',
   onCopyMessage,
   onShareMessage,
@@ -65,6 +68,8 @@ export function MobileChatTimeline({
             text={msg.text}
             agentLabel={msg.agentLabel}
             origin={msg.origin}
+            isThinking={isThinking}
+            isLoadingOthers={isLoadingOthers}
             onCopy={onCopyMessage}
             onShare={onShareMessage}
             onDelete={onDeleteMessage ? (messageId) => setPendingDeleteId(messageId) : undefined}

@@ -9,6 +9,7 @@ import {
   type as typeScale,
 } from '../../theme/tokens';
 import { MobileMessageToolbar } from './MobileMessageToolbar';
+import { MobileAgentOthersTrigger } from '../others/MobileAgentOthersTrigger';
 
 export type MessageRole = 'user' | 'agent';
 
@@ -18,6 +19,10 @@ interface MobileMessageBubbleProps {
   text: string;
   agentLabel?: string;
   origin?: 'direct' | 'others';
+  /** Thinking 中は agent 直下導線を非表示にする */
+  isThinking?: boolean;
+  /** OTHERS 読み込み中は導線を disabled / loading 表示にする */
+  isLoadingOthers?: boolean;
   onCopy?: (messageId: string) => void;
   onShare?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
@@ -30,6 +35,8 @@ export function MobileMessageBubble({
   text,
   agentLabel,
   origin,
+  isThinking = false,
+  isLoadingOthers = false,
   onCopy,
   onShare,
   onDelete,
@@ -38,6 +45,17 @@ export function MobileMessageBubble({
   const isUser = role === 'user';
   const isOthers = origin === 'others';
   const hasToolbar = Boolean(onCopy && onShare && onDelete);
+
+  // Phase 3A: agent message 直下「ほかの声も聴く」導線の表示条件
+  //   - role === 'agent'
+  //   - origin !== 'others'（others message からは連鎖させない）
+  //   - Thinking 中ではない
+  //   - onRequestOthers が存在する
+  const showAgentOthersTrigger =
+    !isUser &&
+    !isOthers &&
+    !isThinking &&
+    Boolean(onRequestOthers);
 
   return (
     <View style={[styles.row, isUser ? styles.rowUser : styles.rowAgent]}>
@@ -73,6 +91,14 @@ export function MobileMessageBubble({
             onShare={(id) => onShare?.(id)}
             onDelete={(id) => onDelete?.(id)}
             onRequestOthers={onRequestOthers}
+          />
+        ) : null}
+        {showAgentOthersTrigger && onRequestOthers ? (
+          <MobileAgentOthersTrigger
+            messageId={messageId}
+            onPress={onRequestOthers}
+            isLoading={isLoadingOthers}
+            disabled={isLoadingOthers}
           />
         ) : null}
       </View>

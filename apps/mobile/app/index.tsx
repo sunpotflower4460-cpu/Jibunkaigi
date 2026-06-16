@@ -264,6 +264,8 @@ export default function IndexScreen() {
                 <MobileChatTimeline
                   messages={messages}
                   isThinking={isThinking}
+                  // Phase 3A: OTHERS 読み込み中フラグを各 bubble に伝える。
+                  isLoadingOthers={isLoadingOthers}
                   // Phase 2.5: prefer the concrete voice resolved at send time so
                   // the Thinking UI shows the actual speaker, not 'delegate'.
                   thinkingAgentId={pendingResolvedAgentId ?? selectedAgent}
