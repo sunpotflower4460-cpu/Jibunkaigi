@@ -735,6 +735,18 @@ export function useUniversalConversation(
         return;
       }
 
+      // If a direct concrete agent message was removed, the last resolved
+      // speaker may have changed. Recompute from the remaining messages so the
+      // OTHERS exclusion basis does not keep pointing at a deleted voice.
+      if (
+        target.role === 'agent' &&
+        target.origin !== 'others' &&
+        target.agentId &&
+        isConcreteAgentId(target.agentId)
+      ) {
+        setLastResolvedAgentId(findLastResolvedConcreteAgent(nextMessages));
+      }
+
       setActionResult('メッセージを削除しました');
     },
     [refreshSessions, runStorageTask, setActionResult],
