@@ -36,8 +36,13 @@ export function MobileSafeLayout({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    width: '100%',
+    maxWidth: '100%',
+    overflow: 'hidden',
   },
   flex: {
     flex: 1,
+    width: '100%',
+    maxWidth: '100%',
   },
 });
