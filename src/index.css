@@ -9,6 +9,10 @@
  * Root / Body defaults
  * ============================================================ */
 html, body, #root {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
   background: var(--jk-bg-base);
   color: var(--jk-ink-main);
   font-family: var(--jk-font-jp);
@@ -18,10 +22,21 @@ html, body, #root {
 }
 
 body {
+  margin: 0;
   /* iOS で 100vh が回り込まないように dvh フォールバック */
   min-height: 100vh;
   min-height: 100dvh;
   overscroll-behavior-y: none;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* スマホ幅で装飾や長文がビューポート外に横幅を作らないための保険 */
+img, video, canvas, svg {
+  max-width: 100%;
 }
 
 /* 明朝体ユーティリティ — 詩的な見出し・キャッチコピー用。
