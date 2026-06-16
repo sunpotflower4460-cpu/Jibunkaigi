@@ -1,11 +1,14 @@
 import {
-  CONCRETE_AGENT_IDS,
   getUniversalAgent,
   isConcreteAgentId,
   type ConcreteAgentId,
   type UniversalAgentId,
 } from './agents';
 import { getUniversalMode, type UniversalModeId } from './modes';
+import {
+  pickDelegateByContext,
+  type DelegateMessageLike,
+} from './delegate/delegateSelection';
 
 export interface UniversalMockMessageLike {
   role: 'user' | 'agent';
@@ -26,9 +29,18 @@ export interface UniversalMockReply {
   text: string;
 }
 
+/**
+ * @deprecated Legacy character-count-remainder delegate pick. This produced a
+ * meaningless pseudo-random voice and is no longer used by the mobile reply
+ * path. Kept only for backward compatibility with any web / other callers.
+ *
+ * Internally it now delegates to the context-based selector
+ * (pickDelegateByContext) with no previous context, so callers that still use
+ * it at least get context-aware behaviour for the current text. Prefer calling
+ * pickDelegateByContext directly with the conversation history.
+ */
 export function pickMockDelegatedAgent(userText: string): ConcreteAgentId {
-  const seed = userText.length;
-  return CONCRETE_AGENT_IDS[seed % CONCRETE_AGENT_IDS.length];
+  return pickDelegateByContext(userText);
 }
 
 export function createUniversalMockReply(
@@ -36,7 +48,10 @@ export function createUniversalMockReply(
 ): UniversalMockReply {
   const actualAgentId =
     params.agentId === 'delegate'
-      ? pickMockDelegatedAgent(params.userText)
+      ? pickDelegateByContext(
+          params.userText,
+          params.previousMessages as DelegateMessageLike[],
+        )
       : params.agentId;
 
   const agent = getUniversalAgent(actualAgentId);

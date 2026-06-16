@@ -34,19 +34,17 @@ export function MobileFloatingAgentBar({
   onHeightChange,
 }: MobileFloatingAgentBarProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [hasEverHadMessages, setHasEverHadMessages] = useState(hasMessages);
 
+  // Bar visibility follows the *current* state, not an "ever had messages"
+  // latch. When the conversation is cleared / a new session starts, hasMessages
+  // becomes false and the bar disappears naturally.
   useEffect(() => {
-    if (hasMessages) {
-      setHasEverHadMessages(true);
-    }
-  }, [hasMessages]);
-
-  useEffect(() => {
-    if (!hasEverHadMessages) {
+    if (!hasMessages) {
+      // Collapse the open rail and report zero height so layout reflows.
+      setIsOpen(false);
       onHeightChange?.(0);
     }
-  }, [hasEverHadMessages, onHeightChange]);
+  }, [hasMessages, onHeightChange]);
 
   const agents = useMemo(
     () => UNIVERSAL_AGENTS.filter((agent) => agent.shouldAppearInAgentBar),
@@ -54,7 +52,7 @@ export function MobileFloatingAgentBar({
   );
   const selected = agents.find((agent) => agent.id === selectedAgent) ?? agents[0];
 
-  if (!hasEverHadMessages) {
+  if (!hasMessages) {
     return null;
   }
 
