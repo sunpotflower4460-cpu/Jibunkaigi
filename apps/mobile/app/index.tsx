@@ -10,6 +10,7 @@ import { MobileIntroScreen } from '../components/intro/MobileIntroScreen';
 import { MobileOnboardingScreen } from '../components/onboarding/MobileOnboardingScreen';
 import { MobileComposer } from '../components/composer/MobileComposer';
 import { MobileAgentControlBar } from '../components/composer/MobileAgentControlBar';
+import { MobileManualControlsToggle } from '../components/composer/MobileManualControlsToggle';
 import { MobileFloatingAgentBar } from '../components/composer/MobileFloatingAgentBar';
 import { MobileSessionHeader } from '../components/session/MobileSessionHeader';
 import { MobileSessionDrawer } from '../components/session/MobileSessionDrawer';
@@ -119,6 +120,10 @@ export default function IndexScreen() {
   const [onboardingUserName, setOnboardingUserName] = useState('');
   const [bottomDockHeight, setBottomDockHeight] = useState(0);
   const [floatingBarHeight, setFloatingBarHeight] = useState(0);
+  // Phase 2 (4): manual controls (mode / agent / OTHERS) are demoted from
+  // permanent fixtures. With '委ねる' (delegate) as the default entry point they
+  // stay collapsed until the user opts in to picking a voice/mode themselves.
+  const [manualControlsExpanded, setManualControlsExpanded] = useState(false);
 
   const hasUserMessages = messages.some((message) => message.role === 'user');
   const selectedShelfSession = sessions.find((item) => item.id === selectedSessionId) ?? session;
@@ -289,21 +294,32 @@ export default function IndexScreen() {
               }}
             >
               <View style={styles.bottomPanel}>
-                <MobileModeSelector
-                  selected={selectedMode}
-                  onSelect={selectMode}
+                {/* Phase 2 (4): the manual controls are no longer permanent.
+                    They live behind an opt-in toggle so the default surface
+                    stays focused on '委ねる' (delegate) + composer. */}
+                <MobileManualControlsToggle
+                  expanded={manualControlsExpanded}
+                  onToggle={() => setManualControlsExpanded((prev) => !prev)}
                 />
-                <MobileAgentControlBar
-                  selected={selectedAgent}
-                  onSelect={selectAgent}
-                />
-                <MobileOthersTrigger
-                  disabled={!hasUserMessages || isThinking}
-                  isLoading={isLoadingOthers}
-                  onPress={() => {
-                    void requestOthers();
-                  }}
-                />
+                {manualControlsExpanded ? (
+                  <>
+                    <MobileModeSelector
+                      selected={selectedMode}
+                      onSelect={selectMode}
+                    />
+                    <MobileAgentControlBar
+                      selected={selectedAgent}
+                      onSelect={selectAgent}
+                    />
+                    <MobileOthersTrigger
+                      disabled={!hasUserMessages || isThinking}
+                      isLoading={isLoadingOthers}
+                      onPress={() => {
+                        void requestOthers();
+                      }}
+                    />
+                  </>
+                ) : null}
                 <MobileComposer
                   visible={isComposerOpen}
                   onOpen={openComposer}
