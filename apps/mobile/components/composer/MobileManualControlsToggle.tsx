@@ -50,13 +50,13 @@ export function MobileManualControlsToggle({
       activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityState={{ expanded }}
-      accessibilityLabel={expanded ? '手動で選ぶをとじる' : '手動で選ぶをひらく'}
+      accessibilityLabel={expanded ? '自分で視点を選ぶをとじる' : '自分で視点を選ぶをひらく'}
     >
       <Animated.Text style={[styles.chevron, { transform: [{ rotate }] }]}>
         ▸
       </Animated.Text>
       <Text style={styles.label}>
-        {expanded ? '自分で選ぶ（とじる）' : '自分で選ぶ（視点・モード）'}
+        {expanded ? '自分で選ぶ（とじる）' : '自分で視点を選ぶ'}
       </Text>
     </TouchableOpacity>
   );
