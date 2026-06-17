@@ -1041,3 +1041,122 @@ test('runInternalOS amplifies field softness differences across agents', () => {
 
   assert.ok(diff >= 0.05, `expected softness diff >= 0.05, got ${diff}`);
 });
+
+// Golden regression tests for InternalOS core shape
+
+const summarizeInternalOS = (result) => ({
+  hasMakerSeed: Boolean(result.latentState?.makerSeed),
+  hasHome: Boolean(result.latentState?.home),
+  hasHomeNeutralization: Boolean(result.latentState?.homeNeutralization),
+  hasExistence1: Boolean(result.latentState?.existence1),
+  hasExistence2: Boolean(result.latentState?.existence2),
+  hasBeliefCore: Boolean(result.latentState?.beliefCore),
+  hasBeliefBranch: Boolean(result.latentState?.beliefBranch),
+  hasBeliefLeaf: Boolean(result.latentState?.beliefLeaf),
+  hasBeliefTension: Boolean(result.latentState?.beliefTension),
+  hasPreconditionFilter: Boolean(result.latentState?.preconditionFilter),
+  hasPreconditionBias: Boolean(result.latentState?.preconditionBias),
+  hasField: Boolean(result.latentState?.field),
+  hasReaction: Boolean(result.latentState?.reaction),
+  hasStance: Boolean(result.latentState?.stance),
+  hasPermission: Boolean(result.latentState?.permission),
+  hasBodySignals: Boolean(result.latentState?.bodySignals),
+  hasDecision: Boolean(result.latentState?.decision),
+  hasActivatedThoughts: Boolean(result.latentState?.activatedThoughts),
+  hasActivatedFeelings: Boolean(result.latentState?.activatedFeelings),
+  hasActivatedMoves: Boolean(result.latentState?.activatedMoves),
+  hasBoundThoughts: Boolean(result.latentState?.boundThoughts),
+  hasBoundMixedNodes: Boolean(result.latentState?.boundMixedNodes),
+  hasSelectedThoughts: Boolean(result.latentState?.selectedThoughts),
+  hasSelectedMixedClusters: Boolean(result.latentState?.selectedMixedClusters),
+  hasConsciousIntent: Boolean(result.latentState?.consciousIntent),
+  hasLengthPlan: Boolean(result.latentState?.lengthPlan),
+  hasSurfacePlan: Boolean(result.latentState?.surfacePlan),
+  hasFinalDecisionSubstrate: Boolean(result.latentState?.finalDecisionSubstrate),
+});
+
+test('golden: runInternalOS preserves core live latent layers', () => {
+  const result = runInternalOS('本当はまだやりたいけど、少し怖い。', {
+    agentId: 'joe',
+    lengthPreference: 'medium',
+  });
+
+  assert.deepEqual(summarizeInternalOS(result), {
+    hasMakerSeed: true,
+    hasHome: true,
+    hasHomeNeutralization: true,
+    hasExistence1: true,
+    hasExistence2: true,
+    hasBeliefCore: true,
+    hasBeliefBranch: true,
+    hasBeliefLeaf: true,
+    hasBeliefTension: true,
+    hasPreconditionFilter: true,
+    hasPreconditionBias: true,
+    hasField: true,
+    hasReaction: true,
+    hasStance: true,
+    hasPermission: true,
+    hasBodySignals: true,
+    hasDecision: true,
+    hasActivatedThoughts: true,
+    hasActivatedFeelings: true,
+    hasActivatedMoves: true,
+    hasBoundThoughts: true,
+    hasBoundMixedNodes: true,
+    hasSelectedThoughts: true,
+    hasSelectedMixedClusters: true,
+    hasConsciousIntent: true,
+    hasLengthPlan: true,
+    hasSurfacePlan: true,
+    hasFinalDecisionSubstrate: true,
+  });
+});
+
+test('golden: runInternalOS emits focusPoints and empty legacy attentionTargets', () => {
+  const result = runInternalOS('比較してしまって苦しい。', {
+    agentId: 'ray',
+    lengthPreference: 'short',
+  });
+
+  assert.ok(Array.isArray(result.emergingField.focusPoints));
+  assert.ok(Array.isArray(result.emergingField.attentionTargets));
+  assert.equal(result.emergingField.attentionTargets.length, 0);
+});
+
+test('golden: runInternalOS preserves live layers after afterglow blending', () => {
+  const first = runInternalOS('今日は少し重い。', { agentId: 'mina' });
+  const second = runInternalOS('でも、言葉にしたい気もする。', {
+    agentId: 'mina',
+    previousLatentState: first.latentState,
+  });
+
+  const summary = summarizeInternalOS(second);
+  assert.equal(summary.hasMakerSeed, true);
+  assert.equal(summary.hasHome, true);
+  assert.equal(summary.hasHomeNeutralization, true);
+  assert.equal(summary.hasExistence1, true);
+  assert.equal(summary.hasExistence2, true);
+  assert.equal(summary.hasBeliefCore, true);
+  assert.equal(summary.hasBeliefBranch, true);
+  assert.equal(summary.hasBeliefLeaf, true);
+  assert.equal(summary.hasBeliefTension, true);
+  assert.equal(summary.hasPreconditionFilter, true);
+  assert.equal(summary.hasPreconditionBias, true);
+  assert.equal(summary.hasBodySignals, true);
+  assert.equal(summary.hasDecision, true);
+  assert.equal(summary.hasSurfacePlan, true);
+  assert.equal(summary.hasFinalDecisionSubstrate, true);
+  assert.equal(second.debugInfo.usedAfterglow, true);
+});
+
+test('golden: runInternalOS keeps legacy compatibility fields', () => {
+  const result = runInternalOS('まだうまく言えないけど、ここにある。', {
+    agentId: 'joe',
+  });
+
+  assert.ok(result.latentState.existence);
+  assert.ok(result.latentState.existence.layer1);
+  assert.ok(result.latentState.existence.layer2);
+  assert.ok(result.latentState.belief);
+});
