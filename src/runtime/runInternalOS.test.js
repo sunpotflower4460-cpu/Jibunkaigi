@@ -921,6 +921,7 @@ test('runInternalOS returns emergingField with correct shape', () => {
   assert.ok(result.emergingField, 'emergingField should exist in return value');
   assert.ok(Array.isArray(result.emergingField.focusPoints), 'focusPoints should be array');
   assert.ok(Array.isArray(result.emergingField.attentionTargets), 'attentionTargets should be array');
+  assert.deepStrictEqual(result.emergingField.attentionTargets, [], 'attentionTargets should remain empty compatibility field');
   assert.ok(Array.isArray(result.emergingField.resonanceAxes), 'resonanceAxes should be array');
   assert.ok(result.emergingField.bodySignals, 'bodySignals should exist');
   assert.ok(Array.isArray(result.emergingField.atmosphere), 'atmosphere should be array');
@@ -990,6 +991,7 @@ test('runInternalOS returns emergingField at top level', () => {
 
   // emergingField must have expected keys
   assert.ok(Array.isArray(result.emergingField.attentionTargets), 'attentionTargets should be array');
+  assert.deepStrictEqual(result.emergingField.attentionTargets, [], 'attentionTargets should remain empty compatibility field');
   assert.ok(Array.isArray(result.emergingField.focusPoints), 'focusPoints should be array');
   assert.ok(Array.isArray(result.emergingField.resonanceAxes), 'resonanceAxes should be array');
   assert.ok(result.emergingField.bodySignals, 'bodySignals should exist');

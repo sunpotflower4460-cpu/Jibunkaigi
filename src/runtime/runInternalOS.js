@@ -788,23 +788,12 @@ export function runInternalOS(input, options = {}) {
   // P-4: Add focusPoints from radial condensation (Japanese-first attention)
   // ════════════════════════════════════════════════════════════════════
 
-  // Extract attention targets from user text and belief tension
-  // LEGACY BACKWARD COMPATIBILITY: attentionTargets は旧経路
+  // LEGACY BACKWARD COMPATIBILITY: attentionTargets は旧経路の互換フィールド
   // - focusPoints が primary attention mechanism (Japanese-first, radial condensation)
-  // - attentionTargets は weak support / backward compatibility のみ
-  // - attentionTargets は英語向けの split ベースであり、日本語に不向き
-  // TODO: 将来的に削除候補 (条件: focusPoints 系の安定とテスト充実)
+  // - attentionTargets は downstream fallback shape のため空配列として残す
+  // - 旧 English split 抽出は C-2C で停止
+  // TODO: 将来的に削除候補 (条件: attentionTargets fallback 参照とテストの削除)
   const attentionTargets = [];
-  if (normalizedInput) {
-    // Simple keyword extraction (in future, this could be more sophisticated)
-    const words = normalizedInput.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-    attentionTargets.push(...words.slice(0, 3));
-  }
-  if (beliefTension?.activeTensions?.length > 0) {
-    beliefTension.activeTensions.slice(0, 2).forEach(t => {
-      if (t.axis) attentionTargets.push(t.axis);
-    });
-  }
 
   // P-4: Extract focusPoints via radial condensation (3 channels)
   // PRIMARY ATTENTION MECHANISM: focusPoints を優先使用すること
