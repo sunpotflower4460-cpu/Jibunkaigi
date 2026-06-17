@@ -8,7 +8,14 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
 
   useEffect(() => {
     if (!visible) return undefined;
-    const timer = window.setTimeout(() => startBtnRef.current?.focus(), 220);
+
+    const timer = window.setTimeout(() => {
+      const isTouchDevice = window.matchMedia?.('(pointer: coarse)')?.matches;
+      if (!isTouchDevice) {
+        startBtnRef.current?.focus({ preventScroll: true });
+      }
+    }, 220);
+
     const handleKey = (event) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -34,7 +41,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
       role="dialog"
       aria-modal="true"
       aria-labelledby="intro-title"
-      className={`fixed inset-0 z-[100] flex flex-col items-center safe-bottom safe-top overflow-y-auto overflow-x-hidden transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[100] flex h-[100dvh] max-h-[100dvh] flex-col items-center safe-bottom safe-top overflow-y-auto overflow-x-hidden transition-opacity duration-500 ${
         isHomeReady ? 'opacity-0' : 'opacity-100'
       }`}
     >
@@ -44,28 +51,28 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
       <div className="mesh-grid z-0" aria-hidden="true" />
       <div className="grain-overlay z-0" aria-hidden="true" />
 
-      <div className="relative z-10 flex min-h-full w-full items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
+      <div className="relative z-10 flex min-h-full w-full items-center justify-center px-4 py-5 sm:px-6 sm:py-10">
         <div
           className="w-full max-w-sm text-center px-2 flex flex-col items-center anim-card-rise"
-          style={{ gap: 'clamp(0.85rem, 3vh, 1.6rem)' }}
+          style={{ gap: 'clamp(0.55rem, 2vh, 1.35rem)' }}
         >
           <div className="anim-scale-in shrink-0">
             <div
               className="icon-tile anim-float"
-              style={{ width: 'clamp(4.25rem, 11vh, 5.5rem)', height: 'clamp(4.25rem, 11vh, 5.5rem)' }}
+              style={{ width: 'clamp(3.45rem, 9vh, 5.5rem)', height: 'clamp(3.45rem, 9vh, 5.5rem)' }}
             >
-              <Users size={32} strokeWidth={1.75} aria-hidden="true" />
+              <Users size={28} strokeWidth={1.75} aria-hidden="true" />
             </div>
           </div>
 
-          <div className="space-y-1.5 w-full">
+          <div className="space-y-1 w-full">
             <p className="typo-label-small uppercase pl-[0.32em]">
               {t('app.tagline')}
             </p>
             <h1
               id="intro-title"
               className="title-ink leading-tight font-black tracking-tighter"
-              style={{ fontSize: 'clamp(2.1rem, 5.5vh, 2.8rem)' }}
+              style={{ fontSize: 'clamp(1.85rem, 4.8vh, 2.8rem)' }}
             >
               {t('app.name')}
             </h1>
@@ -75,14 +82,14 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
           </div>
 
           <div
-            className="keyline-card px-6 flex justify-center items-center w-full"
-            style={{ paddingTop: 'clamp(1.15rem, 3.4vh, 1.9rem)', paddingBottom: 'clamp(1.15rem, 3.4vh, 1.9rem)' }}
+            className="keyline-card px-5 flex justify-center items-center w-full"
+            style={{ paddingTop: 'clamp(0.8rem, 2.4vh, 1.9rem)', paddingBottom: 'clamp(0.8rem, 2.4vh, 1.9rem)' }}
           >
             <span className="glass-bloom" aria-hidden="true" />
             <span className="glass-flecks" aria-hidden="true" />
             <p
               className="jk-serif typo-body relative z-[1] font-medium tracking-[0.05em] text-center"
-              style={{ fontSize: 'clamp(1.02rem, 2.5vh, 1.2rem)' }}
+              style={{ fontSize: 'clamp(0.95rem, 2.15vh, 1.2rem)' }}
             >
               {t('intro.keyline.line1')}
               <br />
@@ -90,7 +97,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
             </p>
           </div>
 
-          <ol className="w-full flex flex-wrap items-center justify-center gap-2" aria-label="intro steps">
+          <ol className="w-full flex flex-wrap items-center justify-center gap-1.5 sm:gap-2" aria-label="intro steps">
             <li className="intro-step">
               <span className="intro-step__num" aria-hidden="true">1</span>
               <Feather size={12} className="text-slate-500" aria-hidden="true" />
@@ -112,7 +119,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
             ref={startBtnRef}
             type="button"
             onClick={onStart}
-            className="cta-primary-surface w-full py-4 rounded-[1.6rem] font-black text-[0.95rem] tracking-wide active:scale-95 flex items-center justify-center gap-2"
+            className="cta-primary-surface w-full py-3.5 sm:py-4 rounded-[1.6rem] font-black text-[0.95rem] tracking-wide active:scale-95 flex items-center justify-center gap-2"
           >
             {hasBlockingConfigIssue ? t('intro.cta.config') : t('intro.cta.start')}
             <ChevronRight size={18} aria-hidden="true" />
