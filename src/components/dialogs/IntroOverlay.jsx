@@ -9,6 +9,24 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
   useEffect(() => {
     if (!visible) return undefined;
 
+    const root = document.documentElement;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverflow = root.style.overflow;
+    const previousViewportHeight = root.style.getPropertyValue('--intro-viewport-height');
+
+    const syncIntroViewportHeight = () => {
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      root.style.setProperty('--intro-viewport-height', `${viewportHeight}px`);
+    };
+
+    syncIntroViewportHeight();
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    document.body.style.overflow = 'hidden';
+    root.style.overflow = 'hidden';
+
+    window.visualViewport?.addEventListener('resize', syncIntroViewportHeight);
+    window.addEventListener('resize', syncIntroViewportHeight);
+
     const timer = window.setTimeout(() => {
       const isTouchDevice = window.matchMedia?.('(pointer: coarse)')?.matches;
       if (!isTouchDevice) {
@@ -27,10 +45,21 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
         onStart();
       }
     };
+
     window.addEventListener('keydown', handleKey);
+
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener('keydown', handleKey);
+      window.visualViewport?.removeEventListener('resize', syncIntroViewportHeight);
+      window.removeEventListener('resize', syncIntroViewportHeight);
+      document.body.style.overflow = previousBodyOverflow;
+      root.style.overflow = previousRootOverflow;
+      if (previousViewportHeight) {
+        root.style.setProperty('--intro-viewport-height', previousViewportHeight);
+      } else {
+        root.style.removeProperty('--intro-viewport-height');
+      }
     };
   }, [visible, onStart]);
 
@@ -41,9 +70,10 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
       role="dialog"
       aria-modal="true"
       aria-labelledby="intro-title"
-      className={`fixed inset-0 z-[100] flex h-[100dvh] max-h-[100dvh] flex-col items-center safe-bottom safe-top overflow-y-auto overflow-x-hidden transition-opacity duration-500 ${
+      className={`fixed inset-x-0 top-0 z-[100] flex w-full flex-col items-center overflow-hidden transition-opacity duration-500 ${
         isHomeReady ? 'opacity-0' : 'opacity-100'
       }`}
+      style={{ height: 'var(--intro-viewport-height, 100svh)', maxHeight: 'var(--intro-viewport-height, 100svh)' }}
     >
       <div className="absolute inset-0 lake-bg z-0" aria-hidden="true" />
       <div className="aurora-orb aurora-orb-top z-0" aria-hidden="true" />
@@ -51,7 +81,7 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
       <div className="mesh-grid z-0" aria-hidden="true" />
       <div className="grain-overlay z-0" aria-hidden="true" />
 
-      <div className="relative z-10 flex min-h-full w-full items-center justify-center px-4 py-5 sm:px-6 sm:py-10">
+      <div className="relative z-10 flex h-full w-full items-center justify-center overflow-hidden px-4 py-5 sm:px-6 sm:py-10">
         <div
           className="w-full max-w-sm text-center px-2 flex flex-col items-center anim-card-rise"
           style={{ gap: 'clamp(0.55rem, 2vh, 1.35rem)' }}
