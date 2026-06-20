@@ -43,55 +43,117 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
       role="dialog"
       aria-modal="true"
       aria-labelledby="intro-title"
-      className={`fixed inset-0 z-[100] flex h-[100svh] max-h-[100svh] w-full flex-col items-center justify-start overflow-hidden transition-opacity duration-500 ${
-        isHomeReady ? 'opacity-0' : 'opacity-100'
-      }`}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 10000,
+        width: '100%',
+        height: '100vh',
+        minHeight: '100vh',
+        overflow: 'hidden',
+        opacity: isHomeReady ? 0 : 1,
+        transition: 'opacity 500ms ease',
+      }}
     >
-      <div className="absolute inset-0 lake-bg z-0" aria-hidden="true" />
-      <div className="aurora-orb aurora-orb-top z-0" aria-hidden="true" />
-      <div className="water-shimmer z-0" aria-hidden="true" />
-      <div className="mesh-grid z-0" aria-hidden="true" />
-      <div className="grain-overlay z-0" aria-hidden="true" />
+      <div className="lake-bg" style={{ position: 'absolute', inset: 0, zIndex: 0 }} aria-hidden="true" />
+      <div className="aurora-orb aurora-orb-top" style={{ zIndex: 0 }} aria-hidden="true" />
+      <div className="water-shimmer" style={{ zIndex: 0 }} aria-hidden="true" />
+      <div className="mesh-grid" style={{ zIndex: 0 }} aria-hidden="true" />
+      <div className="grain-overlay" style={{ zIndex: 0 }} aria-hidden="true" />
 
-      <div className="relative z-10 flex h-full min-h-0 w-full items-start justify-center overflow-hidden px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-[clamp(3.25rem,10svh,6.25rem)] sm:px-6 sm:pt-24">
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          boxSizing: 'border-box',
+          paddingLeft: 16,
+          paddingRight: 16,
+          paddingTop: 'min(86px, 12vh)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
+          overflow: 'hidden',
+        }}
+      >
         <div
-          className="w-full max-w-sm text-center px-2 flex flex-col items-center anim-card-rise"
-          style={{ gap: 'clamp(0.45rem, 1.55svh, 1.05rem)' }}
+          style={{
+            width: '100%',
+            maxWidth: 384,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 'min(14px, 1.9vh)',
+            textAlign: 'center',
+            paddingLeft: 8,
+            paddingRight: 8,
+            boxSizing: 'border-box',
+          }}
         >
-          <div className="anim-scale-in shrink-0">
+          <div style={{ flexShrink: 0 }}>
             <div
-              className="icon-tile anim-float"
-              style={{ width: 'clamp(3.1rem, 7.8svh, 4.8rem)', height: 'clamp(3.1rem, 7.8svh, 4.8rem)' }}
+              className="icon-tile"
+              style={{
+                width: 'min(72px, 9vh)',
+                height: 'min(72px, 9vh)',
+              }}
             >
               <Users size={26} strokeWidth={1.75} aria-hidden="true" />
             </div>
           </div>
 
-          <div className="space-y-0.5 w-full">
-            <p className="typo-label-small uppercase pl-[0.32em]">
+          <div style={{ width: '100%' }}>
+            <p className="typo-label-small uppercase" style={{ paddingLeft: '0.32em', margin: 0, marginBottom: 4 }}>
               {t('app.tagline')}
             </p>
             <h1
               id="intro-title"
-              className="title-ink leading-tight font-black tracking-tighter"
-              style={{ fontSize: 'clamp(1.75rem, 4.4svh, 2.55rem)' }}
+              className="title-ink"
+              style={{
+                margin: 0,
+                fontSize: 'min(2.55rem, 4.8vh)',
+                lineHeight: 1.14,
+                fontWeight: 900,
+                letterSpacing: '-0.04em',
+              }}
             >
               {t('app.name')}
             </h1>
-            <p className="typo-body-secondary font-semibold tracking-wide leading-relaxed">
+            <p className="typo-body-secondary" style={{ margin: 0, marginTop: 10, fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1.6 }}>
               {hasBlockingConfigIssue ? t('intro.subtitle.config') : t('intro.subtitle.default')}
             </p>
           </div>
 
           <div
-            className="keyline-card px-5 flex justify-center items-center w-full"
-            style={{ paddingTop: 'clamp(0.65rem, 1.9svh, 1.25rem)', paddingBottom: 'clamp(0.65rem, 1.9svh, 1.25rem)' }}
+            className="keyline-card"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: 'min(18px, 2.3vh) 20px',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
           >
             <span className="glass-bloom" aria-hidden="true" />
             <span className="glass-flecks" aria-hidden="true" />
             <p
-              className="jk-serif typo-body relative z-[1] font-medium tracking-[0.05em] text-center"
-              style={{ fontSize: 'clamp(0.9rem, 2svh, 1.08rem)' }}
+              className="jk-serif typo-body"
+              style={{
+                position: 'relative',
+                zIndex: 1,
+                margin: 0,
+                fontWeight: 500,
+                letterSpacing: '0.05em',
+                textAlign: 'center',
+                fontSize: 'min(1.08rem, 2.35vh)',
+                lineHeight: 1.75,
+              }}
             >
               {t('intro.keyline.line1')}
               <br />
@@ -99,7 +161,20 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
             </p>
           </div>
 
-          <ol className="w-full flex flex-wrap items-center justify-center gap-1.5 sm:gap-2" aria-label="intro steps">
+          <ol
+            style={{
+              width: '100%',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: 0,
+              margin: 0,
+              listStyle: 'none',
+            }}
+            aria-label="intro steps"
+          >
             <li className="intro-step">
               <span className="intro-step__num" aria-hidden="true">1</span>
               <Feather size={12} className="text-slate-500" aria-hidden="true" />
@@ -121,13 +196,26 @@ const IntroOverlay = ({ visible, isHomeReady, hasBlockingConfigIssue, onStart })
             ref={startBtnRef}
             type="button"
             onClick={onStart}
-            className="cta-primary-surface w-full py-3 sm:py-4 rounded-[1.6rem] font-black text-[0.95rem] tracking-wide active:scale-95 flex items-center justify-center gap-2"
+            className="cta-primary-surface"
+            style={{
+              width: '100%',
+              minHeight: 58,
+              padding: '14px 18px',
+              borderRadius: '1.6rem',
+              fontWeight: 900,
+              fontSize: '0.95rem',
+              letterSpacing: '0.04em',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+            }}
           >
             {hasBlockingConfigIssue ? t('intro.cta.config') : t('intro.cta.start')}
             <ChevronRight size={18} aria-hidden="true" />
           </button>
           {hasBlockingConfigIssue && (
-            <p className="typo-helper-muted font-medium leading-relaxed text-center w-full">
+            <p className="typo-helper-muted" style={{ margin: 0, width: '100%', fontWeight: 600, lineHeight: 1.6, textAlign: 'center' }}>
               {t('intro.config.note')}
             </p>
           )}
