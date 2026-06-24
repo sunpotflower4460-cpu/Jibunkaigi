@@ -13,8 +13,13 @@ import type {
 export function createUniversalOthersMockResponse(
   request: UniversalOthersRequest,
 ): UniversalOthersResponse {
-  const targets: ConcreteAgentId[] =
+  const requestedTargets: ConcreteAgentId[] =
     request.targetAgentIds?.length ? request.targetAgentIds : CONCRETE_AGENT_IDS;
+  // Exclude the already-spoken voice so OTHERS brings *different* angles.
+  // currentAgentId may be a non-concrete id (mirror/delegate); in that case
+  // nothing is filtered. Guard against an empty result.
+  const excluded = requestedTargets.filter((id) => id !== request.currentAgentId);
+  const targets: ConcreteAgentId[] = excluded.length > 0 ? excluded : requestedTargets;
 
   const replies: UniversalOthersReply[] = targets.map((agentId) => {
     const reply = createUniversalMockReply({
