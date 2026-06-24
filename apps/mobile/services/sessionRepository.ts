@@ -37,6 +37,9 @@ export interface UniversalSessionRepository {
   /** Removes all messages from a session (does not delete the session itself). */
   clearMessages(sessionId: string): Promise<void>;
 
+  /** Removes every session and all their messages for the current user. */
+  deleteAllSessions(): Promise<void>;
+
   /** Loads all messages for a session, ordered by createdAt. */
   loadMessages(sessionId: string): Promise<UniversalMessage[]>;
 }
@@ -98,6 +101,10 @@ export class LocalSessionRepository implements UniversalSessionRepository {
     const session = this.sessions.get(sessionId);
     if (!session) return;
     this.sessions.set(sessionId, { ...session, messages: [], updatedAt: Date.now() });
+  }
+
+  async deleteAllSessions(): Promise<void> {
+    this.sessions.clear();
   }
 
   async loadMessages(sessionId: string): Promise<UniversalMessage[]> {

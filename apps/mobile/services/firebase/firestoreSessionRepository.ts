@@ -122,6 +122,18 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
     await batch.commit();
   }
 
+  async deleteAllSessions(): Promise<void> {
+    const uid = await this.getCurrentUserId();
+    if (!uid) return;
+    // Fetch every session, then delete each (deleteSession also removes that
+    // session's messages subcollection). Sessions are typically few, so a
+    // sequential pass keeps each session's messages within one write batch.
+    const snap = await getDocs(this.sessionsCol(uid));
+    for (const sessionDoc of snap.docs) {
+      await this.deleteSession(sessionDoc.id);
+    }
+  }
+
   async loadMessages(sessionId: string): Promise<UniversalMessage[]> {
     const uid = await this.getCurrentUserId();
     if (!uid) return [];
