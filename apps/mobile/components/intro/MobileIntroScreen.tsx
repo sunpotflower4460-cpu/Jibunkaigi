@@ -50,6 +50,8 @@ export function MobileIntroScreen({ onHintSelect }: MobileIntroScreenProps) {
             style={styles.hintChip}
             onPress={() => onHintSelect(hint)}
             activeOpacity={0.6}
+            accessibilityRole="button"
+            accessibilityLabel={`この問いではじめる: ${hint}`}
           >
             <Text style={styles.hintText}>{hint}</Text>
           </TouchableOpacity>

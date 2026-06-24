@@ -29,10 +29,22 @@ export function MobileDeleteMessageSheet({
             <Text style={styles.title}>このメッセージを手放しますか？</Text>
             <Text style={styles.caption}>会話の表示から取り除かれます。</Text>
             <View style={styles.actions}>
-              <TouchableOpacity style={styles.cancelButton} onPress={onCancel} activeOpacity={0.75}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={onCancel}
+                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel="削除をキャンセル"
+              >
                 <Text style={styles.cancelText}>キャンセル</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.deleteButton} onPress={onConfirm} activeOpacity={0.75}>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={onConfirm}
+                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel="メッセージを手放す"
+              >
                 <Text style={styles.deleteText}>手放す</Text>
               </TouchableOpacity>
             </View>

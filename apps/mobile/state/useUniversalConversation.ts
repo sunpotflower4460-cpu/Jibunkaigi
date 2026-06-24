@@ -167,6 +167,11 @@ export function useUniversalConversation(
   const sessionsRef = useRef<UniversalSession[]>([]);
   const modeRef = useRef<UniversalModeId>('dialogue');
   const sessionRef = useRef<UniversalSession>(session);
+  // Request generation counter. Incremented whenever the active conversation is
+  // invalidated (clear / new / switch). Async replies captured an earlier
+  // generation are discarded on arrival, which catches the clearConversation
+  // case where the session id stays the same but messages are emptied.
+  const requestGenerationRef = useRef(0);
   // Mirror of lastResolvedAgentId for use inside async callbacks without
   // adding it to their dependency arrays (keeps OTHERS reading a fresh value).
   const lastResolvedAgentIdRef = useRef<ConcreteAgentId | null>(null);
@@ -309,7 +314,7 @@ export function useUniversalConversation(
       if (!trimmed || isThinkingRef.current) return;
       closeComposer();
 
-        const userMsg: UniversalMessage = {
+      const userMsg: UniversalMessage = {
         id: createUniversalId('message'),
         role: 'user',
         text: trimmed,
@@ -337,6 +342,7 @@ export function useUniversalConversation(
       setAiError(null);
 
       const sessionId = sessionRef.current.id;
+      const generation = requestGenerationRef.current;
       // selectedAgent is the user's entry point. When it is 'delegate', resolve
       // the concrete voice here (the single source of truth) so AI / proxy /
       // fallback / metadata / OTHERS all reference the same speaker. proxy and
@@ -371,7 +377,12 @@ export function useUniversalConversation(
             userName: resolvedUserName,
           });
 
-          if (sessionRef.current.id !== sessionId) return;
+          if (
+            sessionRef.current.id !== sessionId ||
+            requestGenerationRef.current !== generation
+          ) {
+            return;
+          }
 
           const agentMsg: UniversalMessage = {
             id: createUniversalId('message'),
@@ -398,7 +409,6 @@ export function useUniversalConversation(
           if (isConcreteAgentId(reply.agentId)) {
             setLastResolvedAgentId(reply.agentId);
           }
-          setPendingResolvedAgentId(null);
 
           void runStorageTask(async () => {
             await repoRef.current.saveMessage(sessionId, agentMsg);
@@ -408,9 +418,11 @@ export function useUniversalConversation(
         } catch (error) {
           const msg = error instanceof Error ? error.message : String(error);
           setAiError(msg);
-          setPendingResolvedAgentId(null);
           console.warn('[Jibunkaigi] AI reply error:', error);
         } finally {
+          // Reset pendingResolvedAgentId here (not in the success/catch paths)
+          // so the early-return guard above also clears it.
+          setPendingResolvedAgentId(null);
           isThinkingRef.current = false;
           setIsThinking(false);
         }
@@ -430,6 +442,7 @@ export function useUniversalConversation(
     if (!othersTarget) return;
 
     const originSessionId = sessionRef.current.id;
+    const generation = requestGenerationRef.current;
     const messagesSnapshot = messagesRef.current;
 
     isLoadingOthersRef.current = true;
@@ -455,7 +468,12 @@ export function useUniversalConversation(
         userName: resolvedUserName,
       });
 
-      if (sessionRef.current.id !== originSessionId) return;
+      if (
+        sessionRef.current.id !== originSessionId ||
+        requestGenerationRef.current !== generation
+      ) {
+        return;
+      }
 
       const now = Date.now();
       const agentMessages: UniversalMessage[] = result.replies.map((reply, index) => ({
@@ -506,6 +524,7 @@ export function useUniversalConversation(
   }, []);
 
   const clearConversation = useCallback(() => {
+    requestGenerationRef.current += 1;
     isThinkingRef.current = false;
     messagesRef.current = [];
     setIsThinking(false);
@@ -528,6 +547,7 @@ export function useUniversalConversation(
   }, [openComposer, refreshSessions, runStorageTask]);
 
   const createNewSession = useCallback(() => {
+    requestGenerationRef.current += 1;
     isThinkingRef.current = false;
     const newSession = createLocalSession();
     messagesRef.current = [];
@@ -547,6 +567,7 @@ export function useUniversalConversation(
   }, [openComposer, refreshSessions, runStorageTask]);
 
   const switchSession = useCallback(async (sessionId: string) => {
+    requestGenerationRef.current += 1;
     isThinkingRef.current = false;
     setIsThinking(false);
     setIsLoadingSessions(true);
