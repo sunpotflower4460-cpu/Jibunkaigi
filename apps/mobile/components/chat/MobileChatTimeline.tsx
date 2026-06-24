@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { MobileMessageBubble, type MessageRole } from './MobileMessageBubble';
-import { MobileThinkingIndicator } from './MobileThinkingIndicator';
+import { MobileEntrustConvergence } from './MobileEntrustConvergence';
 import { MobileDeleteMessageSheet } from './MobileDeleteMessageSheet';
 import { MobileBottomSpacer } from '../layout/MobileBottomSpacer';
 import type { MobileAgentId } from '../../state/mobileTypes';
@@ -81,7 +81,7 @@ export function MobileChatTimeline({
               : undefined}
           />
         ))}
-        {isThinking && <MobileThinkingIndicator agentId={thinkingAgentId} />}
+        {isThinking && <MobileEntrustConvergence agentId={thinkingAgentId} />}
         <MobileBottomSpacer
           composerOpen={composerOpen}
           floatingBarVisible={floatingBarVisible}
