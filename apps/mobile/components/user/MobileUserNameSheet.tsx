@@ -77,6 +77,8 @@ export function MobileUserNameSheet({
                     style={styles.primaryButton}
                     onPress={onSave}
                     activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="名前を保存する"
                   >
                     <Text style={styles.primaryButtonText}>保存する</Text>
                   </TouchableOpacity>
@@ -84,6 +86,8 @@ export function MobileUserNameSheet({
                     style={styles.secondaryButton}
                     onPress={onClose}
                     activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="キャンセル"
                   >
                     <Text style={styles.secondaryButtonText}>キャンセル</Text>
                   </TouchableOpacity>

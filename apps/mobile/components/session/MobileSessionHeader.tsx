@@ -88,6 +88,8 @@ export function MobileSessionHeader({
             onPress={onClear}
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="この会話をクリア"
           >
             <Text style={styles.btnText}>クリア</Text>
           </TouchableOpacity>
@@ -97,6 +99,8 @@ export function MobileSessionHeader({
           onPress={onNewSession}
           activeOpacity={0.7}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="新しい問いをはじめる"
         >
           <Text style={[styles.btnText, styles.btnTextPrimary]}>{newSessionLabel}</Text>
         </TouchableOpacity>
