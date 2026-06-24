@@ -9,5 +9,8 @@
     "declaration": true,
     "isolatedModules": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  // Test files run under tsx (see `npm test`); exclude them from the library
+  // typecheck so node:test types and .ts-extension imports are not required.
+  "exclude": ["src/**/*.test.ts"]
 }
