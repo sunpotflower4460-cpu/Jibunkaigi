@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import {
   createDefaultUserProfile,
   normalizeUserName,
@@ -14,6 +14,8 @@ const LOCAL_PROFILE_KEY = 'jibunkaigi:user-profile';
 export interface UserProfileRepository {
   loadProfile(): Promise<UniversalUserProfile>;
   saveProfile(profile: UniversalUserProfile): Promise<void>;
+  /** Removes the user's profile both locally (AsyncStorage) and remotely (Firestore). */
+  deleteProfile(): Promise<void>;
 }
 
 function profileDoc(uid: string) {
@@ -140,6 +142,25 @@ export function createUserProfileRepository(): UserProfileRepository {
         );
       } catch {
         console.warn('[Jibunkaigi] Failed to save user profile.');
+      }
+    },
+
+    async deleteProfile(): Promise<void> {
+      // Local first so the device is cleared even if the network call fails.
+      await AsyncStorage.removeItem(LOCAL_PROFILE_KEY);
+
+      if (!getMobileFirebaseServices()) return;
+
+      try {
+        const user = await ensureAnonymousUser();
+        if (!user?.uid) return;
+
+        const profileRef = profileDoc(user.uid);
+        if (!profileRef) return;
+
+        await deleteDoc(profileRef);
+      } catch {
+        console.warn('[Jibunkaigi] Failed to delete user profile.');
       }
     },
   };
