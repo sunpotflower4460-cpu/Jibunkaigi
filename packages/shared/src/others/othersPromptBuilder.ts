@@ -11,9 +11,14 @@ import type { UniversalOthersRequest } from './othersTypes';
 
 export function buildUniversalOthersPrompt(request: UniversalOthersRequest): string {
   const mode = getModePromptProfile(request.modeId);
-  const targets: ConcreteAgentId[] = request.targetAgentIds?.length
+  const requestedTargets: ConcreteAgentId[] = request.targetAgentIds?.length
     ? request.targetAgentIds
     : CONCRETE_AGENT_IDS;
+  // Exclude the already-spoken voice so OTHERS brings *different* angles.
+  // currentAgentId may be a non-concrete id (mirror/delegate); in that case
+  // nothing is filtered. Guard against an empty result.
+  const excluded = requestedTargets.filter((id) => id !== request.currentAgentId);
+  const targets: ConcreteAgentId[] = excluded.length > 0 ? excluded : requestedTargets;
 
   const recentMessages = selectRecentPromptMessages(request.messages, 12);
   // Exclude the last message from history if it is a user message matching userText,
