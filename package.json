@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "test": "node --import ./scripts/register-jsx.mjs --test",
-    "test:run": "node --import ./scripts/register-jsx.mjs --test",
+    "test": "node --import ./scripts/register-jsx.mjs --test \"src/**/*.test.js\" \"src/**/*.test.jsx\"",
+    "test:run": "node --import ./scripts/register-jsx.mjs --test \"src/**/*.test.js\" \"src/**/*.test.jsx\"",
     "preview": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy"
   },
