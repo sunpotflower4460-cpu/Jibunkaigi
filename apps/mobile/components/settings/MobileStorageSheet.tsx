@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   Platform,
   SafeAreaView,
@@ -19,6 +20,7 @@ import {
   MOBILE_STORAGE_EXPLANATIONS,
   getMobileStorageStatusSummary,
 } from '../../services/storageStatus';
+import { deleteAllUserData } from '../../services/userDataDeletion';
 import {
   colors,
   mobileLayout,
@@ -32,10 +34,35 @@ interface MobileStorageSheetProps {
   visible: boolean;
   status: UniversalRuntimeStatus;
   onClose: () => void;
+  /** Called after all user data is deleted, so the host can reset UI state (e.g. start a new session). */
+  onDataDeleted?: () => void;
 }
 
-export function MobileStorageSheet({ visible, status, onClose }: MobileStorageSheetProps) {
+type DeletePhase = 'idle' | 'confirming' | 'deleting';
+
+export function MobileStorageSheet({
+  visible,
+  status,
+  onClose,
+  onDataDeleted,
+}: MobileStorageSheetProps) {
   const summary = getMobileStorageStatusSummary(status);
+  const [deletePhase, setDeletePhase] = useState<DeletePhase>('idle');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleDeleteAll() {
+    setDeletePhase('deleting');
+    setDeleteError(null);
+    const result = await deleteAllUserData();
+    if (result.ok) {
+      setDeletePhase('idle');
+      onDataDeleted?.();
+      onClose();
+    } else {
+      setDeletePhase('idle');
+      setDeleteError(result.error ?? '削除中に問題が発生しました。時間をおいて再度お試しください。');
+    }
+  }
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -105,8 +132,76 @@ export function MobileStorageSheet({ visible, status, onClose }: MobileStorageSh
               ))}
               <Text style={styles.note}>{MOBILE_REFLECTION_SHELF_DELETION_NOTE}</Text>
             </View>
+
+            <View style={[styles.section, styles.sectionDanger]}>
+              <Text style={styles.sectionTitle}>すべてのデータを削除</Text>
+              <Text style={styles.sectionSummary}>
+                端末とクラウドの会話・プロフィールをまとめて削除します。元に戻せません。
+              </Text>
+              {deleteError ? (
+                <Text style={[styles.sectionLine, styles.deleteErrorText]}>・{deleteError}</Text>
+              ) : null}
+              <TouchableOpacity
+                style={[
+                  styles.deleteAllButton,
+                  deletePhase === 'deleting' && styles.deleteAllButtonDisabled,
+                ]}
+                onPress={() => setDeletePhase('confirming')}
+                disabled={deletePhase === 'deleting'}
+                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel="すべてのデータを削除"
+              >
+                {deletePhase === 'deleting' ? (
+                  <ActivityIndicator color={colors.danger} />
+                ) : (
+                  <Text style={styles.deleteAllButtonText}>すべてのデータを削除</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </SafeAreaView>
+
+        <Modal
+          visible={deletePhase === 'confirming'}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setDeletePhase('idle')}
+        >
+          <View style={styles.confirmOverlay}>
+            <TouchableOpacity
+              style={styles.confirmBackdrop}
+              activeOpacity={1}
+              onPress={() => setDeletePhase('idle')}
+            />
+            <View style={styles.confirmSheet}>
+              <Text style={styles.confirmTitle}>本当にすべて削除しますか？</Text>
+              <Text style={styles.confirmCaption}>
+                端末とクラウドの会話・プロフィールが消えます。この操作は元に戻せません。
+              </Text>
+              <View style={styles.confirmActions}>
+                <TouchableOpacity
+                  style={styles.confirmCancel}
+                  onPress={() => setDeletePhase('idle')}
+                  activeOpacity={0.75}
+                  accessibilityRole="button"
+                  accessibilityLabel="削除をキャンセル"
+                >
+                  <Text style={styles.confirmCancelText}>キャンセル</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.confirmDelete}
+                  onPress={handleDeleteAll}
+                  activeOpacity={0.75}
+                  accessibilityRole="button"
+                  accessibilityLabel="すべてのデータを削除する"
+                >
+                  <Text style={styles.confirmDeleteText}>削除する</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </Modal>
   );
@@ -385,5 +480,89 @@ const styles = StyleSheet.create({
     fontSize: typeScale.tiny,
     lineHeight: 20,
     color: colors.inkMuted,
+  },
+  deleteErrorText: {
+    color: colors.danger,
+  },
+  deleteAllButton: {
+    marginTop: spacing.sm,
+    minHeight: 48,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.dangerBorder,
+    backgroundColor: colors.surfaceStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  deleteAllButtonDisabled: {
+    opacity: 0.6,
+  },
+  deleteAllButtonText: {
+    fontSize: typeScale.small,
+    fontWeight: '700',
+    color: colors.danger,
+  },
+  confirmOverlay: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  confirmBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.overlayStrong,
+  },
+  confirmSheet: {
+    width: '100%',
+    maxWidth: mobileLayout.sheetMaxWidth,
+    backgroundColor: colors.surfaceSoft,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+    gap: spacing.md,
+    ...shadow.card,
+  },
+  confirmTitle: {
+    fontSize: typeScale.body,
+    fontWeight: '700',
+    color: colors.inkStrong,
+  },
+  confirmCaption: {
+    fontSize: typeScale.tiny,
+    lineHeight: 20,
+    color: colors.inkMuted,
+  },
+  confirmActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  confirmCancel: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmCancelText: {
+    fontSize: typeScale.small,
+    fontWeight: '600',
+    color: colors.inkMain,
+  },
+  confirmDelete: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmDeleteText: {
+    fontSize: typeScale.small,
+    fontWeight: '700',
+    color: '#ffffff',
   },
 });

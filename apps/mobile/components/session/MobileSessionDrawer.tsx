@@ -194,6 +194,11 @@ export function MobileSessionDrawer({
         visible={storageSheetOpen}
         status={runtimeStatus}
         onClose={() => setStorageSheetOpen(false)}
+        onDataDeleted={() => {
+          // Reset UI to a clean state after all data is wiped.
+          onNewSession();
+          onClose();
+        }}
       />
     </>
   );
