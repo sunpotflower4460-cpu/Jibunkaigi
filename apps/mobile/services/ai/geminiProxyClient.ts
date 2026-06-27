@@ -7,6 +7,10 @@ import type {
 
 const REQUEST_TIMEOUT_MS = 30000;
 
+// 開発者モードのトレース送信フラグ。本番ビルドでは EXPO_PUBLIC_DEV_TRACE を未設定にする。
+const DEV_TRACE_ENABLED = process.env.EXPO_PUBLIC_DEV_TRACE === '1';
+const DEV_TRACE_KEY = process.env.EXPO_PUBLIC_DEV_TRACE_KEY ?? '';
+
 export function createGeminiProxyClient(): UniversalAiClient | null {
   const baseUrl = getJibunkaigiApiBaseUrl();
   if (!baseUrl) return null;
@@ -39,6 +43,9 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
             modeId: request.modeId,
             messages: request.messages.slice(-20),
             userName: request.userName,
+            ...(DEV_TRACE_ENABLED && DEV_TRACE_KEY
+              ? { devTrace: true, devTraceKey: DEV_TRACE_KEY }
+              : {}),
           }),
           signal: controller.signal,
         });

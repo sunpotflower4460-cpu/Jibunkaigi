@@ -14,6 +14,9 @@ export interface Env {
   GEMINI_API_KEY: string;
   GEMINI_MODEL?: string;
   ALLOWED_ORIGIN?: string;
+  // 開発者モードのトレース記録用（任意）。未設定なら記録は一切行われない。
+  DEV_TRACE_SECRET?: string;
+  DEV_TRACE_KV?: KVNamespace;
 }
 
 function corsHeaders(env: Env): Record<string, string> {
@@ -204,12 +207,126 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
   }
 }
 
+interface DevTraceInput {
+  sessionId: string;
+  agentId: UniversalAgentId;
+  modeId: UniversalModeId;
+  userName: string | null;
+  input: string;
+  context: UniversalPromptMessage[];
+  prompt: string;
+  output: string;
+  model: string;
+}
+
+// 軽量AIに「このやり取りをどう受け取ったか」を書かせる（実験用の自己診断）。
+async function generateReflection(
+  env: Env,
+  prompt: string,
+  output: string,
+): Promise<unknown> {
+  const model = env.GEMINI_MODEL || 'gemini-1.5-flash';
+  const geminiUrl =
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const reflectionPrompt =
+    'あなたは実験の観察役です。以下の「AIへの指示（システムプロンプト）」と「生成された応答」を読み、次の3点だけを日本語のJSONで答えてください。前置きや説明は不要、JSONのみ。\n' +
+    '- felt: この指示群を読んでどう受け取ったか（一人称で短く）\n' +
+    '- why: なぜこの応答になったと思うか\n' +
+    '- noticed: 違和感や、設定文に引っ張られた箇所などの気づき\n\n' +
+    '【指示】\n' +
+    prompt +
+    '\n\n【応答】\n' +
+    output;
+  const res = await fetch(geminiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': env.GEMINI_API_KEY,
+    },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: reflectionPrompt }] }],
+    }),
+  });
+  if (!res.ok) {
+    return { error: `reflection upstream ${res.status}` };
+  }
+  const data = await res.json<{
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+  }>();
+  const rawText =
+    data?.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text || '')
+      .join('')
+      .trim() || '';
+  try {
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    return JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
+  } catch {
+    return { raw: rawText };
+  }
+}
+
+// トレース1件をKVに保存（reflection付き）。30日で自動失効。
+async function recordTrace(env: Env, data: DevTraceInput): Promise<void> {
+  if (!env.DEV_TRACE_KV) return;
+  let reflection: unknown = null;
+  try {
+    reflection = await generateReflection(env, data.prompt, data.output);
+  } catch (error) {
+    reflection = { error: String(error) };
+  }
+  const recordedAt = Date.now();
+  const trace = { ...data, reflection, recordedAt };
+  const key = `trace:${recordedAt}:${data.sessionId}`;
+  try {
+    await env.DEV_TRACE_KV.put(key, JSON.stringify(trace), {
+      expirationTtl: 60 * 60 * 24 * 30,
+    });
+  } catch (error) {
+    console.error('[jibunkaigi-proxy] dev-trace put failed:', error);
+  }
+}
+
+// 保存済みトレースを読み出す（合言葉が一致したときだけ）。新しい順で返す。
+async function handleDevTracesRead(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const key = url.searchParams.get('key');
+  if (!env.DEV_TRACE_SECRET || key !== env.DEV_TRACE_SECRET) {
+    return json({ error: 'unauthorized' }, 401, env);
+  }
+  if (!env.DEV_TRACE_KV) {
+    return json({ count: 0, traces: [] }, 200, env);
+  }
+  const list = await env.DEV_TRACE_KV.list({ prefix: 'trace:' });
+  const traces: unknown[] = [];
+  for (const k of list.keys) {
+    const value = await env.DEV_TRACE_KV.get(k.name);
+    if (value) {
+      try {
+        traces.push(JSON.parse(value));
+      } catch {
+        traces.push({ key: k.name, raw: value });
+      }
+    }
+  }
+  traces.sort((a, b) => {
+    const ra = (a as { recordedAt?: number }).recordedAt || 0;
+    const rb = (b as { recordedAt?: number }).recordedAt || 0;
+    return rb - ra;
+  });
+  return json({ count: traces.length, traces }, 200, env);
+}
+
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders(env) });
+    }
+
+    if (url.pathname === '/api/jibunkaigi/dev-traces' && request.method === 'GET') {
+      return handleDevTracesRead(request, env);
     }
 
     if (url.pathname === '/api/jibunkaigi/others' && request.method === 'POST') {
@@ -231,6 +348,9 @@ export default {
         modeId?: unknown;
         messages?: unknown;
         userName?: unknown;
+        sessionId?: unknown;
+        devTrace?: unknown;
+        devTraceKey?: unknown;
       }>();
 
       const userText = String(body.userText || '').trim();
@@ -310,6 +430,31 @@ export default {
 
       if (!text) {
         return json({ error: 'Gemini returned empty text' }, 502, env);
+      }
+
+      // 開発者モード（合言葉一致）のときだけ、トレースを非同期で記録する。
+      // 本番ユーザーは devTraceKey を持たないため、記録は一切走らない。
+      if (
+        body.devTrace === true &&
+        typeof body.devTraceKey === 'string' &&
+        env.DEV_TRACE_SECRET &&
+        body.devTraceKey === env.DEV_TRACE_SECRET &&
+        env.DEV_TRACE_KV
+      ) {
+        const sessionId = typeof body.sessionId === 'string' ? body.sessionId : 'nosession';
+        ctx.waitUntil(
+          recordTrace(env, {
+            sessionId,
+            agentId,
+            modeId,
+            userName,
+            input: userText,
+            context: messages,
+            prompt: built.prompt,
+            output: text,
+            model,
+          }),
+        );
       }
 
       return json(
