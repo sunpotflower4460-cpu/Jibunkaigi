@@ -6,5 +6,10 @@ export { ignite } from './ignition/ignite';
 export type { IgniteOptions } from './ignition/ignite';
 export { igniteAndSpread } from './igniteAndSpread';
 export type { IgniteAndSpreadOptions } from './igniteAndSpread';
-export { getAgentDefinition, AGENT_DEFINITIONS } from './agents';
+export {
+  getAgentDefinition,
+  AGENT_DEFINITIONS,
+  TOOL_ENGINE_AGENT_IDS,
+  CONNECTED_AGENT_IDS,
+} from './agents';
 export type { AgentDefinition } from './agents';
