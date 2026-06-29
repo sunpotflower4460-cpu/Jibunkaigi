@@ -7,6 +7,14 @@ export type { IgniteOptions } from './ignition/ignite';
 export { igniteAndSpread } from './igniteAndSpread';
 export type { IgniteAndSpreadOptions } from './igniteAndSpread';
 export {
+  AGENT_CORRECTION_LENSES,
+  strengthBucket,
+  buildSurfacedMaterialBlock,
+  buildCorrectionBlock,
+  buildToolEnginePromptSection,
+} from './promptSection';
+export type { SurfacedBlockOptions } from './promptSection';
+export {
   getAgentDefinition,
   AGENT_DEFINITIONS,
   TOOL_ENGINE_AGENT_IDS,

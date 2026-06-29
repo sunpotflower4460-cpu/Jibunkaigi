@@ -29,3 +29,4 @@ export * from './session/sessionDisplay';
 export * from './session/sessionExport';
 export * from './message/messageActions';
 export * from './message/resolveOthersTarget';
+export * from './toolEngine';
