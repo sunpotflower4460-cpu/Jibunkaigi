@@ -2,6 +2,7 @@ import { getAgentPromptProfile } from './agentPromptProfiles';
 import { getModePromptProfile } from './modePromptProfiles';
 import { buildResponsePolicyText } from './responsePolicy';
 import { sanitizePromptText, selectRecentPromptMessages } from './promptSanitizer';
+import { buildToolEnginePromptSection } from '../toolEngine/promptSection';
 import type {
   BuildUniversalConversationPromptParams,
   UniversalBuiltPrompt,
@@ -29,6 +30,10 @@ export function buildUniversalConversationPrompt(
       return `${speaker}: ${sanitizePromptText(msg.text, 800)}`;
     })
     .join('\n');
+
+  const innerSection = params.surfaced
+    ? buildToolEnginePromptSection(params.surfaced, agent.label)
+    : '';
 
   const prompt = [
     'あなたは「じぶん会議」の応答生成APIです。',
@@ -59,6 +64,7 @@ export function buildUniversalConversationPrompt(
     '## 直近の会話',
     history || '(なし)',
     '',
+    ...(innerSection ? [innerSection, ''] : []),
     '## 今回のユーザー入力',
     sanitizePromptText(params.userText, 1200),
     '',

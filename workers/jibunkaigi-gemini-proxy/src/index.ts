@@ -3,6 +3,7 @@ import {
   buildUniversalOthersPrompt,
   CONCRETE_AGENT_IDS,
   getUniversalAgent,
+  igniteAndSpread,
   type ConcreteAgentId,
   type UniversalAgentId,
   type UniversalModeId,
@@ -382,12 +383,18 @@ export default {
         createdAt: typeof msg.createdAt === 'number' ? msg.createdAt : undefined,
       }));
 
+      // tool層: 入力を活性拡散ネットワークで反応させ、浮上材料を得る。
+      // 形態素解析(kuromoji)は未注入＝部分一致のみ（後で tokenizer を足せる設計）。
+      // 登録の無い声（mirror/delegate）は ignited 空 → 材料ブロックは差し込まれない。
+      const surfaced = igniteAndSpread(userText, agentId);
+
       const built = buildUniversalConversationPrompt({
         userText,
         agentId,
         modeId,
         messages,
         userName,
+        surfaced,
       });
 
       const model = env.GEMINI_MODEL || 'gemini-1.5-flash';
