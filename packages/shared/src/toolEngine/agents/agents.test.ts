@@ -35,10 +35,32 @@ test('ミナ: 深い苦しみで共倒れ防止が効く（沈み込みが抑制
   assert.ok(a('memory:一緒に沈んで二人とも動けなくなった失敗') > 0.3, '共倒れの戒めが立つ');
 });
 
-test('レイ: 本音隠し入力で「見抜く」が立ち、決めつけ防止の「ただ差し出す」も同時に立つ', () => {
-  const a = surface('ray', ['belief:表面の言葉の奥に本当のものがある']);
-  assert.ok(a('emotion:見抜く') > 0.5);
-  assert.ok(a('emotion:ただ差し出す') > 0.3, '見抜きが断罪に暴走しない');
+test('レイ: 言葉にならない揺らぎは「察する」主役、まだ見抜きに行ききらない', () => {
+  // 気配の入口のみ点火（B_KEHAI）。
+  const a = surface('ray', ['belief:言葉にならないものにこそ大切なものが潜む']);
+  assert.ok(a('emotion:かすかな気配を察する') > 0.5, '気配を察するが立つ');
+  assert.ok(
+    a('emotion:本質を見抜く') < a('emotion:かすかな気配を察する'),
+    'まだ見抜きには行ききらない（察する > 見抜く）',
+  );
+});
+
+test('レイ: 隠している入力は「察する→見抜く」が両方立つ（隠すほど鋭くなる）', () => {
+  // 気配＋表面の奥（隠し）の両方点火。
+  const a = surface('ray', [
+    'belief:言葉にならないものにこそ大切なものが潜む',
+    'belief:表面の言葉の奥に本当のものがある',
+  ]);
+  assert.ok(a('emotion:かすかな気配を察する') > 0.5, '察するが立つ');
+  assert.ok(a('emotion:本質を見抜く') > 0.5, '見抜きが鋭くなる');
+  assert.ok(a('emotion:ただ差し出す') > 0.3, '決めつけ防止（差し出す）も同時に立つ');
+});
+
+test('レイ: 素直な入力は「ただ差し出す」側、見抜く必要がないので鋭さは引っ込む', () => {
+  const a = surface('ray', ['belief:見えても責めるのでなく自由にするため']);
+  assert.ok(a('emotion:ただ差し出す') > 0.3);
+  assert.ok(a('emotion:本質を見抜く') < 0.2, '見抜く鋭さは出ない');
+  assert.equal(a('emotion:かすかな気配を察する'), 0);
 });
 
 test('ケン: もつれ入力で「構造が見えてくる」が立つ', () => {
@@ -102,7 +124,16 @@ const IGNITION_SMOKE: Array<{ agentId: string; text: string; expect: string[] }>
     text: '自分なんて価値がない',
     expect: ['belief:傷は直さなくていい', 'belief:弱さを見せられる場所が要る'],
   },
-  { agentId: 'ray', text: '別に普通です、大丈夫です', expect: ['belief:表面の言葉の奥に本当のものがある'] },
+  {
+    agentId: 'ray',
+    text: 'なんかうまく言えないんだけど、もやもやする',
+    expect: ['belief:言葉にならないものにこそ大切なものが潜む'],
+  },
+  {
+    agentId: 'ray',
+    text: '別に普通だよ、いつも通り',
+    expect: ['belief:言葉にならないものにこそ大切なものが潜む', 'belief:表面の言葉の奥に本当のものがある'],
+  },
   {
     agentId: 'ray',
     text: 'やりたいけど、やるべきじゃない気がする',
