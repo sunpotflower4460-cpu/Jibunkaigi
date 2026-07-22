@@ -26,6 +26,7 @@ import {
   createUniversalId,
   formatMessageForCopy,
   formatSessionForCopy,
+  isCrisisSafetyText,
   normalizeSessionTitle,
   sortUniversalSessions,
   pickDelegateByContext,
@@ -40,19 +41,20 @@ import {
 async function initRepository(): Promise<UniversalSessionRepository> {
   const firestoreRepo = createFirestoreRepository();
   if (firestoreRepo) {
-    setSessionRepository(firestoreRepo);
-    return firestoreRepo;
+    // Do not switch the singleton to a remote repository until anonymous auth
+    // is actually available. Otherwise every operation can silently/noisily
+    // fail while the UI still claims cloud persistence is active.
+    const uid = await firestoreRepo.getCurrentUserId();
+    if (uid) {
+      setSessionRepository(firestoreRepo);
+      return firestoreRepo;
+    }
+    console.warn('[Jibunkaigi] Firebase auth unavailable. Using local session storage.');
   }
   return getSessionRepository();
 }
 
-/**
- * Find the concrete agentId of the most recent *direct* (non-others) agent
- * message in a loaded message list. Used to restore lastResolvedAgentId when
- * switching sessions / bootstrapping so the OTHERS exclusion basis does not
- * carry over a stale value from a previous session. Returns null when there is
- * no direct concrete agent message.
- */
+/** Find the most recent direct concrete speaker in a loaded conversation. */
 function findLastResolvedConcreteAgent(
   messages: UniversalMessage[],
 ): ConcreteAgentId | null {
@@ -75,10 +77,6 @@ interface UseUniversalConversationReturn {
   isComposerOpen: boolean;
   selectedAgent: UniversalAgentId;
   selectedMode: UniversalModeId;
-  // Resolved-voice state (Phase 0-1), decoupled from selectedAgent:
-  // pendingResolvedAgentId holds the concrete voice chosen at send time
-  // (read by future convergence animation); lastResolvedAgentId is the most
-  // recent actual speaker (basis for OTHERS exclusion).
   pendingResolvedAgentId: ConcreteAgentId | null;
   lastResolvedAgentId: ConcreteAgentId | null;
   isThinking: boolean;
@@ -132,14 +130,8 @@ export function useUniversalConversation(
   const [sessions, setSessions] = useState<UniversalSession[]>([]);
   const [composerVisibility, setComposerVisibility] =
     useState<UniversalComposerVisibility>('open');
-  // Phase 2: 'delegate' ('委ねる') is the default entry point. The user can
-  // still pick a concrete voice, but by default the system reads context and
-  // chooses for them. Kept consistent with the new-session / clear resets below
-  // so the entry point is never a mix of 'ray' (first run) and 'delegate'.
   const [selectedAgent, setSelectedAgent] = useState<UniversalAgentId>('delegate');
   const [selectedMode, setSelectedMode] = useState<UniversalModeId>('dialogue');
-  // Resolved-voice state. Kept separate from selectedAgent (the user's entry
-  // point) so UI / AI / OTHERS can all reference the same actual speaker.
   const [pendingResolvedAgentId, setPendingResolvedAgentId] =
     useState<ConcreteAgentId | null>(null);
   const [lastResolvedAgentId, setLastResolvedAgentId] =
@@ -163,17 +155,12 @@ export function useUniversalConversation(
   const isThinkingRef = useRef(false);
   const isLoadingOthersRef = useRef(false);
   const saveOperationsRef = useRef(0);
+  const storageQueueRef = useRef<Promise<void>>(Promise.resolve());
   const messagesRef = useRef<UniversalMessage[]>([]);
   const sessionsRef = useRef<UniversalSession[]>([]);
   const modeRef = useRef<UniversalModeId>('dialogue');
   const sessionRef = useRef<UniversalSession>(session);
-  // Request generation counter. Incremented whenever the active conversation is
-  // invalidated (clear / new / switch). Async replies captured an earlier
-  // generation are discarded on arrival, which catches the clearConversation
-  // case where the session id stays the same but messages are emptied.
   const requestGenerationRef = useRef(0);
-  // Mirror of lastResolvedAgentId for use inside async callbacks without
-  // adding it to their dependency arrays (keeps OTHERS reading a fresh value).
   const lastResolvedAgentIdRef = useRef<ConcreteAgentId | null>(null);
 
   useEffect(() => {
@@ -196,11 +183,41 @@ export function useUniversalConversation(
     return () => clearTimeout(timeoutId);
   }, [lastActionMessage]);
 
+  const updateLastResolvedAgentId = useCallback((agentId: ConcreteAgentId | null) => {
+    lastResolvedAgentIdRef.current = agentId;
+    setLastResolvedAgentId(agentId);
+  }, []);
+
+  const isRequestCurrent = useCallback((sessionId: string, generation: number) => {
+    return (
+      sessionRef.current.id === sessionId &&
+      requestGenerationRef.current === generation
+    );
+  }, []);
+
+  const invalidateAsyncRequests = useCallback(() => {
+    requestGenerationRef.current += 1;
+    isThinkingRef.current = false;
+    isLoadingOthersRef.current = false;
+    setIsThinking(false);
+    setIsLoadingOthers(false);
+    setPendingResolvedAgentId(null);
+    return requestGenerationRef.current;
+  }, []);
+
   const runStorageTask = useCallback(async (task: () => Promise<void>) => {
     saveOperationsRef.current += 1;
     setIsSaving(true);
+
+    // Serialize persistence. Without this queue, a delayed save started before
+    // "clear" or "delete" could finish afterwards and resurrect removed data.
+    const operation = storageQueueRef.current
+      .catch(() => undefined)
+      .then(task);
+    storageQueueRef.current = operation.catch(() => undefined);
+
     try {
-      await task();
+      await operation;
       setStorageError(null);
       return true;
     } catch (error) {
@@ -274,21 +291,22 @@ export function useUniversalConversation(
           });
           if (cancelled) return;
           messagesRef.current = [];
+          sessionRef.current = initial;
           setSession(initial);
           setSessions(sortUniversalSessions([initial]));
           setPendingResolvedAgentId(null);
-          setLastResolvedAgentId(null);
+          updateLastResolvedAgentId(null);
         } else {
           const active = list[0];
           const msgs = await repo.loadMessages(active.id);
           if (!cancelled) {
+            const loadedSession = { ...active, messages: msgs };
             messagesRef.current = msgs;
-            setSession({ ...active, messages: msgs });
+            sessionRef.current = loadedSession;
+            setSession(loadedSession);
             setSessions(list);
-            // Restore the most recent direct speaker so OTHERS exclusion is
-            // correct on first load.
             setPendingResolvedAgentId(null);
-            setLastResolvedAgentId(findLastResolvedConcreteAgent(msgs));
+            updateLastResolvedAgentId(findLastResolvedConcreteAgent(msgs));
           }
         }
       } catch (error) {
@@ -306,7 +324,7 @@ export function useUniversalConversation(
     return () => {
       cancelled = true;
     };
-  }, [runStorageTask]);
+  }, [runStorageTask, updateLastResolvedAgentId]);
 
   const sendMessage = useCallback(
     (text: string) => {
@@ -314,25 +332,30 @@ export function useUniversalConversation(
       if (!trimmed || isThinkingRef.current) return;
       closeComposer();
 
+      const currentSession = sessionRef.current;
+      const sessionId = currentSession.id;
+      const generation = requestGenerationRef.current;
+      const modeId = modeRef.current;
       const userMsg: UniversalMessage = {
         id: createUniversalId('message'),
         role: 'user',
         text: trimmed,
-        modeId: modeRef.current,
+        modeId,
         createdAt: Date.now(),
       };
 
       const currentMessages = messagesRef.current;
       messagesRef.current = [...currentMessages, userMsg];
       const updatedSession: UniversalSession = {
-        ...sessionRef.current,
+        ...currentSession,
         messages: messagesRef.current,
         updatedAt: Date.now(),
       };
+      sessionRef.current = updatedSession;
       setSession(updatedSession);
 
       void runStorageTask(async () => {
-        await repoRef.current.saveMessage(sessionRef.current.id, userMsg);
+        await repoRef.current.saveMessage(sessionId, userMsg);
         await repoRef.current.saveSession({ ...updatedSession, messages: [] });
         await refreshSessions();
       });
@@ -341,14 +364,7 @@ export function useUniversalConversation(
       setIsThinking(true);
       setAiError(null);
 
-      const sessionId = sessionRef.current.id;
-      const generation = requestGenerationRef.current;
-      // selectedAgent is the user's entry point. When it is 'delegate', resolve
-      // the concrete voice here (the single source of truth) so AI / proxy /
-      // fallback / metadata / OTHERS all reference the same speaker. proxy and
-      // fallback must NOT re-resolve delegate.
       const requestedAgentId = selectedAgent;
-      const modeId = modeRef.current;
       const messagesSnapshot = messagesRef.current;
       const resolvedFromDelegate = requestedAgentId === 'delegate';
       const resolvedAgentId: UniversalAgentId = resolvedFromDelegate
@@ -358,8 +374,6 @@ export function useUniversalConversation(
           )
         : requestedAgentId;
 
-      // Surface the resolved voice immediately so future convergence animation
-      // can read it before the reply arrives.
       if (isConcreteAgentId(resolvedAgentId)) {
         setPendingResolvedAgentId(resolvedAgentId);
       } else {
@@ -377,12 +391,7 @@ export function useUniversalConversation(
             userName: resolvedUserName,
           });
 
-          if (
-            sessionRef.current.id !== sessionId ||
-            requestGenerationRef.current !== generation
-          ) {
-            return;
-          }
+          if (!isRequestCurrent(sessionId, generation)) return;
 
           const agentMsg: UniversalMessage = {
             id: createUniversalId('message'),
@@ -394,6 +403,8 @@ export function useUniversalConversation(
             createdAt: Date.now(),
             requestedAgentId,
             ...(resolvedFromDelegate ? { resolvedFromDelegate: true } : {}),
+            ...(reply.model ? { model: reply.model } : {}),
+            source: reply.source,
           };
 
           messagesRef.current = [...messagesRef.current, agentMsg];
@@ -402,12 +413,12 @@ export function useUniversalConversation(
             messages: messagesRef.current,
             updatedAt: Date.now(),
           };
+          sessionRef.current = afterReply;
           setSession(afterReply);
           setAiSource(reply.source);
 
-          // Record the actual speaker as the most recent resolved voice.
           if (isConcreteAgentId(reply.agentId)) {
-            setLastResolvedAgentId(reply.agentId);
+            updateLastResolvedAgentId(reply.agentId);
           }
 
           void runStorageTask(async () => {
@@ -416,34 +427,46 @@ export function useUniversalConversation(
             await refreshSessions();
           });
         } catch (error) {
+          if (!isRequestCurrent(sessionId, generation)) return;
           const msg = error instanceof Error ? error.message : String(error);
           setAiError(msg);
           console.warn('[Jibunkaigi] AI reply error:', error);
         } finally {
-          // Reset pendingResolvedAgentId here (not in the success/catch paths)
-          // so the early-return guard above also clears it.
-          setPendingResolvedAgentId(null);
-          isThinkingRef.current = false;
-          setIsThinking(false);
+          // A stale request must never clear the loading state of a newer
+          // request that started after a session switch/clear/new action.
+          if (isRequestCurrent(sessionId, generation)) {
+            setPendingResolvedAgentId(null);
+            isThinkingRef.current = false;
+            setIsThinking(false);
+          }
         }
       })();
     },
-    [closeComposer, refreshSessions, resolvedUserName, runStorageTask, selectedAgent],
+    [
+      closeComposer,
+      isRequestCurrent,
+      refreshSessions,
+      resolvedUserName,
+      runStorageTask,
+      selectedAgent,
+      updateLastResolvedAgentId,
+    ],
   );
 
   const requestOthers = useCallback(async (messageId?: string) => {
     if (isThinkingRef.current || isLoadingOthersRef.current) return;
 
-    // Phase 3A: resolveOthersTarget で対象を解決する。
-    // - user message 直下 / agent message 直下 / 手動パネル（messageId なし）
-    //   の 3 ケースを一元処理する。
-    // - others origin の message からは null が返るので早期リターン。
     const othersTarget = resolveOthersTarget(messagesRef.current, messageId);
     if (!othersTarget) return;
+    if (isCrisisSafetyText(othersTarget.userText)) {
+      setOthersError('安全に関わる可能性があるため、ほかの視点は開かず、安全案内を優先します。');
+      return;
+    }
 
     const originSessionId = sessionRef.current.id;
     const generation = requestGenerationRef.current;
     const messagesSnapshot = messagesRef.current;
+    const modeId = modeRef.current;
 
     isLoadingOthersRef.current = true;
     setIsLoadingOthers(true);
@@ -451,20 +474,13 @@ export function useUniversalConversation(
 
     const groupId = createUniversalId('others');
     try {
-      // Phase 3A: excludeAgentId の優先順位
-      //   1. agent message 直下から呼ばれた場合: そのメッセージの agentId
-      //   2. それ以外（user message / 手動パネル）: lastResolvedAgentIdRef ?? selectedAgent
       const currentAgentId =
         othersTarget.excludeAgentId ??
         lastResolvedAgentIdRef.current ??
         selectedAgent;
 
-      // OTHERSが反応する対象＝メインエージェントの発話。
-      // 直下がエージェントの直接発話（origin !== 'others'）のときだけ、その本文を渡す。
-      // user message 直下・手動パネルからの呼び出しはメインの応答がまだ無いので空文字
-      // （othersPromptBuilder 側でユーザー入力への反応というフォールバックになる）。
       const targetMessage = messageId
-        ? messagesSnapshot.find((m) => m.id === messageId)
+        ? messagesSnapshot.find((message) => message.id === messageId)
         : undefined;
       const mainReplyText =
         targetMessage && targetMessage.role === 'agent' && targetMessage.origin !== 'others'
@@ -476,17 +492,12 @@ export function useUniversalConversation(
         userText: othersTarget.userText,
         mainReplyText,
         currentAgentId,
-        modeId: modeRef.current,
+        modeId,
         messages: messagesSnapshot,
         userName: resolvedUserName,
       });
 
-      if (
-        sessionRef.current.id !== originSessionId ||
-        requestGenerationRef.current !== generation
-      ) {
-        return;
-      }
+      if (!isRequestCurrent(originSessionId, generation)) return;
 
       const now = Date.now();
       const agentMessages: UniversalMessage[] = result.replies.map((reply, index) => ({
@@ -495,14 +506,19 @@ export function useUniversalConversation(
         text: reply.text,
         agentId: reply.agentId,
         agentLabel: reply.agentLabel,
-        modeId: modeRef.current,
+        modeId,
         createdAt: now + index,
         source: result.source,
-        model: result.model,
+        ...(result.model ? { model: result.model } : {}),
         origin: 'others' as const,
         position: reply.position,
         groupId,
       }));
+
+      if (agentMessages.length === 0) {
+        setOthersError('ほかの視点を開けませんでした。もう一度お試しください。');
+        return;
+      }
 
       messagesRef.current = [...messagesRef.current, ...agentMessages];
       const updated: UniversalSession = {
@@ -510,23 +526,33 @@ export function useUniversalConversation(
         messages: messagesRef.current,
         updatedAt: Date.now(),
       };
+      sessionRef.current = updated;
       setSession(updated);
       setOthersSource(result.source ?? null);
 
       void runStorageTask(async () => {
-        for (const msg of agentMessages) {
-          await repoRef.current.saveMessage(originSessionId, msg);
+        for (const message of agentMessages) {
+          await repoRef.current.saveMessage(originSessionId, message);
         }
         await repoRef.current.saveSession({ ...updated, messages: [] });
         await refreshSessions();
       });
     } catch (error) {
+      if (!isRequestCurrent(originSessionId, generation)) return;
       setOthersError(error instanceof Error ? error.message : String(error));
     } finally {
-      isLoadingOthersRef.current = false;
-      setIsLoadingOthers(false);
+      if (isRequestCurrent(originSessionId, generation)) {
+        isLoadingOthersRef.current = false;
+        setIsLoadingOthers(false);
+      }
     }
-  }, [refreshSessions, resolvedUserName, runStorageTask, selectedAgent]);
+  }, [
+    isRequestCurrent,
+    refreshSessions,
+    resolvedUserName,
+    runStorageTask,
+    selectedAgent,
+  ]);
 
   const selectAgent = useCallback((agentId: UniversalAgentId) => {
     setSelectedAgent(agentId);
@@ -538,13 +564,11 @@ export function useUniversalConversation(
   }, []);
 
   const clearConversation = useCallback(() => {
-    requestGenerationRef.current += 1;
-    isThinkingRef.current = false;
+    invalidateAsyncRequests();
     messagesRef.current = [];
-    setIsThinking(false);
-    setPendingResolvedAgentId(null);
-    setLastResolvedAgentId(null);
-    // Phase 2: return the entry point to the default ('委ねる') on clear.
+    updateLastResolvedAgentId(null);
+    setAiError(null);
+    setOthersError(null);
     setSelectedAgent('delegate');
     openComposer();
     const cleared: UniversalSession = {
@@ -552,70 +576,89 @@ export function useUniversalConversation(
       messages: [],
       updatedAt: Date.now(),
     };
+    sessionRef.current = cleared;
     setSession(cleared);
     void runStorageTask(async () => {
       await repoRef.current.clearMessages(cleared.id);
       await repoRef.current.saveSession({ ...cleared, messages: [] });
       await refreshSessions();
     });
-  }, [openComposer, refreshSessions, runStorageTask]);
+  }, [
+    invalidateAsyncRequests,
+    openComposer,
+    refreshSessions,
+    runStorageTask,
+    updateLastResolvedAgentId,
+  ]);
 
   const createNewSession = useCallback(() => {
-    requestGenerationRef.current += 1;
-    isThinkingRef.current = false;
+    invalidateAsyncRequests();
     const newSession = createLocalSession();
     messagesRef.current = [];
-    setIsThinking(false);
-    setPendingResolvedAgentId(null);
-    setLastResolvedAgentId(null);
-    // Phase 2: a brand-new session starts from the default entry point ('委ねる').
+    updateLastResolvedAgentId(null);
     setSelectedAgent('delegate');
     openComposer();
+    sessionRef.current = newSession;
     setSession(newSession);
+    setAiError(null);
+    setOthersError(null);
     setShareError(null);
     setLastActionMessage(null);
     void runStorageTask(async () => {
       await repoRef.current.saveSession(newSession);
       await refreshSessions();
     });
-  }, [openComposer, refreshSessions, runStorageTask]);
+  }, [
+    invalidateAsyncRequests,
+    openComposer,
+    refreshSessions,
+    runStorageTask,
+    updateLastResolvedAgentId,
+  ]);
 
   const switchSession = useCallback(async (sessionId: string) => {
-    requestGenerationRef.current += 1;
-    isThinkingRef.current = false;
-    setIsThinking(false);
+    const generation = invalidateAsyncRequests();
+    setAiError(null);
+    setOthersError(null);
     setIsLoadingSessions(true);
     try {
       const msgs = await repoRef.current.loadMessages(sessionId);
       const list = sortUniversalSessions(await repoRef.current.listSessions());
+      if (requestGenerationRef.current !== generation) return;
+
       const target = list.find((item) => item.id === sessionId);
       if (!target) return;
 
       setStorageError(null);
       setShareError(null);
+      const loadedSession = { ...target, messages: msgs };
       messagesRef.current = msgs;
+      sessionRef.current = loadedSession;
       openComposer();
-      setSession({ ...target, messages: msgs });
+      setSession(loadedSession);
       setSessions(list);
-      // Phase 2: opening a session returns the entry point to the default
-      // ('委ねる'). The actual most-recent speaker is restored independently
-      // into lastResolvedAgentId below, so OTHERS exclusion stays correct.
       setSelectedAgent('delegate');
-      // Restore the last resolved speaker for the opened session so the OTHERS
-      // exclusion basis does not carry over from the previous session.
       setPendingResolvedAgentId(null);
-      setLastResolvedAgentId(findLastResolvedConcreteAgent(msgs));
+      updateLastResolvedAgentId(findLastResolvedConcreteAgent(msgs));
     } catch (error) {
+      if (requestGenerationRef.current !== generation) return;
       const message = error instanceof Error ? error.message : String(error);
       setStorageError(message);
       console.warn('[Jibunkaigi] Session switch error:', error);
     } finally {
-      setIsLoadingSessions(false);
+      if (requestGenerationRef.current === generation) {
+        setIsLoadingSessions(false);
+      }
     }
-  }, [openComposer]);
+  }, [invalidateAsyncRequests, openComposer, updateLastResolvedAgentId]);
 
   const deleteSession = useCallback(
     async (sessionId: string) => {
+      const deletingActiveSession = sessionRef.current.id === sessionId;
+      if (deletingActiveSession) {
+        invalidateAsyncRequests();
+      }
+
       let list: UniversalSession[] = [];
       const deleted = await runStorageTask(async () => {
         await repoRef.current.deleteSession(sessionId);
@@ -623,7 +666,7 @@ export function useUniversalConversation(
       });
       if (!deleted) return;
 
-      if (sessionRef.current.id === sessionId) {
+      if (deletingActiveSession) {
         if (list.length > 0) {
           await switchSession(list[0].id);
           setSessions(list);
@@ -633,19 +676,25 @@ export function useUniversalConversation(
             await repoRef.current.saveSession(newSession);
           });
           messagesRef.current = [];
+          sessionRef.current = newSession;
           openComposer();
           setSession(newSession);
           setSessions(sortUniversalSessions([newSession]));
           setPendingResolvedAgentId(null);
-          setLastResolvedAgentId(null);
-          // Phase 2: fresh fallback session starts from the default entry point.
+          updateLastResolvedAgentId(null);
           setSelectedAgent('delegate');
         }
       } else {
         setSessions(list);
       }
     },
-    [openComposer, runStorageTask, switchSession],
+    [
+      invalidateAsyncRequests,
+      openComposer,
+      runStorageTask,
+      switchSession,
+      updateLastResolvedAgentId,
+    ],
   );
 
   const renameSession = useCallback(
@@ -673,11 +722,13 @@ export function useUniversalConversation(
       }
 
       if (sessionRef.current.id === sessionId) {
-        setSession((current) => ({
-          ...current,
+        const current = {
+          ...sessionRef.current,
           title: normalized,
           updatedAt,
-        }));
+        };
+        sessionRef.current = current;
+        setSession(current);
       }
 
       setActionResult('タイトルを変更しました');
@@ -710,11 +761,13 @@ export function useUniversalConversation(
       }
 
       if (sessionRef.current.id === sessionId) {
-        setSession((current) => ({
-          ...current,
+        const current = {
+          ...sessionRef.current,
           pinned: nextPinned,
           updatedAt,
-        }));
+        };
+        sessionRef.current = current;
+        setSession(current);
       }
 
       setActionResult(nextPinned ? 'ピン留めしました' : 'ピン留めを外しました');
@@ -773,6 +826,7 @@ export function useUniversalConversation(
       };
 
       messagesRef.current = nextMessages;
+      sessionRef.current = updatedSession;
       setSession(updatedSession);
 
       const saved = await runStorageTask(async () => {
@@ -783,26 +837,24 @@ export function useUniversalConversation(
 
       if (!saved) {
         messagesRef.current = currentMessages;
+        sessionRef.current = currentSession;
         setSession(currentSession);
         setStorageError('メッセージの削除に失敗しました。');
         return;
       }
 
-      // If a direct concrete agent message was removed, the last resolved
-      // speaker may have changed. Recompute from the remaining messages so the
-      // OTHERS exclusion basis does not keep pointing at a deleted voice.
       if (
         target.role === 'agent' &&
         target.origin !== 'others' &&
         target.agentId &&
         isConcreteAgentId(target.agentId)
       ) {
-        setLastResolvedAgentId(findLastResolvedConcreteAgent(nextMessages));
+        updateLastResolvedAgentId(findLastResolvedConcreteAgent(nextMessages));
       }
 
       setActionResult('メッセージを削除しました');
     },
-    [refreshSessions, runStorageTask, setActionResult],
+    [refreshSessions, runStorageTask, setActionResult, updateLastResolvedAgentId],
   );
 
   const copyCurrentSession = useCallback(async () => {
@@ -838,6 +890,7 @@ export function useUniversalConversation(
     if (firstUser && session.title === '新しい問い') {
       const titled = createLocalSessionFromText(firstUser.text);
       const updated: UniversalSession = { ...session, title: titled.title };
+      sessionRef.current = updated;
       setSession(updated);
       void runStorageTask(async () => {
         await repoRef.current.saveSession({ ...updated, messages: [] });
