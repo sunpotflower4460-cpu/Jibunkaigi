@@ -51,6 +51,18 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
     return uid;
   }
 
+  private requireExistingAuthenticatedUserId(): string {
+    const services = this.getServices();
+    const uid = services.auth.currentUser?.uid;
+    if (!uid) {
+      throw new Error(
+        'Firebase authentication is unavailable. Cloud deletion was not performed.',
+      );
+    }
+    this.uid = uid;
+    return uid;
+  }
+
   private getServices(): MobileFirebaseServices {
     const services = getMobileFirebaseServices();
     if (!services) throw new Error('Firebase services are not available');
@@ -96,7 +108,10 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
     const snap = await getDocs(
       query(this.sessionsCol(uid), orderBy('updatedAt', 'desc')),
     );
-    return snap.docs.map((d) => ({ ...(d.data() as Omit<UniversalSession, 'messages'>), messages: [] }));
+    return snap.docs.map((d) => ({
+      ...(d.data() as Omit<UniversalSession, 'messages'>),
+      messages: [],
+    }));
   }
 
   async saveSession(session: UniversalSession): Promise<void> {
@@ -110,7 +125,9 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
   }
 
   async deleteSession(sessionId: string): Promise<void> {
-    const uid = await this.requireCurrentUserId();
+    // Destructive operations must use the already-authenticated UID. Never
+    // create a replacement anonymous account while trying to delete data.
+    const uid = this.requireExistingAuthenticatedUserId();
     const services = this.getServices();
 
     // Firestore does not cascade-delete subcollections. Remove messages in
@@ -118,7 +135,9 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
     await this.deleteMessageDocuments(uid, sessionId);
 
     const appId = getUniversalAppId();
-    await deleteDoc(doc(services.db, 'artifacts', appId, 'users', uid, 'sessions', sessionId));
+    await deleteDoc(
+      doc(services.db, 'artifacts', appId, 'users', uid, 'sessions', sessionId),
+    );
   }
 
   async saveMessage(sessionId: string, message: UniversalMessage): Promise<void> {
@@ -130,7 +149,7 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
   }
 
   async deleteMessage(sessionId: string, messageId: string): Promise<void> {
-    const uid = await this.requireCurrentUserId();
+    const uid = this.requireExistingAuthenticatedUserId();
     const services = this.getServices();
     const appId = getUniversalAppId();
     await deleteDoc(doc(this.messagesCol(uid, sessionId), messageId));
@@ -142,12 +161,12 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
   }
 
   async clearMessages(sessionId: string): Promise<void> {
-    const uid = await this.requireCurrentUserId();
+    const uid = this.requireExistingAuthenticatedUserId();
     await this.deleteMessageDocuments(uid, sessionId);
   }
 
   async deleteAllSessions(): Promise<void> {
-    const uid = await this.requireCurrentUserId();
+    const uid = this.requireExistingAuthenticatedUserId();
     const snap = await getDocs(this.sessionsCol(uid));
     for (const sessionDoc of snap.docs) {
       await this.deleteSession(sessionDoc.id);
