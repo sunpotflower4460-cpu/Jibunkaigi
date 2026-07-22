@@ -128,7 +128,7 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
       userName,
     });
 
-    const model = env.GEMINI_MODEL || 'gemini-1.5-flash';
+    const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
     const geminiUrl =
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
@@ -226,7 +226,7 @@ async function generateReflection(
   prompt: string,
   output: string,
 ): Promise<unknown> {
-  const model = env.GEMINI_MODEL || 'gemini-1.5-flash';
+  const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
   const geminiUrl =
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const reflectionPrompt =
@@ -397,7 +397,7 @@ export default {
         surfaced,
       });
 
-      const model = env.GEMINI_MODEL || 'gemini-1.5-flash';
+      const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
       const geminiUrl =
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
