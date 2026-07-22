@@ -201,6 +201,7 @@ export function useUniversalConversation(
     isLoadingOthersRef.current = false;
     setIsThinking(false);
     setIsLoadingOthers(false);
+    setIsLoadingSessions(false);
     setPendingResolvedAgentId(null);
     return requestGenerationRef.current;
   }, []);
