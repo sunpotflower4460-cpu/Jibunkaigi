@@ -178,4 +178,6 @@ test('励起（煙テスト）: 各人の代表入力が期待する信念を点
 test("igniteAndSpread('体が重くて息苦しい', 'fio') が空でない材料を返す", () => {
   const m = igniteAndSpread('体が重くて息苦しい', 'fio');
   assert.ok(m.surfaced.length > 0, '浮上材料が空でないはず');
+  assert.ok(m.ignited.length > 0, 'フィオは身体の言葉に点火するはず');
+  assert.ok(m.ignited.includes('belief:今ここは頭でなく身体で感じる'));
 });

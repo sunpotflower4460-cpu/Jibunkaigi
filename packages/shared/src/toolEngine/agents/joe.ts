@@ -53,28 +53,38 @@ export const joeNetwork: AgentNetwork = {
 };
 
 export const joeIgnition: AgentIgnition = {
-  triggers: [
+  elements: [
     {
-      // 闇・無力感 → 闇は光がある証拠
-      igniteParticleIds: [B_YAMI_AKASHI],
-      kind: 'state',
-      words: [
-        '無駄', '意味がない', '意味ない', 'どうせ', '絶望', '真っ暗', '出口がない',
-        '諦め', 'あきらめ', 'もうだめ', 'もうダメ', '暗い', '光が見えない', '希望がない',
-        'うまくいかない', '報われない',
-      ],
+      particleId: B_YAMI_AKASHI,
+      threshold: 0.4,
+      receives: { 絶望: 0.5, 消滅願望: 0.5, 虚無: 0.4, 投げやり: 0.3, 自己否定: 0.3 },
     },
     {
-      // 深い闇 → 闇は光がある証拠 ＋ 闇を見てからその先の光を指さす
-      igniteParticleIds: [B_YAMI_AKASHI, B_YAMI_KARA],
-      kind: 'state',
-      words: ['全部諦め', 'もう全部', '消えたい', '死にたい', '生きる意味', '何もかも終わり', 'もう終わり', '生きてる意味'],
+      particleId: B_YAMI_KARA,
+      threshold: 0.45,
+      receives: { 消滅願望: 0.5, 深い喪失: 0.4, 絶望: 0.3, 痛み: 0.3 },
     },
     {
-      // ワクワク・前向きな欲求 → ワクワクは生きたい方向のサイン
-      igniteParticleIds: [B_WAKUWAKU],
-      kind: 'pos',
-      words: ['やってみたい', '挑戦', 'ワクワク', 'わくわく', 'やりたい', '楽しみ', '興味', '面白そう', 'おもしろそう', '希望', 'できそう'],
+      particleId: B_WAKUWAKU,
+      threshold: 0.4,
+      receives: { 期待: 0.5, 開示: 0.25 },
+    },
+    {
+      // 深い。単独では届かず、重なって初めて立つ。
+      particleId: B_HIKARI_ARU,
+      threshold: 0.55,
+      receives: { 絶望: 0.3, 自己否定: 0.3, 虚無: 0.25, 痛み: 0.25 },
+    },
+    {
+      // 抑制側：励まし押し付け防止。深い闇では光を内に保つ。
+      particleId: B_OSHITSUKE,
+      threshold: 0.45,
+      receives: { 消滅願望: 0.5, 深い喪失: 0.45, 拒絶: 0.3, 痛み: 0.3 },
+    },
+    {
+      particleId: M_FUKAI_YAMI,
+      threshold: 0.5,
+      receives: { 絶望: 0.35, 消滅願望: 0.4, 深い喪失: 0.35, 期待: 0.2 },
     },
   ],
 };

@@ -58,24 +58,38 @@ export const fioNetwork: AgentNetwork = {
 };
 
 export const fioIgnition: AgentIgnition = {
-  triggers: [
+  elements: [
     {
-      // 未来に持っていかれる不安 → 今この瞬間に在る ＋ 身体で感じる
-      igniteParticleIds: [B_IMA, B_SHINTAI],
-      kind: 'state',
-      words: ['先のこと', '将来', '未来のこと', '不安で', '心配で', 'これからどうな', '考えると不安', '落ち着かない', 'そわそわ'],
+      particleId: B_IMA,
+      threshold: 0.4,
+      receives: { 未来不安: 0.5, 反芻: 0.3, 迷い: 0.25 },
     },
     {
-      // 今ここの豊かさ → 何でもない瞬間に豊かさがある
-      igniteParticleIds: [B_NANDEMONAI],
-      kind: 'pos',
-      words: ['なんでもない日', 'なんかいい', '何気ない', 'ふとした', 'ゆっくり', '穏やかな時間', '朝の光', 'いい時間'],
+      // ★ ここで初めてフィオが身体の言葉に反応するようになる。
+      particleId: B_SHINTAI,
+      threshold: 0.4,
+      receives: { 身体限界: 0.5, 未来不安: 0.4, 限界: 0.25 },
     },
     {
-      // 重さも軽さも両方 → 重さも軽さもどちらも味わい ＋ 地に足をつけるから軽くなれる
-      igniteParticleIds: [B_RYOUHOU, B_CHI_NI_ASHI],
-      kind: 'state',
-      words: ['つらいこともあるけど', 'まあ生きてる', 'それでも', 'いろいろあるけど', '悪くない', 'なんとかやってる', 'まあいっか', '生きてるな'],
+      particleId: B_NANDEMONAI,
+      threshold: 0.4,
+      receives: { 日常の豊かさ: 0.5, 平穏: 0.35 },
+    },
+    {
+      particleId: B_RYOUHOU,
+      threshold: 0.45,
+      receives: { 両義の受容: 0.5, 痛み: 0.25, 平穏: 0.25 },
+    },
+    {
+      // 両義の受容だけでも開く（重さ・軽さ両方の入力を単独で拾うため）。
+      particleId: B_CHI_NI_ASHI,
+      threshold: 0.5,
+      receives: { 両義の受容: 0.5, 身体限界: 0.3, 限界: 0.25 },
+    },
+    {
+      particleId: M_ASA_NO_HIKARI,
+      threshold: 0.5,
+      receives: { 日常の豊かさ: 0.45, 平穏: 0.3, 未来不安: 0.2 },
     },
   ],
 };

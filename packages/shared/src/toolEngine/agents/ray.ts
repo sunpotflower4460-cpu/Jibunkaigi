@@ -69,33 +69,44 @@ export const rayNetwork: AgentNetwork = {
 };
 
 export const rayIgnition: AgentIgnition = {
-  triggers: [
+  elements: [
     {
-      // 言葉にならない揺らぎ → 気配を察する（入口のみ。まだ見抜きに行ききらない）
-      igniteParticleIds: [B_KEHAI],
-      kind: 'state',
-      words: [
-        'もやもや', 'モヤモヤ', 'うまく言えない', 'うまく言葉に', 'なんとなく', 'ふわふわ',
-        '言葉にならない', 'はっきりしない', '違和感', 'ざわざわ', 'もどかし', '言語化できない',
-      ],
+      particleId: B_KEHAI,
+      threshold: 0.4,
+      // 「いつも通り」のような強がりも、建前と重なると気配になる。
+      receives: { 言語化困難: 0.5, 迷い: 0.3, 建前: 0.3, 強がり: 0.2 },
     },
     {
-      // 隠している・本音が奥にある → 気配を察する ＋ 表面の奥に本当のものがある（両方→見抜きが鋭くなる）
-      igniteParticleIds: [B_KEHAI, B_OKU],
-      kind: 'state',
-      words: ['別に普通', '別に大丈夫', 'いつも通り', 'いつもどおり', '普通だよ', '普通です', 'なんでもない', '特にない', '本心は', '建前', '隠して', '言いたくない'],
+      particleId: B_OKU,
+      threshold: 0.45,
+      receives: { 建前: 0.5, 強がり: 0.4, 言語化困難: 0.25 },
     },
     {
-      // すべき⇔したいの葛藤・本音 → すべきの下に本当はしたい ＋ 本音はそこにしか出口がない
-      igniteParticleIds: [B_SHITAI, B_DEGUCHI],
-      kind: 'state',
-      words: ['やりたいけど', 'べきじゃない', 'やるべき', 'すべき', 'ほんとは', '本当は', '本音', '葛藤', '迷って', 'したいけど'],
+      particleId: B_SHITAI,
+      threshold: 0.4,
+      receives: { べき: 0.5, 迷い: 0.3 },
     },
     {
-      // 素直・隠してない → 見えても責めるのでなく自由にするため（見抜く必要がない）
-      igniteParticleIds: [B_JIYUU],
-      kind: 'pos',
-      words: ['楽しい一日', '楽しかった', 'いい一日', '素直に', '嬉しい', 'すっきり', '正直に話', '全部話'],
+      particleId: B_DEGUCHI,
+      threshold: 0.45,
+      receives: { べき: 0.45, 拒絶: 0.4, 建前: 0.3 },
+    },
+    {
+      // 抑制側：決めつけ防止。
+      particleId: B_KUMORU,
+      threshold: 0.5,
+      receives: { 拒絶: 0.4, 痛み: 0.3, 深い喪失: 0.35, 消滅願望: 0.4 },
+    },
+    {
+      particleId: B_JIYUU,
+      threshold: 0.4,
+      receives: { 開示: 0.5, 平穏: 0.4 },
+    },
+    {
+      // 抑制の源。
+      particleId: M_KYOUKI,
+      threshold: 0.5,
+      receives: { 拒絶: 0.4, 痛み: 0.35, 自己否定: 0.3 },
     },
   ],
 };

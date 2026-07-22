@@ -5,8 +5,14 @@
 
 import { CUE_POOL } from '../src/toolEngine/ignition/cuePool.ts';
 import { matchCue } from '../src/toolEngine/ignition/cueMatch.ts';
+import { ignite } from '../src/toolEngine/ignition/ignite.ts';
 import { satoIgnition } from '../src/toolEngine/agents/sato.ts';
+import { AGENT_DEFINITIONS, TOOL_ENGINE_AGENT_IDS } from '../src/toolEngine/agents/index.ts';
 import type { ElementIgnition } from '../src/toolEngine/ignition/ignitionTypes.ts';
+
+const AGENT_LABELS: Record<string, string> = {
+  satou: 'サトウ', joe: 'ジョー', mina: 'ミナ', ray: 'レイ', ken: 'ケン', tom: 'トム', fio: 'フィオ',
+};
 
 const INPUTS = [
   'もう疲れた。全部どうでもいい',
@@ -90,4 +96,35 @@ for (const text of ['大丈夫', '大丈夫じゃない', 'はいはい大丈夫
     if (evaluate(el, present).opened) openedCount++;
   }
   console.log(`「${text}」 → 気配:[${[...present].join(',') || '-'}] 点火:${openedCount}件`);
+}
+
+console.log('\n\n════════ 7人に広げたときの分布 ════════\n');
+let openTotal = 0;
+let cells = 0;
+for (const text of INPUTS) {
+  const who: string[] = [];
+  for (const agentId of TOOL_ENGINE_AGENT_IDS) {
+    cells++;
+    const def = AGENT_DEFINITIONS[agentId];
+    const fired = ignite(text, def.ignition);
+    if (fired.size > 0) {
+      who.push(AGENT_LABELS[agentId] ?? agentId);
+      openTotal++;
+    }
+  }
+  console.log(`「${text}」`);
+  console.log(`   → ${who.length}/7人が点火: ${who.join(' ') || '(なし)'}\n`);
+}
+console.log(`総着火率: ${openTotal}/${cells} = ${Math.round((openTotal / cells) * 100)}%`);
+
+console.log('\n════════ 中立入力での浮上確認（発火ゲートの健全性） ════════\n');
+for (const text of ['今日は特にない', '明日の会議は何時ですか']) {
+  console.log(`「${text}」`);
+  for (const agentId of TOOL_ENGINE_AGENT_IDS) {
+    const def = AGENT_DEFINITIONS[agentId];
+    const fired = ignite(text, def.ignition);
+    const label = AGENT_LABELS[agentId] ?? agentId;
+    console.log(`  ${label}: 点火${fired.size}件 ${fired.size > 0 ? '[' + [...fired].map(shortLabel).join(', ') + ']' : ''}`);
+  }
+  console.log('');
 }

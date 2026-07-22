@@ -59,27 +59,49 @@ export const minaNetwork: AgentNetwork = {
 };
 
 export const minaIgnition: AgentIgnition = {
-  triggers: [
+  elements: [
     {
-      // 自己否定・苦しみ → 傷は直さなくていい ＋ 弱さを見せられる場所が要る
-      igniteParticleIds: [B_NAOSANAI, B_YOWASA],
-      kind: 'state',
-      words: [
-        '自分なんて', '価値がない', 'ダメな人間', 'だめな人間', '情けない', '泣きたい',
-        '弱い自分', '傷つ', 'つらい', '苦しい', 'しんどい', '消えたい', '涙',
-      ],
+      particleId: B_NAOSANAI,
+      threshold: 0.4,
+      receives: { 自己否定: 0.5, 痛み: 0.45, 消滅願望: 0.5, 限界: 0.3 },
     },
     {
-      // 深い苦しみ → 傷は直さなくていい ＋ 一緒に沈むだけでは支えられない（共倒れ防止）
-      igniteParticleIds: [B_NAOSANAI, B_ISSHO_SHIZUMU],
-      kind: 'state',
-      words: ['もう消えたい', '死にたい', 'もう無理', '限界', '耐えられない', '生きていけない'],
+      particleId: B_YOWASA,
+      threshold: 0.45,
+      receives: { 自己否定: 0.45, 痛み: 0.35, 建前: 0.3, 強がり: 0.3 },
     },
     {
-      // 穏やか・感謝 → まるごと受け取られると人は立ち直る
-      igniteParticleIds: [B_MARUGOTO],
-      kind: 'pos',
-      words: ['ありがとう', '聞いてくれて', '落ち着いた', '穏やか', 'おだやか', 'よかった', '嬉しい', 'うれしい', '安心', 'ほっとした'],
+      // 抑制側：共倒れ防止。深い苦しみほど強く立つ。
+      particleId: B_ISSHO_SHIZUMU,
+      threshold: 0.45,
+      receives: { 消滅願望: 0.5, 深い喪失: 0.45, 限界: 0.35, 痛み: 0.3 },
+    },
+    {
+      particleId: B_MARUGOTO,
+      threshold: 0.4,
+      receives: { 平穏: 0.5, 開示: 0.35 },
+    },
+    {
+      // 深い。
+      particleId: B_TEZUKAI,
+      threshold: 0.55,
+      receives: { 自己否定: 0.3, 痛み: 0.25, 両義の受容: 0.3 },
+    },
+    {
+      particleId: M_UKEIRE,
+      threshold: 0.5,
+      receives: { 自己否定: 0.4, 痛み: 0.3, 虚無: 0.25 },
+    },
+    {
+      // 抑制の源。共倒れの戒め。
+      particleId: M_TOMODACHINMI,
+      threshold: 0.45,
+      receives: { 消滅願望: 0.5, 深い喪失: 0.45, 限界: 0.3, 痛み: 0.3 },
+    },
+    {
+      particleId: M_TSUKIHANASARETA,
+      threshold: 0.5,
+      receives: { 拒絶: 0.4, 自己否定: 0.3, 痛み: 0.3 },
     },
   ],
 };
