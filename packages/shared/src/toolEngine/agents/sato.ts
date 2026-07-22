@@ -112,4 +112,44 @@ export const satoIgnition: AgentIgnition = {
       ],
     },
   ],
+  // 新方式。各要素が自分で「自分は点火するか」を決める（真空管モデル）。
+  elements: [
+    {
+      // サトウの中心。強がり・麻痺・投げやりのどれか一つで開く。
+      particleId: B_MAHI,
+      threshold: 0.4,
+      receives: { 麻痺: 0.5, 強がり: 0.5, 投げやり: 0.4, 虚無: 0.4, 消耗: 0.4, 限界: 0.35 },
+    },
+    {
+      // 一段深い。回避で直接開くが、それ以外は重ならないと届かない。
+      particleId: B_KAKURE,
+      threshold: 0.45,
+      receives: { 回避: 0.5, 先送り: 0.3, 虚無: 0.25, 迷い: 0.2 },
+    },
+    {
+      particleId: B_MISUEREBA,
+      threshold: 0.5,
+      receives: { 限界: 0.3, 迷い: 0.3, 身体限界: 0.3, 消耗: 0.25 },
+    },
+    {
+      // 抑制側。相手が閉じている合図で開く。
+      particleId: B_FUMIKOMI,
+      threshold: 0.45,
+      receives: { 拒絶: 0.5, 回避: 0.2 },
+    },
+    {
+      // 抑制側。相手が落ち着いているときに開く。
+      particleId: B_MIMAMORU,
+      threshold: 0.4,
+      receives: { 平穏: 0.5 },
+    },
+    {
+      // 記憶にも点火口を持たせる（新方式で初めて可能になった）。
+      // 単独では届きにくく、重なったときに立ち上がる。
+      particleId: M_SEOWAKU,
+      threshold: 0.5,
+      receives: { 手遅れ: 0.5, 回避: 0.35, 先送り: 0.3, 強がり: 0.3, 限界: 0.3 },
+    },
+    // 感情とコアは receives を持たない（伝播でのみ立つ）。
+  ],
 };

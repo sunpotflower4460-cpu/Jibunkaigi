@@ -30,12 +30,37 @@ export interface NodeTrigger {
   words: string[];
 }
 
+/** 共有プールの1グループ。何も決めない。ただの言葉の袋。 */
+export interface CueGroup {
+  id: string;
+  kind: TriggerKind;
+  words: string[];
+  /** pos語が皮肉で裏返ったとき、代わりに現れる気配のid。 */
+  reverseCueId?: string;
+}
+
+/** 1要素が自分で持つ点火条件（閾値方式）。 */
+export interface ElementIgnition {
+  /** 点火する particle の id。'belief:' でも 'memory:' でもよい。 */
+  particleId: string;
+  /**
+   * どの気配をどれだけ受け取るか（cueId → 重み）。
+   * 空なら点火口を持たない（深い信念・コアは伝播でしか到達しない）。
+   */
+  receives: Record<string, number>;
+  /** 自分の閾値。ここを超えたら点火する。 */
+  threshold: number;
+}
+
 /** 1エージェントの励起設定。 */
 export interface AgentIgnition {
+  /** 旧方式。elements があるエージェントでは使われない。 */
   triggers: NodeTrigger[];
   /**
    * ポジ語が皮肉で反転したときに点火する particle id（投げやり・麻痺側）。
    * 例: サトウなら "belief:麻痺や大丈夫の下に本当の状態がある"。
    */
   sarcasmFallbackParticleId?: string;
+  /** 新方式（閾値）。これがあれば triggers より優先される。 */
+  elements?: ElementIgnition[];
 }
