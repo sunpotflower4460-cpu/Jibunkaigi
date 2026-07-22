@@ -9,6 +9,10 @@ import {
   pickDelegateByContext,
   type DelegateMessageLike,
 } from './delegate/delegateSelection';
+import {
+  buildCrisisSafetyResponse,
+  isCrisisSafetyText,
+} from './safety/crisisSafety';
 
 export interface UniversalMockMessageLike {
   role: 'user' | 'agent';
@@ -46,6 +50,18 @@ export function pickMockDelegatedAgent(userText: string): ConcreteAgentId {
 export function createUniversalMockReply(
   params: CreateUniversalMockReplyParams,
 ): UniversalMockReply {
+  // Safety routing must happen before delegate selection and persona-specific
+  // mock text. The fallback path is used when the proxy is unavailable, so it
+  // must never regress to a character reply for direct crisis language.
+  if (isCrisisSafetyText(params.userText)) {
+    const safetyAgent = getUniversalAgent('mirror');
+    return {
+      agentId: 'mirror',
+      agentLabel: safetyAgent.label,
+      text: buildCrisisSafetyResponse(),
+    };
+  }
+
   const actualAgentId =
     params.agentId === 'delegate'
       ? pickDelegateByContext(
