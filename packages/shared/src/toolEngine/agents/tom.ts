@@ -66,40 +66,40 @@ export const tomIgnition: AgentIgnition = {
     {
       particleId: B_TE_HIRAKU,
       threshold: 0.4,
-      receives: { 些事: 0.5, 反芻: 0.35, 迷い: 0.25 },
+      receives: { 些事: 0.5, 反芻: 0.45, べき: 0.35, 迷い: 0.3, 混乱: 0.3 },
     },
     {
       particleId: B_ZENTEI,
-      threshold: 0.45,
-      receives: { 反芻: 0.5, 些事: 0.3, べき: 0.3 },
+      threshold: 0.4,
+      receives: { 反芻: 0.5, べき: 0.4, 些事: 0.35, 混乱: 0.3 },
     },
     {
       // 反芻・深い喪失どちらか一つでも開く（軽い悩みでも本物の苦しみでも第三の道を持つため）。
       particleId: B_NAGAMERU,
-      threshold: 0.4,
-      receives: { 反芻: 0.4, 深い喪失: 0.4, 消滅願望: 0.45, 限界: 0.25 },
+      threshold: 0.45,
+      receives: { 消滅願望: 0.5, 反芻: 0.45, 深い喪失: 0.45, 限界: 0.35, 絶望: 0.35 },
     },
     {
-      // 抑制側：茶化し防止。本物の苦しみで強く立つ。
+      // 抑制側：茶化し防止。本物の苦しみで確実に立つ。
       particleId: B_HODOKU,
       threshold: 0.45,
-      receives: { 深い喪失: 0.5, 消滅願望: 0.5, 痛み: 0.4, 絶望: 0.35 },
+      receives: { 深い喪失: 0.5, 消滅願望: 0.5, 痛み: 0.45, 絶望: 0.4 },
     },
     {
       particleId: B_ZURASU,
       threshold: 0.45,
-      receives: { 深い喪失: 0.45, 消滅願望: 0.45, 絶望: 0.3, 痛み: 0.3 },
+      receives: { 深い喪失: 0.5, 消滅願望: 0.5, 絶望: 0.35, 痛み: 0.35 },
     },
     {
       particleId: M_DAISHITA,
       threshold: 0.5,
-      receives: { 些事: 0.4, 反芻: 0.35, べき: 0.25 },
+      receives: { 些事: 0.45, 反芻: 0.4, べき: 0.3, 迷い: 0.25 },
     },
     {
-      // 抑制の源。軽口の失敗。深い喪失で必ず立つ。
+      // 抑制の源。軽口の失敗。
       particleId: M_KARUGUCHI,
       threshold: 0.45,
-      receives: { 深い喪失: 0.5, 消滅願望: 0.5, 痛み: 0.4 },
+      receives: { 深い喪失: 0.5, 消滅願望: 0.5, 痛み: 0.45 },
     },
   ],
 };

@@ -55,40 +55,39 @@ export const kenIgnition: AgentIgnition = {
     {
       particleId: B_CHIRABATTA,
       threshold: 0.4,
-      receives: { 混乱: 0.5, 過負荷: 0.45, 迷い: 0.3 },
+      receives: { 混乱: 0.5, 過負荷: 0.5, 迷い: 0.4, 反芻: 0.35 },
     },
     {
       particleId: B_MOTSURETA,
-      threshold: 0.45,
-      receives: { 混乱: 0.5, 反芻: 0.3, 迷い: 0.3 },
+      threshold: 0.4,
+      receives: { 混乱: 0.5, 反芻: 0.4, 迷い: 0.35, 過負荷: 0.35 },
     },
     {
       particleId: B_SHINPURU,
-      threshold: 0.5,
-      receives: { 過負荷: 0.45, 混乱: 0.3 },
+      threshold: 0.45,
+      receives: { 過負荷: 0.5, 混乱: 0.35, 反芻: 0.3 },
     },
     {
       // 抑制側：急いで形にしない。
       particleId: B_ISOGANAI,
       threshold: 0.4,
-      receives: { 言語化困難: 0.5, 迷い: 0.25 },
+      receives: { 言語化困難: 0.5, 迷い: 0.3, 痛み: 0.3 },
     },
     {
-      // 深い。
       particleId: B_KANJOU,
-      threshold: 0.55,
-      receives: { 痛み: 0.3, 混乱: 0.25, 自己否定: 0.25 },
+      threshold: 0.5,
+      receives: { 痛み: 0.35, 混乱: 0.3, 自己否定: 0.3, 言語化困難: 0.3 },
     },
     {
       // 抑制側：押し付け防止。
       particleId: B_MITORIZU,
       threshold: 0.5,
-      receives: { 拒絶: 0.4, 言語化困難: 0.3, 痛み: 0.3 },
+      receives: { 拒絶: 0.45, 言語化困難: 0.35, 痛み: 0.35 },
     },
     {
       particleId: M_OSHITSUKE,
       threshold: 0.5,
-      receives: { 拒絶: 0.4, 痛み: 0.35, 言語化困難: 0.3 },
+      receives: { 拒絶: 0.45, 痛み: 0.4, 言語化困難: 0.3 },
     },
   ],
 };

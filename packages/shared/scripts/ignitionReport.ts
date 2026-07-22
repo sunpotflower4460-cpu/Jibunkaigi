@@ -14,6 +14,7 @@ const AGENT_LABELS: Record<string, string> = {
   satou: 'サトウ', joe: 'ジョー', mina: 'ミナ', ray: 'レイ', ken: 'ケン', tom: 'トム', fio: 'フィオ',
 };
 
+// 指示書07: 7つだと偏りが見えないため18入力に拡張。末尾2件は中立（0人であるべき）。
 const INPUTS = [
   'もう疲れた。全部どうでもいい',
   '転職しようか迷ってる',
@@ -22,7 +23,19 @@ const INPUTS = [
   'どうしていいか分からない',
   '体が重くて眠れない',
   'ずっと堂々巡りしてる',
+  '自分なんて価値がない',
+  'やることが多すぎて回らない',
+  'なんとなくもやもやする',
+  '本当はやりたいけど、やるべきじゃない気がする',
+  '今日はいい一日だった',
+  '消えたいと思うことがある',
+  '先のことを考えると不安で仕方ない',
+  '気にしすぎかもしれないけど',
+  'つらいこともあるけど、まあ生きてる',
+  '明日の会議は何時ですか',
+  '資料をまとめておきました',
 ];
+const NEUTRAL_INPUTS = new Set(['明日の会議は何時ですか', '資料をまとめておきました']);
 
 function presentCues(text: string): Set<string> {
   const present = new Set<string>();
@@ -72,7 +85,7 @@ for (const text of INPUTS) {
 }
 
 console.log(
-  `着火率（サトウ、7入力）: ${openedInputCount}/${INPUTS.length} = ${Math.round((openedInputCount / INPUTS.length) * 100)}%\n`,
+  `着火率（サトウ、${INPUTS.length}入力）: ${openedInputCount}/${INPUTS.length} = ${Math.round((openedInputCount / INPUTS.length) * 100)}%\n`,
 );
 
 console.log('════════ 加算の確認（一語では届かない入力） ════════\n');
@@ -101,6 +114,8 @@ for (const text of ['大丈夫', '大丈夫じゃない', 'はいはい大丈夫
 console.log('\n\n════════ 7人に広げたときの分布 ════════\n');
 let openTotal = 0;
 let cells = 0;
+let nonNeutralTotal = 0;
+let nonNeutralCount = 0;
 for (const text of INPUTS) {
   const who: string[] = [];
   for (const agentId of TOOL_ENGINE_AGENT_IDS) {
@@ -112,13 +127,19 @@ for (const text of INPUTS) {
       openTotal++;
     }
   }
-  console.log(`「${text}」`);
+  const isNeutral = NEUTRAL_INPUTS.has(text);
+  if (!isNeutral) {
+    nonNeutralTotal += who.length;
+    nonNeutralCount++;
+  }
+  console.log(`「${text}」${isNeutral ? '（中立）' : ''}`);
   console.log(`   → ${who.length}/7人が点火: ${who.join(' ') || '(なし)'}\n`);
 }
 console.log(`総着火率: ${openTotal}/${cells} = ${Math.round((openTotal / cells) * 100)}%`);
+console.log(`非中立の平均人数: ${(nonNeutralTotal / nonNeutralCount).toFixed(1)}人`);
 
 console.log('\n════════ 中立入力での浮上確認（発火ゲートの健全性） ════════\n');
-for (const text of ['今日は特にない', '明日の会議は何時ですか']) {
+for (const text of NEUTRAL_INPUTS) {
   console.log(`「${text}」`);
   for (const agentId of TOOL_ENGINE_AGENT_IDS) {
     const def = AGENT_DEFINITIONS[agentId];
