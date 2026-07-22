@@ -121,3 +121,13 @@ test("buildUniversalConversationPrompt({ agentId: 'tom', ... }) が例外を投�
     });
   });
 });
+
+test('prompt に共通返答方針「必要なら問いを一つだけ返す」が含まれる（OTHERSからは外れたが/replyでは維持）', () => {
+  const { prompt } = buildUniversalConversationPrompt({
+    userText: 'テスト',
+    agentId: 'satou',
+    modeId: 'dialogue',
+    messages: [],
+  });
+  assert.match(prompt, /必要なら問いを一つだけ返す/);
+});
