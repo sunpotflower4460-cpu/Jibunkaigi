@@ -1,7 +1,6 @@
 import { getUniversalAgent, type ConcreteAgentId } from '../agents';
 import { getModePromptProfile } from '../prompt/modePromptProfiles';
 import { getAgentPromptProfile } from '../prompt/agentPromptProfiles';
-import { buildResponsePolicyText } from '../prompt/responsePolicy';
 import { sanitizePromptText, selectRecentPromptMessages } from '../prompt/promptSanitizer';
 import { strengthBucket } from '../toolEngine/promptSection';
 import type { ParticleKind, SurfacedMaterial } from '../toolEngine/engineTypes';
@@ -21,22 +20,31 @@ const KIND_LABELS: Record<ParticleKind, string> = {
   emotion: '感情',
 };
 
-const MAX_THOUGHT_NODES = 4;
+const MAX_THOUGHT_NODES = 5;
+const MAX_EMOTION_NODES = 2;
 
 /** 【人となり】＝恒常的な個性。existence（詩的な確定テキスト）は使わない。core/sees/avoidsから短く組む。 */
 function buildPersonaLine(agentId: ConcreteAgentId): string {
   const profile = getAgentPromptProfile(agentId);
-  return `${profile.core}${profile.sees} 避けるのは、${profile.avoids}`;
+  return `${profile.core} ${profile.sees} 避けるのは、${profile.avoids}`;
 }
 
-/** 【今回立った思考】＝活性拡散の結果。空なら「特に強く立っているものはない」。 */
+/**
+ * 【今回立った思考】＝活性拡散の結果。空なら「特に強く立っているものはない」。
+ *
+ * 感情は反応の色を決めるので、必ず枠を確保する（活性順に押し出されないように）。
+ */
 function buildThoughtsBlock(material: SurfacedMaterial): string {
   if (material.ignited.length === 0) {
     return '（特に強く立っているものはない）';
   }
-  const lines = material.surfaced
-    .slice(0, MAX_THOUGHT_NODES)
-    .map((n) => `  ${KIND_LABELS[n.kind]}（${strengthBucket(n.activation)}）: ${n.label}`);
+  const emotions = material.surfaced.filter((n) => n.kind === 'emotion').slice(0, MAX_EMOTION_NODES);
+  const others = material.surfaced
+    .filter((n) => n.kind !== 'emotion')
+    .slice(0, MAX_THOUGHT_NODES - emotions.length);
+  // 元の活性順に並べ直す（強い順に読ませるため）。
+  const picked = material.surfaced.filter((n) => emotions.includes(n) || others.includes(n));
+  const lines = picked.map((n) => `  ${KIND_LABELS[n.kind]}（${strengthBucket(n.activation)}）: ${n.label}`);
   return lines.length > 0 ? lines.join('\n') : '（特に強く立っているものはない）';
 }
 
@@ -133,15 +141,9 @@ export function buildUniversalOthersPrompt(
   return [
     OTHERS_INSTRUCTION_TEXT,
     '',
-    '## 各エージェント',
-    agentBlocks,
-    '',
     '## 応答モード',
     `モード: ${mode.label}`,
     `方針: ${mode.instruction}`,
-    '',
-    '## 共通返答方針',
-    buildResponsePolicyText(),
     '',
     '## 直近の会話',
     history || '(なし)',
@@ -151,6 +153,9 @@ export function buildUniversalOthersPrompt(
     '',
     '## メインの応答',
     mainReplySection,
+    '',
+    '## 各エージェント',
+    agentBlocks,
     '',
     '## 出力形式',
     '必ずJSONだけを返してください。Markdownや説明文を付けないでください。',

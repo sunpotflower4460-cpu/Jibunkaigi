@@ -86,3 +86,28 @@ test('mainReplyText が空文字でも例外を投げない', () => {
     assert.match(prompt, /ユーザー入力に直接反応してください/);
   });
 });
+
+test('## 各エージェント は ## メインの応答 より後ろにある（素材は反応対象の直後）', () => {
+  const request = baseRequest();
+  const materials = materialsFor(request.userText, NON_RAY);
+  const prompt = buildUniversalOthersPrompt(request, materials);
+  const mainIndex = prompt.indexOf('## メインの応答');
+  const agentsIndex = prompt.indexOf('## 各エージェント');
+  assert.ok(mainIndex >= 0 && agentsIndex >= 0, 'セクション見出しが両方見つからない');
+  assert.ok(agentsIndex > mainIndex, '## 各エージェント が ## メインの応答 より前にある');
+});
+
+test('共通返答方針（/reply向け）が含まれない', () => {
+  const request = baseRequest();
+  const materials = materialsFor(request.userText, NON_RAY);
+  const prompt = buildUniversalOthersPrompt(request, materials);
+  assert.doesNotMatch(prompt, /## 共通返答方針/);
+  assert.doesNotMatch(prompt, /必要なら問いを一つだけ返す/);
+});
+
+test('サトウ「もう疲れた。全部どうでもいい」で、感情（見据えるまなざし）が上限落ちしない', () => {
+  const request = baseRequest({ userText: 'もう疲れた。全部どうでもいい' });
+  const materials = materialsFor(request.userText, ['satou']);
+  const prompt = buildUniversalOthersPrompt(request, materials);
+  assert.match(prompt, /感情（強）: 見据えるまなざし/);
+});
