@@ -67,6 +67,10 @@ jobs:
         working-directory: packages/shared
         run: npm run typecheck
 
+      - name: Test shared
+        working-directory: packages/shared
+        run: npm test
+
       - name: Install mobile dependencies
         run: npm ci
 
@@ -78,3 +82,26 @@ jobs:
 
       - name: Build check mobile
         run: npm run build:check
+
+  verify-worker:
+    name: Verify Gemini Proxy Worker
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/jibunkaigi-gemini-proxy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: workers/jibunkaigi-gemini-proxy/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck Worker
+        run: npm run typecheck
