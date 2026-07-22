@@ -11,11 +11,17 @@ import { getUniversalAppId } from './firebase/mobileFirebaseConfig';
 
 const LOCAL_PROFILE_KEY = 'jibunkaigi:user-profile';
 
+export interface UserProfileDeleteResult {
+  localDeleted: true;
+  /** null means Firebase was not configured, so there was no cloud deletion to perform. */
+  cloudDeleted: true | null;
+}
+
 export interface UserProfileRepository {
   loadProfile(): Promise<UniversalUserProfile>;
   saveProfile(profile: UniversalUserProfile): Promise<void>;
   /** Removes the user's profile both locally (AsyncStorage) and remotely (Firestore). */
-  deleteProfile(): Promise<void>;
+  deleteProfile(): Promise<UserProfileDeleteResult>;
 }
 
 function profileDoc(uid: string) {
@@ -145,22 +151,32 @@ export function createUserProfileRepository(): UserProfileRepository {
       }
     },
 
-    async deleteProfile(): Promise<void> {
+    async deleteProfile(): Promise<UserProfileDeleteResult> {
       // Local first so the device is cleared even if the network call fails.
       await AsyncStorage.removeItem(LOCAL_PROFILE_KEY);
 
-      if (!getMobileFirebaseServices()) return;
+      if (!getMobileFirebaseServices()) {
+        return { localDeleted: true, cloudDeleted: null };
+      }
 
       try {
         const user = await ensureAnonymousUser();
-        if (!user?.uid) return;
+        if (!user?.uid) {
+          throw new Error('Firebase authentication is unavailable; cloud profile was not deleted.');
+        }
 
         const profileRef = profileDoc(user.uid);
-        if (!profileRef) return;
+        if (!profileRef) {
+          throw new Error('Firestore profile reference is unavailable; cloud profile was not deleted.');
+        }
 
         await deleteDoc(profileRef);
-      } catch {
-        console.warn('[Jibunkaigi] Failed to delete user profile.');
+        return { localDeleted: true, cloudDeleted: true };
+      } catch (error) {
+        console.warn('[Jibunkaigi] Failed to delete cloud user profile.', error);
+        // Do not swallow this failure. The unified deletion flow must be able to
+        // tell the user that local data was cleared but cloud data may remain.
+        throw error;
       }
     },
   };
