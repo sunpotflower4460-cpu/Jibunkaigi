@@ -15,12 +15,12 @@ export interface Tokenizer {
   toBaseForms(text: string): string[];
 }
 
-export type TriggerKind = 'state' | 'pos';
+export type CueKind = 'state' | 'pos';
 
 /** 共有プールの1グループ。何も決めない。ただの言葉の袋。 */
 export interface CueGroup {
   id: string;
-  kind: TriggerKind;
+  kind: CueKind;
   words: string[];
   /** pos語が皮肉で裏返ったとき、代わりに現れる気配のid。 */
   reverseCueId?: string;
