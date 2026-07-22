@@ -155,19 +155,27 @@ export function createUserProfileRepository(): UserProfileRepository {
       // Local first so the device is cleared even if the network call fails.
       await AsyncStorage.removeItem(LOCAL_PROFILE_KEY);
 
-      if (!getMobileFirebaseServices()) {
+      const services = getMobileFirebaseServices();
+      if (!services) {
         return { localDeleted: true, cloudDeleted: null };
       }
 
       try {
-        const user = await ensureAnonymousUser();
+        // Never create a new anonymous user during deletion. A newly-created UID
+        // could make an empty account look successfully deleted while the
+        // original user's cloud profile remains untouched.
+        const user = services.auth.currentUser;
         if (!user?.uid) {
-          throw new Error('Firebase authentication is unavailable; cloud profile was not deleted.');
+          throw new Error(
+            'Firebase authentication is unavailable; cloud profile was not deleted.',
+          );
         }
 
         const profileRef = profileDoc(user.uid);
         if (!profileRef) {
-          throw new Error('Firestore profile reference is unavailable; cloud profile was not deleted.');
+          throw new Error(
+            'Firestore profile reference is unavailable; cloud profile was not deleted.',
+          );
         }
 
         await deleteDoc(profileRef);
