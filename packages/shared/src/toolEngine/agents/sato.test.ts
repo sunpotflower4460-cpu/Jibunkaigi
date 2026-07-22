@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ignite } from '../ignition/ignite.ts';
 import { igniteAndSpread } from '../igniteAndSpread.ts';
-import { satoIgnition } from './sato.ts';
+import { satoIgnition, satoNetwork } from './sato.ts';
+import { CUE_POOL } from '../ignition/cuePool.ts';
 
 const B_MAHI = 'belief:麻痺や大丈夫の下に本当の状態がある';
 const B_KAKURE = 'belief:本当に大事なものは見ない所に隠れてる';
@@ -76,4 +77,44 @@ test('中立入力: 何も点火せず、常駐の核だけが残る', () => {
 test('未知の agentId: throw せず空材料を返す', () => {
   const m = igniteAndSpread('もう何も感じない', 'unknown');
   assert.deepEqual(m, { agentId: 'unknown', ignited: [], surfaced: [] });
+});
+
+// ── 閾値方式（指示書05）─────────────────────────────────────────────────────
+
+const M_SEOWAKU = 'memory:目を背けて取り返しつかなくなった';
+
+test('「大丈夫、あとで考える」で memory:目を背けて取り返しつかなくなった が ignited に入る', () => {
+  const fired = ignite('大丈夫、あとで考える', satoIgnition);
+  assert.ok(fired.has(M_SEOWAKU), '強がり+先送りの加算で記憶が開くはず');
+});
+
+test('「大丈夫」だけでは上記 memory が ignited に入らない（＝加算が効いている）', () => {
+  const fired = ignite('大丈夫', satoIgnition);
+  assert.ok(!fired.has(M_SEOWAKU), '強がり単独では閾値0.5に届かないはず');
+});
+
+test('「最近、何をやっても満たされない」で belief:麻痺や大丈夫の下に本当の状態がある が ignited に入る', () => {
+  const fired = ignite('最近、何をやっても満たされない', satoIgnition);
+  assert.ok(fired.has(B_MAHI), '虚無の気配だけで閾値0.4に届くはず（現行の一語方式では開かない入力）');
+});
+
+test('「体が重くて眠れない」ではサトウは何も点火しない（フィオの領分）', () => {
+  const fired = ignite('体が重くて眠れない', satoIgnition);
+  assert.equal(fired.size, 0);
+});
+
+test('CUE_POOL の全 reverseCueId が、実在する CueGroup.id を指している', () => {
+  const ids = new Set(CUE_POOL.map((g) => g.id));
+  for (const group of CUE_POOL) {
+    if (group.reverseCueId) {
+      assert.ok(ids.has(group.reverseCueId), `${group.id}.reverseCueId="${group.reverseCueId}" が存在しない`);
+    }
+  }
+});
+
+test('サトウの全 ElementIgnition.particleId が、サトウのネットワークに実在する', () => {
+  const particleIds = new Set(satoNetwork.particles.map((p) => p.id));
+  for (const el of satoIgnition.elements ?? []) {
+    assert.ok(particleIds.has(el.particleId), `${el.particleId} がサトウのネットワークに無い`);
+  }
 });

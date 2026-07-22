@@ -8,7 +8,9 @@
 // Tokenizer を渡すと、各反応語の原形一致でクラスタを補強する（活用・若者言葉の汎化）。
 // 未注入時は部分一致のみ（それでも難問セットは 100%）。
 
-import type { AgentIgnition, NodeTrigger, Tokenizer } from './ignitionTypes';
+import type { AgentIgnition, ElementIgnition, NodeTrigger, Tokenizer } from './ignitionTypes';
+import { CUE_POOL } from './cuePool';
+import { matchCue } from './cueMatch';
 
 const SIMPLE_NEG = [
   'ない', 'なかった', 'くなかった', 'ねえ', 'ねぇ', 'じゃない', 'じゃなかった',
@@ -42,11 +44,54 @@ export interface IgniteOptions {
 
 /**
  * テキストを判定し、点火する particle id の集合を返す。
+ *
+ * elements があれば閾値方式（igniteByThreshold）、無ければ従来の一語ヒット方式
+ * （igniteByTriggers）を使う。エージェントを1人ずつ移行できる。
  */
 export function ignite(
   text: string,
   ignition: AgentIgnition,
   options: IgniteOptions = {},
+): Set<string> {
+  if (ignition.elements && ignition.elements.length > 0) {
+    return igniteByThreshold(text, ignition.elements, options);
+  }
+  return igniteByTriggers(text, ignition, options);
+}
+
+/**
+ * 閾値方式（真空管モデル）。中央の判定者はいない。
+ * 各要素が共有プールの気配を自分の重みで受け取り、自分の閾値と比べて開くかを決める。
+ */
+function igniteByThreshold(
+  text: string,
+  elements: ElementIgnition[],
+  options: IgniteOptions,
+): Set<string> {
+  // 1) どの気配が現れているか。共有プールを1回だけ走査する（要素ごとに舐め直さない）。
+  const present = new Set<string>();
+  for (const group of CUE_POOL) {
+    const r = matchCue(text, group.words, group.kind, options.tokenizer);
+    if (r === 'hit') present.add(group.id);
+    else if (r === 'reverse' && group.reverseCueId) present.add(group.reverseCueId);
+  }
+  // 2) 各要素が自分で足して、自分の閾値と比べる。
+  const fired = new Set<string>();
+  for (const el of elements) {
+    let total = 0;
+    for (const [cueId, weight] of Object.entries(el.receives)) {
+      if (present.has(cueId)) total += weight;
+    }
+    if (total >= el.threshold) fired.add(el.particleId);
+  }
+  return fired;
+}
+
+/** 旧方式：一語ヒットで即点火。 */
+function igniteByTriggers(
+  text: string,
+  ignition: AgentIgnition,
+  options: IgniteOptions,
 ): Set<string> {
   const fired = new Set<string>();
   // Tokenizer 注入時は原形集合を1度だけ計算してクラスタ補強に使う。
