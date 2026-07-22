@@ -18,28 +18,28 @@ function agentIds(res: { replies: { agentId: string }[] }): string[] {
   return res.replies.map((r) => r.agentId);
 }
 
-test('OTHERS除外: 既に話したミナは結果に含まれない（4声）', () => {
+test('OTHERS除外: 既に話したミナは結果に含まれない（6声）', () => {
   const res = createUniversalOthersMockResponse(baseRequest({ currentAgentId: 'mina' }));
   const ids = agentIds(res);
   assert.ok(!ids.includes('mina'), 'ミナが除外されていない');
-  assert.equal(ids.length, 4);
+  assert.equal(ids.length, 6);
 });
 
-test('OTHERS除外: 既に話したケンは結果に含まれない（4声）', () => {
+test('OTHERS除外: 既に話したケンは結果に含まれない（6声）', () => {
   const res = createUniversalOthersMockResponse(baseRequest({ currentAgentId: 'ken' }));
   const ids = agentIds(res);
   assert.ok(!ids.includes('ken'));
-  assert.equal(ids.length, 4);
+  assert.equal(ids.length, 6);
 });
 
-test('OTHERS除外: currentAgentId が mirror（非concrete）なら除外せず5声', () => {
+test('OTHERS除外: currentAgentId が mirror（非concrete）なら除外せず7声', () => {
   const res = createUniversalOthersMockResponse(baseRequest({ currentAgentId: 'mirror' }));
-  assert.equal(agentIds(res).length, 5);
+  assert.equal(agentIds(res).length, 7);
 });
 
-test('OTHERS除外: currentAgentId が delegate（非concrete）なら除外せず5声', () => {
+test('OTHERS除外: currentAgentId が delegate（非concrete）なら除外せず7声', () => {
   const res = createUniversalOthersMockResponse(baseRequest({ currentAgentId: 'delegate' }));
-  assert.equal(agentIds(res).length, 5);
+  assert.equal(agentIds(res).length, 7);
 });
 
 test('OTHERS除外: targetAgentIds=[mina] かつ cur=mina → 空ガードでミナに戻る', () => {

@@ -22,6 +22,10 @@ export function createMockAgentReply(agentId: MobileAgentId, userText: string): 
       return '急いで整えなくても大丈夫です。今は、そのまま置いておける場所を作りましょう。';
     case 'satou':
       return '現実の足場として、まず一つだけ確認するとしたら何でしょう。';
+    case 'tom':
+      return 'その重さ、握りしめているだけかもしれません。視点を一つ変えたら、どう見えるでしょう。';
+    case 'fio':
+      return '今、体はどんな感じでしょう。息や、足の裏の感覚に、少しだけ意識を向けてみませんか。';
     case 'ray':
     default:
       return '言葉になる前の気配を、少しだけ一緒に見てみましょう。';
@@ -31,7 +35,7 @@ export function createMockAgentReply(agentId: MobileAgentId, userText: string): 
 // Selects a real agent when "delegate" mode is active.
 // Replace with pickContextualAgent logic in Phase 3.
 export function pickMockDelegatedAgent(_userText: string): MobileAgentId {
-  const pool: MobileAgentId[] = ['ray', 'joe', 'ken', 'mina', 'satou'];
+  const pool: MobileAgentId[] = ['ray', 'joe', 'ken', 'mina', 'satou', 'tom', 'fio'];
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -44,6 +48,8 @@ export const AGENT_LABELS: Record<MobileAgentId, string> = {
   ken: 'ケン',
   mina: 'ミナ',
   satou: 'サトウ',
+  tom: 'トム',
+  fio: 'フィオ',
 };
 
 // Thinking indicator text per agent.
@@ -55,6 +61,8 @@ export const AGENT_THINKING_TEXT: Record<MobileAgentId, string> = {
   ken: 'ケンが、構造を静かに見ています…',
   mina: 'ミナが、今の気持ちを受け止めています…',
   satou: 'サトウが、現実の足場を確かめています…',
+  tom: 'トムが、ひとつ上から眺めています…',
+  fio: 'フィオが、体の声に耳を澄ませています…',
 };
 
 // Mirror (心の鏡) summary response logic.

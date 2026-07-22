@@ -39,7 +39,7 @@ function json(data: unknown, status: number, env: Env): Response {
 }
 
 function normalizeAgentId(value: string): UniversalAgentId {
-  const allowed = ['mirror', 'delegate', 'ray', 'joe', 'ken', 'mina', 'satou'] as const;
+  const allowed = ['mirror', 'delegate', 'ray', 'joe', 'ken', 'mina', 'satou', 'tom', 'fio'] as const;
   return (allowed as readonly string[]).includes(value)
     ? (value as UniversalAgentId)
     : 'ray';

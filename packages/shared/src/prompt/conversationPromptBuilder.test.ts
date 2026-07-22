@@ -110,3 +110,14 @@ test('既存テスト「surfaced を渡すと材料＋補正が入力の直前�
     prompt.indexOf('いま自分の内側で立ち上がっているもの') < prompt.indexOf('## 今回のユーザー入力'),
   );
 });
+
+test("buildUniversalConversationPrompt({ agentId: 'tom', ... }) が例外を投げない", () => {
+  assert.doesNotThrow(() => {
+    buildUniversalConversationPrompt({
+      userText: 'テスト',
+      agentId: 'tom',
+      modeId: 'dialogue',
+      messages: [],
+    });
+  });
+});

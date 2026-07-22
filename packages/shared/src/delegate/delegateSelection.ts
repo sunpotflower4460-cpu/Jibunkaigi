@@ -59,6 +59,10 @@ const CUE_PATTERNS: Record<ConcreteAgentId, RegExp> = {
   ray: /なんとなく|何となく|うまく言え|言葉にならな|言葉にできな|もやもや|モヤモヤ|気配|曖昧|ぼんやり|沈黙|違和感/,
   // ジョー: the spark that has not gone out / lingering desire.
   joe: /まだ|残って|やりたい|捨てきれ|諦め|あきらめ|悔し|本当は|ほんとは|好き|夢|希望|手放せ/,
+  // トム: stuck in seriousness, going in circles, overthinking.
+  tom: /堂々巡り|ぐるぐる|どうしようもな|重く|重い|考えすぎ|思い詰め/,
+  // フィオ: body, breath, groundedness / being here now.
+  fio: /息苦し|体が|眠れな|落ち着かな|ふわふわ/,
 };
 
 /**
