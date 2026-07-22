@@ -3,9 +3,20 @@ main = "src/index.ts"
 compatibility_date = "2026-05-01"
 
 [vars]
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = "gemini-2.5-flash-lite"
 ALLOWED_ORIGIN = "*"
 
-# Do not put GEMINI_API_KEY here.
-# Set it as a secret manually:
+# Production security: uncomment and set the same Firebase project used by the app.
+# When set, /reply and /others require a valid Firebase ID token.
+# FIREBASE_PROJECT_ID = "your-firebase-project-id"
+
+# Optional best-effort rate limit. Create a KV namespace and bind it below.
+# RATE_LIMIT_MAX_PER_MINUTE = "60"
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "your-rate-limit-kv-id"
+
+# Do not put GEMINI_API_KEY or DEV_TRACE_SECRET here.
+# Set secrets manually:
 # wrangler secret put GEMINI_API_KEY
+# wrangler secret put DEV_TRACE_SECRET

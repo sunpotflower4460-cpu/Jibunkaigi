@@ -19,6 +19,22 @@ export async function ensureAnonymousUser(): Promise<User | null> {
   }
 }
 
+/**
+ * Returns a fresh Firebase ID token for authenticated proxy requests.
+ * null means Firebase/auth is unavailable; callers may still support a
+ * backwards-compatible unauthenticated worker during migration.
+ */
+export async function getMobileFirebaseIdToken(): Promise<string | null> {
+  const user = await ensureAnonymousUser();
+  if (!user) return null;
+  try {
+    return await user.getIdToken();
+  } catch (error) {
+    console.warn('[Jibunkaigi] Failed to obtain Firebase ID token.', error);
+    return null;
+  }
+}
+
 /** Subscribes to auth state changes. Returns an unsubscribe function. */
 export function subscribeMobileAuth(callback: (user: User | null) => void): () => void {
   const services = getMobileFirebaseServices();

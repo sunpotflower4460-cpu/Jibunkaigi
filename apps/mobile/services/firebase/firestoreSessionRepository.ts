@@ -19,6 +19,16 @@ import { getMobileFirebaseServices, type MobileFirebaseServices } from './mobile
 import { ensureAnonymousUser } from './mobileAuth';
 import { getUniversalAppId } from './mobileFirebaseConfig';
 
+// Firestore allows at most 500 writes in one batch. Keep headroom for future
+// metadata writes and avoid deletion failures for long conversations.
+const DELETE_BATCH_SIZE = 400;
+
+function omitUndefined<T extends object>(value: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => entry !== undefined),
+  ) as Partial<T>;
+}
+
 export class FirestoreSessionRepository implements UniversalSessionRepository {
   private uid: string | null = null;
 
@@ -31,6 +41,26 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
     const user = await ensureAnonymousUser();
     this.uid = user?.uid ?? null;
     return this.uid;
+  }
+
+  private async requireCurrentUserId(): Promise<string> {
+    const uid = await this.getCurrentUserId();
+    if (!uid) {
+      throw new Error('Firebase authentication is unavailable. Cloud data was not changed.');
+    }
+    return uid;
+  }
+
+  private requireExistingAuthenticatedUserId(): string {
+    const services = this.getServices();
+    const uid = services.auth.currentUser?.uid;
+    if (!uid) {
+      throw new Error(
+        'Firebase authentication is unavailable. Cloud deletion was not performed.',
+      );
+    }
+    this.uid = uid;
+    return uid;
   }
 
   private getServices(): MobileFirebaseServices {
@@ -60,48 +90,66 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
     );
   }
 
+  private async deleteMessageDocuments(uid: string, sessionId: string): Promise<void> {
+    const services = this.getServices();
+    const msgSnap = await getDocs(this.messagesCol(uid, sessionId));
+
+    for (let offset = 0; offset < msgSnap.docs.length; offset += DELETE_BATCH_SIZE) {
+      const batch = writeBatch(services.db);
+      msgSnap.docs
+        .slice(offset, offset + DELETE_BATCH_SIZE)
+        .forEach((messageDoc) => batch.delete(messageDoc.ref));
+      await batch.commit();
+    }
+  }
+
   async listSessions(): Promise<UniversalSession[]> {
-    const uid = await this.getCurrentUserId();
-    if (!uid) return [];
+    const uid = await this.requireCurrentUserId();
     const snap = await getDocs(
       query(this.sessionsCol(uid), orderBy('updatedAt', 'desc')),
     );
-    return snap.docs.map((d) => ({ ...(d.data() as Omit<UniversalSession, 'messages'>), messages: [] }));
+    return snap.docs.map((d) => ({
+      ...(d.data() as Omit<UniversalSession, 'messages'>),
+      messages: [],
+    }));
   }
 
   async saveSession(session: UniversalSession): Promise<void> {
-    const uid = await this.getCurrentUserId();
-    if (!uid) return;
+    const uid = await this.requireCurrentUserId();
     const { messages: _messages, ...sessionData } = session;
-    await setDoc(doc(this.sessionsCol(uid), session.id), sessionData, { merge: true });
+    await setDoc(
+      doc(this.sessionsCol(uid), session.id),
+      omitUndefined(sessionData),
+      { merge: true },
+    );
   }
 
   async deleteSession(sessionId: string): Promise<void> {
-    const uid = await this.getCurrentUserId();
-    if (!uid) return;
+    // Destructive operations must use the already-authenticated UID. Never
+    // create a replacement anonymous account while trying to delete data.
+    const uid = this.requireExistingAuthenticatedUserId();
     const services = this.getServices();
-    const batch = writeBatch(services.db);
 
-    // Delete all messages first
-    const msgSnap = await getDocs(this.messagesCol(uid, sessionId));
-    msgSnap.docs.forEach((d) => batch.delete(d.ref));
+    // Firestore does not cascade-delete subcollections. Remove messages in
+    // bounded batches first, then remove the parent session document.
+    await this.deleteMessageDocuments(uid, sessionId);
 
-    // Delete the session document
     const appId = getUniversalAppId();
-    batch.delete(doc(services.db, 'artifacts', appId, 'users', uid, 'sessions', sessionId));
-
-    await batch.commit();
+    await deleteDoc(
+      doc(services.db, 'artifacts', appId, 'users', uid, 'sessions', sessionId),
+    );
   }
 
   async saveMessage(sessionId: string, message: UniversalMessage): Promise<void> {
-    const uid = await this.getCurrentUserId();
-    if (!uid) return;
-    await setDoc(doc(this.messagesCol(uid, sessionId), message.id), message);
+    const uid = await this.requireCurrentUserId();
+    await setDoc(
+      doc(this.messagesCol(uid, sessionId), message.id),
+      omitUndefined(message),
+    );
   }
 
   async deleteMessage(sessionId: string, messageId: string): Promise<void> {
-    const uid = await this.getCurrentUserId();
-    if (!uid) return;
+    const uid = this.requireExistingAuthenticatedUserId();
     const services = this.getServices();
     const appId = getUniversalAppId();
     await deleteDoc(doc(this.messagesCol(uid, sessionId), messageId));
@@ -113,21 +161,12 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
   }
 
   async clearMessages(sessionId: string): Promise<void> {
-    const uid = await this.getCurrentUserId();
-    if (!uid) return;
-    const services = this.getServices();
-    const batch = writeBatch(services.db);
-    const msgSnap = await getDocs(this.messagesCol(uid, sessionId));
-    msgSnap.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
+    const uid = this.requireExistingAuthenticatedUserId();
+    await this.deleteMessageDocuments(uid, sessionId);
   }
 
   async deleteAllSessions(): Promise<void> {
-    const uid = await this.getCurrentUserId();
-    if (!uid) return;
-    // Fetch every session, then delete each (deleteSession also removes that
-    // session's messages subcollection). Sessions are typically few, so a
-    // sequential pass keeps each session's messages within one write batch.
+    const uid = this.requireExistingAuthenticatedUserId();
     const snap = await getDocs(this.sessionsCol(uid));
     for (const sessionDoc of snap.docs) {
       await this.deleteSession(sessionDoc.id);
@@ -135,8 +174,7 @@ export class FirestoreSessionRepository implements UniversalSessionRepository {
   }
 
   async loadMessages(sessionId: string): Promise<UniversalMessage[]> {
-    const uid = await this.getCurrentUserId();
-    if (!uid) return [];
+    const uid = await this.requireCurrentUserId();
     const snap = await getDocs(
       query(this.messagesCol(uid, sessionId), orderBy('createdAt', 'asc')),
     );
