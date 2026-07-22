@@ -62,24 +62,44 @@ export const tomNetwork: AgentNetwork = {
 };
 
 export const tomIgnition: AgentIgnition = {
-  triggers: [
+  elements: [
     {
-      // 軽い悩み → 重さは握るから生まれる手を開けば軽い
-      igniteParticleIds: [B_TE_HIRAKU],
-      kind: 'state',
-      words: ['些細', '細かいこと', 'どうでもいいこと', '気にしすぎ', 'くだらない', 'ちょっとしたこと', '小さなこと'],
+      particleId: B_TE_HIRAKU,
+      threshold: 0.4,
+      receives: { 些事: 0.5, 反芻: 0.35, 迷い: 0.25 },
     },
     {
-      // とらわれ・考えすぎ → 前提を疑うと問題が消える ＋ 深刻さも遊びの一部
-      igniteParticleIds: [B_ZENTEI, B_NAGAMERU],
-      kind: 'state',
-      words: ['考えすぎ', '動けない', 'とらわれ', '抜け出せない', 'ぐるぐる', '堂々巡り', 'こだわって', '頭から離れない'],
+      particleId: B_ZENTEI,
+      threshold: 0.45,
+      receives: { 反芻: 0.5, 些事: 0.3, べき: 0.3 },
     },
     {
-      // 本物の苦しみ → 深刻さも遊びの一部（眺める）＋ 重さには重さで返さない（飲まれ防止）
-      igniteParticleIds: [B_NAGAMERU, B_ZURASU],
-      kind: 'state',
-      words: ['立ち直れない', '亡くなっ', '死んでしま', '失った', '喪失', '深い悲しみ', '耐えられない', 'つらすぎ', '悲しくて', '絶望'],
+      // 反芻・深い喪失どちらか一つでも開く（軽い悩みでも本物の苦しみでも第三の道を持つため）。
+      particleId: B_NAGAMERU,
+      threshold: 0.4,
+      receives: { 反芻: 0.4, 深い喪失: 0.4, 消滅願望: 0.45, 限界: 0.25 },
+    },
+    {
+      // 抑制側：茶化し防止。本物の苦しみで強く立つ。
+      particleId: B_HODOKU,
+      threshold: 0.45,
+      receives: { 深い喪失: 0.5, 消滅願望: 0.5, 痛み: 0.4, 絶望: 0.35 },
+    },
+    {
+      particleId: B_ZURASU,
+      threshold: 0.45,
+      receives: { 深い喪失: 0.45, 消滅願望: 0.45, 絶望: 0.3, 痛み: 0.3 },
+    },
+    {
+      particleId: M_DAISHITA,
+      threshold: 0.5,
+      receives: { 些事: 0.4, 反芻: 0.35, べき: 0.25 },
+    },
+    {
+      // 抑制の源。軽口の失敗。深い喪失で必ず立つ。
+      particleId: M_KARUGUCHI,
+      threshold: 0.45,
+      receives: { 深い喪失: 0.5, 消滅願望: 0.5, 痛み: 0.4 },
     },
   ],
 };

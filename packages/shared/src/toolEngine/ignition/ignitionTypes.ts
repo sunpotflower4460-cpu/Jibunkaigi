@@ -15,25 +15,12 @@ export interface Tokenizer {
   toBaseForms(text: string): string[];
 }
 
-export type TriggerKind = 'state' | 'pos';
-
-/**
- * 1トリガー = 反応語の集合と、点火するノード。
- * - state: 否定形そのものが状態（感じない/しんどい）。二重否定でなければ点火。
- * - pos:   ポジ語（楽しい/大丈夫）。後ろに否定が付くと反転＝非点火。皮肉で反転。
- */
-export interface NodeTrigger {
-  /** このトリガーが点いたら 1.0 にする particle id 群。 */
-  igniteParticleIds: string[];
-  kind: TriggerKind;
-  /** 反応語。原形で1個書けば、Tokenizer 注入時は活用・若者言葉も拾える。 */
-  words: string[];
-}
+export type CueKind = 'state' | 'pos';
 
 /** 共有プールの1グループ。何も決めない。ただの言葉の袋。 */
 export interface CueGroup {
   id: string;
-  kind: TriggerKind;
+  kind: CueKind;
   words: string[];
   /** pos語が皮肉で裏返ったとき、代わりに現れる気配のid。 */
   reverseCueId?: string;
@@ -52,15 +39,7 @@ export interface ElementIgnition {
   threshold: number;
 }
 
-/** 1エージェントの励起設定。 */
+/** 1エージェントの励起設定。各要素が自分で「自分は点火するか」を決める（真空管モデル）。 */
 export interface AgentIgnition {
-  /** 旧方式。elements があるエージェントでは使われない。 */
-  triggers: NodeTrigger[];
-  /**
-   * ポジ語が皮肉で反転したときに点火する particle id（投げやり・麻痺側）。
-   * 例: サトウなら "belief:麻痺や大丈夫の下に本当の状態がある"。
-   */
-  sarcasmFallbackParticleId?: string;
-  /** 新方式（閾値）。これがあれば triggers より優先される。 */
-  elements?: ElementIgnition[];
+  elements: ElementIgnition[];
 }

@@ -51,24 +51,44 @@ export const kenNetwork: AgentNetwork = {
 };
 
 export const kenIgnition: AgentIgnition = {
-  triggers: [
+  elements: [
     {
-      // もつれ・混乱 → 散らばったままでは気づけない ＋ もつれた糸は一本ずつ
-      igniteParticleIds: [B_CHIRABATTA, B_MOTSURETA],
-      kind: 'state',
-      words: ['整理できない', '整理がつかない', '混乱', 'ごちゃごちゃ', 'こんがらが', 'もつれ', '散らかって', 'まとまらない', '頭の中', 'わけがわからなく', 'ぐちゃぐちゃ'],
+      particleId: B_CHIRABATTA,
+      threshold: 0.4,
+      receives: { 混乱: 0.5, 過負荷: 0.45, 迷い: 0.3 },
     },
     {
-      // まだ言葉にならない → まだ言葉にならないものは急がない
-      igniteParticleIds: [B_ISOGANAI],
-      kind: 'state',
-      words: ['何が嫌か', '自分でもわからない', '自分でも分からない', 'うまく言えない', '言葉にならない', 'もやもや', 'モヤモヤ', 'はっきりしない', 'なんとなく'],
+      particleId: B_MOTSURETA,
+      threshold: 0.45,
+      receives: { 混乱: 0.5, 反芻: 0.3, 迷い: 0.3 },
     },
     {
-      // 過負荷・構造化が効く → 散らばったままでは気づけない ＋ 複雑に見えても核はシンプル
-      igniteParticleIds: [B_CHIRABATTA, B_SHINPURU],
-      kind: 'state',
-      words: ['やることが多', 'タスクが多', '多すぎて', '回らない', '手が回らない', 'パンク', 'いっぱいいっぱい', '時間が足りない'],
+      particleId: B_SHINPURU,
+      threshold: 0.5,
+      receives: { 過負荷: 0.45, 混乱: 0.3 },
+    },
+    {
+      // 抑制側：急いで形にしない。
+      particleId: B_ISOGANAI,
+      threshold: 0.4,
+      receives: { 言語化困難: 0.5, 迷い: 0.25 },
+    },
+    {
+      // 深い。
+      particleId: B_KANJOU,
+      threshold: 0.55,
+      receives: { 痛み: 0.3, 混乱: 0.25, 自己否定: 0.25 },
+    },
+    {
+      // 抑制側：押し付け防止。
+      particleId: B_MITORIZU,
+      threshold: 0.5,
+      receives: { 拒絶: 0.4, 言語化困難: 0.3, 痛み: 0.3 },
+    },
+    {
+      particleId: M_OSHITSUKE,
+      threshold: 0.5,
+      receives: { 拒絶: 0.4, 痛み: 0.35, 言語化困難: 0.3 },
     },
   ],
 };
