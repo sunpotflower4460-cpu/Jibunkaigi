@@ -32,6 +32,8 @@ export function createUniversalOthersMockResponse(
       agentId,
       agentLabel: getUniversalAgent(agentId).label,
       text: reply.text,
+      // The offline mock has no activation-driven stance; neutral is the safe default.
+      position: 'neutral',
     };
   });
 

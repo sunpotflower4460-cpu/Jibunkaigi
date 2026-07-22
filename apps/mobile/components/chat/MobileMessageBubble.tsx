@@ -12,9 +12,16 @@ import {
 } from '../../theme/tokens';
 import { MobileMessageToolbar } from './MobileMessageToolbar';
 import { MobileAgentOthersTrigger } from '../others/MobileAgentOthersTrigger';
-import type { MobileAgentId } from '../../state/mobileTypes';
+import type { MobileAgentId, OthersPosition } from '../../state/mobileTypes';
 
 export type MessageRole = 'user' | 'agent';
+
+// OTHERSのメインへのスタンス表示。小さく、控えめに（彩度を上げない・にぎやかにしない）。
+const OTHERS_POSITION_LABELS: Record<OthersPosition, string> = {
+  agree: '共感',
+  question: '疑問',
+  neutral: '中立',
+};
 
 interface MobileMessageBubbleProps {
   messageId: string;
@@ -23,6 +30,8 @@ interface MobileMessageBubbleProps {
   agentId?: MobileAgentId;
   agentLabel?: string;
   origin?: 'direct' | 'others';
+  /** OTHERSのメインへのスタンス。origin === 'others' のときだけ小さく表示する。 */
+  position?: OthersPosition;
   /** Thinking 中は agent 直下導線を非表示にする */
   isThinking?: boolean;
   /** OTHERS 読み込み中は導線を disabled / loading 表示にする */
@@ -40,6 +49,7 @@ export function MobileMessageBubble({
   agentId,
   agentLabel,
   origin,
+  position,
   isThinking = false,
   isLoadingOthers = false,
   onCopy,
@@ -90,6 +100,9 @@ export function MobileMessageBubble({
                 <View style={styles.othersBadge}>
                   <Text style={styles.othersBadgeText}>ほかの声</Text>
                 </View>
+              )}
+              {isOthers && position && (
+                <Text style={styles.positionLabel}>{OTHERS_POSITION_LABELS[position]}</Text>
               )}
             </View>
           )}
@@ -182,6 +195,11 @@ const styles = StyleSheet.create({
     color: colors.accentIndigo,
     fontWeight: '600',
     letterSpacing: 0.5,
+  },
+  positionLabel: {
+    fontSize: typeScale.tiny - 1,
+    color: colors.inkFaint,
+    letterSpacing: 0.3,
   },
   text: {
     fontSize: typeScale.body,

@@ -2,9 +2,9 @@
 // UniversalAgentId and UniversalModeId are re-exported from @jibunkaigi/shared
 // so all platforms share the same canonical definitions.
 
-import type { UniversalAgentId, UniversalModeId } from '@jibunkaigi/shared';
+import type { OthersPosition, UniversalAgentId, UniversalModeId } from '@jibunkaigi/shared';
 
-export type { UniversalAgentId, UniversalModeId };
+export type { OthersPosition, UniversalAgentId, UniversalModeId };
 
 export type UniversalMessageRole = 'user' | 'agent';
 
@@ -19,6 +19,8 @@ export interface UniversalMessage {
   source?: 'proxy' | 'mock-fallback';
   model?: string;
   origin?: 'direct' | 'others';
+  /** OTHERSのメインへのスタンス。origin === 'others' のメッセージにのみ付く。 */
+  position?: OthersPosition;
   groupId?: string;
   // Delegate provenance (Phase 0-1):
   // requestedAgentId is the user's entry-point selection at send time
