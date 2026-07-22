@@ -10,6 +10,11 @@ import { matchCue } from './cueMatch';
 export interface IgniteOptions {
   /** 形態素解析（差し替え可能）。未指定なら部分一致のみ。 */
   tokenizer?: Tokenizer;
+  /**
+   * 温度（前ターンの余韻。指示書08）。particleId ごとの上乗せ値。
+   * 「あと一押し」に限定するため、気配が1つ以上現れている要素にのみ適用する。
+   */
+  warmth?: Record<string, number>;
 }
 
 /**
@@ -28,11 +33,20 @@ export function ignite(
     else if (r === 'reverse' && group.reverseCueId) present.add(group.reverseCueId);
   }
   // 2) 各要素が自分で足して、自分の閾値と比べる。
+  const warmth = options.warmth ?? {};
   const fired = new Set<string>();
   for (const el of ignition.elements) {
     let total = 0;
+    let cueCount = 0;
     for (const [cueId, weight] of Object.entries(el.receives)) {
-      if (present.has(cueId)) total += weight;
+      if (present.has(cueId)) {
+        total += weight;
+        cueCount++;
+      }
+    }
+    // 温度は「あと一押し」。気配が全く現れていない要素には適用しない。
+    if (cueCount > 0) {
+      total += warmth[el.particleId] ?? 0;
     }
     if (total >= el.threshold) fired.add(el.particleId);
   }

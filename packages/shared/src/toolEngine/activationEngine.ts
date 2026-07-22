@@ -80,14 +80,23 @@ export function parseLabel(id: string): string {
 
 /**
  * ネットワークを ignitedIds で点火し、steps 回まわして平衡させた最終ノード状態を返す（純粋）。
+ *
+ * initialActivation（温度）を渡すと、点火していないノードの初期活性を
+ * max(baseline, initialActivation[id]) から始める。点火ノードの 1.0 は
+ * 温度に上書きされない（点火が最優先）。
  */
 export function spreadActivation(
   network: AgentNetwork,
   ignitedIds: string[],
   steps: number = DEFAULT_STEPS,
+  initialActivation?: Record<string, number>,
 ): ParticlePoint[] {
-  let particles = network.particles.map((p) => ({ ...p }));
   const ignitedSet = new Set(ignitedIds);
+  let particles = network.particles.map((p) => {
+    if (ignitedSet.has(p.id)) return { ...p, activation: 1.0 };
+    const warmth = initialActivation?.[p.id] ?? 0;
+    return { ...p, activation: Math.max(network.baseline[p.id] ?? 0, warmth) };
+  });
   for (let step = 0; step < steps; step++) {
     // 毎ステップ再点火（入力刺激が持続している間の挙動を表す）。
     particles = particles.map((p) =>
@@ -118,4 +127,14 @@ export function toSurfacedMaterial(
       activation: p.activation,
     }));
   return { agentId, ignited: ignitedIds, surfaced };
+}
+
+/**
+ * 浮上材料から { id: activation } を取り出す。次ターンの温度の素になる
+ * （指示書08）。baseline のみのノード（点火なし）も含む点に注意。
+ */
+export function activationSnapshot(material: SurfacedMaterial): Record<string, number> {
+  const snap: Record<string, number> = {};
+  for (const node of material.surfaced) snap[node.id] = node.activation;
+  return snap;
 }

@@ -8,11 +8,16 @@ import { getAgentDefinition } from './agents';
 import { ignite } from './ignition/ignite';
 import type { Tokenizer } from './ignition/ignitionTypes';
 
+/** 前ターンの余韻がどれだけ残るか（指示書08）。仮の値。 */
+const WARMTH_DECAY = 0.3;
+
 export interface IgniteAndSpreadOptions {
   /** 形態素解析（差し替え可能）。Worker 側で kuromoji を注入する想定。 */
   tokenizer?: Tokenizer;
   /** 平衡までのステップ数（既定 20）。 */
   steps?: number;
+  /** 前ターンの浮上活性（このエージェント分）。温度の素（指示書08）。 */
+  previousActivation?: Record<string, number>;
 }
 
 /**
@@ -28,12 +33,20 @@ export function igniteAndSpread(
   if (!def) {
     return { agentId, ignited: [], surfaced: [] };
   }
-  const fired = ignite(text, def.ignition, { tokenizer: options.tokenizer });
+  // 前ターンの活性を減衰させて温度にする。
+  const warmth: Record<string, number> = {};
+  if (options.previousActivation) {
+    for (const [id, act] of Object.entries(options.previousActivation)) {
+      warmth[id] = act * WARMTH_DECAY;
+    }
+  }
+  const fired = ignite(text, def.ignition, { tokenizer: options.tokenizer, warmth });
   const ignitedIds = [...fired];
   const particles = spreadActivation(
     def.network,
     ignitedIds,
     options.steps ?? DEFAULT_STEPS,
+    warmth,
   );
   return toSurfacedMaterial(agentId, ignitedIds, particles);
 }

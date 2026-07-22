@@ -4,6 +4,7 @@ import type {
   UniversalModeId,
 } from '../../state/mobileTypes';
 import type { ConcreteAgentId, OthersPosition } from '@jibunkaigi/shared';
+import type { UniversalWarmthState } from './aiClientTypes';
 
 export interface UniversalOthersAiRequest {
   sessionId: string;
@@ -15,6 +16,8 @@ export interface UniversalOthersAiRequest {
   messages: UniversalMessage[];
   targetAgentIds?: ConcreteAgentId[];
   userName?: string | null;
+  /** 対象エージェントごとの前ターンの浮上活性。 */
+  warmth?: UniversalWarmthState;
 }
 
 export interface UniversalOthersAiReply {
@@ -28,4 +31,6 @@ export interface UniversalOthersAiResponse {
   replies: UniversalOthersAiReply[];
   source: 'proxy' | 'mock-fallback';
   model?: string;
+  /** 対象エージェントごとの今回の浮上活性。 */
+  warmth?: UniversalWarmthState;
 }
