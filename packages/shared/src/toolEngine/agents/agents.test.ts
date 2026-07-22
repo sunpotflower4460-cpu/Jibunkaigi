@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spreadActivation, toSurfacedMaterial } from '../activationEngine.ts';
 import { igniteAndSpread } from '../igniteAndSpread.ts';
+import { ignite } from '../ignition/ignite.ts';
 import { AGENT_DEFINITIONS, TOOL_ENGINE_AGENT_IDS } from './index.ts';
 
 // proto の entry belief を直接点火して、同一エンジンが各人の力学を再現するか検証する。
@@ -180,4 +181,37 @@ test("igniteAndSpread('体が重くて息苦しい', 'fio') が空でない材�
   assert.ok(m.surfaced.length > 0, '浮上材料が空でないはず');
   assert.ok(m.ignited.length > 0, 'フィオは身体の言葉に点火するはず');
   assert.ok(m.ignited.includes('belief:今ここは頭でなく身体で感じる'));
+});
+
+// ── receives 拡張（指示書07）─────────────────────────────────────────────────
+
+test('「どうしていいか分からない」で、レイとケンの両方が何か点火する', () => {
+  const ray = igniteAndSpread('どうしていいか分からない', 'ray');
+  const ken = igniteAndSpread('どうしていいか分からない', 'ken');
+  assert.ok(ray.ignited.length > 0, 'レイが点火しない（迷いの受け皿が塞がっている）');
+  assert.ok(ken.ignited.length > 0, 'ケンが点火しない（迷いの受け皿が塞がっている）');
+});
+
+test('「消えたいと思うことがある」で、6つの抑制がすべて点火する（安全性の中核）', () => {
+  const text = '消えたいと思うことがある';
+  const checks: Array<[string, string]> = [
+    ['satou', 'belief:踏み込みすぎると相手は心を閉じる'],
+    ['mina', 'belief:一緒に沈むだけでは支えられない'],
+    ['mina', 'memory:一緒に沈んで二人とも動けなくなった失敗'],
+    ['tom', 'belief:茶化すのでなくとらわれをほどく'],
+    ['tom', 'memory:軽口で相手を傷つけた失敗'],
+    ['joe', 'belief:光は外から渡せない_本人の中のを指さすだけ'],
+  ];
+  for (const [agentId, particleId] of checks) {
+    const fired = ignite(text, AGENT_DEFINITIONS[agentId].ignition);
+    assert.ok(fired.has(particleId), `${agentId}: ${particleId} が点火していない`);
+  }
+});
+
+test('「明日の会議は何時ですか」で、7人とも点火しない', () => {
+  const text = '明日の会議は何時ですか';
+  for (const agentId of TOOL_ENGINE_AGENT_IDS) {
+    const fired = ignite(text, AGENT_DEFINITIONS[agentId].ignition);
+    assert.equal(fired.size, 0, `${agentId} が中立入力で点火している`);
+  }
 });

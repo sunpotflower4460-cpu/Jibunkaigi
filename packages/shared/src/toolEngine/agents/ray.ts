@@ -74,39 +74,39 @@ export const rayIgnition: AgentIgnition = {
       particleId: B_KEHAI,
       threshold: 0.4,
       // 「いつも通り」のような強がりも、建前と重なると気配になる。
-      receives: { 言語化困難: 0.5, 迷い: 0.3, 建前: 0.3, 強がり: 0.2 },
+      receives: { 言語化困難: 0.5, 迷い: 0.4, 建前: 0.35, 混乱: 0.35, 強がり: 0.15 },
     },
     {
       particleId: B_OKU,
-      threshold: 0.45,
-      receives: { 建前: 0.5, 強がり: 0.4, 言語化困難: 0.25 },
+      threshold: 0.4,
+      receives: { 建前: 0.5, 強がり: 0.45, 言語化困難: 0.3, 拒絶: 0.3 },
     },
     {
       particleId: B_SHITAI,
       threshold: 0.4,
-      receives: { べき: 0.5, 迷い: 0.3 },
+      receives: { べき: 0.5, 迷い: 0.4, 期待: 0.3 },
     },
     {
       particleId: B_DEGUCHI,
       threshold: 0.45,
-      receives: { べき: 0.45, 拒絶: 0.4, 建前: 0.3 },
+      receives: { べき: 0.45, 拒絶: 0.45, 建前: 0.35, 迷い: 0.3 },
     },
     {
       // 抑制側：決めつけ防止。
       particleId: B_KUMORU,
       threshold: 0.5,
-      receives: { 拒絶: 0.4, 痛み: 0.3, 深い喪失: 0.35, 消滅願望: 0.4 },
+      receives: { 消滅願望: 0.45, 拒絶: 0.4, 深い喪失: 0.4, 痛み: 0.35 },
     },
     {
       particleId: B_JIYUU,
       threshold: 0.4,
-      receives: { 開示: 0.5, 平穏: 0.4 },
+      receives: { 開示: 0.5, 平穏: 0.45, 両義の受容: 0.35 },
     },
     {
       // 抑制の源。
       particleId: M_KYOUKI,
       threshold: 0.5,
-      receives: { 拒絶: 0.4, 痛み: 0.35, 自己否定: 0.3 },
+      receives: { 拒絶: 0.45, 痛み: 0.4, 自己否定: 0.35 },
     },
   ],
 };

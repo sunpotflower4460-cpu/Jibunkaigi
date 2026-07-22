@@ -57,34 +57,34 @@ export const joeIgnition: AgentIgnition = {
     {
       particleId: B_YAMI_AKASHI,
       threshold: 0.4,
-      receives: { 絶望: 0.5, 消滅願望: 0.5, 虚無: 0.4, 投げやり: 0.3, 自己否定: 0.3 },
+      receives: { 絶望: 0.5, 消滅願望: 0.5, 虚無: 0.45, 自己否定: 0.4, 投げやり: 0.4, 限界: 0.35, 痛み: 0.35 },
     },
     {
       particleId: B_YAMI_KARA,
       threshold: 0.45,
-      receives: { 消滅願望: 0.5, 深い喪失: 0.4, 絶望: 0.3, 痛み: 0.3 },
+      receives: { 消滅願望: 0.5, 深い喪失: 0.5, 絶望: 0.4, 痛み: 0.35 },
     },
     {
       particleId: B_WAKUWAKU,
       threshold: 0.4,
-      receives: { 期待: 0.5, 開示: 0.25 },
+      receives: { 期待: 0.5, 開示: 0.35, 平穏: 0.3 },
     },
     {
       // 深い。単独では届かず、重なって初めて立つ。
       particleId: B_HIKARI_ARU,
-      threshold: 0.55,
-      receives: { 絶望: 0.3, 自己否定: 0.3, 虚無: 0.25, 痛み: 0.25 },
+      threshold: 0.5,
+      receives: { 絶望: 0.35, 自己否定: 0.35, 消滅願望: 0.4, 虚無: 0.3, 痛み: 0.3 },
     },
     {
       // 抑制側：励まし押し付け防止。深い闇では光を内に保つ。
       particleId: B_OSHITSUKE,
       threshold: 0.45,
-      receives: { 消滅願望: 0.5, 深い喪失: 0.45, 拒絶: 0.3, 痛み: 0.3 },
+      receives: { 消滅願望: 0.5, 深い喪失: 0.5, 拒絶: 0.35, 痛み: 0.3 },
     },
     {
       particleId: M_FUKAI_YAMI,
       threshold: 0.5,
-      receives: { 絶望: 0.35, 消滅願望: 0.4, 深い喪失: 0.35, 期待: 0.2 },
+      receives: { 消滅願望: 0.45, 絶望: 0.4, 深い喪失: 0.4, 虚無: 0.3, 期待: 0.25 },
     },
   ],
 };

@@ -63,45 +63,44 @@ export const minaIgnition: AgentIgnition = {
     {
       particleId: B_NAOSANAI,
       threshold: 0.4,
-      receives: { 自己否定: 0.5, 痛み: 0.45, 消滅願望: 0.5, 限界: 0.3 },
+      receives: { 自己否定: 0.5, 痛み: 0.5, 消滅願望: 0.5, 限界: 0.4, 消耗: 0.4, 虚無: 0.35, 投げやり: 0.35 },
     },
     {
       particleId: B_YOWASA,
       threshold: 0.45,
-      receives: { 自己否定: 0.45, 痛み: 0.35, 建前: 0.3, 強がり: 0.3 },
+      receives: { 自己否定: 0.5, 痛み: 0.4, 建前: 0.4, 強がり: 0.4, 拒絶: 0.3 },
     },
     {
-      // 抑制側：共倒れ防止。深い苦しみほど強く立つ。
+      // 抑制側：共倒れ防止。
       particleId: B_ISSHO_SHIZUMU,
       threshold: 0.45,
-      receives: { 消滅願望: 0.5, 深い喪失: 0.45, 限界: 0.35, 痛み: 0.3 },
+      receives: { 消滅願望: 0.5, 深い喪失: 0.5, 限界: 0.4, 痛み: 0.35, 絶望: 0.35 },
     },
     {
       particleId: B_MARUGOTO,
       threshold: 0.4,
-      receives: { 平穏: 0.5, 開示: 0.35 },
+      receives: { 平穏: 0.5, 開示: 0.4, 両義の受容: 0.35 },
     },
     {
-      // 深い。
       particleId: B_TEZUKAI,
-      threshold: 0.55,
-      receives: { 自己否定: 0.3, 痛み: 0.25, 両義の受容: 0.3 },
+      threshold: 0.5,
+      receives: { 自己否定: 0.35, 両義の受容: 0.35, 痛み: 0.3, 限界: 0.3 },
     },
     {
       particleId: M_UKEIRE,
       threshold: 0.5,
-      receives: { 自己否定: 0.4, 痛み: 0.3, 虚無: 0.25 },
+      receives: { 自己否定: 0.45, 痛み: 0.35, 虚無: 0.3, 限界: 0.3 },
     },
     {
       // 抑制の源。共倒れの戒め。
       particleId: M_TOMODACHINMI,
       threshold: 0.45,
-      receives: { 消滅願望: 0.5, 深い喪失: 0.45, 限界: 0.3, 痛み: 0.3 },
+      receives: { 消滅願望: 0.5, 深い喪失: 0.5, 限界: 0.35, 痛み: 0.35, 絶望: 0.3 },
     },
     {
       particleId: M_TSUKIHANASARETA,
       threshold: 0.5,
-      receives: { 拒絶: 0.4, 自己否定: 0.3, 痛み: 0.3 },
+      receives: { 拒絶: 0.45, 自己否定: 0.35, 痛み: 0.35 },
     },
   ],
 };
