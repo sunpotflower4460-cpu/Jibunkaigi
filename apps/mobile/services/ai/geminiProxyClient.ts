@@ -6,6 +6,7 @@ import type {
   UniversalAiRequest,
   UniversalAiResponse,
 } from './aiClientTypes';
+import { isWarmthState } from './warmthState';
 
 const REQUEST_TIMEOUT_MS = 30000;
 
@@ -54,6 +55,7 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
             modeId: request.modeId,
             messages: request.messages.slice(-20),
             userName: request.userName,
+            ...(request.warmth ? { warmth: request.warmth } : {}),
             ...(DEV_TRACE_ENABLED && DEV_TRACE_KEY ? { devTrace: true } : {}),
           }),
           signal: controller.signal,
@@ -68,6 +70,7 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
           agentId?: unknown;
           agentLabel?: unknown;
           model?: unknown;
+          warmth?: unknown;
         };
 
         if (!data || typeof data.text !== 'string' || !data.text.trim()) {
@@ -80,6 +83,7 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
           agentLabel: typeof data.agentLabel === 'string' ? data.agentLabel : '',
           source: 'proxy',
           model: typeof data.model === 'string' ? data.model : undefined,
+          warmth: isWarmthState(data.warmth) ? data.warmth : undefined,
         };
       } finally {
         clearTimeout(timeout);

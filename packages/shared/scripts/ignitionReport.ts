@@ -6,6 +6,8 @@
 import { CUE_POOL } from '../src/toolEngine/ignition/cuePool.ts';
 import { matchCue } from '../src/toolEngine/ignition/cueMatch.ts';
 import { ignite } from '../src/toolEngine/ignition/ignite.ts';
+import { igniteAndSpread } from '../src/toolEngine/igniteAndSpread.ts';
+import { activationSnapshot } from '../src/toolEngine/activationEngine.ts';
 import { satoIgnition } from '../src/toolEngine/agents/sato.ts';
 import { AGENT_DEFINITIONS, TOOL_ENGINE_AGENT_IDS } from '../src/toolEngine/agents/index.ts';
 import type { ElementIgnition } from '../src/toolEngine/ignition/ignitionTypes.ts';
@@ -148,4 +150,26 @@ for (const text of NEUTRAL_INPUTS) {
     console.log(`  ${label}: 点火${fired.size}件 ${fired.size > 0 ? '[' + [...fired].map(shortLabel).join(', ') + ']' : ''}`);
   }
   console.log('');
+}
+
+console.log('\n════════ 温度（前ターンの持ち越し・指示書08） ════════\n');
+{
+  const text = 'もう無理';
+  console.log(`「${text}」を2回連続で入力（サトウ）\n`);
+
+  const first = igniteAndSpread(text, 'satou');
+  const firedFirst = first.ignited.map(shortLabel);
+  console.log(`1回目（温度なし） → 点火: ${firedFirst.join(', ') || '(なし)'}`);
+
+  const warmthFromFirst = activationSnapshot(first);
+  const second = igniteAndSpread(text, 'satou', { previousActivation: warmthFromFirst });
+  const firedSecond = second.ignited.map(shortLabel);
+  console.log(`2回目（1回目の余韻あり） → 点火: ${firedSecond.join(', ') || '(なし)'}`);
+
+  const newlyOpened = second.ignited.filter((id) => !first.ignited.includes(id));
+  console.log(
+    newlyOpened.length > 0
+      ? `\n温度で新たに開いた: ${newlyOpened.map(shortLabel).join(', ')}`
+      : '\n温度による新規点火は無し（この入力・この減衰率では起きなかった）',
+  );
 }

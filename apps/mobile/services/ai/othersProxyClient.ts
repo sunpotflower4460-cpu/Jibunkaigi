@@ -10,6 +10,7 @@ import type {
   UniversalOthersAiRequest,
   UniversalOthersAiResponse,
 } from './othersClientTypes';
+import { isWarmthState } from './warmthState';
 
 const REQUEST_TIMEOUT_MS = 45000;
 
@@ -48,6 +49,7 @@ export function createOthersProxyClient() {
             messages: request.messages.slice(-20),
             targetAgentIds: request.targetAgentIds,
             userName: request.userName,
+            ...(request.warmth ? { warmth: request.warmth } : {}),
           }),
           signal: controller.signal,
         });
@@ -56,7 +58,7 @@ export function createOthersProxyClient() {
           throw new Error(`OTHERS proxy failed: ${response.status}`);
         }
 
-        const data = await response.json() as { replies?: unknown; model?: unknown };
+        const data = await response.json() as { replies?: unknown; model?: unknown; warmth?: unknown };
         if (!data || !Array.isArray(data.replies)) {
           throw new Error('OTHERS proxy returned invalid response');
         }
@@ -101,6 +103,7 @@ export function createOthersProxyClient() {
           replies,
           source: 'proxy',
           model: typeof data.model === 'string' ? data.model : undefined,
+          warmth: isWarmthState(data.warmth) ? data.warmth : undefined,
         };
       } finally {
         clearTimeout(timeout);

@@ -12,6 +12,7 @@ import type {
 import { AGENT_LABELS } from '../services/universalAgentMock';
 import { createUniversalAiReply } from '../services/ai/universalAiClient';
 import { createUniversalOthersReplies } from '../services/ai/universalOthersClient';
+import type { UniversalWarmthState } from '../services/ai/aiClientTypes';
 import { isGeminiProxyConfigured } from '../config/mobileApiConfig';
 import { createLocalSession, createLocalSessionFromText } from '../services/universalSessionLocal';
 import {
@@ -162,6 +163,13 @@ export function useUniversalConversation(
   const sessionRef = useRef<UniversalSession>(session);
   const requestGenerationRef = useRef(0);
   const lastResolvedAgentIdRef = useRef<ConcreteAgentId | null>(null);
+  // 前ターンの浮上活性（温度・指示書08）。セッション内のみ有効。会話をまたがない。
+  const warmthRef = useRef<UniversalWarmthState>({});
+
+  const mergeWarmth = useCallback((incoming: UniversalWarmthState | undefined) => {
+    if (!incoming) return;
+    warmthRef.current = { ...warmthRef.current, ...incoming };
+  }, []);
 
   useEffect(() => {
     sessionRef.current = session;
@@ -203,6 +211,8 @@ export function useUniversalConversation(
     setIsLoadingOthers(false);
     setIsLoadingSessions(false);
     setPendingResolvedAgentId(null);
+    // 温度はセッション内のみ有効。クリア／新規／切替では前ターンの余韻を持ち越さない。
+    warmthRef.current = {};
     return requestGenerationRef.current;
   }, []);
 
@@ -390,9 +400,11 @@ export function useUniversalConversation(
             modeId,
             messages: messagesSnapshot,
             userName: resolvedUserName,
+            warmth: warmthRef.current,
           });
 
           if (!isRequestCurrent(sessionId, generation)) return;
+          mergeWarmth(reply.warmth);
 
           const agentMsg: UniversalMessage = {
             id: createUniversalId('message'),
@@ -446,6 +458,7 @@ export function useUniversalConversation(
     [
       closeComposer,
       isRequestCurrent,
+      mergeWarmth,
       refreshSessions,
       resolvedUserName,
       runStorageTask,
@@ -496,9 +509,11 @@ export function useUniversalConversation(
         modeId,
         messages: messagesSnapshot,
         userName: resolvedUserName,
+        warmth: warmthRef.current,
       });
 
       if (!isRequestCurrent(originSessionId, generation)) return;
+      mergeWarmth(result.warmth);
 
       const now = Date.now();
       const agentMessages: UniversalMessage[] = result.replies.map((reply, index) => ({
@@ -549,6 +564,7 @@ export function useUniversalConversation(
     }
   }, [
     isRequestCurrent,
+    mergeWarmth,
     refreshSessions,
     resolvedUserName,
     runStorageTask,

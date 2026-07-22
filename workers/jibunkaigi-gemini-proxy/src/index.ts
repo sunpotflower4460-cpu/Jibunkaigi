@@ -1,4 +1,6 @@
 import {
+  activationSnapshot,
+  AGENT_DEFINITIONS,
   buildCrisisSafetyResponse,
   buildUniversalConversationPrompt,
   buildUniversalOthersPrompt,
@@ -107,6 +109,29 @@ function readOptionalUserName(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed ? trimmed.slice(0, 24) : null;
+}
+
+/**
+ * 前ターンの浮上活性（温度・指示書08）。クライアントが送り返す値なので、
+ * 既知の particle id のみ・0〜1 にクランプして受け取る。サーバー自身は何も保存しない。
+ */
+type WarmthState = Record<string, Record<string, number>>;
+
+function readAgentWarmth(warmth: unknown, agentId: string): Record<string, number> | undefined {
+  if (!warmth || typeof warmth !== 'object') return undefined;
+  const def = AGENT_DEFINITIONS[agentId];
+  if (!def) return undefined;
+
+  const raw = (warmth as Record<string, unknown>)[agentId];
+  if (!raw || typeof raw !== 'object') return undefined;
+
+  const knownIds = new Set(def.network.particles.map((p) => p.id));
+  const result: Record<string, number> = {};
+  for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (!knownIds.has(id) || typeof value !== 'number' || !Number.isFinite(value)) continue;
+    result[id] = Math.min(1, Math.max(0, value));
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
 }
 
 function readBearerToken(request: Request): string | null {
@@ -342,6 +367,8 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
       messages?: unknown;
       targetAgentIds?: unknown;
       userName?: unknown;
+      /** 前ターンの浮上活性（温度・指示書08）。対象エージェントごと。 */
+      warmth?: unknown;
     }>(request);
 
     const userText = readUserText(body.userText);
@@ -388,7 +415,9 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
 
     const materials = targetAgentIds.map((agentId) => ({
       agentId,
-      surfaced: igniteAndSpread(userText, agentId),
+      surfaced: igniteAndSpread(userText, agentId, {
+        previousActivation: readAgentWarmth(body.warmth, agentId),
+      }),
     }));
 
     const prompt = buildUniversalOthersPrompt(
@@ -459,7 +488,12 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
       return json({ error: 'All OTHERS replies were invalid or empty' }, 502, env);
     }
 
-    return json({ replies, model }, 200, env);
+    const warmth: WarmthState = {};
+    for (const material of materials) {
+      warmth[material.agentId] = activationSnapshot(material.surfaced);
+    }
+
+    return json({ replies, model, warmth }, 200, env);
   } catch (error) {
     if (error instanceof RequestError) {
       return json({ error: error.message }, error.status, env);
@@ -595,6 +629,8 @@ async function handleReplyRequest(
       devTrace?: unknown;
       /** Legacy only; new clients send the secret in X-Jibunkaigi-Dev-Trace. */
       devTraceKey?: unknown;
+      /** 前ターンの浮上活性（温度・指示書08）。セッション内のみ有効。 */
+      warmth?: unknown;
     }>(request);
 
     const userText = readUserText(body.userText);
@@ -619,7 +655,8 @@ async function handleReplyRequest(
     }
 
     const messages = normalizeMessages(body.messages);
-    const surfaced = igniteAndSpread(userText, agentId);
+    const previousActivation = readAgentWarmth(body.warmth, agentId);
+    const surfaced = igniteAndSpread(userText, agentId, { previousActivation });
     const built = buildUniversalConversationPrompt({
       userText,
       agentId,
@@ -677,12 +714,15 @@ async function handleReplyRequest(
       );
     }
 
+    const warmth: WarmthState = { [agentId]: activationSnapshot(surfaced) };
+
     return json(
       {
         text,
         agentId,
         agentLabel: built.agentLabel,
         model,
+        warmth,
       },
       200,
       env,
