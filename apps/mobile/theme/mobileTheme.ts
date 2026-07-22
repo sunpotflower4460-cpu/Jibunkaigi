@@ -57,6 +57,16 @@ export const mobileAgentPalette = {
     border: 'rgba(74,222,128,0.18)',
     label: '#4f7f5f',
   },
+  tom: {
+    surface: 'rgba(253,164,127,0.14)',
+    border: 'rgba(234,120,73,0.20)',
+    label: '#9a5636',
+  },
+  fio: {
+    surface: 'rgba(165,214,206,0.14)',
+    border: 'rgba(94,168,158,0.20)',
+    label: '#3f6f6a',
+  },
 } as const;
 
 export const mobileRadius = {

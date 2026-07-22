@@ -6,7 +6,7 @@ import {
   type DelegateMessageLike,
 } from './delegateSelection.ts';
 
-const CONCRETE = ['ray', 'joe', 'ken', 'mina', 'satou'] as const;
+const CONCRETE = ['ray', 'joe', 'ken', 'mina', 'satou', 'tom', 'fio'] as const;
 
 function topVoice(scores: Record<string, number>): string {
   return Object.keys(scores).sort((a, b) => scores[b] - scores[a])[0];

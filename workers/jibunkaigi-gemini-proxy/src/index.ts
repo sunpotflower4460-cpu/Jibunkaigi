@@ -5,6 +5,7 @@ import {
   getUniversalAgent,
   igniteAndSpread,
   type ConcreteAgentId,
+  type OthersPosition,
   type UniversalAgentId,
   type UniversalModeId,
   type UniversalOthersReply,
@@ -39,7 +40,7 @@ function json(data: unknown, status: number, env: Env): Response {
 }
 
 function normalizeAgentId(value: string): UniversalAgentId {
-  const allowed = ['mirror', 'delegate', 'ray', 'joe', 'ken', 'mina', 'satou'] as const;
+  const allowed = ['mirror', 'delegate', 'ray', 'joe', 'ken', 'mina', 'satou', 'tom', 'fio'] as const;
   return (allowed as readonly string[]).includes(value)
     ? (value as UniversalAgentId)
     : 'ray';
@@ -58,6 +59,14 @@ function normalizeConcreteAgentId(value: string): ConcreteAgentId | null {
     : null;
 }
 
+// position が不正・欠落なら neutral にフォールバックする。
+function normalizeOthersPosition(value: unknown): OthersPosition {
+  const allowed = ['agree', 'question', 'neutral'] as const;
+  return (allowed as readonly string[]).includes(String(value))
+    ? (value as OthersPosition)
+    : 'neutral';
+}
+
 function readOptionalUserName(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
@@ -73,6 +82,7 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
     const body = await request.json<{
       sessionId?: unknown;
       userText?: unknown;
+      mainReplyText?: unknown;
       currentAgentId?: unknown;
       modeId?: unknown;
       messages?: unknown;
@@ -85,18 +95,28 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
       return json({ error: 'userText is required' }, 400, env);
     }
 
+    // ★新規: OTHERSが反応する対象＝メインエージェントの応答本文。無ければ空文字
+    // （othersPromptBuilder 側でユーザー入力への反応というフォールバックになる）。
+    const mainReplyText = String(body.mainReplyText || '').trim();
     const currentAgentId = normalizeAgentId(String(body.currentAgentId || 'ray'));
     const modeId = normalizeModeId(String(body.modeId || 'dialogue'));
     const userName = readOptionalUserName(body.userName);
 
     const rawTargets = Array.isArray(body.targetAgentIds) ? body.targetAgentIds : [];
-    const targetAgentIds: ConcreteAgentId[] = [
+    const explicitTargets: ConcreteAgentId[] = [
       ...new Set(
         rawTargets
           .map((id) => normalizeConcreteAgentId(String(id)))
           .filter((id): id is ConcreteAgentId => id !== null),
       ),
-    ].slice(0, 5);
+    ].slice(0, 6);
+
+    // 対象人数: その回のメインを除いた全員（現在は7人体制なので最大6人）。
+    // プランごとの人数出し分けは未実装なので、今は「メインを除く全員」で固定。
+    const targetAgentIds: ConcreteAgentId[] =
+      explicitTargets.length > 0
+        ? explicitTargets
+        : CONCRETE_AGENT_IDS.filter((id) => id !== currentAgentId);
 
     const rawMessages = Array.isArray(body.messages)
       ? (body.messages as Array<{
@@ -118,17 +138,30 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
       createdAt: typeof msg.createdAt === 'number' ? msg.createdAt : undefined,
     }));
 
-    const prompt = buildUniversalOthersPrompt({
-      sessionId: String(body.sessionId || ''),
-      userText,
-      currentAgentId,
-      modeId,
-      messages,
-      targetAgentIds: targetAgentIds.length > 0 ? targetAgentIds : undefined,
-      userName,
-    });
+    // 活性拡散はエージェントごとに個別に走らせる（純ロジック・LLM不使用・コストゼロ・
+    // 人格が保たれる）。入力は userText（ユーザーの言葉）を使う。メインの応答文では
+    // ない — 各エージェントはユーザーの言葉に対して内的に反応し、その状態でメインの
+    // 応答を聞く、という順序。
+    const materials = targetAgentIds.map((agentId) => ({
+      agentId,
+      surfaced: igniteAndSpread(userText, agentId),
+    }));
 
-    const model = env.GEMINI_MODEL || 'gemini-1.5-flash';
+    const prompt = buildUniversalOthersPrompt(
+      {
+        sessionId: String(body.sessionId || ''),
+        userText,
+        mainReplyText,
+        currentAgentId,
+        modeId,
+        messages,
+        targetAgentIds,
+        userName,
+      },
+      materials,
+    );
+
+    const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
     const geminiUrl =
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
@@ -170,7 +203,7 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
       return json({ error: 'Gemini returned empty text' }, 502, env);
     }
 
-    let parsed: { replies?: Array<{ agentId?: string; text?: string }> };
+    let parsed: { replies?: Array<{ agentId?: string; position?: string; text?: string }> };
     try {
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
       parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawText) as typeof parsed;
@@ -194,6 +227,7 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
           agentId,
           agentLabel: getUniversalAgent(agentId).label,
           text: String(r.text).trim(),
+          position: normalizeOthersPosition(r.position),
         };
       });
 
@@ -226,7 +260,7 @@ async function generateReflection(
   prompt: string,
   output: string,
 ): Promise<unknown> {
-  const model = env.GEMINI_MODEL || 'gemini-1.5-flash';
+  const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
   const geminiUrl =
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const reflectionPrompt =
@@ -397,7 +431,7 @@ export default {
         surfaced,
       });
 
-      const model = env.GEMINI_MODEL || 'gemini-1.5-flash';
+      const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
       const geminiUrl =
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 

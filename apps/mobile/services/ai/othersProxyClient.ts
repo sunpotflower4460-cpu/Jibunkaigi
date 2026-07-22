@@ -21,6 +21,7 @@ export function createOthersProxyClient() {
           body: JSON.stringify({
             sessionId: request.sessionId,
             userText: request.userText,
+            mainReplyText: request.mainReplyText,
             currentAgentId: request.currentAgentId,
             modeId: request.modeId,
             messages: request.messages.slice(-20),

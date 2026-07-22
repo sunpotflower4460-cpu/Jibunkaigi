@@ -5,7 +5,7 @@ import { MobileMessageBubble, type MessageRole } from './MobileMessageBubble';
 import { MobileEntrustConvergence } from './MobileEntrustConvergence';
 import { MobileDeleteMessageSheet } from './MobileDeleteMessageSheet';
 import { MobileBottomSpacer } from '../layout/MobileBottomSpacer';
-import type { MobileAgentId } from '../../state/mobileTypes';
+import type { MobileAgentId, OthersPosition } from '../../state/mobileTypes';
 import { spacing } from '../../theme/tokens';
 
 export interface ChatMessage {
@@ -15,6 +15,7 @@ export interface ChatMessage {
   agentId?: MobileAgentId;
   agentLabel?: string;
   origin?: 'direct' | 'others';
+  position?: OthersPosition;
 }
 
 interface MobileChatTimelineProps {
@@ -69,6 +70,7 @@ export function MobileChatTimeline({
             agentId={msg.agentId}
             agentLabel={msg.agentLabel}
             origin={msg.origin}
+            position={msg.position}
             isThinking={isThinking}
             isLoadingOthers={isLoadingOthers}
             onCopy={onCopyMessage}

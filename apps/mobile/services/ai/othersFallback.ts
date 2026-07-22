@@ -10,6 +10,7 @@ export function createOthersFallbackClient() {
       const response = createUniversalOthersMockResponse({
         sessionId: request.sessionId,
         userText: request.userText,
+        mainReplyText: request.mainReplyText,
         currentAgentId: request.currentAgentId,
         modeId: request.modeId,
         messages: request.messages,

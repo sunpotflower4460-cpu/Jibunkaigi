@@ -459,9 +459,22 @@ export function useUniversalConversation(
         lastResolvedAgentIdRef.current ??
         selectedAgent;
 
+      // OTHERSが反応する対象＝メインエージェントの発話。
+      // 直下がエージェントの直接発話（origin !== 'others'）のときだけ、その本文を渡す。
+      // user message 直下・手動パネルからの呼び出しはメインの応答がまだ無いので空文字
+      // （othersPromptBuilder 側でユーザー入力への反応というフォールバックになる）。
+      const targetMessage = messageId
+        ? messagesSnapshot.find((m) => m.id === messageId)
+        : undefined;
+      const mainReplyText =
+        targetMessage && targetMessage.role === 'agent' && targetMessage.origin !== 'others'
+          ? targetMessage.text
+          : '';
+
       const result = await createUniversalOthersReplies({
         sessionId: originSessionId,
         userText: othersTarget.userText,
+        mainReplyText,
         currentAgentId,
         modeId: modeRef.current,
         messages: messagesSnapshot,
@@ -487,6 +500,7 @@ export function useUniversalConversation(
         source: result.source,
         model: result.model,
         origin: 'others' as const,
+        position: reply.position,
         groupId,
       }));
 

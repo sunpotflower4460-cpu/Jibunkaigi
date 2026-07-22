@@ -116,6 +116,8 @@ function buildAgentMockReply(params: {
     ken: `今の話には、感情・判断・次にすることが少し混ざっていそうです。`,
     mina: `急いで整えなくても大丈夫です。まずはそのまま置ける場所を作りましょう。`,
     satou: `現実の足場として、まず一つだけ確認するとしたら何でしょう。`,
+    tom: `その重さ、握りしめているだけかもしれません。視点を一つ変えたら、どう見えるでしょう。`,
+    fio: `今、体はどんな感じでしょう。息や、足の裏の感覚に、少しだけ意識を向けてみませんか。`,
   } satisfies Record<ConcreteAgentId, string>;
 
   if (params.modeId === 'flash') {

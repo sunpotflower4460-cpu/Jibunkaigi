@@ -5,14 +5,18 @@ export type UniversalAgentId =
   | 'joe'
   | 'ken'
   | 'mina'
-  | 'satou';
+  | 'satou'
+  | 'tom'
+  | 'fio';
 
 export type ConcreteAgentId =
   | 'ray'
   | 'joe'
   | 'ken'
   | 'mina'
-  | 'satou';
+  | 'satou'
+  | 'tom'
+  | 'fio';
 
 export interface UniversalAgentDefinition {
   id: UniversalAgentId;
@@ -88,6 +92,24 @@ export const UNIVERSAL_AGENTS: UniversalAgentDefinition[] = [
     stance: '避けている現実と、その上で立てる一点を見る',
     shouldAppearInAgentBar: true,
   },
+  {
+    id: 'tom',
+    label: 'トム',
+    shortLabel: 'トム',
+    emoji: '🎪',
+    role: '遊び・前提を崩す',
+    stance: '深刻さに飲まれた場所を、ひとつ上から眺める。前提そのものをひょいと裏返す。',
+    shouldAppearInAgentBar: true,
+  },
+  {
+    id: 'fio',
+    label: 'フィオ',
+    shortLabel: 'フィオ',
+    emoji: '🌬️',
+    role: '風・身体感覚',
+    stance: '重さの隣にある、もう少し息のしやすい場所を知っている。言葉になる前の体の声の側にいる。',
+    shouldAppearInAgentBar: true,
+  },
 ];
 
 export const CONCRETE_AGENT_IDS: ConcreteAgentId[] = [
@@ -96,6 +118,8 @@ export const CONCRETE_AGENT_IDS: ConcreteAgentId[] = [
   'ken',
   'mina',
   'satou',
+  'tom',
+  'fio',
 ];
 
 export function getUniversalAgent(id: UniversalAgentId): UniversalAgentDefinition {

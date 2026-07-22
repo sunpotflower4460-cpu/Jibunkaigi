@@ -10,6 +10,8 @@ const MEMBER_ONE_LINE: Record<UniversalAgentId, string> = {
   ken: 'もつれの位置と隠れた前提を見る',
   mina: 'こぼれそうなものを受け止める場を作る',
   satou: '足場を失いそうな時に地面へ戻す',
+  tom: '深刻さに飲まれた場所を、ひとつ上から眺める',
+  fio: '言葉になる前の、体の声の側にいる',
 };
 
 const MEMBER_USER_FACING_HINT: Record<UniversalAgentId, string> = {
@@ -20,6 +22,8 @@ const MEMBER_USER_FACING_HINT: Record<UniversalAgentId, string> = {
   ken: '考えがこんがらがっていて、何がどこにあるのか分からなくなったときに使う。',
   mina: '疲れていたり、感情を急いで整えたくないときに使う。',
   satou: '現実から目をそらしていると分かっているとき、でも動けないときに使う。',
+  tom: 'ずっと同じ重さで考え込んでいて、抜け出せないと感じるときに使う。',
+  fio: '頭でぐるぐる考えすぎて、体から離れてしまっていると感じるときに使う。',
 };
 
 export const MEMBER_DISPLAY_PROFILES: MemberDisplayProfile[] = UNIVERSAL_AGENTS.map((agent) => {
