@@ -1,6 +1,8 @@
 import {
+  activationSnapshot,
   CONCRETE_AGENT_IDS,
   getUniversalAgent,
+  igniteAndSpread,
   type ConcreteAgentId,
   type OthersPosition,
 } from '@jibunkaigi/shared';
@@ -10,7 +12,7 @@ import type {
   UniversalOthersAiRequest,
   UniversalOthersAiResponse,
 } from './othersClientTypes';
-import { isWarmthState } from './warmthState';
+import type { UniversalWarmthState } from './aiClientTypes';
 
 const REQUEST_TIMEOUT_MS = 45000;
 
@@ -33,6 +35,19 @@ export function createOthersProxyClient() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
       try {
+        // tool層はここ（端末）で実行する。Workerには浮上材料だけを送る
+        // （指示書09-a：辞書もkuromojiもまだ無いが、置き場所を先に移す）。
+        const targetAgentIds: ConcreteAgentId[] = request.targetAgentIds?.length
+          ? request.targetAgentIds.filter((id) => id !== request.currentAgentId)
+          : CONCRETE_AGENT_IDS.filter((id) => id !== request.currentAgentId);
+
+        const materials = targetAgentIds.map((agentId) => ({
+          agentId,
+          surfaced: igniteAndSpread(request.userText, agentId, {
+            previousActivation: request.warmth?.[agentId],
+          }),
+        }));
+
         const idToken = await getMobileFirebaseIdToken();
         const response = await fetch(`${baseUrl}/api/jibunkaigi/others`, {
           method: 'POST',
@@ -49,7 +64,7 @@ export function createOthersProxyClient() {
             messages: request.messages.slice(-20),
             targetAgentIds: request.targetAgentIds,
             userName: request.userName,
-            ...(request.warmth ? { warmth: request.warmth } : {}),
+            materials,
           }),
           signal: controller.signal,
         });
@@ -58,16 +73,12 @@ export function createOthersProxyClient() {
           throw new Error(`OTHERS proxy failed: ${response.status}`);
         }
 
-        const data = await response.json() as { replies?: unknown; model?: unknown; warmth?: unknown };
+        const data = await response.json() as { replies?: unknown; model?: unknown };
         if (!data || !Array.isArray(data.replies)) {
           throw new Error('OTHERS proxy returned invalid response');
         }
 
-        const allowedAgentIds = new Set<ConcreteAgentId>(
-          request.targetAgentIds?.length
-            ? request.targetAgentIds.filter((id) => id !== request.currentAgentId)
-            : CONCRETE_AGENT_IDS.filter((id) => id !== request.currentAgentId),
-        );
+        const allowedAgentIds = new Set<ConcreteAgentId>(targetAgentIds);
         const seen = new Set<ConcreteAgentId>();
         const replies: UniversalOthersAiResponse['replies'] = [];
 
@@ -99,11 +110,16 @@ export function createOthersProxyClient() {
           throw new Error('OTHERS proxy returned no valid replies');
         }
 
+        const warmth: UniversalWarmthState = {};
+        for (const material of materials) {
+          warmth[material.agentId] = activationSnapshot(material.surfaced);
+        }
+
         return {
           replies,
           source: 'proxy',
           model: typeof data.model === 'string' ? data.model : undefined,
-          warmth: isWarmthState(data.warmth) ? data.warmth : undefined,
+          warmth,
         };
       } finally {
         clearTimeout(timeout);

@@ -1,12 +1,17 @@
-import { UNIVERSAL_AGENTS, type UniversalAgentId } from '@jibunkaigi/shared';
+import {
+  activationSnapshot,
+  igniteAndSpread,
+  UNIVERSAL_AGENTS,
+  type UniversalAgentId,
+} from '@jibunkaigi/shared';
 import { getJibunkaigiApiBaseUrl } from '../../config/mobileApiConfig';
 import { getMobileFirebaseIdToken } from '../firebase/mobileAuth';
 import type {
   UniversalAiClient,
   UniversalAiRequest,
   UniversalAiResponse,
+  UniversalWarmthState,
 } from './aiClientTypes';
-import { isWarmthState } from './warmthState';
 
 const REQUEST_TIMEOUT_MS = 30000;
 
@@ -38,6 +43,12 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
       const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
       try {
+        // tool層はここ（端末）で実行する。Workerには浮上材料だけを送る
+        // （指示書09-a：辞書もkuromojiもまだ無いが、置き場所を先に移す）。
+        const surfaced = igniteAndSpread(request.userText, resolvedAgentId, {
+          previousActivation: request.warmth?.[resolvedAgentId],
+        });
+
         const idToken = await getMobileFirebaseIdToken();
         const response = await fetch(`${baseUrl}/api/jibunkaigi/reply`, {
           method: 'POST',
@@ -55,7 +66,7 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
             modeId: request.modeId,
             messages: request.messages.slice(-20),
             userName: request.userName,
-            ...(request.warmth ? { warmth: request.warmth } : {}),
+            surfaced,
             ...(DEV_TRACE_ENABLED && DEV_TRACE_KEY ? { devTrace: true } : {}),
           }),
           signal: controller.signal,
@@ -70,12 +81,13 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
           agentId?: unknown;
           agentLabel?: unknown;
           model?: unknown;
-          warmth?: unknown;
         };
 
         if (!data || typeof data.text !== 'string' || !data.text.trim()) {
           throw new Error('Gemini proxy returned invalid response');
         }
+
+        const warmth: UniversalWarmthState = { [resolvedAgentId]: activationSnapshot(surfaced) };
 
         return {
           text: data.text.trim(),
@@ -83,7 +95,7 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
           agentLabel: typeof data.agentLabel === 'string' ? data.agentLabel : '',
           source: 'proxy',
           model: typeof data.model === 'string' ? data.model : undefined,
-          warmth: isWarmthState(data.warmth) ? data.warmth : undefined,
+          warmth,
         };
       } finally {
         clearTimeout(timeout);
