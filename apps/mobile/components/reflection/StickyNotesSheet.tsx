@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   },
   kindChip: {
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: colors.borderSoft,
     borderRadius: radius.full,
     backgroundColor: colors.surfaceStrong,
     paddingHorizontal: spacing.sm,
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   input: {
     minHeight: 110,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: colors.borderSoft,
     borderRadius: radius.sm,
     backgroundColor: colors.surfaceStrong,
     color: colors.inkStrong,

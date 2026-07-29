@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   sessionChip: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: colors.borderSoft,
     backgroundColor: colors.surfaceStrong,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,

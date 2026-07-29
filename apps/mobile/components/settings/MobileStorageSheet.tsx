@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   badgeNeutral: {
-    borderColor: colors.borderSubtle,
+    borderColor: colors.borderSoft,
     backgroundColor: colors.surfaceFaint,
   },
   badgeAccent: {
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
   innerCard: {
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: colors.borderSoft,
     backgroundColor: colors.surfaceSoft,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   actionBadgeNeutral: {
-    borderColor: colors.borderSubtle,
+    borderColor: colors.borderSoft,
     backgroundColor: colors.surfaceFaint,
   },
   actionBadgeWarning: {

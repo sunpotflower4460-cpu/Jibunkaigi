@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Edit3, Pin, Trash2 } from 'lucide-react-native';
 import type { UniversalSession } from '../../state/mobileTypes';
-import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import { colors, radius, shadow, spacing, type as typeScale } from '../../theme/tokens';
 
 interface MobileSessionListItemProps {
   session: UniversalSession;
@@ -12,15 +13,10 @@ interface MobileSessionListItemProps {
   onDelete: () => void;
 }
 
-function formatUpdatedAt(updatedAt: number): string {
-  return new Date(updatedAt).toLocaleString('ja-JP', {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
+/**
+ * セッション1件。Web版 SessionList.jsx の session-card-active / session-card-idle に揃える。
+ * カード全体が「開く」で、編集・ピン・削除は右端に小さなアイコンで並ぶ。
+ */
 export function MobileSessionListItem({
   session,
   isActive,
@@ -30,151 +26,116 @@ export function MobileSessionListItem({
   onDelete,
 }: MobileSessionListItemProps) {
   return (
-    <View style={[styles.card, isActive && styles.cardActive]}>
-      <View style={styles.metaRow}>
-        <Text style={[styles.title, isActive && styles.titleActive]} numberOfLines={2}>
-          {session.title}
-        </Text>
-        <View style={styles.badges}>
+    <TouchableOpacity
+      style={[styles.card, isActive ? styles.cardActive : styles.cardIdle]}
+      onPress={onOpen}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isActive }}
+      accessibilityLabel={`${session.title}を開く`}
+    >
+      <View style={styles.row}>
+        <View style={styles.titleWrap}>
           {session.pinned ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>PIN</Text>
-            </View>
+            <Pin size={10} color="#f59e0b" fill="#f59e0b" />
           ) : null}
-          {isActive ? (
-            <View style={[styles.badge, styles.badgeActive]}>
-              <Text style={[styles.badgeText, styles.badgeActiveText]}>表示中</Text>
-            </View>
-          ) : null}
+          <Text
+            style={[styles.title, isActive && styles.titleActive]}
+            numberOfLines={1}
+          >
+            {session.title || '無題'}
+          </Text>
+        </View>
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={onEdit}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={`${session.title}のタイトルを編集`}
+          >
+            <Edit3 size={12} color={colors.inkMuted} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={onTogglePin}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={
+              session.pinned
+                ? `${session.title}のピン留めを外す`
+                : `${session.title}をピン留めする`
+            }
+          >
+            <Pin size={12} color={session.pinned ? '#f59e0b' : colors.inkMuted} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={onDelete}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={`${session.title}を削除`}
+          >
+            <Trash2 size={12} color={colors.inkMuted} />
+          </TouchableOpacity>
         </View>
       </View>
-      <Text style={styles.updatedAt}>更新: {formatUpdatedAt(session.updatedAt)}</Text>
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={onOpen}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={`${session.title}を開く`}
-        >
-          <Text style={styles.actionText}>開く</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={onEdit}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={`${session.title}を編集`}
-        >
-          <Text style={styles.actionText}>編集</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={onTogglePin}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={session.pinned ? `${session.title}のピン留めを外す` : `${session.title}をピン留めする`}
-        >
-          <Text style={styles.actionText}>{session.pinned ? 'ピン解除' : 'ピン'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.actionButtonDanger]}
-          onPress={onDelete}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={`${session.title}を削除`}
-        >
-          <Text style={[styles.actionText, styles.actionTextDanger]}>削除</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radius.sm,
+    // Web版 rounded-[1.35rem] px-4 py-3
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceSoft,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    gap: spacing.sm,
+    minHeight: 52,
+    justifyContent: 'center',
   },
   cardActive: {
-    borderColor: colors.accentIndigo,
-    backgroundColor: colors.accentSurface,
+    backgroundColor: 'rgba(250,252,255,0.96)',
+    borderColor: 'rgba(165,180,252,0.46)',
+    ...shadow.card,
   },
-  metaRow: {
+  cardIdle: {
+    backgroundColor: 'rgba(255,255,255,0.26)',
+    borderColor: 'rgba(255,255,255,0.22)',
+  },
+  row: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.sm,
+  },
+  titleWrap: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   title: {
     flex: 1,
-    fontSize: typeScale.small,
-    fontWeight: '600',
-    color: colors.inkMain,
-    lineHeight: 18,
-  },
-  titleActive: {
-    color: colors.accentIndigo,
-  },
-  badges: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    justifyContent: 'flex-end',
-  },
-  badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  badgeActive: {
-    borderColor: colors.accentIndigo,
-    backgroundColor: colors.surfaceStrong,
-  },
-  badgeText: {
-    fontSize: typeScale.tiny,
+    // Web版: text-xs font-bold
+    fontSize: typeScale.tiny + 1,
     fontWeight: '700',
     color: colors.inkMuted,
   },
-  badgeActiveText: {
-    color: colors.accentIndigo,
-  },
-  updatedAt: {
-    fontSize: typeScale.tiny,
-    color: colors.inkFaint,
+  titleActive: {
+    color: '#4338ca',
   },
   actions: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    alignItems: 'center',
+    gap: 2,
   },
-  actionButton: {
-    minHeight: 44,
-    minWidth: 44,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceFaint,
+  iconBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.xs,
+    alignItems: 'center',
     justifyContent: 'center',
-  },
-  actionButtonDanger: {
-    backgroundColor: colors.dangerSoft,
-    borderColor: colors.dangerBorder,
-  },
-  actionText: {
-    fontSize: typeScale.tiny,
-    fontWeight: '600',
-    color: colors.inkMuted,
-  },
-  actionTextDanger: {
-    color: colors.danger,
   },
 });

@@ -19,6 +19,7 @@ import {
   spacing,
   type as typeScale,
 } from '../../theme/tokens';
+import { GhostButton, PrimaryButton } from '../ui/MobileSurfaces';
 
 interface MobileUserNameSheetProps {
   visible: boolean;
@@ -73,24 +74,16 @@ export function MobileUserNameSheet({
                 <Text style={styles.help}>空欄のまま保存すると「あなた」になります。</Text>
 
                 <View style={styles.actions}>
-                  <TouchableOpacity
-                    style={styles.primaryButton}
+                  <PrimaryButton
+                    label="保存する"
                     onPress={onSave}
-                    activeOpacity={0.85}
-                    accessibilityRole="button"
                     accessibilityLabel="名前を保存する"
-                  >
-                    <Text style={styles.primaryButtonText}>保存する</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.secondaryButton}
+                  />
+                  <GhostButton
+                    label="キャンセル"
                     onPress={onClose}
-                    activeOpacity={0.85}
-                    accessibilityRole="button"
                     accessibilityLabel="キャンセル"
-                  >
-                    <Text style={styles.secondaryButtonText}>キャンセル</Text>
-                  </TouchableOpacity>
+                  />
                 </View>
               </View>
             </ScrollView>
@@ -122,38 +115,45 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
+  // Web版 .modal-shell
   sheet: {
     width: '100%',
     maxWidth: mobileLayout.sheetMaxWidth,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    backgroundColor: colors.surfaceSoft,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    backgroundColor: 'rgba(252,253,255,0.98)',
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxl,
     gap: spacing.lg,
     ...shadow.card,
-    maxHeight: 420,
+    maxHeight: 460,
   },
   header: {
     gap: spacing.xs,
+    alignItems: 'center',
   },
   title: {
-    fontSize: typeScale.heading,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '900',
     color: colors.inkStrong,
   },
   sub: {
-    fontSize: typeScale.small,
+    fontSize: typeScale.tiny,
+    fontWeight: '500',
     color: colors.inkMuted,
     lineHeight: 20,
+    textAlign: 'center',
   },
+  // Web版 .neu-concave の入力欄
   input: {
-    minHeight: 52,
+    minHeight: 56,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceStrong,
+    borderColor: 'rgba(255,255,255,0.44)',
+    backgroundColor: 'rgba(232,240,250,0.66)',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     textAlign: 'center',
@@ -163,39 +163,11 @@ const styles = StyleSheet.create({
   },
   help: {
     fontSize: typeScale.tiny,
+    fontWeight: '700',
     color: colors.inkFaint,
+    textAlign: 'center',
   },
   actions: {
     gap: spacing.sm,
-  },
-  primaryButton: {
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.md,
-    backgroundColor: colors.inkStrong,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  primaryButtonText: {
-    color: colors.textOnAccent,
-    fontSize: typeScale.small,
-    fontWeight: '800',
-  },
-  secondaryButton: {
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceStrong,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  secondaryButtonText: {
-    color: colors.inkMuted,
-    fontSize: typeScale.small,
-    fontWeight: '700',
   },
 });

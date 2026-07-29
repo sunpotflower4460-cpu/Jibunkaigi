@@ -17,12 +17,12 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
+import { Users } from 'lucide-react-native';
 import {
   colors,
   mobileTouchTarget,
   radius,
   spacing,
-  type as typeScale,
 } from '../../theme/tokens';
 
 interface MobileAgentOthersTriggerProps {
@@ -52,47 +52,53 @@ export function MobileAgentOthersTrigger({
     >
       {isLoading ? (
         <View style={styles.loadingRow}>
-          <ActivityIndicator size="small" color={colors.accentIndigo} style={styles.spinner} />
+          <ActivityIndicator size="small" color={colors.inkMuted} style={styles.spinner} />
           <Text style={[styles.label, styles.labelDisabled]}>聴いています…</Text>
         </View>
       ) : (
-        <Text style={[styles.label, isDisabled && styles.labelDisabled]}>
-          ほかの声も聴く
-        </Text>
+        <View style={styles.loadingRow}>
+          <Users size={11} color={isDisabled ? colors.inkFaint : colors.inkMuted} />
+          <Text style={[styles.label, isDisabled && styles.labelDisabled]}>
+            ほかの声も聴く
+          </Text>
+        </View>
       )}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
+  // Web版 MessageBubble.jsx の OTHERS タブ:
+  //   px-3 py-1.5 rounded-full bg-white/50 text-slate-500 border-white/70 text-[10px] font-black
   button: {
     alignSelf: 'flex-start',
     minHeight: mobileTouchTarget.minimum,
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: colors.accentIndigoSoft,
-    backgroundColor: 'transparent',
-    marginTop: spacing.xs,
+    borderColor: colors.borderSoft,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    marginTop: spacing.sm,
   },
   buttonDisabled: {
-    borderColor: colors.borderSubtle,
+    opacity: 0.55,
   },
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 6,
   },
   spinner: {
     width: 14,
     height: 14,
   },
   label: {
-    fontSize: typeScale.tiny,
-    fontWeight: '500',
-    color: colors.accentIndigo,
-    letterSpacing: 0.2,
+    fontSize: 10,
+    fontWeight: '900',
+    color: colors.inkMuted,
+    letterSpacing: 0.3,
   },
   labelDisabled: {
     color: colors.inkFaint,

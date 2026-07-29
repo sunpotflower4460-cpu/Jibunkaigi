@@ -7,10 +7,12 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Send, X } from 'lucide-react-native';
 import { UNIVERSAL_COMPOSER_LABELS } from '@jibunkaigi/shared';
 import {
   colors,
+  gradients,
   mobileLineHeights,
   mobileMotion,
   mobileTouchTarget,
@@ -118,14 +120,18 @@ export function MobileComposer({
           textAlignVertical="top"
         />
         <TouchableOpacity
-          style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
           onPress={handleSend}
-          activeOpacity={0.75}
+          activeOpacity={0.85}
           disabled={!canSend}
           accessibilityRole="button"
           accessibilityLabel={sendAccessibilityLabel}
+          accessibilityState={{ disabled: !canSend }}
+          style={[styles.sendButtonWrap, !canSend && styles.sendButtonDisabled]}
         >
-          <Send size={18} color={colors.textOnAccent} />
+          {/* Web版 Composer.jsx の送信ボタンは .cta-primary-surface（紺グラデ・rounded-xl） */}
+          <LinearGradient colors={gradients.cta} style={styles.sendButton}>
+            <Send size={17} color={colors.textOnAccent} />
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </View>
@@ -149,7 +155,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.surfaceFaint,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: colors.borderSoft,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -166,12 +172,13 @@ const styles = StyleSheet.create({
     color: colors.inkMuted,
     letterSpacing: 0.4,
   },
+  // Web版 .agent-chip（「綴る」）に揃える
   collapsedButton: {
     minHeight: mobileTouchTarget.comfortable,
-    borderRadius: radius.full,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceSoft,
+    backgroundColor: 'rgba(252,253,255,0.78)',
     borderWidth: 1,
     borderColor: colors.borderSoft,
     justifyContent: 'center',
@@ -179,8 +186,8 @@ const styles = StyleSheet.create({
   },
   collapsedLabel: {
     fontSize: typeScale.small,
-    fontWeight: '600',
-    color: colors.accentIndigo,
+    fontWeight: '900',
+    color: colors.inkSoft,
   },
   collapsedHint: {
     marginTop: 2,
@@ -188,13 +195,14 @@ const styles = StyleSheet.create({
     color: colors.inkMuted,
     lineHeight: mobileLineHeights.tiny,
   },
+  // Web版 .composer-shell — 白い霧ガラスの入力面
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: 'rgba(255,255,255,0.94)',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: 'rgba(255,255,255,0.82)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     ...shadow.soft,
@@ -210,16 +218,22 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xs,
     marginRight: spacing.sm,
   },
+  sendButtonWrap: {
+    alignSelf: 'flex-end',
+    borderRadius: radius.xs,
+    ...shadow.ctaGlow,
+  },
   sendButton: {
     width: mobileTouchTarget.minimum,
     height: mobileTouchTarget.minimum,
-    borderRadius: radius.full,
-    backgroundColor: colors.accentIndigo,
+    // Web版は rounded-xl（丸ではなく角丸の四角）
+    borderRadius: radius.xs,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'flex-end',
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.28)',
   },
   sendButtonDisabled: {
-    backgroundColor: colors.inkGhost,
+    opacity: 0.3,
   },
 });

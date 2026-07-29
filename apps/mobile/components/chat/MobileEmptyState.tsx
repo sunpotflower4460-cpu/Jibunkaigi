@@ -1,23 +1,30 @@
 import React from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { Feather } from 'lucide-react-native';
+import { IconTile } from '../ui/MobileSurfaces';
 import {
   colors,
+  fonts,
   mobileLayout,
   mobileLineHeights,
-  radius,
   spacing,
   type as typeScale,
 } from '../../theme/tokens';
 
+/**
+ * セッション内にメッセージが1件もないときの空状態。
+ * Web版 EmptyState.jsx と同じ「アイコンタイル + 明朝の見出し2行 + 補足」に揃える。
+ */
 export function MobileEmptyState() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.content}>
-        <View style={styles.iconWrap}>
-          <Feather size={24} color={colors.inkFaint} />
-        </View>
-        <Text style={styles.heading}>まずは、ひとつ置いてみる。</Text>
+        <IconTile size={88}>
+          <Feather size={34} strokeWidth={1.75} color={colors.inkFaint} />
+        </IconTile>
+        <Text style={styles.heading}>
+          まずは、ひとつ{'\n'}置いてみる。
+        </Text>
         <Text style={styles.sub}>まだ言葉になっていなくても、大丈夫です。</Text>
       </View>
     </ScrollView>
@@ -26,7 +33,7 @@ export function MobileEmptyState() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: spacing.xxl,
     paddingBottom: spacing.xxl,
@@ -37,34 +44,22 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'center',
     gap: spacing.lg,
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    borderRadius: radius.xl,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxl,
-  },
-  iconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceFaint,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
   },
   heading: {
-    fontSize: typeScale.heading,
-    fontWeight: '600',
+    // Web版: .jk-serif .title-ink .typo-hero-title
+    fontFamily: fonts.serif,
+    fontSize: typeScale.title,
+    fontWeight: '700',
     color: colors.inkStrong,
     textAlign: 'center',
+    lineHeight: mobileLineHeights.title,
     letterSpacing: -0.3,
   },
   sub: {
-    fontSize: typeScale.body,
-    color: colors.inkMuted,
+    fontSize: typeScale.small,
+    color: colors.inkSoft,
     textAlign: 'center',
+    fontWeight: '500',
     lineHeight: mobileLineHeights.body,
   },
 });

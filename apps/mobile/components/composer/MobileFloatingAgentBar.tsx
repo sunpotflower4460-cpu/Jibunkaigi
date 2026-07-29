@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronUp, X } from 'lucide-react-native';
 import {
   UNIVERSAL_AGENTS,
@@ -8,12 +9,13 @@ import {
 } from '@jibunkaigi/shared';
 import {
   colors,
+  getAgentIcon,
+  gradients,
   mobileLayout,
   mobileTouchTarget,
   radius,
   spacing,
   shadow,
-  type as typeScale,
 } from '../../theme/tokens';
 
 interface MobileFloatingAgentBarProps {
@@ -24,6 +26,13 @@ interface MobileFloatingAgentBarProps {
   bottomDockHeight: number;
   onHeightChange?: (height: number) => void;
 }
+
+// Web版 FloatingAgentBar.jsx のチップ配色。
+//   心の鏡 → --dark / 委ねる → --gradient / ジョー → --orange / その他 → --light
+const CHIP_ICON_COLORS: Partial<Record<UniversalAgentId, string>> = {
+  mirror: '#a5b4fc',
+  joe: '#ea580c',
+};
 
 export function MobileFloatingAgentBar({
   selectedAgent,
@@ -68,14 +77,17 @@ export function MobileFloatingAgentBar({
           }}
         >
           <TouchableOpacity
-            style={styles.collapsedToggle}
             onPress={() => setIsOpen(true)}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="視点を開く"
+            style={shadow.floatingRail}
           >
-            <ChevronUp size={14} color={colors.inkMuted} />
-            <Text style={styles.collapsedToggleText}>視点を開く</Text>
+            {/* Web版 .floating-agent-toggle — 濃紺の小さなトグル */}
+            <LinearGradient colors={gradients.floatingRail} style={styles.collapsedToggle}>
+              <ChevronUp size={14} color={colors.inkOnDark} />
+              <Text style={styles.collapsedToggleText}>視点を開く</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
@@ -90,7 +102,13 @@ export function MobileFloatingAgentBar({
           onHeightChange?.(event.nativeEvent.layout.height);
         }}
       >
-        <View style={styles.rail}>
+        {/* Web版 .floating-agent-rail — 濃紺の半透明レール */}
+        <LinearGradient
+          colors={gradients.floatingRail}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.rail, shadow.floatingRail]}
+        >
           <View style={styles.railHeader}>
             <Text style={styles.railCaption}>現在: {selected?.label ?? 'レイ'}</Text>
             <TouchableOpacity
@@ -100,7 +118,7 @@ export function MobileFloatingAgentBar({
               accessibilityRole="button"
               accessibilityLabel="視点を閉じる"
             >
-              <X size={14} color={colors.inkMuted} />
+              <X size={14} color={colors.inkOnDark} />
             </TouchableOpacity>
           </View>
           <ScrollView
@@ -110,24 +128,80 @@ export function MobileFloatingAgentBar({
           >
             {agents.map((agent) => {
               const isActive = agent.id === selectedAgent;
+              const Icon = getAgentIcon(agent.id);
+              const isDelegate = agent.id === 'delegate';
+              const isJoe = agent.id === 'joe';
+              const iconColor = isJoe
+                ? CHIP_ICON_COLORS.joe
+                : CHIP_ICON_COLORS[agent.id] ?? colors.inkOnDarkStrong;
+
+              const inner = (
+                <>
+                  <Icon
+                    size={13}
+                    color={isDelegate ? colors.textOnAccent : iconColor}
+                  />
+                  <Text
+                    style={[
+                      styles.agentLabel,
+                      isDelegate && styles.agentLabelOnGradient,
+                      isJoe && styles.agentLabelOnOrange,
+                      isActive && styles.agentLabelActive,
+                    ]}
+                  >
+                    {agent.label}
+                  </Text>
+                </>
+              );
+
+              if (isDelegate) {
+                return (
+                  <TouchableOpacity
+                    key={agent.id}
+                    onPress={() => onSelectAgent(agent.id)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isActive }}
+                    accessibilityLabel={`${agent.label}を選ぶ`}
+                  >
+                    <LinearGradient
+                      colors={gradients.delegate}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[
+                        styles.agentChip,
+                        styles.agentChipGradient,
+                        isActive && styles.agentChipActive,
+                      ]}
+                    >
+                      {inner}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                );
+              }
+
               return (
                 <TouchableOpacity
                   key={agent.id}
-                  style={[styles.agentChip, isActive && styles.agentChipActive]}
+                  style={[
+                    styles.agentChip,
+                    agent.id === 'mirror' && styles.agentChipDark,
+                    isJoe && styles.agentChipOrange,
+                    !isJoe && agent.id !== 'mirror' && styles.agentChipLight,
+                    isActive && styles.agentChipActive,
+                  ]}
                   onPress={() => onSelectAgent(agent.id)}
-                  activeOpacity={0.75}
+                  activeOpacity={0.8}
                   accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
                   accessibilityLabel={`${agent.label}を選ぶ`}
                 >
-                  <Text style={styles.agentEmoji}>{agent.emoji}</Text>
-                  <Text style={[styles.agentLabel, isActive && styles.agentLabelActive]}>
-                    {agent.label}
-                  </Text>
+                  {inner}
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
-        </View>
+        </LinearGradient>
       </View>
     </View>
   );
@@ -151,36 +225,34 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceSoft,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: 'rgba(255,255,255,0.14)',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xs,
-    ...shadow.soft,
   },
   collapsedToggleText: {
-    fontSize: typeScale.small,
-    fontWeight: '600',
-    color: colors.inkMuted,
+    fontSize: 11.5,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: colors.inkOnDark,
   },
   openWrap: {
     position: 'absolute',
     left: 0,
     right: 0,
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
   },
   rail: {
     width: '100%',
     maxWidth: mobileLayout.panelMaxWidth,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceStrong,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: 'rgba(255,255,255,0.14)',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
-    ...shadow.card,
   },
   railHeader: {
     flexDirection: 'row',
@@ -190,9 +262,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   railCaption: {
-    fontSize: typeScale.tiny,
-    fontWeight: '600',
-    color: colors.inkMuted,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    color: 'rgba(196,210,234,0.82)',
   },
   closeToggle: {
     minHeight: mobileTouchTarget.minimum,
@@ -202,35 +275,54 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   railContent: {
-    gap: spacing.sm,
+    gap: spacing.xs,
     paddingHorizontal: spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
   },
+  // Web版 .floating-agent-btn
   agentChip: {
     minHeight: mobileTouchTarget.minimum,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceFaint,
+    borderColor: 'transparent',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 6,
+  },
+  agentChipDark: {
+    backgroundColor: 'rgba(28,42,80,0.95)',
+    borderColor: 'rgba(99,102,241,0.22)',
+  },
+  agentChipGradient: {
+    borderColor: 'rgba(167,139,250,0.3)',
+  },
+  agentChipOrange: {
+    backgroundColor: 'rgba(255,244,232,0.94)',
+    borderColor: 'rgba(251,191,36,0.28)',
+  },
+  agentChipLight: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   agentChipActive: {
-    borderColor: colors.accentIndigo,
-    backgroundColor: colors.accentSurface,
-  },
-  agentEmoji: {
-    fontSize: 15,
+    borderColor: 'rgba(165,180,252,0.85)',
   },
   agentLabel: {
-    fontSize: typeScale.small,
-    fontWeight: '600',
-    color: colors.inkMuted,
+    fontSize: 11.5,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    color: colors.inkOnDarkStrong,
+  },
+  agentLabelOnGradient: {
+    color: colors.textOnAccent,
+  },
+  agentLabelOnOrange: {
+    color: '#92400e',
   },
   agentLabelActive: {
-    color: colors.accentIndigo,
+    fontWeight: '900',
   },
 });

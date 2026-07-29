@@ -20,6 +20,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: '100%',
     overflow: 'hidden',
-    backgroundColor: colors.bgBase,
+    // 湖面グラデーションの一番上の色。MobileBackground が描画されるまでの下敷き。
+    backgroundColor: colors.bgSurfaceTop,
   },
 });
