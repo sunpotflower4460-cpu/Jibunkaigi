@@ -9,7 +9,7 @@ const MEMBER_ONE_LINE: Record<UniversalAgentId, string> = {
   joe: 'まだ消えていない一点を見つける',
   ken: 'もつれの位置と隠れた前提を見る',
   mina: 'こぼれそうなものを受け止める場を作る',
-  satou: '足場を失いそうな時に地面へ戻す',
+  satou: '足元の崖を、見えるように指す',
   tom: '深刻さに飲まれた場所を、ひとつ上から眺める',
   fio: '言葉になる前の、体の声の側にいる',
 };

@@ -88,8 +88,8 @@ export const UNIVERSAL_AGENTS: UniversalAgentDefinition[] = [
     label: 'サトウ',
     shortLabel: 'サトウ',
     emoji: '🌿',
-    role: '現実の足場へ戻す',
-    stance: '避けている現実と、その上で立てる一点を見る',
+    role: '危ういものを危ういと映す',
+    stance: '心地よさの奥で鳴っている警報の側に立つ',
     shouldAppearInAgentBar: true,
   },
   {
