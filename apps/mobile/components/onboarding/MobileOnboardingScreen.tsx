@@ -8,10 +8,12 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { ChevronRight, Users } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ChevronRight, Compass, Feather, Heart, Users } from 'lucide-react-native';
 import { UNIVERSAL_ONBOARDING_CONTENT } from '@jibunkaigi/shared';
 import {
   colors,
+  gradients,
   mobileLayout,
   mobileLineHeights,
   radius,
@@ -19,8 +21,9 @@ import {
   spacing,
   type as typeScale,
 } from '../../theme/tokens';
-import { MobileOnboardingStep } from './MobileOnboardingStep';
 import { MobileLegalSheet } from '../settings/MobileLegalSheet';
+
+const STEP_ICONS = [Feather, Heart, Compass] as const;
 
 interface MobileOnboardingScreenProps {
   userName: string;
@@ -39,7 +42,11 @@ export function MobileOnboardingScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.background} />
+      <LinearGradient
+        colors={gradients.background}
+        locations={[0, 0.55, 1]}
+        style={styles.background}
+      />
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
@@ -48,9 +55,12 @@ export function MobileOnboardingScreen({
         keyboardShouldPersistTaps="handled"
       >
         <View style={[styles.panel, isCompactHeight && styles.panelCompact]}>
-          <View style={[styles.iconWrap, isCompactHeight && styles.iconWrapCompact]}>
-            <Users size={isCompactHeight ? 24 : 30} color={colors.textOnAccent} />
-          </View>
+          <LinearGradient
+            colors={gradients.iconTile}
+            style={[styles.iconWrap, isCompactHeight && styles.iconWrapCompact, shadow.iconTile]}
+          >
+            <Users size={isCompactHeight ? 24 : 26} color={colors.inkStrong} strokeWidth={1.75} />
+          </LinearGradient>
 
           <View style={styles.titleBlock}>
             {UNIVERSAL_ONBOARDING_CONTENT.eyebrow ? (
@@ -71,9 +81,18 @@ export function MobileOnboardingScreen({
           </View>
 
           <View style={styles.steps}>
-            {UNIVERSAL_ONBOARDING_CONTENT.steps.map((step, index) => (
-              <MobileOnboardingStep key={step.id} index={index} step={step} />
-            ))}
+            {UNIVERSAL_ONBOARDING_CONTENT.steps.map((step, index) => {
+              const StepIcon = STEP_ICONS[index] ?? Feather;
+              return (
+                <View key={step.id} style={styles.stepPill}>
+                  <View style={styles.stepPillNum}>
+                    <Text style={styles.stepPillNumText}>{index + 1}</Text>
+                  </View>
+                  <StepIcon size={12} color={colors.inkMuted} strokeWidth={1.75} />
+                  <Text style={styles.stepPillText}>{step.title}</Text>
+                </View>
+              );
+            })}
           </View>
 
           <View style={styles.nameSection}>
@@ -97,16 +116,18 @@ export function MobileOnboardingScreen({
           </View>
 
           <TouchableOpacity
-            style={styles.primaryButton}
             onPress={onComplete}
-            activeOpacity={0.85}
+            activeOpacity={0.88}
             accessibilityRole="button"
             accessibilityLabel={UNIVERSAL_ONBOARDING_CONTENT.primaryCta}
+            style={[styles.primaryButtonShadow, shadow.ctaGlow]}
           >
-            <Text style={styles.primaryButtonText}>
-              {UNIVERSAL_ONBOARDING_CONTENT.primaryCta}
-            </Text>
-            <ChevronRight size={18} color={colors.textOnAccent} />
+            <LinearGradient colors={gradients.cta} style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>
+                {UNIVERSAL_ONBOARDING_CONTENT.primaryCta}
+              </Text>
+              <ChevronRight size={18} color={colors.textOnAccent} />
+            </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.legalButton}
@@ -132,7 +153,6 @@ const styles = StyleSheet.create({
   },
   background: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.bgBase,
   },
   scrollContent: {
     flexGrow: 1,
@@ -148,28 +168,21 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     maxWidth: mobileLayout.onboardingMaxWidth,
-    borderRadius: 28,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxl,
-    backgroundColor: colors.surfaceStrong,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    gap: spacing.xl,
-    ...shadow.card,
+    gap: spacing.lg,
+    alignItems: 'center',
   },
   panelCompact: {
-    borderRadius: 28,
-    paddingVertical: spacing.xl,
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   iconWrap: {
     width: 72,
     height: 72,
-    borderRadius: 28,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    backgroundColor: colors.inkStrong,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.9)',
   },
   iconWrapCompact: {
     width: 60,
@@ -183,13 +196,13 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 3.6,
+    letterSpacing: 3,
     textTransform: 'uppercase',
     color: colors.inkFaint,
   },
   title: {
     fontSize: 36,
-    fontWeight: '700',
+    fontWeight: '900',
     letterSpacing: -1.4,
     color: colors.inkStrong,
     lineHeight: 40,
@@ -199,17 +212,19 @@ const styles = StyleSheet.create({
   },
   supportingText: {
     fontSize: typeScale.small,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.inkMuted,
     letterSpacing: 0.4,
   },
   subtitleCard: {
+    width: '100%',
     borderRadius: radius.lg,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xl,
     backgroundColor: colors.surfaceSoft,
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: 'rgba(255,255,255,0.92)',
+    ...shadow.soft,
   },
   subtitleCardCompact: {
     paddingHorizontal: spacing.lg,
@@ -221,11 +236,46 @@ const styles = StyleSheet.create({
     color: colors.inkSoft,
     lineHeight: mobileLineHeights.body,
     fontWeight: '500',
+    letterSpacing: 0.3,
   },
   steps: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: spacing.sm,
   },
+  stepPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.85)',
+  },
+  stepPillNum: {
+    width: 18,
+    height: 18,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.inkStrong,
+  },
+  stepPillNumText: {
+    color: colors.textOnAccent,
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  stepPillText: {
+    fontSize: typeScale.tiny,
+    fontWeight: '700',
+    color: colors.inkSoft,
+  },
   nameSection: {
+    width: '100%',
     gap: spacing.sm,
   },
   nameLabel: {
@@ -252,23 +302,30 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     textAlign: 'center',
   },
+  primaryButtonShadow: {
+    width: '100%',
+    borderRadius: radius.lg,
+  },
   primaryButton: {
-    minHeight: 52,
-    borderRadius: radius.md,
-    backgroundColor: colors.inkStrong,
+    minHeight: 56,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.28)',
   },
   primaryButtonText: {
     color: colors.textOnAccent,
     fontSize: typeScale.small,
-    fontWeight: '700',
+    fontWeight: '900',
+    letterSpacing: 0.4,
   },
   legalButton: {
+    width: '100%',
     minHeight: 44,
     borderRadius: radius.md,
     borderWidth: 1,

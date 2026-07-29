@@ -50,3 +50,5 @@ export const spacing = {
 export const type = mobileTheme.typography;
 
 export const shadow = mobileTheme.shadow;
+
+export const gradients = mobileTheme.gradients;
