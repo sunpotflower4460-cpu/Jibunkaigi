@@ -4,6 +4,7 @@ export * from './activationEngine';
 export * from './ignition/ignitionTypes';
 export { ignite } from './ignition/ignite';
 export type { IgniteOptions } from './ignition/ignite';
+export { lightTokenizer } from './ignition/lightTokenizer';
 export { igniteAndSpread } from './igniteAndSpread';
 export type { IgniteAndSpreadOptions } from './igniteAndSpread';
 export {

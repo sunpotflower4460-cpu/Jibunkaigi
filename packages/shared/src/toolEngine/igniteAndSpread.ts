@@ -6,14 +6,22 @@ import { spreadActivation, toSurfacedMaterial, DEFAULT_STEPS } from './activatio
 import type { SurfacedMaterial } from './engineTypes';
 import { getAgentDefinition } from './agents';
 import { ignite } from './ignition/ignite';
+import { lightTokenizer } from './ignition/lightTokenizer';
 import type { Tokenizer } from './ignition/ignitionTypes';
 
 /** 前ターンの余韻がどれだけ残るか（指示書08）。仮の値。 */
 const WARMTH_DECAY = 0.3;
 
 export interface IgniteAndSpreadOptions {
-  /** 形態素解析（差し替え可能）。Worker 側で kuromoji を注入する想定。 */
-  tokenizer?: Tokenizer;
+  /**
+   * 形態素解析（差し替え可能）。
+   * 既定は lightTokenizer（辞書なしの活用展開・指示書09の選択肢C）。
+   * 端末と Worker のフォールバックで結果がずれないよう、呼び出し側で
+   * 渡し忘れても効くように既定値をここに置く。
+   * 本物の形態素解析器を入れるときはここを差し替える。
+   * 明示的に `null` を渡すと原形化なし（部分一致のみ）になる。
+   */
+  tokenizer?: Tokenizer | null;
   /** 平衡までのステップ数（既定 20）。 */
   steps?: number;
   /** 前ターンの浮上活性（このエージェント分）。温度の素（指示書08）。 */
@@ -40,7 +48,11 @@ export function igniteAndSpread(
       warmth[id] = act * WARMTH_DECAY;
     }
   }
-  const fired = ignite(text, def.ignition, { tokenizer: options.tokenizer, warmth });
+  const tokenizer = options.tokenizer === undefined ? lightTokenizer : options.tokenizer;
+  const fired = ignite(text, def.ignition, {
+    tokenizer: tokenizer ?? undefined,
+    warmth,
+  });
   const ignitedIds = [...fired];
   const particles = spreadActivation(
     def.network,
