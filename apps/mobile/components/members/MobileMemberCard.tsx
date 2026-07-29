@@ -5,8 +5,18 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import { isConcreteAgentId, type UniversalAgentId } from '@jibunkaigi/shared';
 import type { MemberDisplayProfile } from '@jibunkaigi/shared/members/memberDisplayTypes';
-import { colors, mobileLineHeights, radius, spacing, type as typeScale } from '../../theme/tokens';
+import {
+  agentPalette,
+  colors,
+  getAgentIcon,
+  mobileLineHeights,
+  radius,
+  spacing,
+  type as typeScale,
+} from '../../theme/tokens';
 
 interface MobileMemberCardProps {
   profile: MemberDisplayProfile;
@@ -14,10 +24,17 @@ interface MobileMemberCardProps {
 
 export function MobileMemberCard({ profile }: MobileMemberCardProps) {
   const [expanded, setExpanded] = useState(false);
+  // Web版 BeliefsDialog はメンバーごとの淡色でカードを染める。
+  const agentId = profile.id as UniversalAgentId;
+  const palette = isConcreteAgentId(agentId) ? agentPalette[agentId] : null;
+  const Icon = getAgentIcon(agentId);
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[
+        styles.card,
+        palette ? { backgroundColor: palette.surface, borderColor: palette.border } : null,
+      ]}
       onPress={() => setExpanded((v) => !v)}
       activeOpacity={0.85}
       accessibilityRole="button"
@@ -25,12 +42,18 @@ export function MobileMemberCard({ profile }: MobileMemberCardProps) {
     >
       {/* Header row */}
       <View style={styles.header}>
-        <Text style={styles.emoji}>{profile.emoji}</Text>
+        <Icon size={16} color={palette?.label ?? colors.inkSoft} />
         <View style={styles.titleBlock}>
-          <Text style={styles.name}>{profile.label}</Text>
+          <Text style={[styles.name, palette ? { color: palette.label } : null]}>
+            {profile.label}
+          </Text>
           <Text style={styles.oneLine}>{profile.oneLine}</Text>
         </View>
-        <Text style={styles.chevron}>{expanded ? '▲' : '▼'}</Text>
+        {expanded ? (
+          <ChevronUp size={14} color={colors.inkFaint} />
+        ) : (
+          <ChevronDown size={14} color={colors.inkFaint} />
+        )}
       </View>
 
       {/* Expanded detail */}
@@ -59,76 +82,72 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  // Web版 BeliefsDialog のカード: p-5 / rounded-[1.75rem] / メンバー色
   card: {
-    backgroundColor: colors.surfaceStrong,
-    borderRadius: radius.sm,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    borderColor: colors.borderSoft,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
   },
-  emoji: {
-    fontSize: 22,
-    lineHeight: 28,
-  },
   titleBlock: {
     flex: 1,
     gap: spacing.xs,
   },
   name: {
-    fontSize: typeScale.body,
-    fontWeight: '700',
+    fontSize: typeScale.small,
+    fontWeight: '900',
     color: colors.inkStrong,
-    letterSpacing: -0.3,
+    letterSpacing: -0.1,
   },
   oneLine: {
-    fontSize: typeScale.small,
-    color: colors.inkMuted,
-    lineHeight: mobileLineHeights.small,
-  },
-  chevron: {
     fontSize: typeScale.tiny,
-    color: colors.inkFaint,
+    color: colors.inkMuted,
+    lineHeight: mobileLineHeights.tiny,
   },
   detail: {
     marginTop: spacing.md,
-    gap: spacing.sm,
-    paddingTop: spacing.sm,
+    gap: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
+    borderTopColor: 'rgba(255,255,255,0.6)',
   },
   row: {
     gap: spacing.xs,
   },
   rowLabel: {
-    fontSize: typeScale.tiny,
-    fontWeight: '600',
+    fontSize: typeScale.label,
+    fontWeight: '900',
     color: colors.inkFaint,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
+    letterSpacing: 1.6,
   },
   rowValue: {
-    fontSize: typeScale.small,
+    // Web版の belief は italic の本文
+    fontSize: typeScale.tiny,
+    fontWeight: '700',
     color: colors.inkSoft,
-    lineHeight: mobileLineHeights.small,
+    lineHeight: 19,
+    fontStyle: 'italic',
   },
   hintBlock: {
     marginTop: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.accentSurface,
+    backgroundColor: 'rgba(255,255,255,0.62)',
     borderRadius: radius.xs,
     borderWidth: 1,
-    borderColor: colors.accentIndigoSoft,
+    borderColor: 'rgba(255,255,255,0.8)',
   },
   hintText: {
-    fontSize: typeScale.small,
-    color: colors.accentIndigo,
+    fontSize: typeScale.tiny,
+    color: colors.inkMuted,
+    fontWeight: '600',
     lineHeight: 19,
   },
 });

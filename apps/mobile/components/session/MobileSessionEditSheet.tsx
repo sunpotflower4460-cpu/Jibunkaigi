@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { colors, radius, spacing, type as typeScale } from '../../theme/tokens';
+import { GhostButton, PrimaryButton } from '../ui/MobileSurfaces';
 
 interface MobileSessionEditSheetProps {
   visible: boolean;
@@ -73,26 +74,18 @@ export function MobileSessionEditSheet({
                   }}
                 />
                 <View style={styles.actions}>
-                  <TouchableOpacity
-                    style={styles.secondaryButton}
-                    onPress={onClose}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel="セッションタイトル編集をキャンセル"
-                  >
-                    <Text style={styles.secondaryText}>キャンセル</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.primaryButton}
+                  <PrimaryButton
+                    label="保存"
                     onPress={() => {
                       void handleSave();
                     }}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
                     accessibilityLabel="セッションタイトルを保存"
-                  >
-                    <Text style={styles.primaryText}>保存</Text>
-                  </TouchableOpacity>
+                  />
+                  <GhostButton
+                    label="キャンセル"
+                    onPress={onClose}
+                    accessibilityLabel="セッションタイトル編集をキャンセル"
+                  />
                 </View>
               </View>
             </ScrollView>
@@ -122,9 +115,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     justifyContent: 'flex-end',
   },
+  // Web版 .modal-shell（rounded-[2.5rem]）
   sheet: {
-    borderRadius: radius.md,
-    backgroundColor: colors.bgBase,
+    borderRadius: radius.xl,
+    backgroundColor: 'rgba(252,253,255,0.98)',
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
@@ -132,64 +128,35 @@ const styles = StyleSheet.create({
     maxHeight: 420,
   },
   title: {
-    fontSize: typeScale.heading,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '900',
     color: colors.inkStrong,
+    textAlign: 'center',
   },
   caption: {
-    fontSize: typeScale.small,
+    fontSize: typeScale.tiny,
+    fontWeight: '500',
     color: colors.inkMuted,
     lineHeight: 18,
+    textAlign: 'center',
   },
+  // Web版 .neu-concave の入力欄（中央揃え・太字）
   input: {
-    minHeight: 48,
-    borderRadius: radius.sm,
+    minHeight: 52,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceStrong,
+    borderColor: 'rgba(255,255,255,0.44)',
+    backgroundColor: 'rgba(232,240,250,0.66)',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    fontSize: typeScale.body,
-    color: colors.inkMain,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  secondaryButton: {
-    minHeight: 44,
-    minWidth: 88,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceStrong,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  secondaryText: {
-    fontSize: typeScale.small,
-    fontWeight: '600',
-    color: colors.inkMuted,
-  },
-  primaryButton: {
-    minHeight: 44,
-    minWidth: 88,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.accentIndigo,
-    backgroundColor: colors.accentIndigoSoft,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  primaryText: {
-    fontSize: typeScale.small,
+    fontSize: 18,
     fontWeight: '700',
-    color: colors.accentIndigo,
+    color: colors.inkStrong,
+    textAlign: 'center',
+  },
+  // Web版 UserNameDialog と同じく、主ボタンを上・取り消しを下に縦積みする
+  actions: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
   },
 });

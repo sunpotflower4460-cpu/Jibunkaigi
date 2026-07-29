@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceStrong,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: colors.borderSoft,
     padding: spacing.md,
     gap: spacing.xs,
   },

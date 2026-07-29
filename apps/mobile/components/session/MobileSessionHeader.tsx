@@ -7,6 +7,7 @@ import {
   StyleSheet,
   useWindowDimensions,
 } from 'react-native';
+import { Menu } from 'lucide-react-native';
 import type { MobileSession } from '../../state/mobileTypes';
 import {
   colors,
@@ -16,6 +17,7 @@ import {
   spacing,
   type as typeScale,
 } from '../../theme/tokens';
+import { HeaderShell } from '../ui/MobileSurfaces';
 import { MobileUserNameTrigger } from '../user/MobileUserNameTrigger';
 
 interface MobileSessionHeaderProps {
@@ -28,6 +30,11 @@ interface MobileSessionHeaderProps {
   onOpenUserName?: () => void;
 }
 
+/**
+ * 上部ヘッダー。Web版 TopHeader.jsx と同じく、
+ * 「いま、どのセッションか」を静かに示すガラスの情報帯にする。
+ * 下部の操作バーと競合しないよう、視覚的な主張は抑える。
+ */
 export function MobileSessionHeader({
   session,
   onNewSession,
@@ -44,22 +51,25 @@ export function MobileSessionHeader({
 
   return (
     <View style={styles.header}>
-      <View style={[styles.topRow, isCompact && styles.topRowCompact]}>
+      <HeaderShell style={styles.shell}>
         <TouchableOpacity
           style={styles.drawerBtn}
           onPress={onOpenDrawer}
           activeOpacity={0.7}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
-          accessibilityLabel="セッション一覧を開く"
+          accessibilityLabel="メニューを開く"
         >
-          <Text style={styles.drawerBtnText}>≡</Text>
+          <Menu size={18} color={colors.inkMuted} />
         </TouchableOpacity>
         <View style={styles.titleBlock}>
-          <Text style={styles.title}>じぶん会議</Text>
-          <Text style={styles.sessionTitle} numberOfLines={1}>{session.title}</Text>
+          <Text style={styles.eyebrow}>じぶん会議</Text>
+          <Text style={styles.sessionTitle} numberOfLines={1}>
+            {session.title}
+          </Text>
         </View>
-      </View>
+      </HeaderShell>
+
       <ScrollView
         horizontal={isCompact}
         showsHorizontalScrollIndicator={false}
@@ -114,46 +124,44 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: mobileLayout.panelMaxWidth,
     alignSelf: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: spacing.md,
     gap: spacing.md,
   },
-  topRow: {
+  // Web版 TopHeader は px-4 py-3 のガラス帯
+  shell: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  topRowCompact: {
     alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   drawerBtn: {
-    minWidth: 44,
-    minHeight: 44,
+    minWidth: mobileTouchTarget.minimum,
+    minHeight: mobileTouchTarget.minimum,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  drawerBtnText: {
-    fontSize: 22,
-    color: colors.inkMuted,
-    lineHeight: 28,
+    marginLeft: -spacing.sm,
   },
   titleBlock: {
     flex: 1,
     minWidth: 0,
-    gap: spacing.xs,
+    gap: 2,
   },
-  title: {
-    fontSize: typeScale.tiny,
-    fontWeight: '700',
+  eyebrow: {
+    // Web版 .typo-label-small — トラッキングの広い極小ラベル
+    fontSize: typeScale.label,
+    fontWeight: '800',
     color: colors.inkFaint,
-    letterSpacing: 1.2,
+    letterSpacing: 2.6,
   },
   sessionTitle: {
-    fontSize: typeScale.heading,
+    // Web版 .typo-screen-title
+    fontSize: typeScale.body,
     color: colors.inkStrong,
-    letterSpacing: -0.4,
-    fontWeight: '600',
+    letterSpacing: -0.2,
+    fontWeight: '700',
   },
   actions: {
     flexDirection: 'row',
@@ -166,22 +174,23 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceSoft,
+    borderColor: colors.borderSoft,
+    backgroundColor: 'rgba(255,255,255,0.5)',
     minHeight: mobileTouchTarget.minimum,
     justifyContent: 'center',
   },
   btnPrimary: {
-    backgroundColor: colors.accentSurface,
-    borderColor: colors.accentIndigo,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderColor: 'rgba(165,180,252,0.46)',
   },
   btnText: {
-    fontSize: typeScale.small,
+    // Web版のバーのラベルは 10px / font-black
+    fontSize: 10,
     color: colors.inkMuted,
-    fontWeight: '500',
+    fontWeight: '900',
+    letterSpacing: 0.4,
   },
   btnTextPrimary: {
-    color: colors.accentIndigo,
-    fontWeight: '600',
+    color: colors.inkStrong,
   },
 });

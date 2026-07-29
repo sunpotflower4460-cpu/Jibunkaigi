@@ -34,7 +34,7 @@ import { useReflectionShelf } from '../state/useReflectionShelf';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 import { useUniversalOnboarding } from '../state/useUniversalOnboarding';
 import { DEFAULT_USER_NAME } from '@jibunkaigi/shared';
-import { colors, spacing, mobileLayout, shadow } from '../theme/tokens';
+import { colors, spacing, mobileLayout, radius, shadow } from '../theme/tokens';
 import { createSelfReturnSeed } from '../utils/selfReturn';
 import { buildKeywordField } from '../services/keywordField';
 import { buildThemeArchive } from '../services/themeArchive';
@@ -504,16 +504,18 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     alignItems: 'center',
   },
+  // Web版の下部は面を張らず、入力欄と操作バーが湖面に浮かぶ。
+  // モバイルはキーボード回避のためドックにするが、面は最小限の霧ガラスに留める。
   bottomPanel: {
     width: '100%',
     maxWidth: mobileLayout.panelMaxWidth,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xs,
-    backgroundColor: colors.surfaceSoft,
+    backgroundColor: 'rgba(252,253,255,0.72)',
     ...shadow.soft,
   },
   loadingScreen: {

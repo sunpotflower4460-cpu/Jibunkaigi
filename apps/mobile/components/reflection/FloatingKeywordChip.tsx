@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
   chip: {
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: colors.borderSoft,
     backgroundColor: colors.surfaceStrong,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,

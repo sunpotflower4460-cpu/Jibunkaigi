@@ -6,12 +6,12 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
+import { Users } from 'lucide-react-native';
 import {
   colors,
   mobileTouchTarget,
   radius,
   spacing,
-  type as typeScale,
 } from '../../theme/tokens';
 
 interface MobileOthersTriggerProps {
@@ -37,11 +37,14 @@ export function MobileOthersTrigger({
       accessibilityState={{ disabled: isDisabled, busy: isLoading }}
     >
       {isLoading ? (
-        <ActivityIndicator size="small" color={colors.accentIndigo} />
+        <ActivityIndicator size="small" color={colors.inkMuted} />
       ) : (
         <View style={styles.inner}>
-          <Text style={[styles.label, isDisabled && styles.labelDisabled]}>ほかの視点</Text>
-          <Text style={[styles.sub, isDisabled && styles.subDisabled]}>いまの問いを別角度で見る</Text>
+          <Users size={13} color={isDisabled ? colors.inkFaint : colors.inkSoft} />
+          <View>
+            <Text style={[styles.label, isDisabled && styles.labelDisabled]}>ほかの視点</Text>
+            <Text style={[styles.sub, isDisabled && styles.subDisabled]}>いまの問いを別角度で見る</Text>
+          </View>
         </View>
       )}
     </TouchableOpacity>
@@ -49,40 +52,44 @@ export function MobileOthersTrigger({
 }
 
 const styles = StyleSheet.create({
+  // Web版 .agent-chip と同じ体裁（アイコン + 名前 + 役割）
   button: {
     minHeight: mobileTouchTarget.comfortable,
     minWidth: 132,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 15,
+    paddingVertical: 9,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.accentIndigoSoft,
-    backgroundColor: colors.surfaceSoft,
+    borderColor: colors.borderSoft,
+    backgroundColor: 'rgba(252,253,255,0.78)',
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
   },
   buttonDisabled: {
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceFaint,
+    opacity: 0.5,
   },
   inner: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: spacing.sm,
   },
   label: {
-    fontSize: typeScale.small,
-    fontWeight: '600',
-    color: colors.accentIndigo,
-    letterSpacing: 0.8,
+    fontSize: 11.5,
+    fontWeight: '900',
+    color: colors.inkSoft,
+    letterSpacing: 0.1,
   },
   labelDisabled: {
     color: colors.inkFaint,
   },
   sub: {
-    fontSize: typeScale.tiny,
+    fontSize: 9.5,
+    fontWeight: '600',
     color: colors.inkMuted,
-    opacity: 0.9,
+    opacity: 0.6,
+    letterSpacing: 0.4,
+    marginTop: 2,
   },
   subDisabled: {
     color: colors.inkFaint,

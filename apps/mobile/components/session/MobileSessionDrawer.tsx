@@ -10,6 +10,7 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
+import { Feather, Plus, Users, X } from 'lucide-react-native';
 import type { UniversalSession } from '../../state/mobileTypes';
 import {
   sortUniversalSessions,
@@ -23,6 +24,7 @@ import {
   spacing,
   type as typeScale,
 } from '../../theme/tokens';
+import { IconTile, PanelSurface, PrimaryButton } from '../ui/MobileSurfaces';
 import { MobileSessionEditSheet } from './MobileSessionEditSheet';
 import { MobileSessionListItem } from './MobileSessionListItem';
 import { MobileLegalLinks } from '../settings/MobileLegalLinks';
@@ -89,7 +91,6 @@ export function MobileSessionDrawer({
         onRequestClose={onClose}
       >
         <View style={styles.overlay}>
-          <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
           <SafeAreaView
             style={[
               styles.drawer,
@@ -97,8 +98,17 @@ export function MobileSessionDrawer({
               width < 420 && styles.drawerCompact,
             ]}
           >
+            {/* Web版 Sidebar.jsx のロゴ帯（内なる会議 / じぶん会議） */}
             <View style={styles.drawerHeader}>
-              <Text style={styles.drawerTitle}>会議の記録</Text>
+              <View style={styles.brandRow}>
+                <IconTile size={40}>
+                  <Users size={19} strokeWidth={1.75} color={colors.inkSoft} />
+                </IconTile>
+                <View style={styles.brandTexts}>
+                  <Text style={styles.brandEyebrow}>内なる会議</Text>
+                  <Text style={styles.brandTitle}>じぶん会議</Text>
+                </View>
+              </View>
               <TouchableOpacity
                 style={styles.closeBtn}
                 onPress={onClose}
@@ -106,19 +116,17 @@ export function MobileSessionDrawer({
                 accessibilityRole="button"
                 accessibilityLabel="セッション一覧を閉じる"
               >
-                <Text style={styles.closeBtnText}>✕</Text>
+                <X size={18} color={colors.inkMuted} />
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={styles.newBtn}
+            <PrimaryButton
+              label="新しい問い"
               onPress={handleNewSession}
-              activeOpacity={0.75}
-              accessibilityRole="button"
               accessibilityLabel="新しい問いを始める"
-            >
-              <Text style={styles.newBtnText}>＋ 新しい問いを始める</Text>
-            </TouchableOpacity>
+              icon={<Plus size={16} color={colors.textOnAccent} />}
+              style={styles.newBtn}
+            />
 
             <View style={styles.exportRow}>
               <TouchableOpacity
@@ -173,10 +181,17 @@ export function MobileSessionDrawer({
                 />
               )}
               ListEmptyComponent={
-                <Text style={styles.emptyText}>まだ会議がありません</Text>
+                <PanelSurface style={styles.emptyPanel}>
+                  <IconTile size={44} rounded style={styles.emptyIcon}>
+                    <Feather size={18} strokeWidth={1.75} color={colors.inkFaint} />
+                  </IconTile>
+                  <Text style={styles.emptyTitle}>まだ保存された問いはありません。</Text>
+                  <Text style={styles.emptySubtitle}>最初の問いが、ここに残ります。</Text>
+                </PanelSurface>
               }
             />
           </SafeAreaView>
+          <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
         </View>
       </Modal>
 
@@ -205,19 +220,21 @@ export function MobileSessionDrawer({
 }
 
 const styles = StyleSheet.create({
+  // Web版 Sidebar は左から出る（left-0 / -translate-x-full）
   overlay: {
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
   },
   backdrop: {
     flex: 1,
-    backgroundColor: colors.overlayStrong,
+    backgroundColor: colors.overlay,
   },
   drawer: {
     width: '84%',
     maxWidth: mobileLayout.drawerMaxWidth,
-    backgroundColor: colors.surfaceSoft,
+    // Web版 .sidebar-shell の白〜淡青のグラデーション相当
+    backgroundColor: 'rgba(246,250,255,0.98)',
     ...shadow.soft,
   },
   drawerCompact: {
@@ -234,14 +251,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
   },
-  drawerTitle: {
-    fontSize: typeScale.heading,
-    fontWeight: '700',
+  brandRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minWidth: 0,
+  },
+  brandTexts: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  brandEyebrow: {
+    fontSize: typeScale.tiny,
+    fontWeight: '900',
+    color: colors.inkFaint,
+    letterSpacing: 1.3,
+  },
+  brandTitle: {
+    fontSize: 18,
+    fontWeight: '900',
     color: colors.inkStrong,
-    letterSpacing: -0.4,
+    letterSpacing: -0.6,
   },
   closeBtn: {
     minHeight: 44,
@@ -249,26 +282,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeBtnText: {
-    fontSize: typeScale.body,
-    color: colors.inkMuted,
-  },
   newBtn: {
     marginHorizontal: spacing.xl,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.accentSurface,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.accentIndigo,
-    alignItems: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
   },
-  newBtnText: {
+  emptyPanel: {
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
+    alignItems: 'center',
+    borderRadius: radius.lg,
+  },
+  emptyIcon: {
+    marginBottom: spacing.lg,
+  },
+  emptyTitle: {
     fontSize: typeScale.small,
     fontWeight: '600',
-    color: colors.accentIndigo,
+    color: colors.inkSoft,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  emptySubtitle: {
+    fontSize: typeScale.tiny,
+    fontWeight: '500',
+    color: colors.inkMuted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+    lineHeight: 18,
   },
   exportRow: {
     flexDirection: 'row',
@@ -283,7 +325,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: colors.borderSoft,
     backgroundColor: colors.surfaceFaint,
     justifyContent: 'center',
   },
@@ -300,7 +342,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: colors.borderSoft,
     backgroundColor: colors.surfaceFaint,
     justifyContent: 'center',
     alignItems: 'center',
@@ -314,12 +356,6 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xxl,
-    gap: spacing.sm,
-  },
-  emptyText: {
-    fontSize: typeScale.small,
-    color: colors.inkFaint,
-    textAlign: 'center',
-    marginTop: spacing.xl,
+    gap: spacing.xs,
   },
 });

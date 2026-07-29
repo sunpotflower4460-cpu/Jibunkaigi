@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { ChevronRight } from 'lucide-react-native';
 import {
   colors,
   mobileMotion,
   mobileTouchTarget,
   radius,
   spacing,
-  type as typeScale,
 } from '../../theme/tokens';
 
 interface MobileManualControlsToggleProps {
@@ -52,9 +52,9 @@ export function MobileManualControlsToggle({
       accessibilityState={{ expanded }}
       accessibilityLabel={expanded ? '自分で視点を選ぶをとじる' : '自分で視点を選ぶをひらく'}
     >
-      <Animated.Text style={[styles.chevron, { transform: [{ rotate }] }]}>
-        ▸
-      </Animated.Text>
+      <Animated.View style={{ transform: [{ rotate }] }}>
+        <ChevronRight size={13} color={colors.inkFaint} />
+      </Animated.View>
       <Text style={styles.label}>
         {expanded ? '自分で選ぶ（とじる）' : '自分で視点を選ぶ'}
       </Text>
@@ -74,15 +74,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     minHeight: mobileTouchTarget.minimum,
   },
-  chevron: {
-    fontSize: typeScale.tiny,
-    color: colors.inkFaint,
-    fontWeight: '600',
-  },
   label: {
-    fontSize: typeScale.tiny,
+    // Web版の補助ラベルは .typo-hint（極小・font-bold）
+    fontSize: 11,
     color: colors.inkMuted,
-    fontWeight: '600',
+    fontWeight: '700',
     letterSpacing: 0.6,
   },
 });

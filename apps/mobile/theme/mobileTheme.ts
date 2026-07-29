@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { mobileLayout, mobileSpacing, mobileTouchTarget } from './mobileSpacing';
 import { mobileTypography, mobileLineHeights } from './mobileTypography';
 import { mobileMotion } from './mobileMotion';
@@ -31,41 +32,51 @@ export const mobileColors = {
   overlayStrong: 'rgba(15,23,42,0.35)',
 } as const;
 
+// エージェントの色。Web版 src/agents/agentDefinitions.jsx の
+// color / accentColor / borderColor（tailwind の *-50 / *-700 / *-100）と同値に揃える。
+// トム・フィオは Web版に存在しないため、同じ体系（*-50 / *-700 / *-100）で拡張する。
 export const mobileAgentPalette = {
   ray: {
-    surface: 'rgba(147,197,253,0.13)',
-    border: 'rgba(96,165,250,0.20)',
-    label: '#3b6f9f',
+    // bg-violet-50 / text-violet-700 / border-violet-100
+    surface: '#f5f3ff',
+    border: '#ede9fe',
+    label: '#6d28d9',
   },
   joe: {
-    surface: 'rgba(251,191,36,0.12)',
-    border: 'rgba(217,119,6,0.18)',
-    label: '#8a5a16',
+    // bg-orange-50 / text-orange-600 / border-orange-100
+    surface: '#fff7ed',
+    border: '#ffedd5',
+    label: '#ea580c',
   },
   ken: {
-    surface: 'rgba(148,163,184,0.13)',
-    border: 'rgba(100,116,139,0.18)',
-    label: '#526173',
+    // bg-blue-50 / text-blue-700 / border-blue-100
+    surface: '#eff6ff',
+    border: '#dbeafe',
+    label: '#1d4ed8',
   },
   mina: {
-    surface: 'rgba(251,207,232,0.18)',
-    border: 'rgba(244,114,182,0.16)',
-    label: '#9d5576',
+    // bg-rose-50 / text-rose-700 / border-rose-100
+    surface: '#fff1f2',
+    border: '#ffe4e6',
+    label: '#be123c',
   },
   satou: {
-    surface: 'rgba(187,247,208,0.15)',
-    border: 'rgba(74,222,128,0.18)',
-    label: '#4f7f5f',
+    // bg-slate-100 / text-slate-700 / border-slate-200
+    surface: '#f1f5f9',
+    border: '#e2e8f0',
+    label: '#334155',
   },
   tom: {
-    surface: 'rgba(253,164,127,0.14)',
-    border: 'rgba(234,120,73,0.20)',
-    label: '#9a5636',
+    // bg-amber-50 / text-amber-700 / border-amber-100
+    surface: '#fffbeb',
+    border: '#fef3c7',
+    label: '#b45309',
   },
   fio: {
-    surface: 'rgba(165,214,206,0.14)',
-    border: 'rgba(94,168,158,0.20)',
-    label: '#3f6f6a',
+    // bg-teal-50 / text-teal-700 / border-teal-100
+    surface: '#f0fdfa',
+    border: '#ccfbf1',
+    label: '#0f766e',
   },
 } as const;
 
@@ -107,14 +118,59 @@ export const mobileShadow = {
     shadowOffset: { width: 0, height: 14 },
     elevation: 8,
   },
+  // .message-user の 0 20px 44px rgba(8,12,36,0.24) 相当。
+  messageUser: {
+    shadowColor: '#080c24',
+    shadowOpacity: 0.24,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
+  // .floating-agent-rail の 0 8px 28px rgba(8,12,36,0.3) 相当。
+  floatingRail: {
+    shadowColor: '#080c24',
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+  // .header-shell の 0 14px 36px rgba(148,163,184,0.12) 相当。
+  header: {
+    shadowColor: '#94a3b8',
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 7 },
+    elevation: 3,
+  },
 } as const;
 
-// 湖面（lake-bg）を模したグラデーション。Web版 premium-surfaces.css の
-// .lake-bg / .icon-tile / .cta-primary-surface と同系統の色味に揃える。
+// グラデーション。Web版 premium-surfaces.css / design-tokens.css の値をそのまま移植する。
 export const mobileGradients = {
-  background: ['#f8fafd', '#eef4fb', '#d5e2f5'] as const,
-  iconTile: ['#ffffff', '#eef4fc'] as const,
-  cta: ['#060c22', '#182642', '#263856'] as const,
+  // .lake-bg の linear-gradient(176deg, ...) と同じ停止色。上が白く、下へ向かって青が差す。
+  background: ['#f8fafd', '#f2f5fc', '#eaeff8', '#e3e9f6', '#dce4f3'] as const,
+  backgroundLocations: [0, 0.28, 0.56, 0.8, 1] as const,
+  // .icon-tile の radial-gradient 相当（左上から光を受ける白い霧ガラス）。
+  iconTile: ['#ffffff', '#fcfeff', '#ecf4ff'] as const,
+  // .cta-primary-surface / .action-primary / .message-user 系の紺グラデーション。
+  cta: ['#060c22', '#0d1830', '#162040', '#1c2b48', '#263856'] as const,
+  // .message-user（ユーザー発言の吹き出し）。
+  messageUser: ['#080c24', '#0e1634', '#142040', '#1c284a'] as const,
+  // .floating-agent-rail / .floating-agent-toggle の濃紺レール。
+  floatingRail: ['#0e163a', '#141e44'] as const,
+  // .delegate-chip（委ねる）の violet → indigo。
+  delegate: ['#7c3aed', '#6366f1'] as const,
+  // .mirror-chip（心の鏡）。
+  mirror: ['#1e293b', '#243046'] as const,
+} as const;
+
+// 明朝体。Web版 --jk-font-serif と同じ意図（詩的な見出し・キャッチコピー専用）。
+// iOS はヒラギノ明朝、Android は端末内蔵の serif にフォールバックする。
+export const mobileFonts = {
+  serif: Platform.select({
+    ios: 'Hiragino Mincho ProN',
+    android: 'serif',
+    default: 'serif',
+  }) as string,
 } as const;
 
 export const mobileTheme = {
@@ -126,6 +182,7 @@ export const mobileTheme = {
   lineHeights: mobileLineHeights,
   shadow: mobileShadow,
   gradients: mobileGradients,
+  fonts: mobileFonts,
   motion: mobileMotion,
   layout: mobileLayout,
   touchTarget: mobileTouchTarget,

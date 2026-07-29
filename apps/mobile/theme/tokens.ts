@@ -8,6 +8,11 @@ export { mobileMotion } from './mobileMotion';
 export const colors = {
   bgBase: mobileTheme.colors.background,
   bgDeep: mobileTheme.colors.backgroundDeep,
+  /** 湖面グラデーションの最上部の色（.lake-bg の 0% 停止色） */
+  bgSurfaceTop: mobileTheme.gradients.background[0],
+  /** 濃紺サーフェス上のテキスト（Web版 .floating-agent-toggle の #c7d2e8） */
+  inkOnDark: '#c7d2e8',
+  inkOnDarkStrong: '#dde4f0',
   inkStrong: mobileTheme.colors.textPrimary,
   inkMain: '#1f2937',
   inkSoft: mobileTheme.colors.textSecondary,
@@ -52,3 +57,7 @@ export const type = mobileTheme.typography;
 export const shadow = mobileTheme.shadow;
 
 export const gradients = mobileTheme.gradients;
+
+export const fonts = mobileTheme.fonts;
+
+export { getAgentIcon, AGENT_ICONS } from './agentIcons';

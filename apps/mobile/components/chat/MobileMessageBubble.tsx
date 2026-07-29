@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { isConcreteAgentId } from '@jibunkaigi/shared';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
-  agentPalette,
   colors,
+  gradients,
   mobileLayout,
   mobileLineHeights,
   radius,
+  shadow,
   spacing,
   type as typeScale,
 } from '../../theme/tokens';
@@ -46,7 +47,6 @@ export function MobileMessageBubble({
   messageId,
   role,
   text,
-  agentId,
   agentLabel,
   origin,
   position,
@@ -59,9 +59,6 @@ export function MobileMessageBubble({
 }: MobileMessageBubbleProps) {
   const isUser = role === 'user';
   const isOthers = origin === 'others';
-  const palette = !isUser && !isOthers && agentId && isConcreteAgentId(agentId)
-    ? agentPalette[agentId]
-    : null;
   const hasToolbar = Boolean(onCopy && onShare && onDelete);
 
   // Phase 3A: agent message 直下「ほかの声も聴く」導線の表示条件
@@ -75,41 +72,50 @@ export function MobileMessageBubble({
     !isThinking &&
     Boolean(onRequestOthers);
 
+  // Web版 MessageBubble.jsx と同じく、発言者名は吹き出しの「外の上」に置く。
+  const headerLabel = !isUser && agentLabel ? agentLabel : null;
+
   return (
     <View style={[styles.row, isUser ? styles.rowUser : styles.rowAgent]}>
-      <View style={styles.column}>
-        <View
-          style={[
-            styles.bubble,
-            isUser ? styles.bubbleUser : styles.bubbleAgent,
-            palette && {
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-            },
-            isOthers && styles.bubbleOthers,
-          ]}
-        >
-          {!isUser && (agentLabel || isOthers) && (
-            <View style={styles.labelRow}>
-              {agentLabel ? (
-                <Text style={[styles.agentLabel, palette && { color: palette.label }]}>
-                  {agentLabel}
-                </Text>
-              ) : null}
-              {isOthers && (
-                <View style={styles.othersBadge}>
-                  <Text style={styles.othersBadgeText}>ほかの声</Text>
-                </View>
-              )}
-              {isOthers && position && (
-                <Text style={styles.positionLabel}>{OTHERS_POSITION_LABELS[position]}</Text>
-              )}
-            </View>
-          )}
-          <Text style={[styles.text, isUser ? styles.textUser : styles.textAgent]}>
-            {text}
-          </Text>
-        </View>
+      <View style={[styles.column, isUser ? styles.columnUser : styles.columnAgent]}>
+        {headerLabel || isOthers ? (
+          <View style={styles.labelRow}>
+            {headerLabel ? <Text style={styles.agentLabel}>{headerLabel}</Text> : null}
+            {isOthers ? (
+              <View style={styles.othersBadge}>
+                <Text style={styles.othersBadgeText}>ほかの声</Text>
+              </View>
+            ) : null}
+            {isOthers && position ? (
+              <Text style={styles.positionLabel}>{OTHERS_POSITION_LABELS[position]}</Text>
+            ) : null}
+          </View>
+        ) : null}
+
+        {isUser ? (
+          <LinearGradient
+            colors={gradients.messageUser}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.6, y: 1 }}
+            style={[styles.bubble, styles.bubbleUser, shadow.messageUser]}
+          >
+            <Text style={[styles.text, styles.textUser]}>{text}</Text>
+          </LinearGradient>
+        ) : (
+          <View
+            style={[
+              styles.bubble,
+              styles.bubbleAgent,
+              isOthers && styles.bubbleOthers,
+              shadow.soft,
+            ]}
+          >
+            {/* .mirror-reflection — 上端で光を受ける鏡面のスジ */}
+            <View style={styles.mirrorReflection} pointerEvents="none" />
+            <Text style={[styles.text, styles.textAgent]}>{text}</Text>
+          </View>
+        )}
+
         {hasToolbar ? (
           <MobileMessageToolbar
             messageId={messageId}
@@ -139,7 +145,8 @@ const styles = StyleSheet.create({
     maxWidth: mobileLayout.timelineMaxWidth,
     alignSelf: 'center',
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    // Web版は mb-10 / sm:mb-12（40–48px）。声と声のあいだに沈黙の間をとる。
+    paddingBottom: spacing.xxl,
   },
   rowUser: {
     alignItems: 'flex-end',
@@ -148,69 +155,89 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   column: {
-    maxWidth: '86%',
+    minWidth: 0,
+  },
+  // Web版: ユーザーは max-w-[88%]、AI は max-w-full（読みやすさを優先）
+  columnUser: {
+    maxWidth: '88%',
+  },
+  columnAgent: {
+    maxWidth: '100%',
   },
   bubble: {
-    paddingHorizontal: spacing.lg,
+    // Web版 rounded-[1.75rem] = 28px、px-5 py-4
+    paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
     borderRadius: radius.lg,
     maxWidth: '100%',
+    overflow: 'hidden',
   },
   bubbleUser: {
-    backgroundColor: colors.accentIndigo,
-    borderBottomRightRadius: radius.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.22)',
   },
   bubbleAgent: {
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: 'rgba(255,255,255,0.96)',
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderBottomLeftRadius: radius.xs,
+    borderColor: 'rgba(255,255,255,0.78)',
   },
   bubbleOthers: {
     borderColor: colors.accentIndigoSoft,
-    backgroundColor: colors.accentSurface,
+    backgroundColor: 'rgba(249,250,255,0.94)',
+  },
+  mirrorReflection: {
+    position: 'absolute',
+    top: 0,
+    left: '10%',
+    right: '12%',
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.9)',
   },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
   },
   agentLabel: {
-    fontSize: typeScale.tiny,
+    // Web版: text-[10px] font-black tracking-[0.18em] text-slate-500
+    fontSize: 10,
     color: colors.inkMuted,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    fontWeight: '900',
+    letterSpacing: 1.8,
   },
   othersBadge: {
-    backgroundColor: colors.surfaceStrong,
-    borderRadius: radius.full,
+    backgroundColor: 'rgba(238,242,255,0.7)',
+    borderRadius: radius.xs,
     borderWidth: 1,
-    borderColor: colors.accentIndigoSoft,
-    paddingHorizontal: spacing.sm,
+    borderColor: 'rgba(224,231,255,0.6)',
+    paddingHorizontal: 6,
     paddingVertical: 2,
   },
   othersBadgeText: {
-    fontSize: typeScale.tiny - 1,
+    fontSize: 8,
     color: colors.accentIndigo,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    fontWeight: '900',
   },
   positionLabel: {
-    fontSize: typeScale.tiny - 1,
+    fontSize: 9,
     color: colors.inkFaint,
+    fontWeight: '700',
     letterSpacing: 0.3,
   },
   text: {
+    // Web版: text-[15px] leading-[1.85]
     fontSize: typeScale.body,
-    lineHeight: mobileLineHeights.body,
+    lineHeight: mobileLineHeights.prose,
     flexShrink: 1,
-    letterSpacing: 0.1,
   },
   textUser: {
-    color: colors.textOnAccent,
+    // Web版 .message-user は text-slate-100
+    color: '#f1f5f9',
   },
   textAgent: {
-    color: colors.inkMain,
+    // Web版 .message-agent は text-slate-700
+    color: colors.inkSoft,
   },
 });
