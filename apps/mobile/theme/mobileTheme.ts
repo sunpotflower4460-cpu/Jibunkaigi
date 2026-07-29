@@ -93,6 +93,28 @@ export const mobileShadow = {
     shadowOffset: { width: 0, height: 16 },
     elevation: 6,
   },
+  iconTile: {
+    shadowColor: '#94a3b8',
+    shadowOpacity: 0.32,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 5,
+  },
+  ctaGlow: {
+    shadowColor: '#060c22',
+    shadowOpacity: 0.38,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 8,
+  },
+} as const;
+
+// 湖面（lake-bg）を模したグラデーション。Web版 premium-surfaces.css の
+// .lake-bg / .icon-tile / .cta-primary-surface と同系統の色味に揃える。
+export const mobileGradients = {
+  background: ['#f8fafd', '#eef4fb', '#d5e2f5'] as const,
+  iconTile: ['#ffffff', '#eef4fc'] as const,
+  cta: ['#060c22', '#182642', '#263856'] as const,
 } as const;
 
 export const mobileTheme = {
@@ -103,6 +125,7 @@ export const mobileTheme = {
   typography: mobileTypography,
   lineHeights: mobileLineHeights,
   shadow: mobileShadow,
+  gradients: mobileGradients,
   motion: mobileMotion,
   layout: mobileLayout,
   touchTarget: mobileTouchTarget,
