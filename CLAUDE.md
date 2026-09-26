@@ -64,18 +64,30 @@ packages/shared/scripts/ignitionReport.ts      着火の様子を目で見るレ
     ・lightTokenizer で活用形を原形へ
     ・気配プールを1回走査 → 各要素が自分で加算して閾値判定 → 点火
     ・伝播 → 浮上材料（surfaced）
-  → surfaced と一緒に Worker へ送信
+  → surfaced と routeLock・voiceCarryover（このチャットのルーティング状態）を一緒に Worker へ送信
   → レスポンス後、現ターンの活性スナップショットを warmthRef に保持（次ターンの温度）
+  → provider を routeLock に保存、switched: true なら voiceCarryover = true
+     （routeStateRef。新規／クリア／切替で warmthRef と一緒にリセット。モック応答では動かさない）
 
 [Worker]
-  ① 危機判定（isCrisisSafetyText）← ペルソナ・tool層・プロンプト生成より「前」
-       該当すれば静的な安全応答（mirror / safety-static-v1）を返して終わり
+  ① 危機判定（isCrisisSafetyText）← ペルソナ・tool層・プロンプト生成・ルーティングより「前」
+       該当すれば静的な安全応答（mirror / safety-static-v1）を返して終わり（プロバイダは呼ばない）
   ② クライアントの surfaced を検証（sanitizeSurfacedMaterial）
        未知IDは捨てる／活性は0〜1にクランプ／ラベルはIDから導出（クライアントの値を信用しない）
        無い・壊れていたら Worker 側で igniteAndSpread をフォールバック実行
-  ③ buildUniversalConversationPrompt → Gemini（既定 gemini-2.5-flash-lite、env GEMINI_MODEL）
-  ④ /others は対象全員の材料を受け取り、LLM 1コールで全員分を生成
+  ③ プラン判定（resolvePlanTier）：クライアント申告は信用しない。課金実装までは全員 free
+       開発用の上書き（X-Jibunkaigi-Dev-Tier / -Dev-Provider）は DEV_TRACE_SECRET 認証時だけ
+  ④ 候補列（planRoute）：ROUTE_TABLE[プラン][用途] から ENABLE_SAKURA=false なら sakura を除く
+       routeLock が候補列にあれば、その位置から後ろだけ（1つのチャットの中では前に戻らない）
+  ⑤ buildUniversalConversationPrompt（voiceCarryover 時は自分の直近の返答3件を「あなたの声」として）
+       → toChatMessages：folded（system=確定3層 / user=body）か split（GPT系）
+       → callWithFallback：候補を順に試す（429・5xx・タイムアウト・空・JSON不正で次へ）
+       → provider（実際に使ったもの）・switched・model を返す
+  ⑥ /others は対象全員の材料を受け取り、LLM 1コールで全員分を生成
+       （Luna / Sol は厳密JSONスキーマ、DeepSeek は json_object＋既存の検証・正規化）
 ```
+
+split（GPT系）の送り方：system = 一層目＋二層目 ／ developer = Developer＋応答モード＋共通返答方針＋（あなたの声）＋直近の会話＋出力 ／ assistant = look_inward の合成呼び出し ＋ tool = 材料（点火なしなら両方省く）／ user = 今回の入力。合成 tool 呼び出しが 400 で拒否されたら、材料を developer の末尾に置いて同じプロバイダに1回だけ送り直す。
 
 「System ▶︎ Developer ▶︎ Tool ▶︎ user-assistant」は、1本のプロンプトの中で文章が並ぶ順序であって、処理の順序ではありません。tool層は LLM を一切使わない純粋なコードで、LLM 呼び出しの前に完結しています。
 
@@ -101,7 +113,7 @@ packages/shared/scripts/ignitionReport.ts      着火の様子を目で見るレ
 
 conversationPromptBuilder は prompt（連結文字列）と layers（systemLayer1 / systemLayer2 / developer / body）の両方を返します。
 
-providerAdapter.toProviderMessages は、既定では全部を system に畳み（folded）、GPT系のときだけ system と developer を分けます（system-developer-split）。現在は Gemini単一なので未使用です。プロバイダ接続時に使います。
+providerAdapter.toChatMessages が、既定では確定テキスト3層を system に畳み body を user に置き（folded）、GPT系のときだけ system / developer / tool / user に分けます（split）。どのプロバイダがどちらかは `packages/shared/src/providers/routeTable.ts` の `PROVIDER_DEFINITIONS` が持ちます。
 
 ## 5. tool層（点火）の仕組み
 
@@ -172,7 +184,7 @@ kuromoji は保留中です（§8）。差し替えるときは Tokenizer イン
 ### 既知の課題（小さいもの）
 
 1. **lightTokenizer の「〜わけじゃない」不整合（実測）** しんどいわけじゃない → 点火しない、しんどかったわけじゃない → 点火する（mina, satou）。つらかったわけではない も同様。原因は lightTokenizer の NEGATED_AFTER が、cueMatch.ts の二重否定パターン（わけじゃない／わけではない等）と揃っていないこと。過剰点火の方向なので安全上の問題はないが、一貫性の問題。直すなら lightTokenizer の否定判定を cueMatch と同じ後続パターンに揃える。
-2. providerAdapter は未使用（Gemini単一のため）。
+2. （解消）providerAdapter はプロバイダ接続（指示書11）で使われるようになった。
 3. README と docs/ の多くが古い（§2）。
 
 ### 保留
@@ -189,16 +201,27 @@ kuromoji は保留中です（§8）。差し替えるときは Tokenizer イン
 | プロバイダ接続 | 直接接続（ゲートウェイは使わない）。候補は全てOpenAI互換。providerAdapterで畳み方を切り替える |
 | プラン出し分け | 無料3人／ライト5人／スタンダード5人／プラチナ7人。現在は全員に7人見える |
 
-### API（決定事項と候補）
+### API（決定事項）
 
-- OTHERS：DeepSeek V4 Flash（確定）
-- 監査LLM：DeepSeek V4 Flash（確定）
-- メイン（プラン別・未確定の候補）
-  - 無料：Gemini 2.5 Flash-Lite（無料APIは学習利用の懸念があるため、安い有料モデル＋回数制限＋広告で吸収）
-  - ライト：DeepSeek V4 Flash
-  - スタンダード：PLaMo 3.0 Prime（実在・API提供・価格を確認済み）。GPTにするかは採算次第で検討中
-  - プラチナ：GPT系（GPT-5.4 の同価格の後継として GPT-5.6 Terra が出ている）
-- System/Developer の分離が本当に効くのは GPT 系のみ。MiniMax は developer ロールで400エラー、PLaMo は黙って system に混ぜる。既定は畳む、GPTのときだけ分ける。
+指示書 11〜13 で確定。候補列は `packages/shared/src/providers/routeTable.ts` の `ROUTE_TABLE`（データで持つ。表の1行を変えるだけで切り替わる）。
+
+| プラン | メインの返答 | OTHERS・reflection |
+|---|---|---|
+| 無料 | Groq無料 → さくら無料 → GPT-6 Luna → DeepSeek | Luna → DeepSeek（reflection は Luna） |
+| ライト | Luna → DeepSeek | 同上 |
+| スタンダード | Luna → DeepSeek（Sol にするかは動的監査で決定） | 同上 |
+| プレミアム | GPT-6 Sol → Luna → DeepSeek | 同上 |
+
+- 無料枠（Groq・さくら）を使うのは無料プランのメインの返答だけ。OTHERS と reflection は JSON で受け取るため、無料プランでも常に Luna（厳密な JSON スキーマを強制できる）。
+- DeepSeek（V4.1 Flash）は全プラン共通の最後のフォールバック（一社依存の保険）。
+- GPT-6 Astra は使わない。Gemini はルーティング表に入れない。
+- 無料枠は組織単位で全無料ユーザーが分け合う。尽きても止めずに次へ落とす。Groq（1日で回復）→ さくら（月単位・予備）。
+- 1つのチャットの中では、一度切り替えたら戻らない。切り替わったら、そのエージェントの直近の返答（最大3件）を「これまでの声」として渡す（プレミアムの Sol → Luna も同じ仕組み）。
+- さくらは約款（第三者利用の条項）の確認が済むまで `ENABLE_SAKURA=false`。
+- 接続はすべて OpenAI 互換の Chat Completions（ゲートウェイは使わない）。既定のモデルID：`openai/gpt-oss-120b`（Groq）／`gpt-oss-120b`（さくら）／`gpt-6-luna`／`gpt-6-sol`／`deepseek-flash`。すべて env（`MODEL_*`）で上書きでき、最終確認はうえきさんが公式で行う。
+- 推論量（`reasoning_effort`）は GPT-6 系にだけ送る。OTHERS・reflection は none。メインは `REASONING_EFFORT_REPLY`（既定 none。GPT-6 の Chat Completions は function calling を none のときだけサポートするため、合成 tool 呼び出しと両立する値）。動的監査で決める。
+- System/Developer の分離が効くのは GPT 系のみ。MiniMax は developer ロールで400エラー、PLaMo は黙って system に混ぜる。既定は畳む、GPTのときだけ分ける。
+- 動的監査は `tools/audit/`（実行は Mac 上。`tools/audit/README.md`）。
 
 ## 9. 絶対に守ること
 

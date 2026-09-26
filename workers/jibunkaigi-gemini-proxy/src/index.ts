@@ -8,6 +8,7 @@ import {
   igniteAndSpread,
   isCrisisSafetyText,
   isPlanTier,
+  isProviderId,
   LOOK_INWARD_TOOL,
   parseKind,
   parseLabel,
@@ -17,6 +18,7 @@ import {
   type ChatMessage,
   type ConcreteAgentId,
   type PlanTier,
+  type ProviderId,
   type OthersPosition,
   type SurfacedMaterial,
   type UniversalAgentId,
@@ -91,7 +93,7 @@ function corsHeaders(env: Env): Record<string, string> {
     'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN || '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers':
-      'Content-Type, Authorization, X-Jibunkaigi-Dev-Trace, X-Jibunkaigi-Dev-Tier',
+      'Content-Type, Authorization, X-Jibunkaigi-Dev-Trace, X-Jibunkaigi-Dev-Tier, X-Jibunkaigi-Dev-Provider',
   };
 }
 
@@ -407,6 +409,26 @@ export function resolvePlanTier(request: Request, env: Env): PlanTier {
   return 'free';
 }
 
+/**
+ * 開発用：特定のプロバイダを強制する（動的監査・第13部）。開発者認証が通ったときだけ有効。
+ */
+function resolveForcedProvider(request: Request, env: Env): ProviderId | null {
+  if (!isDevAuthenticated(request, env)) return null;
+  const forced = request.headers.get('X-Jibunkaigi-Dev-Provider')?.trim();
+  return isProviderId(forced) ? forced : null;
+}
+
+/** 開発者認証が通ったときだけ、使用量と試行の記録をレスポンスに含める（監査用）。 */
+function devDiagnostics(
+  request: Request,
+  env: Env,
+  result: { usage: unknown; attempts: FallbackAttempt[] },
+): Record<string, unknown> {
+  return isDevAuthenticated(request, env)
+    ? { usage: result.usage, attempts: result.attempts }
+    : {};
+}
+
 function logAllProvidersFailed(label: string, attempts: FallbackAttempt[]): void {
   console.error(
     `[jibunkaigi-proxy] ${label}: all providers failed`,
@@ -566,7 +588,16 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
     );
 
     const tier = resolvePlanTier(request, env);
-    const { candidates } = planRoute({ tier, purpose: 'others', enableSakura: isSakuraEnabled(env) });
+    const forcedProvider = resolveForcedProvider(request, env);
+    const { candidates } = planRoute({
+      tier,
+      purpose: 'others',
+      enableSakura: isSakuraEnabled(env),
+      forcedProvider,
+    });
+    if (forcedProvider && candidates.length === 0) {
+      return json({ error: 'forced provider is disabled' }, 400, env);
+    }
     const othersMessages: ChatMessage[] = [{ role: 'user', content: prompt }];
     const result = await callWithFallback({
       label: 'others',
@@ -590,11 +621,20 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
 
     if (!result.ok) {
       logAllProvidersFailed('others', result.attempts);
-      return json({ error: 'AI service temporarily unavailable' }, 502, env);
+      return json(
+        { error: 'AI service temporarily unavailable', ...devDiagnostics(request, env, { usage: null, attempts: result.attempts }) },
+        502,
+        env,
+      );
     }
 
     return json(
-      { replies: result.value, provider: result.provider, model: result.model },
+      {
+        replies: result.value,
+        provider: result.provider,
+        model: result.model,
+        ...devDiagnostics(request, env, result),
+      },
       200,
       env,
     );
@@ -784,12 +824,17 @@ async function handleReplyRequest(
     });
 
     const tier = resolvePlanTier(request, env);
+    const forcedProvider = resolveForcedProvider(request, env);
     const { candidates, routeLock } = planRoute({
       tier,
       purpose: 'reply',
       enableSakura: isSakuraEnabled(env),
       routeLock: body.routeLock,
+      forcedProvider,
     });
+    if (forcedProvider && candidates.length === 0) {
+      return json({ error: 'forced provider is disabled' }, 400, env);
+    }
     const reasoningEffort = readReplyReasoningEffort(env);
     const result = await callWithFallback({
       label: 'reply',
@@ -814,7 +859,11 @@ async function handleReplyRequest(
 
     if (!result.ok) {
       logAllProvidersFailed('reply', result.attempts);
-      return json({ error: 'AI service temporarily unavailable' }, 502, env);
+      return json(
+        { error: 'AI service temporarily unavailable', ...devDiagnostics(request, env, { usage: null, attempts: result.attempts }) },
+        502,
+        env,
+      );
     }
     const text = result.text;
     const model = result.model;
@@ -856,6 +905,7 @@ async function handleReplyRequest(
         provider: result.provider,
         switched: resolveSwitched(routeLock, result.provider),
         model,
+        ...devDiagnostics(request, env, result),
       },
       200,
       env,

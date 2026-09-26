@@ -412,3 +412,72 @@ test('voiceCarryover が true 以外なら「あなたの声」は入らない',
     assert.doesNotMatch(all, /この会話での、あなたの声/, String(voiceCarryover));
   }
 });
+
+// ── 第13部：動的監査用の開発ヘッダ ─────────────────────────────────────
+
+test('X-Jibunkaigi-Dev-Provider は dev 認証なしでは無視される', async () => {
+  queue = [okCompletion('a')];
+  const res = await worker.fetch(
+    post('/api/jibunkaigi/reply', replyBody(), { 'X-Jibunkaigi-Dev-Provider': 'sol' }),
+    makeEnv({ DEV_TRACE_SECRET: 'dev-secret' }),
+    ctx,
+  );
+  const data = (await res.json()) as Record<string, unknown>;
+  assert.equal(modelOf(calls[0]), 'openai/gpt-oss-120b');
+  assert.equal(data.usage, undefined, '使用量は dev 認証時だけ返す');
+  assert.equal(data.attempts, undefined);
+});
+
+test('dev 認証が通れば X-Jibunkaigi-Dev-Provider でプロバイダを1つに固定し、使用量を返す', async () => {
+  queue = [okCompletion('a', { prompt_tokens_details: { cached_tokens: 64 } })];
+  const res = await worker.fetch(
+    post('/api/jibunkaigi/reply', replyBody({ routeLock: 'groq' }), {
+      'X-Jibunkaigi-Dev-Trace': 'dev-secret',
+      'X-Jibunkaigi-Dev-Provider': 'sol',
+    }),
+    makeEnv({ DEV_TRACE_SECRET: 'dev-secret' }),
+    ctx,
+  );
+  const data = (await res.json()) as {
+    provider: string;
+    switched: boolean;
+    usage: { inputTokens: number; cachedInputTokens: number; outputTokens: number };
+    attempts: Array<{ provider: string; outcome: string }>;
+  };
+  assert.equal(calls.length, 1);
+  assert.equal(modelOf(calls[0]), 'gpt-6-sol');
+  assert.equal(data.provider, 'sol');
+  assert.equal(data.switched, true, 'groq のロックから sol へ');
+  assert.deepEqual(data.usage, { inputTokens: 100, cachedInputTokens: 64, outputTokens: 20 });
+  assert.deepEqual(
+    data.attempts.map((a) => [a.provider, a.outcome]),
+    [['sol', 'ok']],
+  );
+});
+
+test('ENABLE_SAKURA=false のとき、dev でも sakura は強制できない', async () => {
+  const res = await worker.fetch(
+    post('/api/jibunkaigi/reply', replyBody(), {
+      'X-Jibunkaigi-Dev-Trace': 'dev-secret',
+      'X-Jibunkaigi-Dev-Provider': 'sakura',
+    }),
+    makeEnv({ DEV_TRACE_SECRET: 'dev-secret', SAKURA_API_KEY: 'test-sakura' }),
+    ctx,
+  );
+  assert.equal(res.status, 400);
+  assert.equal(calls.length, 0);
+});
+
+test('DeepSeek の prompt_cache_hit_tokens もキャッシュ量として正規化する', async () => {
+  queue = [okCompletion('a', { prompt_cache_hit_tokens: 80, prompt_cache_miss_tokens: 20 })];
+  const res = await worker.fetch(
+    post('/api/jibunkaigi/reply', replyBody(), {
+      'X-Jibunkaigi-Dev-Trace': 'dev-secret',
+      'X-Jibunkaigi-Dev-Provider': 'deepseek',
+    }),
+    makeEnv({ DEV_TRACE_SECRET: 'dev-secret' }),
+    ctx,
+  );
+  const data = (await res.json()) as { usage: { cachedInputTokens: number } };
+  assert.equal(data.usage.cachedInputTokens, 80);
+});

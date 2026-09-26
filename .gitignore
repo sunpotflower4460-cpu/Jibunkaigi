@@ -36,3 +36,7 @@ dist-ssr
 
 # Worker deploy config (holds account/KV IDs; see wrangler.toml.example)
 wrangler.toml
+
+# Dynamic audit (tools/audit): outputs contain generated text; env holds the dev secret
+tools/audit/out/
+.env.audit

@@ -1,0 +1,11 @@
+{
+  "_note": "USD / 100万トークン。すべて要公式確認の値（verified=false）。ハードコードせず、ここを差し替える。無料枠の Groq・さくらは実費 0 として扱う（枠の消費は別途）。",
+  "currency": "USD",
+  "perMillionTokens": {
+    "groq":     { "input": 0,    "cachedInput": 0,    "output": 0,    "verified": false, "source": "無料枠で運用（有料時の単価は Groq 公式で確認）" },
+    "sakura":   { "input": 0,    "cachedInput": 0,    "output": 0,    "verified": false, "source": "基盤モデル無償プラン（月3,000回）" },
+    "luna":     { "input": 0.10, "cachedInput": 0.10, "output": 0.50, "verified": false, "source": "2026-09 の報道・中継サイトの数字。キャッシュ単価は未確認のため入力と同額で保守的に計上" },
+    "sol":      { "input": 2.00, "cachedInput": 2.00, "output": 10.00, "verified": false, "source": "2026-09 の報道・中継サイトの数字。キャッシュ単価は未確認のため入力と同額で保守的に計上" },
+    "deepseek": { "input": 0.50, "cachedInput": 0.50, "output": 2.00, "verified": false, "source": "未確認の保守的な仮置き。DeepSeek 公式の Models & Pricing で置き換える" }
+  }
+}

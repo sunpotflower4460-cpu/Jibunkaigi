@@ -41,6 +41,12 @@ Expo Universal版からLLMのAPI Keyを隠し、認証・入力制限・安全�
 - GPT-6 系（Luna / Sol）は system / developer / 合成 tool（look_inward）/ user に分けて送る。合成 tool が 400 で拒否されたら、材料を developer の末尾に置いて同じプロバイダに1回だけ送り直す。
 - 危機判定はルーティングより前（変更しない）。
 
+### 開発用ヘッダ（`X-Jibunkaigi-Dev-Trace` が `DEV_TRACE_SECRET` と一致したときだけ有効）
+
+- `X-Jibunkaigi-Dev-Tier: free|light|standard|premium` … プランの上書き
+- `X-Jibunkaigi-Dev-Provider: groq|sakura|luna|sol|deepseek` … プロバイダを1つに固定（動的監査用。`ENABLE_SAKURA` が false なら sakura は 400）
+- 認証が通ったリクエストだけ、レスポンスに `usage`（入力・キャッシュ・出力トークン）と `attempts`（試行の記録）が付く
+
 `FIREBASE_PROJECT_ID` が設定されると、`/reply` と `/others` はFirebase ID tokenを持つリクエストだけを受け付けます。Expoアプリ側は匿名認証ユーザーのtokenを `Authorization: Bearer ...` で自動送信します。
 
 Rate Limit用KVを設定した場合、`RATE_LIMIT_MAX_PER_MINUTE`（既定60）をIP単位・1分単位の目安として適用します。これは完全な課金防御ではなく、Cloudflare側の追加ルールと併用してください。

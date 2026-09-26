@@ -1,0 +1,16 @@
+{
+  "name": "jibunkaigi-audit",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "audit": "tsx runAudit.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"*.test.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.22.4",
+    "typescript": "~5.8.3"
+  }
+}
