@@ -36,9 +36,31 @@ export interface UniversalPromptLayers {
   body: string;
 }
 
+/**
+ * body を構成する各セクション（見出し込み）。split 送信で body を分解するために使う。
+ * body は、存在するセクションをこの順に '\n\n' で連結したものと一致する。
+ */
+export interface UniversalPromptBodySections {
+  /** ## 応答モード */
+  mode: string;
+  /** ## 共通返答方針 */
+  policy: string;
+  /** ## 直近の会話 */
+  history: string;
+  /** tool層の材料（いま立ち上がっているもの＋補正）。点火なしなら空文字。 */
+  inner: string;
+  /** ## 今回のユーザー入力 */
+  userInput: string;
+  /** 今回のユーザー入力の本文だけ（見出しなし・サニタイズ済み）。 */
+  userText: string;
+  /** ## 出力 */
+  output: string;
+}
+
 export interface UniversalBuiltPrompt {
   prompt: string;
   agentLabel: string;
   modeLabel: string;
   layers: UniversalPromptLayers;
+  sections: UniversalPromptBodySections;
 }

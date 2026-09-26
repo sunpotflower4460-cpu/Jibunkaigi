@@ -7,9 +7,15 @@ import {
   getUniversalAgent,
   igniteAndSpread,
   isCrisisSafetyText,
+  isPlanTier,
+  LOOK_INWARD_TOOL,
   parseKind,
   parseLabel,
+  planRoute,
+  toChatMessages,
+  type ChatMessage,
   type ConcreteAgentId,
+  type PlanTier,
   type OthersPosition,
   type SurfacedMaterial,
   type UniversalAgentId,
@@ -17,10 +23,14 @@ import {
   type UniversalOthersReply,
   type UniversalPromptMessage,
 } from '../../../packages/shared/src';
+import { callWithFallback, type FallbackAttempt } from './providers/callWithFallback';
+import {
+  isSakuraEnabled,
+  readReplyReasoningEffort,
+  type ProviderEnv,
+} from './providers/providerEnv';
 
-export interface Env {
-  GEMINI_API_KEY: string;
-  GEMINI_MODEL?: string;
+export interface Env extends ProviderEnv {
   ALLOWED_ORIGIN?: string;
   /** When set, POST endpoints require a valid Firebase ID token for this project. */
   FIREBASE_PROJECT_ID?: string;
@@ -37,7 +47,11 @@ const MAX_USER_TEXT_CHARS = 4_000;
 const MAX_MAIN_REPLY_CHARS = 4_000;
 const MAX_MESSAGE_COUNT = 30;
 const MAX_MESSAGE_TEXT_CHARS = 2_000;
-const GEMINI_TIMEOUT_MS = 35_000;
+// メインの返答はプロバイダごと 12 秒、全体でも 25 秒（モバイル側のタイムアウト 30 秒より短く）。
+const REPLY_PROVIDER_TIMEOUT_MS = 12_000;
+const REPLY_TOTAL_TIMEOUT_MS = 25_000;
+const OTHERS_PROVIDER_TIMEOUT_MS = 20_000;
+const OTHERS_TOTAL_TIMEOUT_MS = 40_000;
 const REFLECTION_TIMEOUT_MS = 20_000;
 const MAX_DEV_TRACES = 200;
 const DEFAULT_RATE_LIMIT_PER_MINUTE = 60;
@@ -76,7 +90,7 @@ function corsHeaders(env: Env): Record<string, string> {
     'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN || '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers':
-      'Content-Type, Authorization, X-Jibunkaigi-Dev-Trace',
+      'Content-Type, Authorization, X-Jibunkaigi-Dev-Trace, X-Jibunkaigi-Dev-Tier',
   };
 }
 
@@ -364,51 +378,105 @@ function normalizeMessages(value: unknown): UniversalPromptMessage[] {
   }));
 }
 
-async function fetchGemini(
-  env: Env,
-  prompt: string,
-  timeoutMs = GEMINI_TIMEOUT_MS,
-): Promise<Response> {
-  const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
-  const geminiUrl =
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    return await fetch(geminiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': env.GEMINI_API_KEY,
-      },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      }),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeoutId);
-  }
+/**
+ * 開発者認証：X-Jibunkaigi-Dev-Trace ヘッダが DEV_TRACE_SECRET と一致するか（定数時間比較）。
+ * 開発用の上書き（プラン・プロバイダ）は、これが通ったときだけ受け付ける。
+ */
+function isDevAuthenticated(request: Request, env: Env): boolean {
+  const supplied = request.headers.get('X-Jibunkaigi-Dev-Trace')?.trim();
+  return Boolean(env.DEV_TRACE_SECRET && supplied && timingSafeEqual(supplied, env.DEV_TRACE_SECRET));
 }
 
-function extractGeminiText(data: {
-  candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-}): string {
-  return (
-    data?.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text || '')
-      .join('')
-      .trim() || ''
+/**
+ * プラン（tier）の判定。クライアントが申告したプランは信用しない（信用すると誰でも
+ * premium を名乗って Sol を使え、費用が青天井になる）。課金が無い今は全員 free。
+ *
+ * 開発用の上書き：X-Jibunkaigi-Dev-Tier は開発者認証が通ったときだけ有効。
+ *
+ * TODO(課金): 課金実装時は、ここを Firebase のカスタムクレーム等、サーバー側で
+ * 検証できる情報（検証済み ID トークンの claims）からの判定に差し替える。
+ */
+export function resolvePlanTier(request: Request, env: Env): PlanTier {
+  if (isDevAuthenticated(request, env)) {
+    const devTier = request.headers.get('X-Jibunkaigi-Dev-Tier')?.trim();
+    if (isPlanTier(devTier)) return devTier;
+  }
+  return 'free';
+}
+
+function logAllProvidersFailed(label: string, attempts: FallbackAttempt[]): void {
+  console.error(
+    `[jibunkaigi-proxy] ${label}: all providers failed`,
+    attempts.map((a) => `${a.provider}:${a.outcome}${a.status ? `(${a.status})` : ''}`).join(' → ') || '(no candidates)',
   );
 }
 
-async function handleOthersRequest(request: Request, env: Env): Promise<Response> {
-  if (!env.GEMINI_API_KEY) {
-    console.error('[jibunkaigi-proxy] GEMINI_API_KEY is not configured');
-    return json({ error: 'AI service temporarily unavailable' }, 503, env);
-  }
+const OTHERS_POSITIONS = ['agree', 'question', 'neutral'] as const;
 
+/** Luna / Sol で OTHERS の出力を強制する厳密 JSON スキーマ（agentId と position は列挙型）。 */
+function buildOthersJsonSchema(targetAgentIds: ConcreteAgentId[]) {
+  return {
+    type: 'json_schema',
+    json_schema: {
+      name: 'others_replies',
+      strict: true,
+      schema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['replies'],
+        properties: {
+          replies: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['agentId', 'position', 'text'],
+              properties: {
+                agentId: { type: 'string', enum: targetAgentIds },
+                position: { type: 'string', enum: [...OTHERS_POSITIONS] },
+                text: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+}
+
+/** OTHERS の応答を検証・正規化する。有効な返答が1件も無ければ null（次のプロバイダへ）。 */
+function parseOthersReplies(
+  rawText: string,
+  targetSet: Set<ConcreteAgentId>,
+): UniversalOthersReply[] | null {
+  let parsed: { replies?: Array<{ agentId?: string; position?: string; text?: string }> };
+  try {
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawText) as typeof parsed;
+  } catch {
+    return null;
+  }
+  if (!parsed || !Array.isArray(parsed.replies)) return null;
+
+  const seen = new Set<ConcreteAgentId>();
+  const replies: UniversalOthersReply[] = [];
+  for (const reply of parsed.replies) {
+    const agentId = normalizeConcreteAgentId(String(reply?.agentId || ''));
+    if (!agentId || !targetSet.has(agentId) || seen.has(agentId)) continue;
+    if (typeof reply.text !== 'string' || !reply.text.trim()) continue;
+
+    seen.add(agentId);
+    replies.push({
+      agentId,
+      agentLabel: getUniversalAgent(agentId).label,
+      text: reply.text.trim().slice(0, 2_000),
+      position: normalizeOthersPosition(reply.position),
+    });
+  }
+  return replies.length > 0 ? replies : null;
+}
+
+async function handleOthersRequest(request: Request, env: Env): Promise<Response> {
   try {
     const body = await readJsonBody<{
       sessionId?: unknown;
@@ -494,61 +562,39 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
       materials,
     );
 
-    const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
-    const geminiResponse = await fetchGemini(env, prompt);
+    const tier = resolvePlanTier(request, env);
+    const candidates = planRoute({ tier, purpose: 'others', enableSakura: isSakuraEnabled(env) });
+    const othersMessages: ChatMessage[] = [{ role: 'user', content: prompt }];
+    const result = await callWithFallback({
+      label: 'others',
+      candidates,
+      env,
+      buildRequest: (provider) => ({
+        request: {
+          messages: othersMessages,
+          // OTHERS は遅延と出力課金を抑えるため推論なし（GPT-6 系にだけ送られる）。
+          reasoningEffort: 'none',
+          responseFormat: provider.strictJson
+            ? buildOthersJsonSchema(targetAgentIds)
+            : { type: 'json_object' },
+        },
+        usesSyntheticTool: false,
+      }),
+      parse: (text) => parseOthersReplies(text, targetSet),
+      perProviderTimeoutMs: OTHERS_PROVIDER_TIMEOUT_MS,
+      totalTimeoutMs: OTHERS_TOTAL_TIMEOUT_MS,
+    });
 
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error(
-        '[jibunkaigi-proxy] Gemini others upstream error:',
-        geminiResponse.status,
-        errorText.slice(0, 500),
-      );
+    if (!result.ok) {
+      logAllProvidersFailed('others', result.attempts);
       return json({ error: 'AI service temporarily unavailable' }, 502, env);
     }
 
-    const data = await geminiResponse.json<{
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-    }>();
-    const rawText = extractGeminiText(data);
-    if (!rawText) {
-      return json({ error: 'Gemini returned empty text' }, 502, env);
-    }
-
-    let parsed: { replies?: Array<{ agentId?: string; position?: string; text?: string }> };
-    try {
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawText) as typeof parsed;
-    } catch {
-      console.error('[jibunkaigi-proxy] OTHERS JSON parse failed:', rawText.slice(0, 200));
-      return json({ error: 'Failed to parse AI response' }, 502, env);
-    }
-
-    if (!Array.isArray(parsed.replies)) {
-      return json({ error: 'AI response missing replies array' }, 502, env);
-    }
-
-    const seen = new Set<ConcreteAgentId>();
-    const replies: UniversalOthersReply[] = [];
-    for (const reply of parsed.replies) {
-      const agentId = normalizeConcreteAgentId(String(reply.agentId || ''));
-      if (!agentId || !targetSet.has(agentId) || seen.has(agentId)) continue;
-      if (typeof reply.text !== 'string' || !reply.text.trim()) continue;
-
-      seen.add(agentId);
-      replies.push({
-        agentId,
-        agentLabel: getUniversalAgent(agentId).label,
-        text: reply.text.trim().slice(0, 2_000),
-        position: normalizeOthersPosition(reply.position),
-      });
-    }
-
-    if (replies.length === 0) {
-      return json({ error: 'All OTHERS replies were invalid or empty' }, 502, env);
-    }
-
-    return json({ replies, model }, 200, env);
+    return json(
+      { replies: result.value, provider: result.provider, model: result.model },
+      200,
+      env,
+    );
   } catch (error) {
     if (error instanceof RequestError) {
       return json({ error: error.message }, error.status, env);
@@ -568,6 +614,7 @@ interface DevTraceInput {
   prompt: string;
   output: string;
   model: string;
+  provider?: string;
 }
 
 async function generateReflection(
@@ -584,14 +631,25 @@ async function generateReflection(
     prompt +
     '\n\n【応答】\n' +
     output;
-  const response = await fetchGemini(env, reflectionPrompt, REFLECTION_TIMEOUT_MS);
-  if (!response.ok) {
-    return { error: `reflection upstream ${response.status}` };
+  const result = await callWithFallback({
+    label: 'reflection',
+    candidates: planRoute({ tier: 'free', purpose: 'reflection', enableSakura: isSakuraEnabled(env) }),
+    env,
+    buildRequest: () => ({
+      request: {
+        messages: [{ role: 'user', content: reflectionPrompt }],
+        reasoningEffort: 'none',
+      },
+      usesSyntheticTool: false,
+    }),
+    parse: (text) => text,
+    perProviderTimeoutMs: REFLECTION_TIMEOUT_MS,
+    totalTimeoutMs: REFLECTION_TIMEOUT_MS,
+  });
+  if (!result.ok) {
+    return { error: 'reflection upstream failed' };
   }
-  const data = await response.json<{
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-  }>();
-  const rawText = extractGeminiText(data);
+  const rawText = result.text;
   try {
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     return JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
@@ -669,11 +727,6 @@ async function handleReplyRequest(
   env: Env,
   ctx: ExecutionContext,
 ): Promise<Response> {
-  if (!env.GEMINI_API_KEY) {
-    console.error('[jibunkaigi-proxy] GEMINI_API_KEY is not configured');
-    return json({ error: 'AI service temporarily unavailable' }, 503, env);
-  }
-
   try {
     const body = await readJsonBody<{
       userText?: unknown;
@@ -721,25 +774,36 @@ async function handleReplyRequest(
       surfaced,
     });
 
-    const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
-    const geminiResponse = await fetchGemini(env, built.prompt);
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error(
-        '[jibunkaigi-proxy] Gemini upstream error:',
-        geminiResponse.status,
-        errorText.slice(0, 500),
-      );
+    const tier = resolvePlanTier(request, env);
+    const candidates = planRoute({ tier, purpose: 'reply', enableSakura: isSakuraEnabled(env) });
+    const reasoningEffort = readReplyReasoningEffort(env);
+    const result = await callWithFallback({
+      label: 'reply',
+      candidates,
+      env,
+      buildRequest: (provider, placement) => {
+        const messages = toChatMessages(built, provider.roleStyle, { materialPlacement: placement });
+        const usesSyntheticTool = messages.some((m) => m.role === 'tool');
+        return {
+          request: {
+            messages,
+            reasoningEffort,
+            ...(usesSyntheticTool ? { tools: [LOOK_INWARD_TOOL] } : {}),
+          },
+          usesSyntheticTool,
+        };
+      },
+      parse: (text) => text,
+      perProviderTimeoutMs: REPLY_PROVIDER_TIMEOUT_MS,
+      totalTimeoutMs: REPLY_TOTAL_TIMEOUT_MS,
+    });
+
+    if (!result.ok) {
+      logAllProvidersFailed('reply', result.attempts);
       return json({ error: 'AI service temporarily unavailable' }, 502, env);
     }
-
-    const data = await geminiResponse.json<{
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-    }>();
-    const text = extractGeminiText(data);
-    if (!text) {
-      return json({ error: 'Gemini returned empty text' }, 502, env);
-    }
+    const text = result.text;
+    const model = result.model;
 
     const headerTraceKey = request.headers.get('X-Jibunkaigi-Dev-Trace')?.trim();
     const legacyTraceKey = typeof body.devTraceKey === 'string' ? body.devTraceKey : null;
@@ -765,6 +829,7 @@ async function handleReplyRequest(
           prompt: built.prompt,
           output: text,
           model,
+          provider: result.provider,
         }),
       );
     }
@@ -774,6 +839,7 @@ async function handleReplyRequest(
         text,
         agentId,
         agentLabel: built.agentLabel,
+        provider: result.provider,
         model,
       },
       200,

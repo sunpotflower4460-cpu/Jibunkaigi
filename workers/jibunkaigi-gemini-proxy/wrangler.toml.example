@@ -3,8 +3,21 @@ main = "src/index.ts"
 compatibility_date = "2026-05-01"
 
 [vars]
-GEMINI_MODEL = "gemini-2.5-flash-lite"
 ALLOWED_ORIGIN = "*"
+
+# さくらのAI Engine は約款（第三者利用の条項）の確認が済むまで false のまま。
+ENABLE_SAKURA = "false"
+
+# メインの返答の推論量（GPT-6 Luna / Sol にだけ送る）。none / low / medium / high / xhigh / max。
+# 既定 none：合成 tool 呼び出し（材料の渡し方）が Chat Completions で使えるのは none のときだけのため。
+# REASONING_EFFORT_REPLY = "none"
+
+# モデルIDの上書き（未設定なら packages/shared の PROVIDER_DEFINITIONS の既定値）。
+# MODEL_GROQ = "openai/gpt-oss-120b"
+# MODEL_SAKURA = "gpt-oss-120b"
+# MODEL_LUNA = "gpt-6-luna"
+# MODEL_SOL = "gpt-6-sol"
+# MODEL_DEEPSEEK = "deepseek-flash"
 
 # Production security: uncomment and set the same Firebase project used by the app.
 # When set, /reply and /others require a valid Firebase ID token.
@@ -16,7 +29,10 @@ ALLOWED_ORIGIN = "*"
 # binding = "RATE_LIMIT_KV"
 # id = "your-rate-limit-kv-id"
 
-# Do not put GEMINI_API_KEY or DEV_TRACE_SECRET here.
-# Set secrets manually:
-# wrangler secret put GEMINI_API_KEY
+# Do not put API keys or DEV_TRACE_SECRET here.
+# Set secrets manually (only the providers you use are required):
+# wrangler secret put OPENAI_API_KEY      # GPT-6 Luna / Sol
+# wrangler secret put GROQ_API_KEY
+# wrangler secret put SAKURA_API_KEY
+# wrangler secret put DEEPSEEK_API_KEY
 # wrangler secret put DEV_TRACE_SECRET

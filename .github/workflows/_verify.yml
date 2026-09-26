@@ -113,3 +113,6 @@ jobs:
 
       - name: Typecheck Worker
         run: npm run typecheck
+
+      - name: Test Worker
+        run: npm test

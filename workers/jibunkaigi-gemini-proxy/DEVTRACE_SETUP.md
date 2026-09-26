@@ -14,8 +14,9 @@ main = "src/index.ts"
 compatibility_date = "2026-05-01"
 
 [vars]
-GEMINI_MODEL = "gemini-2.5-flash-lite"
 ALLOWED_ORIGIN = "*"
+# さくらは約款確認が済むまで false のまま。
+ENABLE_SAKURA = "false"
 
 # 本番では必須。Expoアプリと同じFirebase project ID。
 FIREBASE_PROJECT_ID = "your-firebase-project-id"
@@ -48,8 +49,11 @@ Rate Limitを使わない場合、`RATE_LIMIT_KV` は省略できる。`DEV_TRAC
 ## 3. Secrets
 
 ```bash
-# 必須
-npx wrangler secret put GEMINI_API_KEY
+# 使うプロバイダのキーだけ（無いプロバイダは滝の中で飛ばされる）
+npx wrangler secret put OPENAI_API_KEY     # GPT-6 Luna / Sol
+npx wrangler secret put GROQ_API_KEY
+npx wrangler secret put SAKURA_API_KEY
+npx wrangler secret put DEEPSEEK_API_KEY
 
 # 開発者トレースを使う場合のみ
 npx wrangler secret put DEV_TRACE_SECRET
