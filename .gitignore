@@ -33,3 +33,6 @@ dist-ssr
 !.dev.vars.example
 .env*
 !.env.example
+
+# Worker deploy config (holds account/KV IDs; see wrangler.toml.example)
+wrangler.toml

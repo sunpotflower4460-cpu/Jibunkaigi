@@ -52,8 +52,24 @@ class RequestError extends Error {
 }
 
 let firebaseJwkCache:
-  | { keys: Record<string, JsonWebKey>; expiresAt: number }
+  | { keys: Record<string, JsonWebKey>; expiresAt: number; fetchedAt: number }
   | null = null;
+
+// Minimum spacing between forced JWK refreshes triggered by an unknown `kid`,
+// so forged tokens cannot turn every request into an upstream fetch.
+const JWK_FORCED_REFRESH_INTERVAL_MS = 60_000;
+
+/** Constant-time string comparison for shared secrets. */
+function timingSafeEqual(a: string, b: string): boolean {
+  const encoder = new TextEncoder();
+  const aBytes = encoder.encode(a);
+  const bBytes = encoder.encode(b);
+  let diff = aBytes.length ^ bBytes.length;
+  for (let i = 0; i < bBytes.length; i += 1) {
+    diff |= (aBytes[i] ?? 0) ^ bBytes[i];
+  }
+  return diff === 0;
+}
 
 function corsHeaders(env: Env): Record<string, string> {
   return {
@@ -183,9 +199,11 @@ function decodeJwtJson<T>(segment: string): T {
   return JSON.parse(new TextDecoder().decode(bytes)) as T;
 }
 
-async function getFirebaseJwks(): Promise<Record<string, JsonWebKey>> {
+async function getFirebaseJwks(forceRefresh = false): Promise<Record<string, JsonWebKey>> {
   const now = Date.now();
-  if (firebaseJwkCache && firebaseJwkCache.expiresAt > now) {
+  const canForce = !firebaseJwkCache ||
+    now - firebaseJwkCache.fetchedAt >= JWK_FORCED_REFRESH_INTERVAL_MS;
+  if (firebaseJwkCache && firebaseJwkCache.expiresAt > now && !(forceRefresh && canForce)) {
     return firebaseJwkCache.keys;
   }
 
@@ -202,6 +220,7 @@ async function getFirebaseJwks(): Promise<Record<string, JsonWebKey>> {
     // Cache conservatively for one hour. Token verification fails closed if a
     // later refresh cannot be completed.
     expiresAt: now + 60 * 60 * 1_000,
+    fetchedAt: now,
   };
   return keys;
 }
@@ -229,8 +248,10 @@ async function verifyFirebaseIdToken(token: string, projectId: string): Promise<
     if (typeof payload.exp !== 'number' || payload.exp <= nowSeconds) return false;
     if (typeof payload.iat === 'number' && payload.iat > nowSeconds + 60) return false;
 
-    const jwks = await getFirebaseJwks();
-    const jwk = jwks[header.kid];
+    // Google rotates signing keys; an unknown kid triggers one throttled refresh
+    // instead of rejecting valid tokens until the cache expires.
+    const jwk = (await getFirebaseJwks())[header.kid] ??
+      (await getFirebaseJwks(true))[header.kid];
     if (!jwk) return false;
 
     const key = await crypto.subtle.importKey(
@@ -384,7 +405,8 @@ function extractGeminiText(data: {
 
 async function handleOthersRequest(request: Request, env: Env): Promise<Response> {
   if (!env.GEMINI_API_KEY) {
-    return json({ error: 'Missing GEMINI_API_KEY' }, 500, env);
+    console.error('[jibunkaigi-proxy] GEMINI_API_KEY is not configured');
+    return json({ error: 'AI service temporarily unavailable' }, 503, env);
   }
 
   try {
@@ -606,7 +628,7 @@ function readDevTraceSecret(request: Request): string | null {
 
 async function handleDevTracesRead(request: Request, env: Env): Promise<Response> {
   const key = readDevTraceSecret(request);
-  if (!env.DEV_TRACE_SECRET || key !== env.DEV_TRACE_SECRET) {
+  if (!env.DEV_TRACE_SECRET || !key || !timingSafeEqual(key, env.DEV_TRACE_SECRET)) {
     return json({ error: 'unauthorized' }, 401, env);
   }
   if (!env.DEV_TRACE_KV) {
@@ -648,7 +670,8 @@ async function handleReplyRequest(
   ctx: ExecutionContext,
 ): Promise<Response> {
   if (!env.GEMINI_API_KEY) {
-    return json({ error: 'Missing GEMINI_API_KEY' }, 500, env);
+    console.error('[jibunkaigi-proxy] GEMINI_API_KEY is not configured');
+    return json({ error: 'AI service temporarily unavailable' }, 503, env);
   }
 
   try {
@@ -725,7 +748,7 @@ async function handleReplyRequest(
       body.devTrace === true &&
       suppliedTraceKey &&
       env.DEV_TRACE_SECRET &&
-      suppliedTraceKey === env.DEV_TRACE_SECRET &&
+      timingSafeEqual(suppliedTraceKey, env.DEV_TRACE_SECRET) &&
       env.DEV_TRACE_KV
     ) {
       const sessionId = typeof body.sessionId === 'string'
