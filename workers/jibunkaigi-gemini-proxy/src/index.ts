@@ -12,6 +12,7 @@ import {
   parseKind,
   parseLabel,
   planRoute,
+  resolveSwitched,
   toChatMessages,
   type ChatMessage,
   type ConcreteAgentId,
@@ -364,6 +365,7 @@ function normalizeMessages(value: unknown): UniversalPromptMessage[] {
         agentLabel?: unknown;
         modeId?: unknown;
         createdAt?: unknown;
+        origin?: unknown;
       }>).slice(-MAX_MESSAGE_COUNT)
     : [];
 
@@ -375,6 +377,7 @@ function normalizeMessages(value: unknown): UniversalPromptMessage[] {
       typeof msg.agentLabel === 'string' ? msg.agentLabel.slice(0, 40) : undefined,
     modeId: typeof msg.modeId === 'string' ? normalizeModeId(msg.modeId) : undefined,
     createdAt: typeof msg.createdAt === 'number' ? msg.createdAt : undefined,
+    ...(msg.origin === 'others' ? { origin: 'others' as const } : {}),
   }));
 }
 
@@ -563,7 +566,7 @@ async function handleOthersRequest(request: Request, env: Env): Promise<Response
     );
 
     const tier = resolvePlanTier(request, env);
-    const candidates = planRoute({ tier, purpose: 'others', enableSakura: isSakuraEnabled(env) });
+    const { candidates } = planRoute({ tier, purpose: 'others', enableSakura: isSakuraEnabled(env) });
     const othersMessages: ChatMessage[] = [{ role: 'user', content: prompt }];
     const result = await callWithFallback({
       label: 'others',
@@ -633,7 +636,8 @@ async function generateReflection(
     output;
   const result = await callWithFallback({
     label: 'reflection',
-    candidates: planRoute({ tier: 'free', purpose: 'reflection', enableSakura: isSakuraEnabled(env) }),
+    candidates: planRoute({ tier: 'free', purpose: 'reflection', enableSakura: isSakuraEnabled(env) })
+      .candidates,
     env,
     buildRequest: () => ({
       request: {
@@ -740,6 +744,10 @@ async function handleReplyRequest(
       devTraceKey?: unknown;
       /** クライアント（モバイル）側で実行した tool層の結果（指示書09-a）。 */
       surfaced?: unknown;
+      /** このチャットで今使っているプロバイダ（指示書12。候補列で検証する）。 */
+      routeLock?: unknown;
+      /** このチャットで切り替えが起きたことがあるか（偽っても見本が増えるだけ）。 */
+      voiceCarryover?: unknown;
     }>(request);
 
     const userText = readUserText(body.userText);
@@ -772,10 +780,16 @@ async function handleReplyRequest(
       messages,
       userName,
       surfaced,
+      voiceCarryover: body.voiceCarryover === true,
     });
 
     const tier = resolvePlanTier(request, env);
-    const candidates = planRoute({ tier, purpose: 'reply', enableSakura: isSakuraEnabled(env) });
+    const { candidates, routeLock } = planRoute({
+      tier,
+      purpose: 'reply',
+      enableSakura: isSakuraEnabled(env),
+      routeLock: body.routeLock,
+    });
     const reasoningEffort = readReplyReasoningEffort(env);
     const result = await callWithFallback({
       label: 'reply',
@@ -840,6 +854,7 @@ async function handleReplyRequest(
         agentId,
         agentLabel: built.agentLabel,
         provider: result.provider,
+        switched: resolveSwitched(routeLock, result.provider),
         model,
       },
       200,

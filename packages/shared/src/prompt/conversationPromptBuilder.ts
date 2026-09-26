@@ -9,6 +9,39 @@ import type {
   UniversalBuiltPrompt,
 } from './promptTypes';
 
+/** 声の引き継ぎで渡す、自分の過去の返答の最大件数と1件あたりの上限。 */
+const VOICE_SAMPLE_MAX = 3;
+const VOICE_SAMPLE_MAX_CHARS = 400;
+
+/**
+ * 声の引き継ぎ（指示書12-2）。プロバイダが切り替わったチャットで、このエージェント自身の
+ * 直近の返答を「これまでの声」として渡す。命令ではなく許可の形で書く。
+ * 他のエージェントの返答と OTHERS の反応は見本に入れない。
+ */
+function buildVoiceCarryoverSection(
+  params: BuildUniversalConversationPromptParams,
+  agentLabel: string,
+): string {
+  if (params.voiceCarryover !== true) return '';
+  const own = params.messages.filter(
+    (msg) =>
+      msg.role === 'agent' &&
+      msg.origin !== 'others' &&
+      (msg.agentId ? msg.agentId === params.agentId : msg.agentLabel === agentLabel) &&
+      msg.text.trim().length > 0,
+  );
+  const samples = own
+    .slice(-VOICE_SAMPLE_MAX)
+    .map((msg) => sanitizePromptText(msg.text, VOICE_SAMPLE_MAX_CHARS));
+  if (samples.length === 0) return '';
+  return [
+    '## この会話での、あなたの声',
+    'この会話で、あなたはすでにこう話してきた。同じ声のまま、続けていい。',
+    '',
+    samples.join('\n\n'),
+  ].join('\n');
+}
+
 export function buildUniversalConversationPrompt(
   params: BuildUniversalConversationPromptParams,
 ): UniversalBuiltPrompt {
@@ -61,6 +94,7 @@ export function buildUniversalConversationPrompt(
       `長さ: ${mode.lengthGuide}`,
     ].join('\n'),
     policy: ['## 共通返答方針', buildResponsePolicyText()].join('\n'),
+    voice: buildVoiceCarryoverSection(params, agent.label),
     history: ['## 直近の会話', history || '(なし)'].join('\n'),
     inner: innerSection,
     userInput: ['## 今回のユーザー入力', sanitizedInput].join('\n'),
@@ -75,6 +109,7 @@ export function buildUniversalConversationPrompt(
   const body = [
     sections.mode,
     sections.policy,
+    ...(sections.voice ? [sections.voice] : []),
     sections.history,
     ...(sections.inner ? [sections.inner] : []),
     sections.userInput,

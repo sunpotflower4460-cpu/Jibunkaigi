@@ -121,9 +121,9 @@ test("split の materialPlacement='developer'：材料を developer の出力の
 test('sections を連結すると layers.body と一致する（既存出力を変えていない）', () => {
   for (const withSurfaced of [true, false]) {
     const built = build(HEAVY_INPUT, withSurfaced);
-    const { mode, policy, history, inner, userInput, output } = built.sections;
+    const { mode, policy, voice, history, inner, userInput, output } = built.sections;
     assert.equal(
-      [mode, policy, history, ...(inner ? [inner] : []), userInput, output].join('\n\n'),
+      [mode, policy, ...(voice ? [voice] : []), history, ...(inner ? [inner] : []), userInput, output].join('\n\n'),
       built.layers.body,
     );
   }

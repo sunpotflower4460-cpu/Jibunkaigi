@@ -1,3 +1,4 @@
+import type { ProviderId } from '@jibunkaigi/shared';
 import type {
   UniversalAgentId,
   UniversalMessage,
@@ -19,6 +20,10 @@ export interface UniversalAiRequest {
   userName?: string | null;
   /** このエージェントの前ターンの浮上活性。 */
   warmth?: UniversalWarmthState;
+  /** このチャットで今使っているプロバイダ（指示書12。温度と同じくクライアントが送り返す）。 */
+  routeLock?: ProviderId | null;
+  /** このチャットの中でプロバイダの切り替えが起きたことがあるか。 */
+  voiceCarryover?: boolean;
 }
 
 export interface UniversalAiResponse {
@@ -29,6 +34,10 @@ export interface UniversalAiResponse {
   model?: string;
   /** 今回の浮上活性（次ターンの温度の素）。 */
   warmth?: UniversalWarmthState;
+  /** 実際に応答したプロバイダ（proxy のときだけ）。 */
+  provider?: ProviderId;
+  /** このターンでプロバイダが切り替わったか（proxy のときだけ）。 */
+  switched?: boolean;
 }
 
 export interface UniversalAiClient {

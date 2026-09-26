@@ -336,3 +336,79 @@ test('OTHERS：Luna の JSON が壊れていれば DeepSeek へ落ち、json_obj
   assert.equal(calls[1].body.reasoning_effort, undefined);
   assert.deepEqual(data.replies.map((r) => [r.agentId, r.position]), [['satou', 'neutral']]);
 });
+
+// ── 第12部：チャット内のロックと声の引き継ぎ ─────────────────────────────
+
+test('routeLock が候補列の2番目なら、1番目は試さない', async () => {
+  queue = [okCompletion('a')];
+  const res = await worker.fetch(
+    post('/api/jibunkaigi/reply', replyBody({ routeLock: 'luna' })),
+    makeEnv(),
+    ctx,
+  );
+  const data = (await res.json()) as { provider: string; switched: boolean };
+  assert.equal(calls.length, 1);
+  assert.equal(modelOf(calls[0]), 'gpt-6-luna');
+  assert.equal(data.provider, 'luna');
+  assert.equal(data.switched, false);
+});
+
+test('ロック先が落ちて次へ進んだら switched: true', async () => {
+  queue = [{ status: 429, text: '' }, okCompletion('a')];
+  const res = await worker.fetch(
+    post('/api/jibunkaigi/reply', replyBody({ routeLock: 'groq' })),
+    makeEnv(),
+    ctx,
+  );
+  const data = (await res.json()) as { provider: string; switched: boolean };
+  assert.equal(data.provider, 'luna');
+  assert.equal(data.switched, true);
+});
+
+test('不正な routeLock は無視して先頭から（switched にもならない）', async () => {
+  queue = [okCompletion('a')];
+  const res = await worker.fetch(
+    post('/api/jibunkaigi/reply', replyBody({ routeLock: 'gemini' })),
+    makeEnv(),
+    ctx,
+  );
+  const data = (await res.json()) as { provider: string; switched: boolean };
+  assert.equal(modelOf(calls[0]), 'openai/gpt-oss-120b');
+  assert.equal(data.switched, false);
+});
+
+const carryoverMessages = [
+  { role: 'user', text: '仕事がしんどい' },
+  { role: 'agent', text: 'サトウの前の返答。', agentId: 'satou', agentLabel: 'サトウ' },
+  { role: 'agent', text: 'OTHERSでのサトウ。', agentId: 'satou', agentLabel: 'サトウ', origin: 'others' },
+];
+
+test('voiceCarryover=true なら自分の過去の返答が「あなたの声」として渡る（OTHERS は除く）', async () => {
+  queue = [okCompletion('a')];
+  await worker.fetch(
+    post('/api/jibunkaigi/reply', replyBody({ messages: carryoverMessages, voiceCarryover: true })),
+    makeEnv(),
+    ctx,
+  );
+  const user = (calls[0].body.messages as Array<{ role: string; content: string }>).find(
+    (m) => m.role === 'user',
+  );
+  assert.match(user?.content ?? '', /## この会話での、あなたの声/);
+  assert.match(user?.content ?? '', /サトウの前の返答。/);
+  const voicePart = (user?.content ?? '').split('## 直近の会話')[0];
+  assert.doesNotMatch(voicePart, /OTHERSでのサトウ/);
+});
+
+test('voiceCarryover が true 以外なら「あなたの声」は入らない', async () => {
+  for (const voiceCarryover of [false, 'true', 1, undefined]) {
+    calls = [];
+    queue = [okCompletion('a')];
+    await worker.fetch(
+      post('/api/jibunkaigi/reply', replyBody({ messages: carryoverMessages, voiceCarryover })),
+      makeEnv(),
+      ctx,
+    );
+    const all = JSON.stringify(calls[0].body.messages);
+    assert.doesNotMatch(all, /この会話での、あなたの声/, String(voiceCarryover));
+  }
+});

@@ -1,6 +1,7 @@
 import {
   activationSnapshot,
   igniteAndSpread,
+  isProviderId,
   UNIVERSAL_AGENTS,
   type UniversalAgentId,
 } from '@jibunkaigi/shared';
@@ -67,6 +68,8 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
             messages: request.messages.slice(-20),
             userName: request.userName,
             surfaced,
+            ...(request.routeLock ? { routeLock: request.routeLock } : {}),
+            ...(request.voiceCarryover ? { voiceCarryover: true } : {}),
             ...(DEV_TRACE_ENABLED && DEV_TRACE_KEY ? { devTrace: true } : {}),
           }),
           signal: controller.signal,
@@ -81,6 +84,8 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
           agentId?: unknown;
           agentLabel?: unknown;
           model?: unknown;
+          provider?: unknown;
+          switched?: unknown;
         };
 
         if (!data || typeof data.text !== 'string' || !data.text.trim()) {
@@ -96,6 +101,8 @@ export function createGeminiProxyClient(): UniversalAiClient | null {
           source: 'proxy',
           model: typeof data.model === 'string' ? data.model : undefined,
           warmth,
+          ...(isProviderId(data.provider) ? { provider: data.provider } : {}),
+          switched: data.switched === true,
         };
       } finally {
         clearTimeout(timeout);

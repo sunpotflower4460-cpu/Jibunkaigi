@@ -66,7 +66,7 @@ export interface ChatMessagesOptions {
  *
  * folded: system = 一層目＋二層目＋Developer ／ user = body
  * split : system = 一層目＋二層目
- *         developer = Developer＋応答モード＋共通返答方針＋直近の会話＋出力
+ *         developer = Developer＋応答モード＋共通返答方針＋（あなたの声）＋直近の会話＋出力
  *         assistant = look_inward の合成呼び出し ／ tool = 材料（点火なしなら両方省く）
  *         user = 今回のユーザー入力
  */
@@ -92,6 +92,7 @@ export function toChatMessages(
     developer,
     sections.mode,
     sections.policy,
+    ...(sections.voice ? [sections.voice] : []),
     sections.history,
     ...(hasMaterial && placement === 'developer' ? [sections.inner] : []),
     sections.output,

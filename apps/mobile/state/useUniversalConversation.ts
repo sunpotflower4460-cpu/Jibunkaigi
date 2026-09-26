@@ -33,7 +33,10 @@ import {
   pickDelegateByContext,
   isConcreteAgentId,
   resolveOthersTarget,
+  initialRouteState,
+  applyRouteResult,
   type ConcreteAgentId,
+  type ConversationRouteState,
   type DelegateMessageLike,
   type UniversalComposerVisibility,
   type UniversalRuntimeStatus,
@@ -165,6 +168,8 @@ export function useUniversalConversation(
   const lastResolvedAgentIdRef = useRef<ConcreteAgentId | null>(null);
   // 前ターンの浮上活性（温度・指示書08）。セッション内のみ有効。会話をまたがない。
   const warmthRef = useRef<UniversalWarmthState>({});
+  // このチャットのルーティング状態（指示書12）。温度と同じくセッション内のみ有効。
+  const routeStateRef = useRef<ConversationRouteState>(initialRouteState());
 
   const mergeWarmth = useCallback((incoming: UniversalWarmthState | undefined) => {
     if (!incoming) return;
@@ -213,6 +218,8 @@ export function useUniversalConversation(
     setPendingResolvedAgentId(null);
     // 温度はセッション内のみ有効。クリア／新規／切替では前ターンの余韻を持ち越さない。
     warmthRef.current = {};
+    // ルーティングのロックと声の引き継ぎも同じ単位でリセットする。
+    routeStateRef.current = initialRouteState();
     return requestGenerationRef.current;
   }, []);
 
@@ -401,10 +408,16 @@ export function useUniversalConversation(
             messages: messagesSnapshot,
             userName: resolvedUserName,
             warmth: warmthRef.current,
+            routeLock: routeStateRef.current.routeLock,
+            voiceCarryover: routeStateRef.current.voiceCarryover,
           });
 
           if (!isRequestCurrent(sessionId, generation)) return;
           mergeWarmth(reply.warmth);
+          // モック応答へのフォールバック時はロックを動かさない（実際のプロバイダ応答だけを反映）。
+          if (reply.source === 'proxy') {
+            routeStateRef.current = applyRouteResult(routeStateRef.current, reply);
+          }
 
           const agentMsg: UniversalMessage = {
             id: createUniversalId('message'),
