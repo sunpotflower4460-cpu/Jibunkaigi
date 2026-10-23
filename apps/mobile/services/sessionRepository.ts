@@ -5,6 +5,7 @@
 //   artifacts/{appId}/users/{uid}/sessions/{sessionId}
 //   artifacts/{appId}/users/{uid}/sessions/{sessionId}/messages/{messageId}
 
+import { mergeSavedSession } from '@jibunkaigi/shared';
 import type { UniversalMessage, UniversalSession } from '../state/mobileTypes';
 import { createLocalSession } from './universalSessionLocal';
 
@@ -69,7 +70,8 @@ export class LocalSessionRepository implements UniversalSessionRepository {
   }
 
   async saveSession(session: UniversalSession): Promise<void> {
-    this.sessions.set(session.id, { ...session });
+    // 本文は saveMessage / deleteMessage / clearMessages だけで変える。Firestore の merge 保存と同じ。
+    this.sessions.set(session.id, mergeSavedSession(this.sessions.get(session.id), session));
   }
 
   async deleteSession(sessionId: string): Promise<void> {

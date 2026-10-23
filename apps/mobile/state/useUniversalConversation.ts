@@ -107,6 +107,7 @@ interface UseUniversalConversationReturn {
   startFromHint: (hint: string) => void;
   createNewSession: () => void;
   switchSession: (sessionId: string) => Promise<void>;
+  loadSessionMessages: (sessionId: string) => Promise<UniversalMessage[]>;
   deleteSession: (sessionId: string) => Promise<void>;
   renameSession: (sessionId: string, title: string) => Promise<void>;
   togglePinSession: (sessionId: string) => Promise<void>;
@@ -932,6 +933,11 @@ export function useUniversalConversation(
     proxyConfigured,
   };
 
+  // 開いていない会話を会議録・言葉の水面の対象にするとき、その本文を読み込む。
+  const loadSessionMessages = useCallback(async (sessionId: string) => {
+    return repoRef.current.loadMessages(sessionId);
+  }, []);
+
   return {
     session,
     sessions,
@@ -969,6 +975,7 @@ export function useUniversalConversation(
     startFromHint,
     createNewSession,
     switchSession,
+    loadSessionMessages,
     deleteSession,
     renameSession,
     togglePinSession,

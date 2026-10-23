@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { useT } from '../../i18n';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { isImeComposing } from '../../utils/imeKeys';
 
 /**
  * クライアント名 (お名前) を編集するモーダル。
@@ -44,7 +45,7 @@ const UserNameDialog = ({ open, tempName, onChange, onConfirm, onCancel }) => {
           value={tempName}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') onConfirm();
+            if (e.key === 'Enter' && !isImeComposing(e)) onConfirm();
           }}
           className="w-full p-4 rounded-2xl text-center font-bold text-xl outline-none mb-3 neu-concave bg-transparent"
         />

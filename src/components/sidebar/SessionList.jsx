@@ -1,6 +1,7 @@
 import React from 'react';
 import { Edit3, Pin, Trash2, Feather } from 'lucide-react';
 import { useT } from '../../i18n';
+import { isImeComposing } from '../../utils/imeKeys';
 
 /**
  * セッション一覧。ピン留め・タイトル編集・削除を提供する。
@@ -74,6 +75,8 @@ const SessionList = ({
                     onChange={(e) => onChangeEditTitle(e.target.value)}
                     onBlur={() => onCommitEditTitle(s.id)}
                     onKeyDown={(e) => {
+                      // 変換中の Enter（確定）と Escape（取り消し）は IME に任せ、編集は確定・破棄しない。
+                      if (isImeComposing(e)) return;
                       if (e.key === 'Enter') e.target.blur();
                       if (e.key === 'Escape') {
                         onChangeEditTitle(s.title || '');

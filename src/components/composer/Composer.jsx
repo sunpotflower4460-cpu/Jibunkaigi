@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import { Send, X } from 'lucide-react';
 import { useT } from '../../i18n';
+import { handleComposerKeyDown } from './composerKeys';
 
 /**
  * 入力欄 (綴る) — 初回は「主役」として、強い影と大きめの角丸で目立たせる。
@@ -23,12 +24,7 @@ const Composer = forwardRef(function Composer(
   textareaRef,
 ) {
   const t = useT();
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      onSend();
-    }
-  };
+  const handleKeyDown = (e) => handleComposerKeyDown(e, onSend);
 
   const textareaPaddingClass = disabled ? 'pr-5' : 'pr-14';
 

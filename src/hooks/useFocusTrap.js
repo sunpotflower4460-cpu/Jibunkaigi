@@ -8,6 +8,7 @@
 // initialFocusRef があればフォーカスを当て、以降の Tab ループと Escape のみ扱う。
 
 import { useEffect } from 'react';
+import { isImeComposing } from '../utils/imeKeys.js';
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -17,6 +18,15 @@ const FOCUSABLE_SELECTOR = [
   'select:not([disabled])',
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
+
+/**
+ * Escape でダイアログを閉じるかどうか（純粋）。
+ * IME の変換中の Escape は変換の取り消しに使われるため、閉じない。
+ * @param {{ key: string, keyCode?: number, isComposing?: boolean }} event
+ */
+export function isEscapeToClose(event) {
+  return event.key === 'Escape' && !isImeComposing(event);
+}
 
 /**
  * @param {boolean} active - トラップを有効にするか（ダイアログの open）
@@ -42,6 +52,7 @@ export function useFocusTrap(active, containerRef, options = {}) {
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
+        if (!isEscapeToClose(e)) return;
         e.preventDefault();
         onEscape?.();
         return;

@@ -33,7 +33,8 @@ import { ThemeArchiveSheet } from '../components/reflection/ThemeArchiveSheet';
 import { useReflectionShelf } from '../state/useReflectionShelf';
 import { useUniversalConversation } from '../state/useUniversalConversation';
 import { useUniversalOnboarding } from '../state/useUniversalOnboarding';
-import { DEFAULT_USER_NAME } from '@jibunkaigi/shared';
+import type { UniversalMessage } from '../state/mobileTypes';
+import { DEFAULT_USER_NAME, resolveShelfSession } from '@jibunkaigi/shared';
 import { colors, spacing, mobileLayout, radius, shadow } from '../theme/tokens';
 import { createSelfReturnSeed } from '../utils/selfReturn';
 import { buildKeywordField } from '../services/keywordField';
@@ -72,6 +73,7 @@ export default function IndexScreen() {
     clearConversation,
     createNewSession,
     switchSession,
+    loadSessionMessages,
     deleteSession,
     renameSession,
     togglePinSession,
@@ -128,14 +130,24 @@ export default function IndexScreen() {
   const [manualControlsExpanded, setManualControlsExpanded] = useState(false);
 
   const hasUserMessages = messages.some((message) => message.role === 'user');
-  const selectedShelfSession = sessions.find((item) => item.id === selectedSessionId) ?? session;
-  const canCreateConferenceRecord = selectedShelfSession.messages
+  // 開いていない会話を会議録・言葉の水面の対象にするとき、その本文を読み込んで持つ。
+  // 一覧のエントリ（listSessions）は本文を持たないため、そのままでは使えない。
+  const [loadedShelfMessages, setLoadedShelfMessages] = useState<{ sessionId: string; messages: UniversalMessage[] } | null>(null);
+  const shelf = resolveShelfSession({
+    activeSession: session,
+    listedSessions: sessions,
+    selectedSessionId,
+    loadedMessages: loadedShelfMessages,
+  });
+  const selectedShelfSession = shelf.session;
+  const selectedShelfMessages = shelf.messages;
+  const canCreateConferenceRecord = selectedShelfMessages
     .some((message) => message.role === 'user' && message.text.trim());
   const floatingKeywords = useMemo(() => buildKeywordField({
-    messages: selectedShelfSession.messages,
+    messages: selectedShelfMessages,
     conferenceRecords,
     stickyNotes,
-  }), [conferenceRecords, selectedShelfSession.messages, stickyNotes]);
+  }), [conferenceRecords, selectedShelfMessages, stickyNotes]);
   const themeArchive = useMemo(() => buildThemeArchive({
     sessions,
     conferenceRecords: themeArchiveConferenceRecords,
@@ -145,6 +157,23 @@ export default function IndexScreen() {
   const themeArchiveSeed = themeArchive.themes.slice(0, 6).map((item) => item.keyword).join(' / ');
   const floatingBarVisible = hasUserMessages;
   const timelineBottomOffset = bottomDockHeight + floatingBarHeight + spacing.lg;
+
+  useEffect(() => {
+    let cancelled = false;
+    if (selectedSessionId && selectedSessionId !== session.id) {
+      void (async () => {
+        try {
+          const loaded = await loadSessionMessages(selectedSessionId);
+          if (!cancelled) setLoadedShelfMessages({ sessionId: selectedSessionId, messages: loaded });
+        } catch (error) {
+          console.warn('[Jibunkaigi] Shelf session load error:', error);
+        }
+      })();
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [loadSessionMessages, selectedSessionId, session.id]);
 
   useEffect(() => {
     const nextDraft = userName === DEFAULT_USER_NAME ? '' : userName;
@@ -410,7 +439,7 @@ export default function IndexScreen() {
         }}
         onCreate={async () => createConferenceRecord({
           sessionTitle: selectedShelfSession.title,
-          messages: selectedShelfSession.messages,
+          messages: selectedShelfMessages,
         })}
         records={conferenceRecords}
         onDelete={deleteConferenceRecord}

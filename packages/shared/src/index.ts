@@ -30,6 +30,8 @@ export * from './status/universalStatusTypes';
 export * from './status/universalStatusMessages';
 export * from './session/sessionDisplay';
 export * from './session/sessionExport';
+export * from './session/shelfSession';
+export * from './session/sessionSave';
 export * from './message/messageActions';
 export * from './message/resolveOthersTarget';
 export * from './toolEngine';
